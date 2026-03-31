@@ -1,68 +1,121 @@
 {% extends "base.html" %}
-{% block title %}Customers — Owner{% endblock %}
+{% block title %}Customers — Uttam Tailors{% endblock %}
 {% block content %}
 <div class="page-header">
-  <div><h1>👥 <span data-t="customers">Customers</span></h1><div class="header-sub">{{ total }} total</div></div>
+  <div><h1>👥 <span data-t="customers">Customers</span></h1><div class="header-sub">{{ total }} customers</div></div>
   <div style="display:flex;gap:8px;align-items:center;">
-    <a href="/owner/dashboard" class="btn btn-ghost btn-sm">← Dashboard</a>
+    <a href="/" class="btn btn-ghost btn-sm">← Back</a>
     <button class="menu-toggle" onclick="openSidebar()">☰</button>
   </div>
 </div>
-<div class="page-body" style="padding:16px 24px;">
+<div class="page-body" style="padding:16px 20px;">
+  <!-- Search -->
   <div style="display:grid;grid-template-columns:1fr auto;gap:10px;margin-bottom:16px;">
-    <input type="text" id="srch" placeholder="Search name, mobile, address..."
-      oninput="filter()"
-      style="padding:11px 16px;font-size:14px;border:2px solid var(--border);border-radius:12px;">
-    <a href="/owner/export/orders" class="btn btn-ghost" style="background:#d1fae5;color:#065f46;">📥 Export Excel</a>
+    <input type="text" id="cust-search" placeholder="Search by name, mobile or address..."
+      oninput="debounce()" onkeydown="if(event.key==='Enter')doSearch()"
+      style="padding:12px 16px;font-size:15px;border:2px solid var(--border);border-radius:12px;">
+    <button onclick="doSearch()" class="btn btn-primary" style="padding:0 24px;">Search</button>
   </div>
-  <div style="overflow-x:auto;">
-    <table style="width:100%;border-collapse:collapse;font-size:13px;">
-      <thead>
-        <tr style="background:#f8fafc;border-bottom:2px solid var(--border);">
-          <th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Customer</th>
-          <th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Mobile</th>
-          <th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Address</th>
-          <th style="padding:10px 16px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Orders</th>
-          <th style="padding:10px 16px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Total Billed</th>
-          <th style="padding:10px 16px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Total Due</th>
-          <th style="padding:10px 16px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Last Order</th>
-        </tr>
-      </thead>
-      <tbody id="tbody">
-        {% for c in customers %}
-        <tr class="crow" data-s="{{ c.name|lower }} {{ c.mobile }} {{ c.address|lower }}"
-          style="border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.1s;"
-          onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''"
-          onclick="window.location='/owner/customers/{{ c.id }}'">
-          <td style="padding:12px 16px;">
-            <div style="font-size:14px;font-weight:800;">{{ c.name }}</div>
-          </td>
-          <td style="padding:12px 16px;color:var(--text-muted);">{{ c.mobile or '—' }}</td>
-          <td style="padding:12px 16px;color:var(--text-muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ c.address or '—' }}</td>
-          <td style="padding:12px 16px;text-align:center;font-weight:800;color:var(--accent);">{{ c.order_count }}</td>
-          <td style="padding:12px 16px;text-align:right;font-weight:700;">₹{{ c.total_billed|int }}</td>
-          <td style="padding:12px 16px;text-align:right;font-weight:700;color:{% if c.total_due > 0 %}var(--danger){% else %}var(--success){% endif %};">
-            {% if c.total_due > 0 %}₹{{ c.total_due|int }}{% else %}✓ Paid{% endif %}
-          </td>
-          <td style="padding:12px 16px;text-align:right;color:var(--text-muted);font-size:12px;">{{ c.last_order_date or '—' }}</td>
-        </tr>
+  <div id="search-results">
+    <!-- Initial: show all customers as cards -->
+    {% for c in customers %}
+    <div class="cust-card" data-id="{{ c.id }}"
+      style="background:#fff;border-radius:14px;margin-bottom:8px;border:1.5px solid var(--border);overflow:hidden;cursor:pointer;"
+      onclick="toggleCust('cc-{{ c.id }}', this)">
+      <div style="display:flex;align-items:center;gap:14px;padding:14px 18px;">
+        <div style="width:44px;height:44px;background:var(--accent-light);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:var(--accent);flex-shrink:0;">
+          {{ c.name[0].upper() }}
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:15px;font-weight:800;">{{ c.name }}</div>
+          <div style="font-size:12px;color:var(--text-muted);">{{ c.mobile or '—' }}{% if c.address %} · {{ c.address }}{% endif %}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-size:14px;font-weight:800;color:var(--accent);">{{ c.order_count }} orders</div>
+          {% if c.remaining_total > 0 %}<div style="font-size:12px;color:var(--danger);font-weight:700;">Due ₹{{ c.remaining_total|int }}</div>{% endif %}
+        </div>
+        <span style="font-size:18px;color:var(--text-muted);margin-left:8px;" id="arr-{{ c.id }}">▾</span>
+      </div>
+      <!-- Expanded: order history -->
+      <div id="cc-{{ c.id }}" style="display:none;border-top:1px solid var(--border);">
+        {% if c.orders %}
+        <div style="max-height:320px;overflow-y:auto;">
+          {% for o in c.orders %}
+          <div style="display:flex;align-items:center;gap:12px;padding:11px 18px 11px 76px;border-bottom:1px solid var(--border);"
+            onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                <span style="font-size:15px;font-weight:900;color:var(--accent);">#{{ o.order_code }}</span>
+                <span style="font-size:11px;padding:2px 8px;border-radius:8px;font-weight:700;
+                  background:{% if o.status=='delivered' %}#d1fae5;color:#065f46{% elif o.status=='ready' %}#ede9fe;color:#6d28d9{% else %}#dbeafe;color:#1e40af{% endif %};">{{ o.status|title }}</span>
+                {% if o.repeat_of %}<span style="font-size:10px;color:#4338ca;background:#eef2ff;padding:1px 6px;border-radius:5px;">↩#{{ o.repeat_of }}</span>{% endif %}
+              </div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">{{ o.order_date_fmt }} → {{ o.delivery_date_fmt }}</div>
+              <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;">
+                {% for g in o.garments %}<span style="font-size:11px;background:#f1f5f9;padding:1px 7px;border-radius:6px;font-weight:600;">{{ g }}</span>{% endfor %}
+              </div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:13px;font-weight:800;">₹{{ o.payable_amount|int }}</div>
+              {% if o.remaining > 0 %}<div style="font-size:11px;color:var(--danger);font-weight:700;">Due ₹{{ o.remaining|int }}</div>{% else %}<div style="font-size:11px;color:var(--success);">Paid ✓</div>{% endif %}
+            </div>
+            <button onclick="event.stopPropagation();window.open('/print-slip/{{ o.order_code }}','_blank')"
+              style="background:none;border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-size:11px;cursor:pointer;color:var(--text-muted);">🖨️</button>
+          </div>
+          {% endfor %}
+        </div>
         {% else %}
-        <tr><td colspan="7" style="padding:48px;text-align:center;color:var(--text-muted);">
-          <div style="font-size:32px;margin-bottom:8px;">👥</div><div style="font-weight:700;">No customers yet</div>
-        </td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
+        <div style="padding:20px 76px;color:var(--text-muted);font-size:13px;">No orders yet</div>
+        {% endif %}
+      </div>
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:60px;color:var(--text-muted);">
+      <div style="font-size:40px;margin-bottom:10px;">👥</div>
+      <div style="font-weight:700;">No customers yet</div>
+    </div>
+    {% endfor %}
   </div>
 </div>
 {% endblock %}
 {% block extra_js %}
 <script>
-function filter() {
-  const q = document.getElementById("srch").value.toLowerCase().trim();
-  document.querySelectorAll(".crow").forEach(row => {
-    row.style.display = (!q || row.dataset.s.includes(q)) ? "" : "none";
+let searchTimer = null;
+function debounce() { clearTimeout(searchTimer); searchTimer = setTimeout(doSearch, 350); }
+function doSearch() {
+  const q = document.getElementById("cust-search").value.trim();
+  fetch("/api/customers/search?q=" + encodeURIComponent(q || " "))
+    .then(r => r.json()).then(renderResults);
+}
+function renderResults(data) {
+  if (!data.length) {
+    document.getElementById("search-results").innerHTML =
+      '<div style="padding:40px;text-align:center;color:var(--text-muted);"><div style="font-size:28px;margin-bottom:8px;">🔍</div><div style="font-weight:700;">No customers found</div></div>';
+    return;
+  }
+  // Re-load page with search results (simple approach)
+  // For now just filter existing cards
+  document.querySelectorAll(".cust-card").forEach(card => {
+    const name = card.querySelector("div > div > div").textContent.toLowerCase();
+    const matchesId = data.some(c => c.id == card.dataset.id);
+    card.style.display = (!q || matchesId) ? "block" : "none";
   });
+}
+const q = document.getElementById("cust-search");
+q.addEventListener("input", () => {
+  const val = q.value.toLowerCase().trim();
+  document.querySelectorAll(".cust-card").forEach(card => {
+    const text = card.textContent.toLowerCase();
+    card.style.display = (!val || text.includes(val)) ? "block" : "none";
+  });
+});
+
+function toggleCust(id, card) {
+  const el  = document.getElementById(id);
+  const arr = card.querySelector("[id^='arr-']");
+  const open = el.style.display !== "none";
+  el.style.display = open ? "none" : "block";
+  if (arr) arr.textContent = open ? "▾" : "▴";
 }
 </script>
 {% endblock %}
