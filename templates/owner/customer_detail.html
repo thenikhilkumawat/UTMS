@@ -112,6 +112,13 @@
               </button>
             </form>
             {% endif %}
+            <form action="/owner/orders/delete/{{ o.order_code }}" method="POST" style="margin:0;"
+              onsubmit="return confirm('⚠️ Permanently DELETE order #{{ o.order_code }}? This cannot be undone!')">
+              <button type="submit"
+                style="background:#1f2937;color:#fff;border:none;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;">
+                🗑️ Delete
+              </button>
+            </form>
           </div>
           <!-- Images container -->
           <div id="imgs-{{ o.order_code }}" style="display:none;margin-top:10px;max-width:300px;"></div>
