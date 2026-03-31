@@ -180,14 +180,24 @@ function doSearch() {
   var res = document.getElementById("search-results");
   res.innerHTML = '<div style="color:rgba(255,255,255,0.7);font-size:14px;padding:6px 0;">खोज रहे हैं...</div>';
   fetch("/api/pickup/search?q=" + encodeURIComponent(q))
-    .then(function(r){ return r.json(); }).then(function(data) {
-      if (!data.length) { res.innerHTML = '<div style="color:rgba(255,255,255,0.7);font-size:14px;padding:6px 0;">कोई ऑर्डर नहीं मिला</div>'; return; }
-      if (data.length === 1) { loadOrder(data[0].order_code); res.innerHTML = ""; return; }
+    .then(function(r){ return r.json(); })
+    .then(function(data) {
+      if (!data.length) {
+        res.innerHTML = '<div style="color:rgba(255,255,255,0.7);font-size:14px;padding:10px 0;">⚠️ कोई ऑर्डर नहीं मिला</div>';
+        return;
+      }
+      // Always show result list so user can see what was found
+      var statusColors = {pending:"#fbbf24",ready:"#34d399",delivered:"#9ca3af",cancelled:"#f87171"};
       res.innerHTML = data.map(function(o) {
-        return '<button onclick="loadOrder(\''+o.order_code+'\');document.getElementById(\'search-results\').innerHTML=\'\'"'
-          + ' style="display:flex;align-items:center;justify-content:space-between;width:100%;padding:10px 14px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:10px;color:#fff;cursor:pointer;margin-bottom:6px;font-size:14px;font-weight:700;">'
-          + '<span>#'+o.order_code+' — '+o.customer_name+'</span><span style="opacity:0.7;">'+o.mobile+'</span></button>';
+        var dot = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+(statusColors[o.status]||"#9ca3af")+';margin-right:6px;"></span>';
+        return '<button onclick="loadOrder(''+o.order_code+'');this.parentElement.innerHTML=''"'
+          + ' style="display:flex;align-items:center;justify-content:space-between;width:100%;padding:10px 14px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:10px;color:#fff;cursor:pointer;margin-bottom:6px;font-size:14px;font-weight:700;text-align:left;">'
+          + '<span>'+dot+'#'+o.order_code+' — '+o.customer_name+'</span>'
+          + '<span style="opacity:0.65;font-size:12px;">'+o.mobile+'</span></button>';
       }).join("");
+    })
+    .catch(function() {
+      res.innerHTML = '<div style="color:#fca5a5;font-size:13px;padding:8px 0;">⚠️ खोज में समस्या हुई। दोबारा कोशिश करें।</div>';
     });
 }
 
@@ -312,10 +322,8 @@ function sendDeliveryWA(lang) {
   var receiverLine_hi = (rn||rm) ? "\n\n👤 लेने वाले का नाम: *"+(rn||"—")+"*\n📱 मोबाइल: *"+(rm||"—")+"*" : "";
   var receiverLine_en = (rn||rm) ? "\n\n👤 Collected by: *"+(rn||"—")+"*\n📱 Mobile: *"+(rm||"—")+"*" : "";
   var msg = lang==="hi"
-    ? "*उत्तम टेलर्स*\n\nनमस्ते "+o.customer_name+" जी!\n\nआपके कपड़े डिलीवर हो गए।\n\nऑर्डर: *#"+o.order_code+"*\nकपड़े: "+items+receiverLine_hi+"\n\n✅ यह संदेश आपकी सुरक्षा के लिए भेजा गया है।\nउत्तम टेलर्स पर पधारने के लिए आपका हार्दिक धन्यवाद।
-\nकृपया पुनः अवश्य पधारें, आपका स्वागत है। \n\nधन्यवाद!"
-    : "*Uttam Tailors*\n\nDear "+o.customer_name+",\n\nYour order *#"+o.order_code+"* has been delivered.\n\nItems: "+items+receiverLine_en+"\n\n✅ This message is sent for your security.\n\nThank you for visiting Uttam Tailors.
-\nPlease do visit us again — you are always welcome! \nThank you!";
+    ? "*उत्तम टेलर्स*\n\nनमस्ते "+o.customer_name+" जी!\n\nआपके कपड़े डिलीवर हो गए।\n\nऑर्डर: *#"+o.order_code+"*\nकपड़े: "+items+receiverLine_hi+"\n\n✅ यह संदेश आपकी सुरक्षा के लिए भेजा गया है।\n\nधन्यवाद!"
+    : "*Uttam Tailors*\n\nDear "+o.customer_name+",\n\nYour order *#"+o.order_code+"* has been delivered.\n\nItems: "+items+receiverLine_en+"\n\n✅ This message is sent for your security.\n\nThank you!";
   if (o.mobile) window.open("https://wa.me/"+o.mobile.replace(/\D/g,"")+  "?text="+encodeURIComponent(msg),"_blank");
 }
 
