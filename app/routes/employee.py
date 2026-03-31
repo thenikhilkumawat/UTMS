@@ -237,13 +237,155 @@ def upload_images(order_code):
         return f"""<html><body style="font-family:sans-serif;padding:30px;text-align:center;">
         <h2>{"✅ Done!" if saved else "⚠️"}</h2><p>{msg}</p>
         <a href="" style="color:#6366f1;font-weight:700;">← Upload more</a></body></html>"""
-    return f"""<html><body style="font-family:sans-serif;padding:30px;max-width:400px;margin:auto;">
-    <h2 style="color:#111827;">📷 Upload for Order #{order_code}</h2>
-    <p style="color:#6b7280;">Choose photos (up to 5 total per order)</p>
-    <form method="POST" enctype="multipart/form-data" style="margin-top:20px;">
-        <input type="file" name="photos" accept="image/*" capture="environment" multiple style="margin-bottom:16px;display:block;">
-        <button type="submit" style="background:#6366f1;color:#fff;padding:12px 28px;border:none;border-radius:8px;font-size:16px;font-weight:700;cursor:pointer;">Upload</button>
-    </form></body></html>"""
+    return f"""<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Upload Photos</title>
+<style>
+  * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+  body {{ font-family: -apple-system, sans-serif; background: #f3f4f6; min-height: 100vh; padding: 20px; }}
+  .card {{ background: #fff; border-radius: 20px; padding: 24px 20px; max-width: 420px; margin: 0 auto; box-shadow: 0 4px 24px rgba(0,0,0,0.10); }}
+  h2 {{ color: #111827; font-size: 19px; margin-bottom: 4px; }}
+  .subtitle {{ color: #6b7280; font-size: 13px; margin-bottom: 20px; }}
+  .counter {{ display: inline-block; background: #eef2ff; color: #6366f1; font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 20px; margin-bottom: 18px; }}
+
+  /* Preview grid */
+  .preview-grid {{ display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; min-height: 0; }}
+  .thumb-wrap {{ position: relative; width: 90px; height: 90px; border-radius: 12px; overflow: hidden; border: 2px solid #e5e7eb; }}
+  .thumb-wrap img {{ width: 100%; height: 100%; object-fit: cover; display: block; }}
+  .remove-btn {{ position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.6); color: #fff; border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 13px; line-height: 22px; text-align: center; cursor: pointer; padding: 0; }}
+
+  /* Add more / First capture button */
+  .add-btn {{ width: 90px; height: 90px; border-radius: 12px; border: 2px dashed #c7d2fe; background: #eef2ff; color: #6366f1; font-size: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 2px; }}
+  .add-btn span {{ font-size: 11px; font-weight: 600; color: #6366f1; }}
+
+  /* First-time big camera button */
+  .camera-btn-big {{ display: block; width: 100%; padding: 20px; background: #eef2ff; border: 2px dashed #c7d2fe; border-radius: 16px; color: #6366f1; font-size: 16px; font-weight: 700; text-align: center; cursor: pointer; margin-bottom: 20px; }}
+  .camera-btn-big .icon {{ font-size: 36px; display: block; margin-bottom: 6px; }}
+
+  /* Upload button */
+  .upload-btn {{ display: block; width: 100%; padding: 16px; background: #6366f1; color: #fff; border: none; border-radius: 14px; font-size: 17px; font-weight: 700; cursor: pointer; }}
+  .upload-btn:disabled {{ background: #c7d2fe; cursor: not-allowed; }}
+  .upload-btn:active {{ background: #4f46e5; }}
+
+  input[type=file] {{ display: none; }}
+  .uploading {{ text-align: center; padding: 20px; color: #6366f1; font-weight: 600; }}
+</style>
+</head>
+<body>
+<div class="card">
+  <h2>📷 Order #{order_code}</h2>
+  <p class="subtitle">Take photos to attach to this order</p>
+  <div class="counter" id="counter">0 / 5 photos</div>
+
+  <div id="preview-grid" class="preview-grid"></div>
+
+  <!-- Hidden camera input (single capture each time) -->
+  <input type="file" id="cam-input" accept="image/*" capture="environment">
+
+  <!-- Big camera button shown when no photos yet -->
+  <div id="big-cam-btn" class="camera-btn-big" onclick="openCamera()">
+    <span class="icon">📸</span>
+    Tap to take a photo
+  </div>
+
+  <!-- Upload form (hidden, used for submission) -->
+  <form id="upload-form" method="POST" enctype="multipart/form-data" style="display:none;">
+  </form>
+
+  <button class="upload-btn" id="upload-btn" disabled onclick="submitPhotos()">
+    Upload Photos
+  </button>
+</div>
+
+<script>
+var capturedFiles = [];
+
+function openCamera() {{
+  if (capturedFiles.length >= 5) return;
+  document.getElementById('cam-input').value = '';
+  document.getElementById('cam-input').click();
+}}
+
+document.getElementById('cam-input').addEventListener('change', function() {{
+  var file = this.files[0];
+  if (!file) return;
+  if (capturedFiles.length >= 5) return;
+  capturedFiles.push(file);
+  renderPreviews();
+}});
+
+function renderPreviews() {{
+  var grid = document.getElementById('preview-grid');
+  var bigBtn = document.getElementById('big-cam-btn');
+  var uploadBtn = document.getElementById('upload-btn');
+  var counter = document.getElementById('counter');
+
+  counter.textContent = capturedFiles.length + ' / 5 photos';
+  grid.innerHTML = '';
+
+  capturedFiles.forEach(function(file, idx) {{
+    var wrap = document.createElement('div');
+    wrap.className = 'thumb-wrap';
+    var img = document.createElement('img');
+    img.src = URL.createObjectURL(file);
+    var rm = document.createElement('button');
+    rm.className = 'remove-btn';
+    rm.textContent = '✕';
+    rm.onclick = function() {{ removePhoto(idx); }};
+    wrap.appendChild(img);
+    wrap.appendChild(rm);
+    grid.appendChild(wrap);
+  }});
+
+  // Show + button if less than 5
+  if (capturedFiles.length > 0 && capturedFiles.length < 5) {{
+    var addBtn = document.createElement('div');
+    addBtn.className = 'add-btn';
+    addBtn.onclick = openCamera;
+    addBtn.innerHTML = '+<span>Add</span>';
+    grid.appendChild(addBtn);
+  }}
+
+  // Toggle big button
+  bigBtn.style.display = capturedFiles.length === 0 ? 'block' : 'none';
+
+  // Enable upload only when photos added
+  uploadBtn.disabled = capturedFiles.length === 0;
+}}
+
+function removePhoto(idx) {{
+  capturedFiles.splice(idx, 1);
+  renderPreviews();
+}}
+
+function submitPhotos() {{
+  if (capturedFiles.length === 0) return;
+  var form = document.getElementById('upload-form');
+  form.style.display = 'block';
+  // Clear old inputs
+  form.innerHTML = '';
+  // Build FormData and submit via fetch
+  var fd = new FormData();
+  capturedFiles.forEach(function(file) {{
+    fd.append('photos', file, file.name || 'photo.jpg');
+  }});
+  document.getElementById('upload-btn').disabled = true;
+  document.getElementById('upload-btn').textContent = 'Uploading...';
+  fetch('', {{ method: 'POST', body: fd }})
+    .then(function(r) {{ return r.text(); }})
+    .then(function(html) {{
+      document.body.innerHTML = html;
+    }})
+    .catch(function() {{
+      document.getElementById('upload-btn').disabled = false;
+      document.getElementById('upload-btn').textContent = 'Upload Photos';
+      alert('Upload failed, please try again.');
+    }});
+}}
+</script>
+</body></html>"""
 
 
 @bp.route("/images/<order_code>")
