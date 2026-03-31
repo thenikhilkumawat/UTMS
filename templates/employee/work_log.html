@@ -202,6 +202,22 @@ var TAB_CONFIG = {
 
 function isHindi() { return typeof currentLang !== "undefined" && currentLang === "hi"; }
 
+function translateWorkType(gt) {
+  if (!isHindi()) return gt;
+  // Translate known non-stitch work types
+  if (gt && gt.indexOf("Measurement") !== -1) return gt.replace("Measurement", "नाप");
+  if (gt && gt.indexOf("Cutting") !== -1)     return gt.replace("Cutting", "कटाई");
+  if (gt && gt.indexOf("Naap") !== -1)        return gt.replace("Naap", "नाप");
+  if (gt && gt.indexOf("Kataai") !== -1)      return gt.replace("Kataai", "कटाई");
+  // Stitch garment types - translate common ones
+  var garmentMap = {
+    "Shirt":"कमीज़", "Pant":"पैंट", "Suit":"सूट", "Kurta":"कुर्ता",
+    "Pajama":"पजामा", "Coat":"कोट", "Blazer":"ब्लेज़र", "Sherwani":"शेरवानी",
+    "Waistcoat":"वेस्टकोट", "Blouse":"ब्लाउज़", "Salwar":"सलवार", "Kameez":"कमीज़"
+  };
+  return garmentMap[gt] || gt;
+}
+
 function selectEmployee(id, name, skills) {
   SEL_EMP_ID   = id;
   SEL_EMP_NAME = name;
@@ -390,13 +406,13 @@ function renderStats(data) {
     return '<div style="border-bottom:1px solid var(--border);">'
       +'<div style="display:flex;justify-content:space-between;padding:8px 14px;background:#f9fafb;">'
       +'<span style="font-size:13px;font-weight:800;">'+day.date_fmt+'</span>'
-      +'<span style="font-size:12px;font-weight:900;color:#4f46e5;">'+day.total_qty+' piece · <span style="color:#16a34a;">₹'+day.day_earnings+'</span></span>'
+      +'<span style="font-size:12px;font-weight:900;color:#4f46e5;">'+day.total_qty+' '+(isHindi()?'कपड़े':'piece')+' · <span style="color:#16a34a;">₹'+day.day_earnings+'</span></span>'
       +'</div>'
       +day.entries.map(function(e){
         return '<div style="display:flex;align-items:center;gap:10px;padding:9px 14px 9px 22px;">'
           +'<div style="flex:1;">'
           +'<span style="font-size:13px;font-weight:900;color:#4f46e5;">#'+e.order_code+'</span>'
-          +'<span style="font-size:12px;margin-left:8px;font-weight:700;color:var(--text-secondary);">'+e.garment_type+'</span>'
+          +'<span style="font-size:12px;margin-left:8px;font-weight:700;color:var(--text-secondary);">'+translateWorkType(e.garment_type)+'</span>'
           +'</div>'
           +'<div style="text-align:right;">'
           +'<div style="font-size:20px;font-weight:900;">'+e.qty_done+'</div>'
