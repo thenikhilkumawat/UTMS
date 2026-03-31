@@ -651,16 +651,23 @@ def owner_customers():
         p = str(d).split("-")
         return f"{p[2]}-{p[1]}-{p[0]}" if len(p)==3 else d
 
-    customers = [{
-        "id":             r["id"],
-        "name":           r["name"],
-        "mobile":         r["mobile"] or "",
-        "address":        r["address"] or "",
-        "order_count":    r["order_count"],
-        "total_billed":   r["total_billed"] or 0,
-        "total_due":      r["total_due"] or 0,
-        "last_order_date":fmtd(r["last_order_date"])
-    } for r in rows]
+    customers = []
+    for r in rows:
+        order_codes = conn.execute(
+            "SELECT order_code FROM orders WHERE customer_id=? ORDER BY id DESC", (r["id"],)
+        ).fetchall()
+        codes_str = " ".join(o["order_code"] for o in order_codes)
+        customers.append({
+            "id":             r["id"],
+            "name":           r["name"],
+            "mobile":         r["mobile"] or "",
+            "address":        r["address"] or "",
+            "order_count":    r["order_count"],
+            "total_billed":   r["total_billed"] or 0,
+            "total_due":      r["total_due"] or 0,
+            "last_order_date":fmtd(r["last_order_date"]),
+            "order_codes":    codes_str
+        })
     urgent_count = conn.execute(
         "SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status!='delivered'"
     ).fetchone()["c"]
@@ -865,6 +872,76 @@ def cancel_order(order_code):
     conn.commit()
     conn.close()
     flash(f"Order #{order_code} cancelled.", "success")
+    return redirect(request.referrer or url_for("owner.owner_dashboard"))
+
+
+# ══════════════════════════════════════════════
+#  ORDER MANAGEMENT (Owner)
+# ══════════════════════════════════════════════
+
+@bp.route("/orders")
+@owner_required
+def owner_orders():
+    conn = get_db()
+    rows = conn.execute("""
+        SELECT o.order_code, o.status, o.order_date, o.delivery_date,
+               o.payable_amount, o.remaining, o.is_urgent, o.note,
+               c.name as cname, c.mobile,
+               GROUP_CONCAT(oi.garment_type||' x'||oi.quantity, ', ') as garments_str
+        FROM orders o
+        LEFT JOIN customers c ON c.id=o.customer_id
+        LEFT JOIN order_items oi ON oi.order_id=o.id
+        GROUP BY o.id
+        ORDER BY o.id DESC
+    """).fetchall()
+
+    def fmtd(d):
+        if not d: return "—"
+        p = str(d).split("-")
+        return f"{p[2]}-{p[1]}-{p[0]}" if len(p)==3 else d
+
+    orders = [{
+        "order_code":    r["order_code"],
+        "status":        r["status"],
+        "order_date":    fmtd(r["order_date"]),
+        "delivery_date": fmtd(r["delivery_date"]),
+        "payable":       r["payable_amount"] or 0,
+        "remaining":     r["remaining"] or 0,
+        "is_urgent":     r["is_urgent"],
+        "note":          r["note"] or "",
+        "cname":         r["cname"] or "—",
+        "mobile":        r["mobile"] or "",
+        "garments":      r["garments_str"] or "—"
+    } for r in rows]
+
+    urgent_count = conn.execute(
+        "SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status!='delivered'"
+    ).fetchone()["c"]
+    conn.close()
+    return render_template("owner/orders.html",
+        active_page="owner_orders", show_voice=False,
+        urgent_count=urgent_count, orders=orders, total=len(orders))
+
+
+# ══════════════════════════════════════════════
+#  ORDER DELETE (Owner)
+# ══════════════════════════════════════════════
+
+@bp.route("/orders/delete/<order_code>", methods=["POST"])
+@owner_required
+def delete_order(order_code):
+    conn = get_db()
+    order = conn.execute("SELECT id FROM orders WHERE order_code=?", (order_code,)).fetchone()
+    if order:
+        conn.execute("DELETE FROM work_logs WHERE order_id=?", (order["id"],))
+        conn.execute("DELETE FROM order_items WHERE order_id=?", (order["id"],))
+        conn.execute("DELETE FROM finance WHERE order_id=?", (order["id"],))
+        conn.execute("DELETE FROM orders WHERE id=?", (order["id"],))
+        conn.commit()
+        flash(f"Order #{order_code} deleted permanently.", "success")
+    else:
+        flash(f"Order #{order_code} not found.", "error")
+    conn.close()
     return redirect(request.referrer or url_for("owner.owner_dashboard"))
 
 
