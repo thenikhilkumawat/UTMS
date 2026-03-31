@@ -307,9 +307,15 @@ function collectAndDeliver() {
 function sendDeliveryWA(lang) {
   var o = currentOrder;
   var items = (o.garments||o.items||[]).map(function(i){return i.garment_type+" ×"+i.quantity;}).join(", ");
+  var rn = (document.getElementById("receiver-name").value||"").trim();
+  var rm = (document.getElementById("receiver-mobile").value||"").trim();
+  var receiverLine_hi = (rn||rm) ? "\n\n👤 लेने वाले का नाम: *"+(rn||"—")+"*\n📱 मोबाइल: *"+(rm||"—")+"*" : "";
+  var receiverLine_en = (rn||rm) ? "\n\n👤 Collected by: *"+(rn||"—")+"*\n📱 Mobile: *"+(rm||"—")+"*" : "";
   var msg = lang==="hi"
-    ? "*उत्तम टेलर्स*\n\nनमस्ते "+o.customer_name+" जी!\n\nआपके कपड़े डिलीवर हो गए।\n\nऑर्डर: *#"+o.order_code+"*\nकपड़े: "+items+"\n\nधन्यवाद!"
-    : "*Uttam Tailors*\n\nDear "+o.customer_name+",\n\nYour order *#"+o.order_code+"* has been delivered.\n\nItems: "+items+"\n\nThank you!";
+    ? "*उत्तम टेलर्स*\n\nनमस्ते "+o.customer_name+" जी!\n\nआपके कपड़े डिलीवर हो गए।\n\nऑर्डर: *#"+o.order_code+"*\nकपड़े: "+items+receiverLine_hi+"\n\n✅ यह संदेश आपकी सुरक्षा के लिए भेजा गया है।\nउत्तम टेलर्स पर पधारने के लिए आपका हार्दिक धन्यवाद।
+\nकृपया पुनः अवश्य पधारें, आपका स्वागत है। \n\nधन्यवाद!"
+    : "*Uttam Tailors*\n\nDear "+o.customer_name+",\n\nYour order *#"+o.order_code+"* has been delivered.\n\nItems: "+items+receiverLine_en+"\n\n✅ This message is sent for your security.\n\nThank you for visiting Uttam Tailors.
+\nPlease do visit us again — you are always welcome! \nThank you!";
   if (o.mobile) window.open("https://wa.me/"+o.mobile.replace(/\D/g,"")+  "?text="+encodeURIComponent(msg),"_blank");
 }
 
