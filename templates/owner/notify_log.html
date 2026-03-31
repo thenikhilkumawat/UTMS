@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}WhatsApp Notify Log — Uttam Tailors{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>📲 WhatsApp Notify Log</h1>
+    <div class="header-sub">Track which customers were notified</div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <a href="/owner/whatsapp" class="btn btn-ghost btn-sm">← Broadcast</a>
+    <button class="menu-toggle" onclick="openSidebar()">☰</button>
+  </div>
+</div>
+<div class="page-body" style="padding:16px 24px;">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">All Sent Notifications</span>
+      <span style="font-size:12px;font-weight:700;background:var(--accent-light);color:var(--accent);padding:3px 10px;border-radius:10px;">{{ logs|length }}</span>
+    </div>
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead>
+          <tr style="background:#f8fafc;border-bottom:2px solid var(--border);">
+            <th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Date & Time</th>
+            <th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Order</th>
+            <th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Customer</th>
+            <th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Mobile</th>
+            <th style="padding:10px 16px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Language</th>
+            <th style="padding:10px 16px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in logs %}
+          <tr style="border-bottom:1px solid var(--border);" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
+            <td style="padding:11px 16px;font-size:12px;color:var(--text-muted);">{{ log.sent_at }}</td>
+            <td style="padding:11px 16px;font-size:15px;font-weight:900;color:var(--accent);">#{{ log.order_code }}</td>
+            <td style="padding:11px 16px;font-weight:700;">{{ log.customer }}</td>
+            <td style="padding:11px 16px;color:var(--text-muted);">{{ log.mobile }}</td>
+            <td style="padding:11px 16px;text-align:center;">
+              <span style="background:{% if log.lang=='HI' %}#dbeafe;color:#1e40af{% else %}#d1fae5;color:#065f46{% endif %};padding:2px 10px;border-radius:8px;font-size:11px;font-weight:700;">{{ log.lang }}</span>
+            </td>
+            <td style="padding:11px 16px;text-align:right;">
+              {% if log.mobile %}
+              <a href="https://wa.me/{{ log.mobile }}" target="_blank"
+                style="background:#25D366;color:#fff;border-radius:8px;padding:4px 12px;font-size:12px;font-weight:700;text-decoration:none;">
+                💬 Open Chat
+              </a>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6" style="padding:48px;text-align:center;color:var(--text-muted);">
+            <div style="font-size:32px;margin-bottom:8px;">📪</div>
+            <div style="font-weight:700;">No notifications sent yet</div>
+            <div style="font-size:12px;margin-top:4px;">When you notify customers from Order Status, it will appear here</div>
+          </td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

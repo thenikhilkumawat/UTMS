@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Measurement Fields — Uttam Tailors{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>📐 <span data-t="meas_fields">Measurement Fields</span></h1>
+    <div class="header-sub">Customize measurement fields per garment type</div>
+  </div>
+  <div style="display:flex;gap:8px;">
+    <a href="/owner/settings" class="btn btn-ghost btn-sm">← Settings</a>
+    <a href="/owner/logout" class="btn btn-sm" style="background:var(--danger-light);color:var(--danger);font-weight:700;">🔓 Logout</a>
+    <button class="menu-toggle" onclick="openSidebar()">☰</button>
+  </div>
+</div>
+<div class="page-body">
+
+  <!-- Add new field -->
+  <div class="card mb-24">
+    <div class="card-header"><span class="card-title">➕ Add Measurement Field</span></div>
+    <div class="card-body">
+      <form action="/owner/measurement-fields/add" method="POST">
+        <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end;">
+          <div class="field-wrap">
+            <label>Garment Type</label>
+            <select name="garment_type">
+              {% for gt in garment_types %}
+              <option value="{{ gt }}">{{ gt }}</option>
+              {% endfor %}
+              <option value="">-- Custom (type below) --</option>
+            </select>
+          </div>
+          <div class="field-wrap">
+            <label>Field Name (e.g. Neck, Armhole)</label>
+            <input type="text" name="field_name" placeholder="Field name...">
+          </div>
+          <button type="submit" class="btn btn-primary" style="height:46px;margin-top:2px;">Add Field</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Fields by garment -->
+  {% for gt in garment_types %}
+  {% set fields = fields_by_garment.get(gt, []) %}
+  {% if fields %}
+  <div class="card mb-16">
+    <div class="card-header">
+      <span class="card-title">{{ gt }}</span>
+      <span style="font-size:12px;color:var(--text-muted);">{{ fields|length }} fields</span>
+    </div>
+    <div class="card-body" style="padding:12px 16px;">
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        {% for f in fields %}
+        <div style="display:flex;align-items:center;gap:6px;background:#f3f4f6;border-radius:20px;padding:6px 12px;">
+          <span style="font-size:13px;font-weight:600;">{{ f.name }}</span>
+          <a href="/owner/measurement-fields/delete/{{ f.id }}"
+            onclick="return confirm('Remove {{ f.name }} from {{ gt }}?')"
+            style="color:var(--danger);font-size:11px;font-weight:700;text-decoration:none;margin-left:2px;">✕</a>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,393 @@
+{% extends "base.html" %}
+{% block title %}Order Status — Uttam Tailors{% endblock %}
+{% block content %}
+
+<div style="background:#fff;border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;position:sticky;top:0;z-index:50;">
+  <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+    <div>
+      <h1 style="font-size:22px;font-weight:900;color:var(--text-primary);margin:0;">
+        <span class="lang-en">Delivery Schedule</span><span class="lang-hi" style="display:none;">डिलीवरी शेड्यूल</span>
+      </h1>
+      <a href="/" style="font-size:12px;color:var(--accent);text-decoration:none;font-weight:600;">← <span class="lang-en">Dashboard</span><span class="lang-hi" style="display:none;">मुख्य पेज</span></a>
+    </div>
+    <span style="background:var(--accent);color:#fff;font-size:13px;font-weight:800;padding:4px 14px;border-radius:20px;">{{ total }} <span class="lang-en">Total</span><span class="lang-hi" style="display:none;">कुल</span></span>
+  </div>
+  <!-- Search -->
+  <div style="display:flex;align-items:center;gap:8px;background:#f8fafc;border:1.5px solid var(--border);border-radius:12px;padding:8px 16px;min-width:260px;">
+    <span style="color:var(--text-muted);">🔍</span>
+    <input type="text" id="srch"
+      placeholder="Search name, mobile, #code..."
+      oninput="filterRows()"
+      style="border:none;background:transparent;font-size:14px;outline:none;flex:1;color:var(--text-primary);">
+  </div>
+  <button class="menu-toggle" onclick="openSidebar()">☰</button>
+</div>
+
+<!-- Filter tabs -->
+<div style="background:#fff;border-bottom:1px solid var(--border);padding:0 28px;display:flex;gap:0;">
+  {% set tabs = [('all','All Orders',total),('late','Late',late_count),('upcoming','Upcoming',upcoming_count),('ready','Ready',ready_count),('delivered','Delivered',delivered_count)] %}
+  {% for key,label,count in tabs %}
+  <button class="sched-tab {% if loop.first %}active{% endif %}" data-f="{{ key }}" onclick="setTab('{{ key }}',this)"
+    style="padding:12px 18px;font-size:13px;font-weight:700;border:none;border-bottom:3px solid {% if loop.first %}var(--accent){% else %}transparent{% endif %};background:transparent;cursor:pointer;color:{% if loop.first %}var(--accent){% else %}var(--text-muted){% endif %};">
+    {{ label }} <span style="background:{% if loop.first %}var(--accent-light){% else %}#f1f5f9{% endif %};color:{% if loop.first %}var(--accent){% else %}var(--text-muted){% endif %};border-radius:10px;padding:1px 8px;font-size:11px;margin-left:4px;">{{ count }}</span>
+  </button>
+  {% endfor %}
+</div>
+
+<!-- Table -->
+<div style="overflow-x:auto;">
+  <table style="width:100%;border-collapse:collapse;font-size:13px;">
+    <thead>
+      <tr style="background:#f8fafc;border-bottom:2px solid var(--border);">
+        <th style="padding:10px 16px 10px 24px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:var(--text-muted);white-space:nowrap;">
+          <span class="lang-en">Delivery Date</span><span class="lang-hi" style="display:none;">डिलीवरी</span>
+        </th>
+        <th style="padding:10px 16px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:var(--text-muted);">
+          <span class="lang-en">Order</span><span class="lang-hi" style="display:none;">ऑर्डर</span>
+        </th>
+        <th style="padding:10px 16px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:var(--text-muted);">
+          <span class="lang-en">Customer</span><span class="lang-hi" style="display:none;">ग्राहक</span>
+        </th>
+        <th style="padding:10px 16px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:var(--text-muted);">
+          <span class="lang-en">Payment</span><span class="lang-hi" style="display:none;">भुगतान</span>
+        </th>
+        <th style="padding:10px 16px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:var(--text-muted);">
+          <span class="lang-en">Progress</span><span class="lang-hi" style="display:none;">प्रगति</span>
+        </th>
+        <th style="padding:10px 16px;text-align:center;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:var(--text-muted);">
+          <span class="lang-en">Status</span><span class="lang-hi" style="display:none;">स्थिति</span>
+        </th>
+        <th style="padding:10px 24px 10px 16px;text-align:right;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:var(--text-muted);">
+          <span class="lang-en">Actions</span><span class="lang-hi" style="display:none;">कार्य</span>
+        </th>
+      </tr>
+    </thead>
+    <tbody id="orders-tbody">
+      {% for o in orders %}
+      {% set total_items = o.garments|sum(attribute='quantity') %}
+      {% set done_items  = o.garments|sum(attribute='logged') %}
+      {% set pct = [[(done_items * 100 // total_items) if total_items else 0, 0]|max, 100]|min %}
+      <tr class="orow"
+        data-status="{{ o.status }}"
+        data-urgent="{{ o.is_urgent }}"
+        data-overdue="{{ 'true' if o.overdue else 'false' }}"
+        data-upcoming="{{ 'true' if o.due_soon and not o.overdue else 'false' }}"
+        data-s="{{ o.order_code }} {{ o.cname|lower }} {{ o.mobile }}"
+        style="border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.1s;"
+        onmouseover="this.style.background='#fafbff'" onmouseout="this.style.background=''"
+        onclick="toggleExpand(this,'exp-{{ o.order_code }}')">
+
+        <!-- Col 1: Delivery Date -->
+        <td style="padding:14px 16px 14px 0;padding-left:0;vertical-align:top;">
+          <div style="display:flex;align-items:stretch;gap:0;">
+            <div style="width:4px;border-radius:0;flex-shrink:0;background:
+              {% if o.is_urgent %}#ef4444
+              {% elif o.overdue %}#ef4444
+              {% elif o.status=='delivered' %}#10b981
+              {% elif o.status=='ready' %}#10b981
+              {% elif o.due_soon %}#f59e0b
+              {% else %}transparent{% endif %};
+              margin-right:16px;border-radius:0 2px 2px 0;"></div>
+            <div style="padding:2px 0;">
+              <div style="font-size:14px;font-weight:800;color:{% if o.overdue %}var(--danger){% else %}var(--text-primary){% endif %};">
+                {{ o.delivery_date_fmt }}
+              </div>
+              <div style="font-size:10px;font-weight:700;margin-top:2px;
+                color:{% if o.is_urgent %}#ef4444{% elif o.overdue %}#ef4444{% elif o.status=='delivered' %}#6b7280{% elif o.due_soon %}#d97706{% else %}#6b7280{% endif %};">
+                {% if o.is_urgent %}🔥 URGENT
+                {% elif o.overdue %}<span class="lang-en">LATE</span><span class="lang-hi" style="display:none;">देरी</span>
+                {% elif o.status=='delivered' %}<span class="lang-en">HISTORY</span><span class="lang-hi" style="display:none;">डिलीवर</span>
+                {% elif o.due_soon %}<span class="lang-en">UPCOMING</span><span class="lang-hi" style="display:none;">आने वाला</span>
+                {% else %}—{% endif %}
+              </div>
+            </div>
+          </div>
+        </td>
+
+        <!-- Col 2: Order Info -->
+        <td style="padding:14px 16px;vertical-align:top;">
+          <div style="font-size:15px;font-weight:900;color:var(--accent);">#{{ o.order_code }}</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:2px;"><span class="lang-en">Ord:</span><span class="lang-hi" style="display:none;">दिनांक:</span> {{ o.order_date_fmt }}</div>
+          {% if o.repeat_of %}
+          <div style="font-size:10px;background:linear-gradient(135deg,#eef2ff,#e0e7ff);color:#4338ca;padding:2px 8px;border-radius:6px;display:inline-flex;align-items:center;gap:3px;margin-top:4px;font-weight:800;border:1px solid #c7d2fe;">
+            ↩ <span class="lang-en">Returning</span><span class="lang-hi" style="display:none;">पुराना ग्राहक</span> · #{{ o.repeat_of }}
+          </div>
+          {% endif %}
+        </td>
+
+        <!-- Col 3: Customer -->
+        <td style="padding:14px 16px;vertical-align:top;">
+          <div style="font-size:13px;font-weight:700;color:var(--text-primary);">{{ o.cname }}</div>
+          {% if o.mobile %}<div style="font-size:11px;color:var(--text-muted);margin-top:1px;">{{ o.mobile }}</div>{% endif %}
+        </td>
+
+        <!-- Col 4: Payment -->
+        <td style="padding:14px 16px;vertical-align:top;">
+          {% if o.remaining > 0 %}
+          <div style="font-size:13px;font-weight:800;color:#dc2626;"><span class="lang-en">Due:</span><span class="lang-hi" style="display:none;">बाकी:</span> ₹{{ o.remaining|int }}</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:1px;"><span class="lang-en">Adv:</span><span class="lang-hi" style="display:none;">अग्रिम:</span> ₹{{ o.advance_paid|int }}</div>
+          {% else %}
+          <div style="font-size:13px;font-weight:700;color:var(--success);">✓ <span class="lang-en">Fully Paid</span><span class="lang-hi" style="display:none;">पूरा भुगतान</span></div>
+          {% endif %}
+        </td>
+
+        <!-- Col 5: Work Progress -->
+        <td style="padding:14px 16px;vertical-align:top;min-width:140px;">
+          <div style="font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:5px;">
+            {{ done_items }}/{{ total_items }}
+            <span class="lang-en">Items</span><span class="lang-hi" style="display:none;">कपड़े</span>
+          </div>
+          <div style="background:#e5e7eb;border-radius:6px;height:7px;overflow:hidden;width:120px;">
+            <div style="background:{% if pct >= 100 %}var(--accent){% elif pct > 0 %}#818cf8{% else %}#c7d2fe{% endif %};height:100%;border-radius:6px;width:{{ pct }}%;transition:width 0.4s;"></div>
+          </div>
+        </td>
+
+        <!-- Col 6: Status badge -->
+        <td style="padding:14px 16px;vertical-align:top;text-align:center;">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+          {% if o.is_urgent and o.status != 'delivered' %}
+          <span style="background:#fee2e2;color:#dc2626;border:1.5px solid #fca5a5;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:800;white-space:nowrap;">🔥 URGENT</span>
+          {% endif %}
+          {% if o.status == 'ready' %}
+          <span style="background:#d1fae5;color:#059669;border:1.5px solid #a7f3d0;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:800;">✅ READY</span>
+          {% elif o.status == 'delivered' %}
+          <span style="background:#f3f4f6;color:#6b7280;border:1.5px solid #e5e7eb;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;"><span class="lang-en">DELIVERED</span><span class="lang-hi" style="display:none;">डिलीवर</span></span>
+          {% elif o.overdue %}
+          <span style="background:#fee2e2;color:#dc2626;border:1.5px solid #fca5a5;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:800;">⏰ LATE</span>
+          {% elif o.due_soon %}
+          <span style="background:#fef3c7;color:#d97706;border:1.5px solid #fde68a;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:800;"><span class="lang-en">UPCOMING</span><span class="lang-hi" style="display:none;">जल्द</span></span>
+          {% elif not o.is_urgent %}
+          <span style="background:#eff6ff;color:#3b82f6;border:1.5px solid #bfdbfe;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;"><span class="lang-en">In Progress</span><span class="lang-hi" style="display:none;">काम हो रहा है</span></span>
+          {% endif %}
+          </div>
+        </td>
+
+        <!-- Col 7: Actions -->
+        <td style="padding:14px 24px 14px 16px;vertical-align:top;text-align:right;">
+          <div style="display:flex;gap:6px;justify-content:flex-end;align-items:center;">
+            <button onclick="event.stopPropagation();toggleExpand(this.closest('tr'),'exp-{{ o.order_code }}')"
+              style="background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;color:var(--text-secondary);">
+              <span class="lang-en">View</span><span class="lang-hi" style="display:none;">देखें</span>
+            </button>
+            {% if o.status == 'ready' %}
+            <button onclick="event.stopPropagation();openNotify('{{ o.order_code }}')"
+              style="background:var(--success);color:#fff;border:none;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">
+              📲 <span class="lang-en">Notify</span><span class="lang-hi" style="display:none;">बताएं</span>
+            </button>
+            {% elif o.status == 'delivered' %}
+            <span style="font-size:11px;color:var(--success);font-weight:700;white-space:nowrap;">✓ <span class="lang-en">Done</span><span class="lang-hi" style="display:none;">हो गया</span></span>
+            {% else %}
+            <a href="/print-slip/{{ o.order_code }}" target="_blank"
+              style="background:#f1f5f9;border:1.5px solid var(--border);border-radius:8px;padding:5px 10px;font-size:12px;font-weight:700;color:var(--text-secondary);text-decoration:none;">
+              🖨️
+            </a>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+
+      <!-- Expandable row -->
+      <tr id="exp-{{ o.order_code }}" style="display:none;">
+        <td colspan="7" style="padding:0;border-bottom:2px solid var(--accent-light);">
+          <div style="background:linear-gradient(135deg,#f8faff,#f0f4ff);padding:16px 28px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:20px;align-items:start;">
+
+              <!-- Garments + measurements -->
+              <div>
+                <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px;">
+                  <span class="lang-en">Garments & Measurements</span><span class="lang-hi" style="display:none;">कपड़े और नाप</span>
+                </div>
+                {% for item in o.garments %}
+                <div style="background:#fff;border:1px solid #e0e7ff;border-radius:10px;padding:10px 14px;margin-bottom:8px;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                    <span style="font-size:13px;font-weight:800;" data-garment="{{ item.garment_type }}">{{ item.garment_type }}</span> <span style="color:var(--text-muted);font-weight:600;font-size:13px;">×{{ item.quantity }}</span>
+                    <span style="font-size:12px;font-weight:700;color:{% if item.progress_pct>=100 %}var(--success){% else %}var(--accent){% endif %};">{{ item.logged }}/{{ item.quantity }} <span class="lang-en">stitched</span><span class="lang-hi" style="display:none;">सिला</span></span>
+                  </div>
+                  <div style="background:#e5e7eb;border-radius:6px;height:5px;overflow:hidden;margin-bottom:8px;">
+                    <div style="background:{% if item.progress_pct>=100 %}#10b981{% elif item.progress_pct>0 %}#818cf8{% else %}#c7d2fe{% endif %};height:100%;width:{{ item.progress_pct }}%;border-radius:6px;"></div>
+                  </div>
+                  {% if item.measurements %}
+                  <div style="display:flex;flex-wrap:wrap;gap:4px;">
+                    {% for k,v in item.measurements.items() %}{% if v %}
+                    {% set hk = hindi_map.get(k, k) %}
+                    <span style="background:#eef2ff;color:#4338ca;border-radius:5px;padding:1px 8px;font-size:11px;font-weight:700;">{{ hk }}: {{ v }}</span>
+                    {% endif %}{% endfor %}
+                  </div>
+                  {% endif %}
+                  {% if item.notes %}
+                  {% set plain_note = item.notes.split('[')[0].strip() if '[' in item.notes else item.notes %}
+                  {% if plain_note %}
+                  <div style="font-size:11px;color:#92400e;background:#fef3c7;border-radius:6px;padding:3px 8px;margin-top:6px;font-weight:600;">{{ plain_note }}</div>
+                  {% endif %}
+                  {% endif %}
+                </div>
+                {% endfor %}
+                {% if o.note %}<div style="font-size:12px;color:var(--text-muted);font-style:italic;margin-top:4px;">📝 {{ o.note }}</div>{% endif %}
+              </div>
+
+              <!-- Payment + order details -->
+              <div>
+                <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px;">
+                  <span class="lang-en">Order Details</span><span class="lang-hi" style="display:none;">ऑर्डर विवरण</span>
+                </div>
+                <div style="background:#fff;border:1px solid #e0e7ff;border-radius:10px;overflow:hidden;">
+                  <div style="display:flex;justify-content:space-between;padding:8px 14px;border-bottom:1px solid var(--border);">
+                    <span style="font-size:12px;color:var(--text-muted);"><span class="lang-en">Total Bill</span><span class="lang-hi" style="display:none;">कुल बिल</span></span>
+                    <span style="font-size:13px;font-weight:700;">₹{{ o.payable_amount|int }}</span>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;padding:8px 14px;border-bottom:1px solid var(--border);">
+                    <span style="font-size:12px;color:var(--text-muted);"><span class="lang-en">Advance</span><span class="lang-hi" style="display:none;">अग्रिम</span></span>
+                    <span style="font-size:13px;font-weight:700;color:var(--success);">₹{{ o.advance_paid|int }}</span>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;padding:8px 14px;border-bottom:1px solid var(--border);">
+                    <span style="font-size:12px;color:var(--text-muted);"><span class="lang-en">Remaining</span><span class="lang-hi" style="display:none;">बाकी</span></span>
+                    <span style="font-size:13px;font-weight:700;color:{% if o.remaining > 0 %}var(--danger){% else %}var(--success){% endif %};">₹{{ o.remaining|int }}</span>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;padding:8px 14px;">
+                    <span style="font-size:12px;color:var(--text-muted);"><span class="lang-en">Order Date</span><span class="lang-hi" style="display:none;">ऑर्डर तारीख</span></span>
+                    <span style="font-size:12px;font-weight:700;">{{ o.order_date_fmt }}</span>
+                  </div>
+                  {% if o.delivered_at_fmt and o.delivered_at_fmt != '—' %}
+                  <div style="display:flex;justify-content:space-between;padding:8px 14px;border-top:1px solid var(--border);">
+                    <span style="font-size:12px;color:var(--text-muted);"><span class="lang-en">Delivered</span><span class="lang-hi" style="display:none;">डिलीवर</span></span>
+                    <span style="font-size:12px;font-weight:700;color:var(--success);">{{ o.delivered_at_fmt }}</span>
+                  </div>
+                  {% endif %}
+                </div>
+              </div>
+
+              <!-- Quick actions -->
+              <div>
+                <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px;">
+                  <span class="lang-en">Actions</span><span class="lang-hi" style="display:none;">कार्य</span>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:8px;">
+                  {% if o.status == 'ready' %}
+                  <button onclick="openNotify('{{ o.order_code }}')"
+                    style="background:var(--success);color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:800;cursor:pointer;text-align:left;">
+                    📲 <span class="lang-en">Notify Customer</span><span class="lang-hi" style="display:none;">ग्राहक को बताएं</span>
+                  </button>
+                  {% endif %}
+                  
+                  <button onclick="window.open('/print-slip/{{ o.order_code }}','_blank')"
+                    style="background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer;text-align:left;">
+                    🖨️ <span class="lang-en">Print Slip</span><span class="lang-hi" style="display:none;">स्लिप प्रिंट</span>
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7" style="padding:80px;text-align:center;color:var(--text-muted);">
+        <div style="font-size:40px;margin-bottom:12px;">📭</div>
+        <div style="font-size:16px;font-weight:700;">
+          <span class="lang-en">No orders yet</span><span class="lang-hi" style="display:none;">कोई ऑर्डर नहीं</span>
+        </div>
+        <a href="/new-order" class="btn btn-primary" style="margin-top:14px;display:inline-flex;">➕ New Order</a>
+      </td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Notify modal -->
+<div id="notify-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:500;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:20px;padding:28px;width:90%;max-width:340px;box-shadow:0 20px 60px rgba(0,0,0,0.2);">
+    <div style="font-size:28px;text-align:center;margin-bottom:10px;">📲</div>
+    <h3 style="text-align:center;font-size:17px;font-weight:800;margin-bottom:6px;">
+      <span class="lang-en">Notify Customer</span><span class="lang-hi" style="display:none;">ग्राहक को बताएं</span>
+    </h3>
+    <p style="text-align:center;font-size:13px;color:var(--text-muted);margin-bottom:18px;">
+      <span class="lang-en">Order</span><span class="lang-hi" style="display:none;">ऑर्डर</span> <strong id="nc"></strong>
+      <span class="lang-en">is ready</span><span class="lang-hi" style="display:none;">तैयार है</span>
+    </p>
+    <button onclick="sendWA('en')" style="display:block;width:100%;padding:13px;background:#25D366;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:8px;">WhatsApp — English</button>
+    <button onclick="sendWA('hi')" style="display:block;width:100%;padding:13px;background:#1a73e8;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:8px;">WhatsApp — हिंदी</button>
+    <button onclick="document.getElementById('notify-modal').style.display='none'" style="display:block;width:100%;padding:11px;background:none;border:1.5px solid var(--border);border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;color:var(--text-secondary);">
+      <span class="lang-en">Cancel</span><span class="lang-hi" style="display:none;">रद्द करें</span>
+    </button>
+  </div>
+</div>
+
+{% endblock %}
+{% block extra_js %}
+<script>
+let activeTab = "all", notifyCode = "", notifyD = {};
+
+function setTab(f, btn) {
+  activeTab = f;
+  document.querySelectorAll(".sched-tab").forEach(b => {
+    b.classList.remove("active");
+    b.style.borderBottomColor = "transparent";
+    b.style.color = "var(--text-muted)";
+    b.querySelector("span").style.background = "#f1f5f9";
+    b.querySelector("span").style.color = "var(--text-muted)";
+  });
+  btn.classList.add("active");
+  btn.style.borderBottomColor = "var(--accent)";
+  btn.style.color = "var(--accent)";
+  btn.querySelector("span").style.background = "var(--accent-light)";
+  btn.querySelector("span").style.color = "var(--accent)";
+  filterRows();
+}
+
+function filterRows() {
+  const q = document.getElementById("srch").value.toLowerCase().trim();
+  document.querySelectorAll(".orow").forEach(row => {
+    const status   = row.dataset.status;
+    const overdue  = row.dataset.overdue === "true";
+    const upcoming = row.dataset.upcoming === "true";
+    const srch     = row.dataset.s;
+    const matchQ   = !q || srch.includes(q);
+    let matchF = true;
+    if      (activeTab === "late")      matchF = overdue && status !== "delivered";
+    else if (activeTab === "upcoming")  matchF = upcoming;
+    else if (activeTab === "ready")     matchF = status === "ready";
+    else if (activeTab === "delivered") matchF = status === "delivered";
+
+    const expRow = document.getElementById("exp-" + row.dataset.s.split(" ")[0]);
+    row.style.display = (matchQ && matchF) ? "" : "none";
+    if (expRow) expRow.style.display = "none";
+  });
+}
+
+function toggleExpand(rowEl, expId) {
+  const exp = document.getElementById(expId);
+  if (!exp) return;
+  const isOpen = exp.style.display !== "none";
+  document.querySelectorAll("[id^='exp-']").forEach(el => el.style.display = "none");
+  exp.style.display = isOpen ? "none" : "table-row";
+}
+
+function markReady(code) {
+  if(!confirm("Mark #"+code+" as Ready?")) return;
+  fetch("/api/order/update-status",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({order_code:code,status:"ready"})}).then(r=>r.json()).then(d=>{
+    if(d.ok) location.reload(); else showToast("Error: "+d.error,"error");
+  });
+}
+
+function openNotify(code) {
+  notifyCode = code;
+  document.getElementById("nc").textContent = "#" + code;
+  document.getElementById("notify-modal").style.display = "flex";
+  fetch("/api/work-log/order-info?code=" + code).then(r => r.json()).then(d => { notifyD = d; });
+}
+
+function sendWA(lang) {
+  document.getElementById("notify-modal").style.display = "none";
+  const d = notifyD;
+  if (!d || !d.mobile) { showToast("No mobile number", "warning"); return; }
+  const items = (d.items || []).map(i => i.garment_type + " x" + i.required).join(", ");
+  const msg = lang === "hi"
+    ? "*उत्तम टेलर्स*\n\nनमस्ते " + d.customer_name + " जी!\n\nआपके कपड़े तैयार हैं। कृपया लेने आएं।\n\nऑर्डर: *#" + notifyCode + "*\nकपड़े: " + items + (d.remaining > 0 ? "\nबकाया: ₹" + d.remaining : "") + "\n\nधन्यवाद!"
+    : "*Uttam Tailors*\n\nHello " + d.customer_name + "!\n\nYour clothes are ready for pickup.\n\nOrder: *#" + notifyCode + "*\nItems: " + items + (d.remaining > 0 ? "\nAmount Due: ₹" + d.remaining : "") + "\n\nThank you for choosing Uttam Tailors!";
+  window.open("https://wa.me/" + d.mobile.replace(/\D/g, "") + "?text=" + encodeURIComponent(msg), "_blank");
+  fetch("/api/log-notify",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({order_code:notifyCode,customer:d.customer_name,mobile:d.mobile,lang:lang})}).catch(()=>{});
+}
+</script>
+{% endblock %}

@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Uttam Tailors{% endblock %}
+{% block content %}
+
+<!-- Header -->
+<div style="background:#fff;border-bottom:1px solid var(--border);padding:14px 28px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+    <div>
+      <div style="font-size:24px;font-weight:900;color:var(--text-primary);">Dashboard</div>
+      <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">{{ today_str }}</div>
+    </div>
+    <!-- BIG CLOCK -->
+    <div style="font-size:48px;font-weight:900;color:#4f46e5;letter-spacing:-2px;font-variant-numeric:tabular-nums;" id="live-clock">--:--</div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button onclick="toggleCalendar()" style="font-size:13px;color:var(--accent);text-decoration:none;background:var(--accent-light);padding:8px 14px;border-radius:10px;font-weight:700;border:none;cursor:pointer;">📅 Calendar</button>
+      <a href="/owner/login" style="font-size:13px;color:var(--text-muted);text-decoration:none;background:#f1f5f9;padding:8px 14px;border-radius:10px;font-weight:700;">🔒 Admin</a>
+      <button class="menu-toggle" onclick="openSidebar()">☰</button>
+    </div>
+  </div>
+  <!-- Inline Calendar (hidden by default) -->
+  <div id="inline-cal" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <button onclick="calNav(-1)" style="background:var(--accent-light);border:none;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:16px;">◀</button>
+      <span id="cal-title" style="font-size:16px;font-weight:800;color:var(--text-primary);"></span>
+      <button onclick="calNav(1)" style="background:var(--accent-light);border:none;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:16px;">▶</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center;">
+      <div style="font-size:11px;font-weight:700;color:var(--text-muted);padding:4px;">Su</div>
+      <div style="font-size:11px;font-weight:700;color:var(--text-muted);padding:4px;">Mo</div>
+      <div style="font-size:11px;font-weight:700;color:var(--text-muted);padding:4px;">Tu</div>
+      <div style="font-size:11px;font-weight:700;color:var(--text-muted);padding:4px;">We</div>
+      <div style="font-size:11px;font-weight:700;color:var(--text-muted);padding:4px;">Th</div>
+      <div style="font-size:11px;font-weight:700;color:var(--text-muted);padding:4px;">Fr</div>
+      <div style="font-size:11px;font-weight:700;color:var(--text-muted);padding:4px;">Sa</div>
+    </div>
+    <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center;"></div>
+  </div>
+</div>
+
+<div style="padding:20px 28px;display:flex;flex-direction:column;gap:20px;">
+
+  <!-- ── ROW 1: 3 STAT CARDS ── -->
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+
+    <a href="/order-status" style="text-decoration:none;">
+      <div style="background:linear-gradient(135deg,#4338ca,#6366f1);border-radius:18px;padding:28px 28px 24px;color:#fff;position:relative;overflow:hidden;">
+        <div style="position:absolute;right:-20px;top:-20px;font-size:90px;opacity:0.1;">📋</div>
+        <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;opacity:0.85;margin-bottom:10px;"><span data-t="todays_orders">Today's Orders</span></div>
+        <div style="font-size:56px;font-weight:900;line-height:1;margin-bottom:10px;">{{ stats.todays_orders }}</div>
+        <div style="font-size:13px;opacity:0.8;font-weight:600;"><span data-t="view_schedule">View delivery schedule →</span></div>
+      </div>
+    </a>
+
+    <a href="/order-status" style="text-decoration:none;">
+      <div style="background:linear-gradient(135deg,#b91c1c,#ef4444);border-radius:18px;padding:28px 28px 24px;color:#fff;position:relative;overflow:hidden;">
+        <div style="position:absolute;right:-20px;top:-20px;font-size:90px;opacity:0.1;">🔥</div>
+        <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;opacity:0.85;margin-bottom:10px;"><span data-t="urgent_orders">Urgent Orders</span></div>
+        <div style="font-size:56px;font-weight:900;line-height:1;margin-bottom:10px;">{{ stats.urgent_today }}</div>
+        <div style="font-size:13px;opacity:0.8;font-weight:600;"><span data-t="handle_first">Handle these first →</span></div>
+      </div>
+    </a>
+
+    <a href="/pickup" style="text-decoration:none;">
+      <div style="background:linear-gradient(135deg,#065f46,#10b981);border-radius:18px;padding:28px 28px 24px;color:#fff;position:relative;overflow:hidden;">
+        <div style="position:absolute;right:-20px;top:-20px;font-size:90px;opacity:0.1;">🚚</div>
+        <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;opacity:0.85;margin-bottom:10px;"><span data-t="pending_delivery">Pending Delivery</span></div>
+        <div style="font-size:56px;font-weight:900;line-height:1;margin-bottom:10px;">{{ stats.pending_delivery }}</div>
+        <div style="font-size:13px;opacity:0.8;font-weight:600;"><span data-t="collect_deliver">Collect &amp; deliver →</span></div>
+      </div>
+    </a>
+
+  </div>
+
+  <!-- ── ROW 2: QUICK ACTIONS ── -->
+  <div>
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-muted);letter-spacing:0.8px;margin-bottom:12px;">Quick Actions</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+
+      <a href="/new-order" style="text-decoration:none;background:#eef2ff;border:1.5px solid #c7d2fe;border-radius:16px;padding:20px 22px;display:flex;align-items:center;gap:16px;transition:all 0.15s;"
+        onmouseover="this.style.borderColor='#6366f1';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='#c7d2fe';this.style.transform='none'">
+        <span style="font-size:32px;">➕</span>
+        <div><div style="font-size:16px;font-weight:800;color:#3730a3;">New Order</div><div style="font-size:12px;color:#6366f1;margin-top:2px;"><span data-t="create_order">Create order for customer</span></div></div>
+      </a>
+
+      <a href="/order-status" style="text-decoration:none;background:#f0fdf4;border:1.5px solid #a7f3d0;border-radius:16px;padding:20px 22px;display:flex;align-items:center;gap:16px;transition:all 0.15s;"
+        onmouseover="this.style.borderColor='#059669';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='#a7f3d0';this.style.transform='none'">
+        <span style="font-size:32px;">📋</span>
+        <div><div style="font-size:16px;font-weight:800;color:#065f46;">Order Status</div><div style="font-size:12px;color:#059669;margin-top:2px;"><span data-t="view_schedule2">View delivery schedule</span></div></div>
+      </a>
+
+      <a href="/work-log" style="text-decoration:none;background:#fff7ed;border:1.5px solid #fed7aa;border-radius:16px;padding:20px 22px;display:flex;align-items:center;gap:16px;transition:all 0.15s;"
+        onmouseover="this.style.borderColor='#f97316';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='#fed7aa';this.style.transform='none'">
+        <span style="font-size:32px;">✂️</span>
+        <div><div style="font-size:16px;font-weight:800;color:#9a3412;">Work Log</div><div style="font-size:12px;color:#ea580c;margin-top:2px;"><span data-t="log_stitching">Log stitching progress</span></div></div>
+      </a>
+
+      <a href="/pickup" style="text-decoration:none;background:#fefce8;border:1.5px solid #fde68a;border-radius:16px;padding:20px 22px;display:flex;align-items:center;gap:16px;transition:all 0.15s;"
+        onmouseover="this.style.borderColor='#d97706';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='#fde68a';this.style.transform='none'">
+        <span style="font-size:32px;">🚚</span>
+        <div><div style="font-size:16px;font-weight:800;color:#92400e;">Pickup &amp; Delivery</div><div style="font-size:12px;color:#b45309;margin-top:2px;"><span data-t="collect_pay">Collect payment &amp; deliver</span></div></div>
+      </a>
+
+      <a href="/finance" style="text-decoration:none;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:16px;padding:20px 22px;display:flex;align-items:center;gap:16px;transition:all 0.15s;"
+        onmouseover="this.style.borderColor='#16a34a';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='#bbf7d0';this.style.transform='none'">
+        <span style="font-size:32px;">💰</span>
+        <div><div style="font-size:16px;font-weight:800;color:#14532d;">Finance</div><div style="font-size:12px;color:#16a34a;margin-top:2px;"><span data-t="todays_expenses">Today's income &amp; expenses</span></div></div>
+      </a>
+
+      <a href="/owner/login" style="text-decoration:none;background:#f5f3ff;border:1.5px solid #ddd6fe;border-radius:16px;padding:20px 22px;display:flex;align-items:center;gap:16px;transition:all 0.15s;"
+        onmouseover="this.style.borderColor='#7c3aed';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='#ddd6fe';this.style.transform='none'">
+        <span style="font-size:32px;">🔒</span>
+        <div><div style="font-size:16px;font-weight:800;color:#4c1d95;">Admin</div><div style="font-size:12px;color:#7c3aed;margin-top:2px;"><span data-t="access_owner">Access owner dashboard</span></div></div>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- ── ROW 3: URGENT ORDERS + RATE LIST ── -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+
+    <!-- Urgent Orders -->
+    <div style="background:#fff;border:1.5px solid var(--border);border-radius:16px;overflow:hidden;">
+      <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,#fff5f5,#fff);">
+        <span style="font-size:15px;font-weight:800;color:#b91c1c;">🔥 Urgent Orders</span>
+        <a href="/order-status" style="font-size:12px;color:var(--accent);font-weight:700;text-decoration:none;background:var(--accent-light);padding:4px 10px;border-radius:8px;">View all →</a>
+      </div>
+      {% if urgent_orders %}
+        {% for o in urgent_orders %}
+        <a href="/order-status" style="text-decoration:none;display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);transition:background 0.1s;"
+          onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background=''">
+          <div>
+            <div style="font-size:16px;font-weight:900;color:var(--accent);">#{{ o.order_code }}</div>
+            <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">{{ o.customer_name }} &nbsp;·&nbsp; 📅 {{ o.delivery_date_fmt if o.delivery_date_fmt is defined else '—' }}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:11px;background:#dc2626;color:#fff;padding:3px 10px;border-radius:6px;font-weight:800;">🔥 URGENT</div>
+            {% if o.remaining > 0 %}<div style="font-size:12px;color:var(--danger);margin-top:4px;font-weight:700;">Due ₹{{ o.remaining|int }}</div>{% endif %}
+          </div>
+        </a>
+        {% endfor %}
+      {% else %}
+      <div style="padding:48px;text-align:center;color:var(--text-muted);">
+        <div style="font-size:40px;margin-bottom:10px;">✅</div>
+        <div style="font-size:15px;font-weight:700;"><span data-t="no_urgent_orders">No urgent orders</span></div>
+        <div style="font-size:13px;margin-top:4px;"><span data-t="all_good">All good!</span></div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Rate List -->
+    <div style="background:#fff;border:1.5px solid var(--border);border-radius:16px;overflow:hidden;">
+      <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,#f8faff,#fff);">
+        <span style="font-size:15px;font-weight:800;color:var(--text-primary);">🏷️ Customer Rate List</span>
+        <button onclick="var b=document.getElementById('rate-body');b.style.display=b.style.display=='none'?'block':'none';"
+          style="font-size:12px;color:var(--accent);font-weight:700;background:var(--accent-light);border:none;padding:4px 10px;border-radius:8px;cursor:pointer;">Show/Hide</button>
+      </div>
+      <div id="rate-body" style="max-height:320px;overflow-y:auto;">
+        {% if garment_rates %}
+          {% for name, rate in garment_rates.items() %}{% if rate %}
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 20px;border-bottom:1px solid var(--border);">
+            <span style="font-size:14px;font-weight:600;color:var(--text-primary);">{{ name }}</span>
+            <span style="font-size:15px;font-weight:900;color:#16a34a;">₹{{ rate }}</span>
+          </div>
+          {% endif %}{% endfor %}
+        {% else %}
+        <div style="padding:40px;text-align:center;color:var(--text-muted);">
+          <div style="font-size:13px;">No rates set yet.</div>
+          <a href="/owner/login" style="font-size:12px;color:var(--accent);">Set in Owner → Settings →</a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}
+{% block extra_js %}
+<script>
+// ── CLOCK: H:MM AM/PM no seconds ──
+function tick() {
+  var n=new Date(), h=n.getHours(), m=n.getMinutes();
+  var ap=h>=12?"PM":"AM"; h=h%12||12;
+  var el=document.getElementById("live-clock");
+  if(el) el.textContent=h+":"+String(m).padStart(2,"0")+" "+ap;
+}
+tick(); setInterval(tick,60000);
+
+// ── CALENDAR ──
+var calDate=new Date();
+function toggleCalendar(){
+  var el=document.getElementById("inline-cal");
+  if(!el) return;
+  el.style.display=(el.style.display==="none"?"block":"none");
+  if(el.style.display==="block") renderCalendar();
+}
+function calNav(d){ calDate.setMonth(calDate.getMonth()+d); renderCalendar(); }
+function renderCalendar(){
+  var M=["January","February","March","April","May","June","July","August","September","October","November","December"];
+  var y=calDate.getFullYear(), m=calDate.getMonth();
+  var t=document.getElementById("cal-title");
+  if(t) t.textContent=M[m]+" "+y;
+  var first=new Date(y,m,1).getDay(), days=new Date(y,m+1,0).getDate();
+  var today=new Date(), html="";
+  for(var i=0;i<first;i++) html+="<div></div>";
+  for(var d=1;d<=days;d++){
+    var isT=(d===today.getDate()&&m===today.getMonth()&&y===today.getFullYear());
+    html+="<div style='padding:6px 2px;border-radius:8px;font-size:14px;font-weight:"+(isT?"900":"600")+";background:"+(isT?"#4f46e5":"transparent")+";color:"+(isT?"#fff":"var(--text-primary)")+";cursor:pointer;'>"+d+"</div>";
+  }
+  var g=document.getElementById("cal-grid");
+  if(g) g.innerHTML=html;
+}
+</script>
+{% endblock %}

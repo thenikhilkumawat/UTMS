@@ -1,0 +1,1310 @@
+{% extends "base.html" %}
+{% block title %}New Order — Uttam Tailors{% endblock %}
+{% block content %}
+
+<div class="order-code-sticky">
+  Order &nbsp;<span class="oc-num" id="sticky-code">#{{ order_code }}</span>
+</div>
+
+<div class="page-header">
+  <div><h1 data-t="new_order">New Order</h1></div>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <a href="/" class="btn btn-ghost btn-sm">← <span data-t="back">Back</span></a>
+    <button class="menu-toggle" onclick="openSidebar()">☰</button>
+  </div>
+</div>
+
+<div class="page-body centered" style="padding:20px 28px;">
+
+  <!-- ════ WIZARD BAR ════ -->
+  <!-- NEW CUSTOMER: 5 steps -->
+  <div class="wizard-steps" id="wizard-new" style="margin-bottom:24px;display:none;">
+    <div class="wizard-step" id="wn1"><span class="step-num">1</span><span>Start</span></div>
+    <div class="wizard-step" id="wn2"><span class="step-num">2</span><span data-t="step_garments">Garments</span></div>
+    <div class="wizard-step" id="wn3"><span class="step-num">3</span><span data-t="step_images">Images</span></div>
+    <div class="wizard-step" id="wn4"><span class="step-num">4</span><span data-t="step_customer">Customer</span></div>
+    <div class="wizard-step" id="wn5"><span class="step-num">5</span><span data-t="step_payment">Payment</span></div>
+  </div>
+
+  <!-- EXISTING CUSTOMER: 5 steps (search is step 1) -->
+  <div class="wizard-steps" id="wizard-existing" style="margin-bottom:24px;display:none;">
+    <div class="wizard-step" id="we1"><span class="step-num">1</span><span>Search</span></div>
+    <div class="wizard-step" id="we2"><span class="step-num">2</span><span data-t="step_garments">Garments</span></div>
+    <div class="wizard-step" id="we3"><span class="step-num">3</span><span data-t="step_images">Images</span></div>
+    <div class="wizard-step" id="we4"><span class="step-num">4</span><span data-t="step_customer">Confirm</span></div>
+    <div class="wizard-step" id="we5"><span class="step-num">5</span><span data-t="step_payment">Payment</span></div>
+  </div>
+
+  <!-- ════ STEP 0: Choose customer type (Start) ════ -->
+  <div id="step0">
+    <div style="padding:24px 0 32px;">
+      <!-- Order code -->
+      <div style="text-align:center;margin-bottom:32px;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.4px;color:var(--text-muted);margin-bottom:14px;">Your Order Code</div>
+        <div class="order-code-hero">
+          <span class="hash">#</span>
+          <span class="code">{{ order_code }}</span>
+        </div>
+      </div>
+
+      <!-- Choice cards — horizontal landscape layout -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:700px;margin:0 auto;">
+
+        <!-- New Customer -->
+        <div onclick="startNewCustomer()" style="
+          background:linear-gradient(135deg,#6366f1 0%,#4f46e5 100%);
+          border-radius:20px;padding:32px 28px;cursor:pointer;
+          box-shadow:0 8px 32px rgba(99,102,241,0.35);
+          transition:all 0.2s;position:relative;overflow:hidden;
+          display:flex;flex-direction:column;justify-content:space-between;min-height:180px;"
+          onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 16px 40px rgba(99,102,241,0.45)'"
+          onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 8px 32px rgba(99,102,241,0.35)'">
+          <!-- Decorative circle -->
+          <div style="position:absolute;top:-20px;right:-20px;width:100px;height:100px;background:rgba(255,255,255,0.1);border-radius:50%;"></div>
+          <div style="position:absolute;bottom:-30px;right:20px;width:60px;height:60px;background:rgba(255,255,255,0.07);border-radius:50%;"></div>
+          <div>
+            <div style="font-size:36px;margin-bottom:14px;">✨</div>
+            <div style="font-size:22px;font-weight:900;color:#fff;letter-spacing:-0.5px;" data-t="new_customer">New Customer</div>
+            <div style="font-size:13px;color:rgba(255,255,255,0.75);margin-top:6px;" data-t="first_time">First time visit</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:20px;">
+            <span style="font-size:13px;font-weight:700;color:rgba(255,255,255,0.9);">Start order</span>
+            <span style="font-size:16px;color:rgba(255,255,255,0.9);">→</span>
+          </div>
+        </div>
+
+        <!-- Existing Customer -->
+        <div onclick="startExistingCustomer()" style="
+          background:linear-gradient(135deg,#059669 0%,#047857 100%);
+          border-radius:20px;padding:32px 28px;cursor:pointer;
+          box-shadow:0 8px 32px rgba(5,150,105,0.35);
+          transition:all 0.2s;position:relative;overflow:hidden;
+          display:flex;flex-direction:column;justify-content:space-between;min-height:180px;"
+          onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 16px 40px rgba(5,150,105,0.45)'"
+          onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 8px 32px rgba(5,150,105,0.35)'">
+          <div style="position:absolute;top:-20px;right:-20px;width:100px;height:100px;background:rgba(255,255,255,0.1);border-radius:50%;"></div>
+          <div style="position:absolute;bottom:-30px;right:20px;width:60px;height:60px;background:rgba(255,255,255,0.07);border-radius:50%;"></div>
+          <div>
+            <div style="font-size:36px;margin-bottom:14px;">👤</div>
+            <div style="font-size:22px;font-weight:900;color:#fff;letter-spacing:-0.5px;" data-t="existing_customer">Existing Customer</div>
+            <div style="font-size:13px;color:rgba(255,255,255,0.75);margin-top:6px;" data-t="returning">Returning customer</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:20px;">
+            <span style="font-size:13px;font-weight:700;color:rgba(255,255,255,0.9);">Search & order</span>
+            <span style="font-size:16px;color:rgba(255,255,255,0.9);">→</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       NEW CUSTOMER STEPS (n2–n5)
+  ════════════════════════════════════════ -->
+
+  <!-- N2: Garments -->
+  <div id="step-n2" style="display:none;">
+    <div class="card mb-16">
+      <div class="card-header">
+        <span class="card-title">✂️ <span data-t="add_garment">Add Garments & Measurements</span></span>
+      </div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:1fr 110px auto;gap:10px;align-items:end;background:#f9fafb;padding:16px;border-radius:10px;margin-bottom:12px;">
+          <div class="field-wrap">
+            <label data-t="garment_type">Garment Type</label>
+            <select id="g_type" onchange="onGarmentChange()">
+              <option value="">-- Select --</option>
+              {% for name in garment_rates.keys() %}
+              <option value="{{ name }}" data-garment="{{ name }}">{{ name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="field-wrap">
+            <label data-t="quantity">Qty</label>
+            <input type="number" id="g_qty" value="1" min="1" style="text-align:center;">
+          </div>
+          <button class="btn btn-primary" onclick="addGarment()" style="height:46px;margin-top:2px;padding:0 22px;">+ Add</button>
+        </div>
+        <div id="garments-list"></div>
+        <div id="garment-count-row" style="display:none;margin-top:10px;padding:10px 14px;background:#f0f9ff;border-radius:8px;font-size:13px;font-weight:600;color:var(--accent);">
+          <span id="g-count-text"></span>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;">
+      <button class="btn btn-ghost" onclick="goStart()">← Back</button>
+      <button class="btn btn-primary" onclick="validateGarments('new')">Next: Images →</button>
+    </div>
+  </div>
+
+  <!-- N3: Images -->
+  <div id="step-n3" style="display:none;">
+    <div class="card mb-16">
+      <div class="card-header">
+        <span class="card-title">📷 Cloth Images</span>
+        <span style="font-size:12px;color:var(--text-muted);">Optional — scan from phone</span>
+      </div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:220px 1fr;gap:28px;align-items:start;">
+          <div style="text-align:center;">
+            <div style="border:1.5px solid var(--border);border-radius:12px;padding:14px;background:#fff;display:inline-block;">
+              <div id="qr-box"></div>
+            </div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:8px;font-weight:600;">Scan to upload</div>
+            <button onclick="openUploadPopup('n')" class="btn btn-ghost btn-sm" style="margin-top:8px;width:100%;">📷 Open Upload Page</button>
+          </div>
+          <div>
+            <div style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;">Photos appear automatically every 4 seconds.</div>
+            <div id="img-preview" style="display:flex;flex-wrap:wrap;gap:10px;min-height:80px;align-items:flex-start;">
+              <div style="color:var(--text-muted);font-size:13px;padding:24px 0;">No images yet</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="fullscreen-ov" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.93);z-index:9999;align-items:center;justify-content:center;flex-direction:column;">
+      <button onclick="document.getElementById('fullscreen-ov').style.display='none'"
+        style="position:absolute;top:20px;right:24px;background:rgba(255,255,255,0.15);border:none;color:#fff;width:44px;height:44px;border-radius:50%;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+      <img id="fullscreen-img" style="max-width:90%;max-height:88%;border-radius:8px;">
+    </div>
+    <div style="display:flex;justify-content:space-between;">
+      <button class="btn btn-ghost" onclick="goNewStep(2)">← Garments</button>
+      <button class="btn btn-primary" onclick="goNewStep(4)">Next: Customer →</button>
+    </div>
+  </div>
+
+  <!-- N4: Customer Info -->
+  <div id="step-n4" style="display:none;">
+    <div class="card mb-16">
+      <div class="card-header"><span class="card-title">✨ New Customer Details</span></div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="field-wrap"><label>Customer Name <span style="color:var(--danger);">*</span></label><input type="text" id="n_name" data-tp="customer_name"></div>
+          <div class="field-wrap"><label>Mobile Number <span style="color:var(--danger);">*</span></label><input type="tel" id="n_mobile" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" required oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)"></div>
+          <div class="field-wrap full"><label data-t="address">Address</label><input type="text" id="n_address"></div>
+          <div class="field-wrap"><label>Order Date</label><input type="date" id="n_odate"></div>
+          <div class="field-wrap">
+            <label>Delivery Date <span style="color:var(--danger);">*</span> <a href="https://calendar.google.com" target="_blank" onclick="openCalendar(event)" style="font-size:10px;color:var(--accent);margin-left:6px;font-weight:600;text-decoration:none;">📅 Calendar</a></label>
+            <input type="date" id="n_ddate" required>
+          </div>
+          <div class="field-wrap full"><label>Special Note</label><input type="text" id="n_note"></div>
+          <div class="field-wrap full" style="flex-direction:row;align-items:center;gap:12px;padding:10px 0;">
+            <input type="checkbox" id="n_urgent" style="width:20px;height:20px;accent-color:var(--danger);cursor:pointer;">
+            <label for="n_urgent" style="text-transform:none;font-size:15px;font-weight:700;cursor:pointer;color:var(--danger);">🔥 Mark as Urgent</label>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;">
+      <button class="btn btn-ghost" onclick="goNewStep(3)">← Images</button>
+      <button class="btn btn-primary" onclick="validateNewCustomer()">Next: Payment →</button>
+    </div>
+  </div>
+
+  <!-- N5: Payment -->
+  <div id="step-n5" style="display:none;">
+    {% include 'employee/_payment.html' ignore missing %}
+    <div id="payment-inner-new"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;">
+      <button class="btn btn-ghost" onclick="goNewStep(4)">← Customer</button>
+      <button class="btn btn-success btn-lg" onclick="confirmOrder('new')" id="confirm-btn-new">✅ Confirm Order</button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       EXISTING CUSTOMER STEPS (e1–e5)
+  ════════════════════════════════════════ -->
+
+  <!-- E1: Search — THIS IS THE FIRST STEP FOR EXISTING CUSTOMER -->
+  <div id="step-e1" style="display:none;">
+
+    <!-- Big search card -->
+    <div class="card mb-16">
+      <div class="card-header" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);">
+        <div>
+          <div class="card-title" style="color:#166534;">👤 Find Existing Customer</div>
+          <div style="font-size:12px;color:#16a34a;margin-top:2px;">Search by previous order code, name, mobile or address</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:end;margin-bottom:20px;">
+          <div class="field-wrap" style="margin:0;">
+            <label style="font-size:13px;font-weight:700;">Order Code / Name / Mobile / Address</label>
+            <input type="text" id="e_search"
+              placeholder="Type #3600 or customer name or 9876543210..."
+              oninput="debounceSearch()" onkeydown="if(event.key==='Enter')searchCustomers()"
+              style="font-size:16px;padding:16px 18px;border:2px solid var(--border);"
+              autofocus>
+          </div>
+          <button class="btn btn-primary" onclick="searchCustomers()" style="height:54px;padding:0 28px;font-size:15px;">Search</button>
+        </div>
+        <div id="search-results"></div>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-start;">
+      <button class="btn btn-ghost" onclick="goStart()">← Back to Start</button>
+    </div>
+  </div>
+
+  <!-- E1b: Customer Profile (shown after search selection, replaces E1) -->
+  <div id="step-e1b" style="display:none;">
+    <input type="hidden" id="e_id">
+    <input type="hidden" id="ec-repeat-of">
+
+    <!-- Profile header -->
+    <div class="card mb-16">
+      <div style="background:linear-gradient(135deg,#6366f1,#4f46e5);padding:22px 24px;border-radius:14px 14px 0 0;display:flex;align-items:center;gap:16px;">
+        <div style="width:56px;height:56px;background:rgba(255,255,255,0.2);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">👤</div>
+        <div style="flex:1;">
+          <div style="font-size:22px;font-weight:900;color:#fff;letter-spacing:-0.5px;" id="ec-name-display">—</div>
+          <div style="font-size:13px;color:rgba(255,255,255,0.75);margin-top:3px;" id="ec-meta-display">—</div>
+        </div>
+        <button onclick="resetExistingSearch()" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.35);color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">↩ Change</button>
+      </div>
+
+      <!-- Previous Orders -->
+      <div id="ec-orders-card" style="display:none;">
+        <div style="padding:14px 20px;background:#f9fafb;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:14px;font-weight:800;">📋 Previous Orders</span>
+          <span id="ec-orders-count" style="font-size:12px;font-weight:700;color:var(--accent);background:var(--accent-light);padding:3px 10px;border-radius:10px;"></span>
+        </div>
+        <div id="ec-orders-body" style="max-height:240px;overflow-y:auto;"></div>
+      </div>
+    </div>
+
+    <!-- Saved Measurements — the main action card -->
+    <div id="ec-meas-card" style="display:none;" class="card mb-16">
+      <div class="card-header" style="background:#eef2ff;">
+        <div>
+          <div class="card-title">📐 Saved Measurements</div>
+          <div style="font-size:12px;color:var(--accent);margin-top:2px;">Edit values if needed, then click "Use These" to add to order</div>
+        </div>
+      </div>
+      <div id="ec-meas-body"></div>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+      <button class="btn btn-ghost" onclick="resetExistingSearch()">← Search Again</button>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-ghost" onclick="goExistingStep(2)" style="font-size:14px;">✂️ Add Garments →</button>
+        <button class="btn btn-primary" style="font-size:14px;" onclick="goExistingStep(2)">Next: Garments →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- E2: Garments (same garment UI, shared) -->
+  <div id="step-e2" style="display:none;">
+    <div class="card mb-16">
+      <div class="card-header">
+        <span class="card-title">✂️ Garments & Measurements</span>
+        <span id="ec-garment-hint" style="font-size:12px;color:var(--accent);font-weight:600;"></span>
+      </div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:1fr 110px auto;gap:10px;align-items:end;background:#f9fafb;padding:16px;border-radius:10px;margin-bottom:12px;">
+          <div class="field-wrap">
+            <label data-t="garment_type">Garment Type</label>
+            <select id="eg_type">
+              <option value="">-- Select --</option>
+              {% for name in garment_rates.keys() %}
+              <option value="{{ name }}" data-garment="{{ name }}">{{ name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="field-wrap">
+            <label data-t="quantity">Qty</label>
+            <input type="number" id="eg_qty" value="1" min="1" style="text-align:center;">
+          </div>
+          <button class="btn btn-primary" onclick="addExistingGarment()" style="height:46px;margin-top:2px;padding:0 22px;">+ Add</button>
+        </div>
+        <div id="existing-garments-list"></div>
+        <div id="existing-garment-count-row" style="display:none;margin-top:10px;padding:10px 14px;background:#f0f9ff;border-radius:8px;font-size:13px;font-weight:600;color:var(--accent);">
+          <span id="eg-count-text"></span>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;">
+      <button class="btn btn-ghost" onclick="goExistingStep(1)">← Back</button>
+      <button class="btn btn-primary" onclick="validateExistingGarments()">Next: Images →</button>
+    </div>
+  </div>
+
+  <!-- E3: Images -->
+  <div id="step-e3" style="display:none;">
+    <div class="card mb-16">
+      <div class="card-header"><span class="card-title">📷 Cloth Images</span><span style="font-size:12px;color:var(--text-muted);">Optional</span></div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:220px 1fr;gap:28px;align-items:start;">
+          <div style="text-align:center;">
+            <div style="border:1.5px solid var(--border);border-radius:12px;padding:14px;background:#fff;display:inline-block;"><div id="qr-box-e"></div></div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:8px;font-weight:600;">Scan to upload</div>
+            <button onclick="openUploadPopup('e')" class="btn btn-ghost btn-sm" style="margin-top:8px;width:100%;">📷 Open Upload Page</button>
+          </div>
+          <div>
+            <div style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;">Photos appear automatically.</div>
+            <div id="img-preview-e" style="display:flex;flex-wrap:wrap;gap:10px;min-height:80px;align-items:flex-start;">
+              <div style="color:var(--text-muted);font-size:13px;padding:24px 0;">No images yet</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;">
+      <button class="btn btn-ghost" onclick="goExistingStep(2)">← Garments</button>
+      <button class="btn btn-primary" onclick="goExistingStep(4)">Next: Confirm →</button>
+    </div>
+  </div>
+
+  <!-- E4: Confirm customer details -->
+  <div id="step-e4" style="display:none;">
+    <div class="card mb-16">
+      <div class="card-header"><span class="card-title">✅ Confirm Customer Details</span></div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="field-wrap"><label data-t="customer_name">Name</label><input type="text" id="e_name"></div>
+          <div class="field-wrap"><label data-t="mobile">Mobile</label><input type="tel" id="e_mobile" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)"></div>
+          <div class="field-wrap full"><label data-t="address">Address</label><input type="text" id="e_address"></div>
+          <div class="field-wrap"><label>Order Date</label><input type="date" id="e_odate"></div>
+          <div class="field-wrap">
+            <label>Delivery Date <a href="https://calendar.google.com" target="_blank" onclick="openCalendar(event)" style="font-size:10px;color:var(--accent);margin-left:6px;font-weight:600;text-decoration:none;">📅 Calendar</a></label>
+            <input type="date" id="e_ddate">
+          </div>
+          <div class="field-wrap full"><label>Special Note</label><input type="text" id="e_note"></div>
+          <div class="field-wrap full" style="flex-direction:row;align-items:center;gap:12px;padding:10px 0;">
+            <input type="checkbox" id="e_urgent" style="width:20px;height:20px;accent-color:var(--danger);cursor:pointer;">
+            <label for="e_urgent" style="text-transform:none;font-size:15px;font-weight:700;cursor:pointer;color:var(--danger);">🔥 Mark as Urgent</label>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;">
+      <button class="btn btn-ghost" onclick="goExistingStep(3)">← Images</button>
+      <button class="btn btn-primary" onclick="validateExistingCustomer()">Next: Payment →</button>
+    </div>
+  </div>
+
+  <!-- E5: Payment -->
+  <div id="step-e5" style="display:none;">
+    <div id="payment-inner-existing"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;">
+      <button class="btn btn-ghost" onclick="goExistingStep(4)">← Confirm</button>
+      <button class="btn btn-success btn-lg" onclick="confirmOrder('existing')" id="confirm-btn-existing">✅ Confirm Order</button>
+    </div>
+  </div>
+
+  <!-- ════ PAYMENT TEMPLATE (shared, injected by JS) ════ -->
+  <template id="payment-template">
+    <div class="card mb-16">
+      <div class="card-header"><span class="card-title">💰 Payment</span></div>
+      <div class="card-body">
+        <div class="payment-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:28px;">
+          <div>
+            <div style="background:#f9fafb;border-radius:10px;overflow:hidden;margin-bottom:20px;">
+              <div style="display:flex;justify-content:space-between;padding:13px 16px;border-bottom:1px solid var(--border);">
+                <span style="color:var(--text-secondary);font-size:14px;">Total Bill</span>
+                <strong>₹<span class="pay-total">0</span></strong>
+              </div>
+              <div style="padding:10px 16px;border-bottom:1px solid var(--border);">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                  <span style="color:var(--text-secondary);font-size:14px;">Extra Charges</span>
+                  <input type="number" class="pay-extra" value="0" min="0" style="width:90px;text-align:right;padding:6px 8px;border:1.5px solid var(--border);border-radius:6px;font-size:14px;font-weight:600;">
+                </div>
+                <input type="text" class="pay-extra-note" placeholder="Reason for extra charges..." style="width:100%;font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;">
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:13px 16px;border-bottom:1px solid var(--border);background:var(--accent-light);">
+                <span style="font-weight:700;font-size:14px;">Net Payable</span>
+                <strong style="color:var(--accent);font-size:16px;">₹<span class="pay-payable">0</span></strong>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border);">
+                <span style="color:var(--success);font-weight:700;font-size:14px;">Advance Paid</span>
+                <input type="number" class="pay-advance" value="0" min="0" style="width:110px;text-align:right;padding:6px 8px;border:1.5px solid var(--success);border-radius:6px;font-size:14px;font-weight:700;color:var(--success);">
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:13px 16px;">
+                <span style="color:var(--danger);font-weight:700;font-size:14px;">Remaining</span>
+                <strong style="color:var(--danger);font-size:16px;">₹<span class="pay-remaining">0</span></strong>
+              </div>
+            </div>
+            <div class="field-wrap">
+              <label>Payment Mode</label>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;">
+                <div class="mode-cash" style="padding:12px;border:2px solid var(--success);border-radius:10px;text-align:center;cursor:pointer;font-weight:700;font-size:13px;background:var(--success-light);color:var(--success);">💵 Cash</div>
+                <div class="mode-upi"  style="padding:12px;border:2px solid var(--border);border-radius:10px;text-align:center;cursor:pointer;font-weight:700;font-size:13px;color:var(--text-secondary);">📱 UPI</div>
+              </div>
+            </div>
+          </div>
+          <div class="pay-upi-panel" style="display:none;text-align:center;background:#f9fafb;border-radius:12px;padding:24px;border:1.5px solid var(--border);flex-direction:column;align-items:center;justify-content:center;">
+            <div style="font-weight:700;margin-bottom:14px;font-size:14px;">Scan to Pay</div>
+            <img src="https://cdn.shopify.com/s/files/1/0587/4778/1225/files/WhatsApp_Image_2026-02-05_at_2.01.51_PM.jpg?v=1774547615" style="max-width:200px;border-radius:8px;border:1px solid var(--border);" alt="QR Code">
+            <div style="font-size:22px;font-weight:800;color:var(--accent);margin-top:12px;">₹<span class="pay-upi-amt">0</span></div>
+          </div>
+          <div class="pay-cash-panel" style="display:flex;align-items:center;justify-content:center;background:#f9fafb;border-radius:12px;border:1.5px solid var(--border);">
+            <div style="text-align:center;padding:28px;"><div style="font-size:52px;margin-bottom:12px;">💵</div><div style="font-weight:700;color:var(--success);font-size:16px;">Receiving Cash</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- ════ SUCCESS SCREEN ════ -->
+  <div id="step-success" style="display:none;">
+    <style>
+      @keyframes scPop{0%{transform:scale(0.9);opacity:0}100%{transform:scale(1);opacity:1}}
+      #step-success{animation:scPop 0.35s ease both}
+    </style>
+
+    <div style="background:linear-gradient(160deg,#1e1b4b,#312e81);border-radius:24px;padding:28px 24px 0;box-shadow:0 12px 40px rgba(21,128,61,0.4);overflow:hidden;">
+
+      <!-- Check + Order number -->
+      <div style="text-align:center;color:#fff;padding-bottom:20px;">
+        <div style="font-size:44px;margin-bottom:6px;">✅</div>
+        <div style="font-size:11px;font-weight:800;letter-spacing:3px;opacity:0.65;text-transform:uppercase;margin-bottom:4px;">
+          <span class="lang-en">ORDER CONFIRMED</span><span class="lang-hi" style="display:none;">ऑर्डर पक्का हो गया</span>
+        </div>
+        <div style="font-size:52px;font-weight:900;letter-spacing:2px;line-height:1;">#<span id="sc_code"></span></div>
+        <div id="sc_repeat_badge" style="display:none;margin-top:8px;">
+          <span style="background:rgba(255,255,255,0.15);border-radius:20px;padding:4px 14px;font-size:12px;font-weight:700;">↩ #<span id="sc_repeat_code"></span></span>
+        </div>
+      </div>
+
+      <!-- Details row -->
+      <div style="display:flex;justify-content:space-around;color:#fff;padding:14px 0;border-top:1px solid rgba(255,255,255,0.15);border-bottom:1px solid rgba(255,255,255,0.15);">
+        <div style="text-align:center;">
+          <div style="font-size:9px;font-weight:800;letter-spacing:1.5px;opacity:0.6;text-transform:uppercase;margin-bottom:4px;"><span class="lang-en">Customer</span><span class="lang-hi" style="display:none;">ग्राहक</span></div>
+          <div id="sc_name_pill" style="font-size:14px;font-weight:900;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div>
+        </div>
+        <div style="width:1px;background:rgba(255,255,255,0.2);"></div>
+        <div style="text-align:center;">
+          <div style="font-size:9px;font-weight:800;letter-spacing:1.5px;opacity:0.6;text-transform:uppercase;margin-bottom:4px;"><span class="lang-en">Delivery</span><span class="lang-hi" style="display:none;">डिलीवरी</span></div>
+          <div id="sc_delivery_pill" style="font-size:14px;font-weight:900;color:#bbf7d0;"></div>
+        </div>
+        <div style="width:1px;background:rgba(255,255,255,0.2);"></div>
+        <div style="text-align:center;">
+          <div style="font-size:9px;font-weight:800;letter-spacing:1.5px;opacity:0.6;text-transform:uppercase;margin-bottom:4px;"><span class="lang-en">Paid</span><span class="lang-hi" style="display:none;">जमा</span></div>
+          <div id="sc_paid_pill" style="font-size:14px;font-weight:900;color:#bbf7d0;"></div>
+        </div>
+        <div style="width:1px;background:rgba(255,255,255,0.2);"></div>
+        <div style="text-align:center;">
+          <div style="font-size:9px;font-weight:800;letter-spacing:1.5px;opacity:0.6;text-transform:uppercase;margin-bottom:4px;"><span class="lang-en">Due</span><span class="lang-hi" style="display:none;">बाकी</span></div>
+          <div id="sc_due_pill" style="font-size:14px;font-weight:900;color:#fca5a5;"></div>
+        </div>
+      </div>
+
+      <!-- Cloth photos (if any) -->
+      <div id="success-images" style="display:none;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.15);">
+        <div id="success-img-list" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;"></div>
+      </div>
+
+      <!-- 4 action buttons -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);">
+        <button onclick="openWAModal()"
+          style="padding:16px 4px;background:transparent;color:#fff;border:none;font-size:11px;font-weight:800;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;border-right:1px solid rgba(255,255,255,0.12);">
+          <span style="font-size:22px;">💬</span>WhatsApp
+        </button>
+        <button onclick="window.open('/print-slip/'+currentCode,'_blank')"
+          style="padding:16px 4px;background:transparent;color:#fff;border:none;font-size:11px;font-weight:800;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;border-right:1px solid rgba(255,255,255,0.12);">
+          <span style="font-size:22px;">🖨️</span><span class="lang-en">Print</span><span class="lang-hi" style="display:none;">पर्ची</span>
+        </button>
+        <a href="/new-order" style="padding:16px 4px;background:transparent;color:#fff;text-decoration:none;font-size:11px;font-weight:800;display:flex;flex-direction:column;align-items:center;gap:5px;border-right:1px solid rgba(255,255,255,0.12);">
+          <span style="font-size:22px;">➕</span><span class="lang-en">New Order</span><span class="lang-hi" style="display:none;">नया ऑर्डर</span>
+        </a>
+        <a href="/" style="padding:16px 4px;background:transparent;color:#fff;text-decoration:none;font-size:11px;font-weight:800;display:flex;flex-direction:column;align-items:center;gap:5px;">
+          <span style="font-size:22px;">🏠</span><span class="lang-en">Home</span><span class="lang-hi" style="display:none;">होम</span>
+        </a>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- WhatsApp Modal -->
+  <div id="wa-modal-bg" style="display:none;" class="wa-modal-bg">
+    <div class="wa-modal">
+      <h3>Message Language?</h3>
+      <p>Choose the language for the WhatsApp receipt</p>
+      <button class="wa-lang-btn green" onclick="sendWA('en')" style="margin-top:16px;">English</button>
+      <button class="wa-lang-btn blue"  onclick="sendWA('hi')" style="margin-top:10px;">Hindi</button>
+      <button onclick="document.getElementById('wa-modal-bg').style.display='none'" class="btn btn-ghost btn-full" style="margin-top:10px;">Cancel</button>
+    </div>
+  </div>
+
+</div>
+<!-- Upload popup modal -->
+<div id="upload-popup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:20px;overflow:hidden;width:90%;max-width:480px;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,0.4);">
+    <div style="padding:14px 20px;background:#4f46e5;display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-size:15px;font-weight:800;color:#fff;">📷 Upload Cloth Photos</span>
+      <button onclick="closeUploadPopup()" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;line-height:1;">✕</button>
+    </div>
+    <div style="padding:14px 16px;text-align:center;border-bottom:1px solid var(--border);">
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:8px;">Scan QR or open the link on your phone → take photos → popup closes automatically.</p>
+      <a id="popup-link" href="#" target="_blank" style="display:inline-block;background:#eef2ff;color:#4338ca;padding:8px 16px;border-radius:10px;font-weight:700;font-size:13px;text-decoration:none;margin-bottom:6px;">🔗 Open on Phone</a>
+      <div id="upload-status" style="font-size:12px;font-weight:700;color:var(--success);margin-top:4px;min-height:18px;"></div>
+    </div>
+    <iframe id="upload-iframe" src="" style="flex:1;border:none;min-height:350px;" title="Upload photos"></iframe>
+  </div>
+</div>
+
+<!-- Image overlay for prev order photos -->
+<div id="img-overlay-new" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;align-items:center;justify-content:center;" onclick="this.style.display='none'">
+  <img style="max-width:92%;max-height:88%;border-radius:10px;object-fit:contain;">
+  <button onclick="document.getElementById('img-overlay-new').style.display='none'" style="position:absolute;top:20px;right:22px;background:rgba(255,255,255,0.15);border:none;color:#fff;width:44px;height:44px;border-radius:50%;font-size:22px;cursor:pointer;">✕</button>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+const ORDER_CODE  = "{{ order_code }}";
+const MEAS_FIELDS = {{ meas_fields_json | safe }};
+const GARMENT_TYPES = {{ garment_types_json | safe }};
+const RATE_MAP    = {{ garment_rates_json | safe }};
+const WA_NUMBER   = "{{ wa_number }}";
+let currentCode   = ORDER_CODE;
+let savedPayload  = {};
+let payMode       = "cash";
+let imgTimer      = null;
+let ecCustomerData = null;
+
+// Shared garment list (used by both flows)
+let garments = [];
+let existingGarments = [];
+
+// ── DATE HELPERS ─────────────────────────
+function fmtDate(d) {
+  if (!d) return "Not set";
+  const p = d.split("-");
+  return p.length===3 ? p[2]+"-"+p[1]+"-"+p[0] : d;
+}
+function openCalendar(e) { e.preventDefault(); window.open("https://calendar.google.com","_blank"); }
+
+// ── WIZARD HELPERS ────────────────────────
+function hideAll() {
+  ["step0","step-n2","step-n3","step-n4","step-n5",
+   "step-e1","step-e1b","step-e2","step-e3","step-e4","step-e5","step-success"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = "none";
+  });
+  stopImgPoll();
+}
+
+function showStep(id) {
+  hideAll();
+  document.getElementById(id).style.display = "block";
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+// Update wizard bar for new customer flow
+function setNewWizard(active) {
+  document.getElementById("wizard-new").style.display      = "flex";
+  document.getElementById("wizard-existing").style.display = "none";
+  [1,2,3,4,5].forEach(i => {
+    const w = document.getElementById("wn"+i);
+    if (!w) return;
+    w.classList.remove("active","done");
+    if (i < active) w.classList.add("done");
+    else if (i === active) w.classList.add("active");
+  });
+}
+
+// Update wizard bar for existing customer flow
+// Existing steps: e1/e1b=1, e2=2, e3=3, e4=4, e5=5
+function setExistingWizard(active) {
+  document.getElementById("wizard-new").style.display      = "none";
+  document.getElementById("wizard-existing").style.display = "flex";
+  [1,2,3,4,5].forEach(i => {
+    const w = document.getElementById("we"+i);
+    if (!w) return;
+    w.classList.remove("active","done");
+    if (i < active) w.classList.add("done");
+    else if (i === active) w.classList.add("active");
+  });
+}
+
+// ── START ─────────────────────────────────
+function goStart() {
+  document.getElementById("wizard-new").style.display      = "none";
+  document.getElementById("wizard-existing").style.display = "none";
+  showStep("step0");
+}
+
+function startNewCustomer() {
+  activeFlow = "new";
+  garments = [];
+  setNewWizard(1);
+  goNewStep(2);
+}
+
+function startExistingCustomer() {
+  activeFlow = "existing";
+  existingGarments = [];
+  setExistingWizard(1);
+  showStep("step-e1");
+  setTimeout(()=>{ const s=document.getElementById("e_search"); if(s)s.focus(); },200);
+}
+
+// ── NEW CUSTOMER NAVIGATION ───────────────
+function goNewStep(n) {
+  setNewWizard(n);
+  const map = {2:"step-n2",3:"step-n3",4:"step-n4",5:"step-n5"};
+  showStep(map[n]);
+  if (n===3) { buildQR("qr-box","qr-link"); startImgPoll("img-preview"); }
+  if (n===4) { const t=new Date().toISOString().split("T")[0]; if(!document.getElementById("n_odate").value) document.getElementById("n_odate").value=t; document.getElementById("n_ddate").min=t; }
+  if (n===5) { injectPayment("payment-inner-new"); recalcPayment(); }
+}
+
+function validateGarments(flow) {
+  if (!garments.length) { showToast("Add at least one garment","warning"); return; }
+  if (flow==="new") goNewStep(3);
+}
+
+function validateNewCustomer() {
+  if (!document.getElementById("n_name").value.trim()) { showToast("Customer name required","warning"); return; }
+  if (!document.getElementById("n_ddate").value) { showToast("Set delivery date","warning"); document.getElementById("n_ddate").focus(); return; }
+  goNewStep(5);
+}
+
+// ── EXISTING CUSTOMER NAVIGATION ─────────
+function goExistingStep(n) {
+  setExistingWizard(n);
+  if (n===1) { showStep("step-e1b"); return; }
+  const map = {2:"step-e2",3:"step-e3",4:"step-e4",5:"step-e5"};
+  showStep(map[n]);
+  if (n===3) { buildQR("qr-box-e","qr-link-e"); startImgPoll("img-preview-e"); }
+  if (n===4) { const t=new Date().toISOString().split("T")[0]; if(!document.getElementById("e_odate").value) document.getElementById("e_odate").value=t; document.getElementById("e_ddate").min=t; }
+  if (n===5) { injectPayment("payment-inner-existing"); recalcPayment(); }
+}
+
+function validateExistingGarments() {
+  if (!existingGarments.length) { showToast("Add at least one garment","warning"); return; }
+  goExistingStep(3);
+}
+
+function validateExistingCustomer() {
+  if (!document.getElementById("e_ddate").value) { showToast("Set delivery date","warning"); document.getElementById("e_ddate").focus(); return; }
+  goExistingStep(5);
+}
+
+// ── SEARCH ────────────────────────────────
+let searchTimer = null;
+function debounceSearch() { clearTimeout(searchTimer); searchTimer=setTimeout(searchCustomers,350); }
+
+function searchCustomers() {
+  const q = document.getElementById("e_search").value.trim();
+  if (q.length < 1) return;
+  const box = document.getElementById("search-results");
+  box.innerHTML = '<div style="padding:14px;color:var(--text-muted);font-size:13px;">Searching...</div>';
+  fetch("/api/customers/search?q="+encodeURIComponent(q))
+    .then(r=>r.json()).then(data=>{
+      if (!data.length) {
+        box.innerHTML = `<div style="padding:24px;text-align:center;color:var(--text-muted);">
+          <div style="font-size:32px;margin-bottom:8px;">🔍</div>
+          <div style="font-weight:700;font-size:15px;">No customer found</div>
+          <div style="font-size:13px;margin-top:6px;">Try a different order code, name or mobile</div></div>`;
+        return;
+      }
+      box.innerHTML = data.map(c=>`
+        <div onclick="loadCustomerProfile(${c.id})"
+          style="display:flex;align-items:center;gap:14px;padding:14px 18px;border:1.5px solid var(--border);border-radius:12px;margin-bottom:8px;cursor:pointer;background:#fff;transition:all 0.15s;"
+          onmouseover="this.style.borderColor='var(--accent)';this.style.background='var(--accent-light)';"
+          onmouseout="this.style.borderColor='var(--border)';this.style.background='#fff';">
+          <div style="width:48px;height:48px;border-radius:14px;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">👤</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:800;font-size:16px;color:var(--text-primary);">${c.name}</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:3px;">
+              ${c.mobile?'📱 '+c.mobile:''}${c.address?' · 📍 '+c.address:''}
+              ${c.matched_code?` · <strong style="color:var(--accent);">Matched Order #${c.matched_code}</strong>`:''}
+            </div>
+          </div>
+          <div style="font-size:13px;font-weight:700;color:var(--accent);">Select →</div>
+        </div>`).join("");
+    });
+}
+
+function loadCustomerProfile(customerId) {
+  document.getElementById("search-results").innerHTML =
+    '<div style="padding:14px;color:var(--accent);font-weight:600;">Loading profile...</div>';
+  fetch("/api/customers/"+customerId)
+    .then(r=>r.json()).then(data=>{
+      if (data.error) { showToast("Customer not found","error"); return; }
+      ecCustomerData = data;
+      document.getElementById("e_id").value      = data.id;
+      document.getElementById("e_name").value    = data.name;
+      document.getElementById("e_mobile").value  = data.mobile;
+      document.getElementById("e_address").value = data.address;
+      document.getElementById("ec-name-display").textContent = data.name;
+      document.getElementById("ec-meta-display").textContent =
+        [data.mobile, data.address, data.orders.length+" order"+(data.orders.length!==1?"s":"")].filter(Boolean).join(" · ");
+      setExistingWizard(1);
+      showStep("step-e1b");
+      renderOrderHistory(data.orders);
+      fetch("/api/customers/"+customerId+"/measurements")
+        .then(r=>r.json()).then(renderSavedMeasurements);
+    });
+}
+
+function resetExistingSearch() {
+  ecCustomerData = null;
+  existingGarments = [];
+  ["e_id","e_name","e_mobile","e_address","e_search","ec-repeat-of"].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value="";
+  });
+  document.getElementById("search-results").innerHTML = "";
+  document.getElementById("ec-orders-card").style.display  = "none";
+  document.getElementById("ec-meas-card").style.display    = "none";
+  setExistingWizard(1);
+  showStep("step-e1");
+  setTimeout(()=>document.getElementById("e_search").focus(),200);
+}
+
+// ── RENDER ORDER HISTORY ──────────────────
+function renderOrderHistory(orders) {
+  if (!orders||!orders.length) return;
+  document.getElementById("ec-orders-card").style.display = "block";
+  document.getElementById("ec-orders-count").textContent = orders.length+" order"+(orders.length!==1?"s":"");
+  const sc = {pending:"background:#fef3c7;color:#92400e",partial:"background:#dbeafe;color:#1e40af",ready:"background:#d1fae5;color:#065f46",delivered:"background:#f3f4f6;color:#374151"};
+  document.getElementById("ec-orders-body").innerHTML = orders.map(o=>{
+    const items = o.items.map(i=>`<span style="background:#f1f5f9;padding:2px 9px;border-radius:8px;font-size:12px;font-weight:600;">${tGarment(i.garment_type)} ×${i.quantity}</span>`).join(" ");
+    return `<div style="padding:14px 20px;border-bottom:1px solid var(--border);">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <span style="font-size:17px;font-weight:900;color:var(--accent);">#${o.order_code}</span>
+          <span style="font-size:11px;padding:2px 9px;border-radius:10px;font-weight:700;${sc[o.status]||sc.pending};">${o.status}</span>
+          ${o.repeat_of?`<span style="font-size:11px;color:var(--text-muted);">Repeat of #${o.repeat_of}</span>`:""}
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="text-align:right;">
+            <div style="font-size:14px;font-weight:800;">₹${o.payable_amount}</div>
+            <div style="font-size:11px;${o.remaining>0?'color:var(--danger)':'color:var(--success)'};">${o.remaining>0?'Due ₹'+o.remaining:'Fully Paid'}</div>
+          </div>
+          <button onclick="repeatOrderFrom(${JSON.stringify(o).replace(/"/g,'&quot;')})"
+            style="background:#4f46e5;color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;flex-shrink:0;">
+            ↩ Use This
+          </button>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">${fmtDate(o.order_date)} → ${fmtDate(o.delivery_date)}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;">${items}</div>
+      <div id="prev-imgs-${o.order_code}" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;">
+        <span style="font-size:11px;color:var(--text-muted);font-style:italic;">Loading images...</span>
+      </div>
+    </div>`}).join("");
+  // Load images for each previous order
+  orders.forEach(o => {
+    fetch("/images/" + o.order_code + "?ts=" + Date.now()).then(r=>r.text()).then(html => {
+      const box = document.getElementById("prev-imgs-" + o.order_code);
+      if (!box) return;
+      if (html && html.trim()) {
+        const tmp = document.createElement("div");
+        tmp.innerHTML = html;
+        box.innerHTML = "";
+        tmp.querySelectorAll("img").forEach(img => {
+          const src = img.getAttribute("src");
+          const el = document.createElement("img");
+          el.src = src;
+          el.title = "Click to zoom";
+          el.style.cssText = "width:70px;height:70px;object-fit:cover;border-radius:8px;border:2px solid var(--border);cursor:zoom-in;";
+          el.onclick = function() {
+            const ov = document.getElementById("img-overlay-new");
+            if (ov) { ov.querySelector("img").src=src; ov.style.display="flex"; }
+          };
+          box.appendChild(el);
+        });
+      } else {
+        box.innerHTML = "";
+      }
+    }).catch(()=>{ const box=document.getElementById("prev-imgs-"+o.order_code); if(box) box.innerHTML=""; });
+  });
+}
+
+// ── RENDER SAVED MEASUREMENTS ─────────────
+function repeatOrderFrom(o) {
+  // Load all items from this order WITH their measurements into existingGarments
+  existingGarments = [];
+  var usedTypes = [];
+
+  if (!o.items || !o.items.length) {
+    showToast("No garments found in order #" + o.order_code, "warning");
+    return;
+  }
+
+  o.items.forEach(function(item) {
+    var meas = item.measurements || {};
+    var rate = parseFloat(RATE_MAP[item.garment_type] || item.rate || 0);
+    existingGarments.push({
+      id:    Date.now() + Math.random(),
+      type:  item.garment_type,
+      qty:   item.quantity,
+      rate:  rate,
+      meas:  meas,
+      notes: item.notes || "",
+      extraFields: []
+    });
+    usedTypes.push(item.garment_type);
+  });
+
+  // Set repeat_of reference
+  document.getElementById("ec-repeat-of").value = o.order_code;
+
+  renderExistingGarments();
+  showToast("✅ Loaded " + o.items.length + " garment(s) from #" + o.order_code + " with measurements. Edit below.", "success");
+
+  // Jump to garments step so user can review and edit
+  goExistingStep(2);
+}
+
+function renderSavedMeasurements(measList) {
+  if (!measList||!measList.length) return;
+  document.getElementById("ec-meas-card").style.display = "block";
+  document.getElementById("ec-meas-body").innerHTML = measList.map((m,mi)=>{
+    const fields = Object.entries(m.measurements||{});
+    if (!fields.length) return "";
+    const inputs = fields.map(([k,v])=>`
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <label style="font-size:12px;font-weight:800;color:#1e1b4b;text-align:center;margin-bottom:2px;">${tField(k)}</label>
+        <input type="text" value="${v}" id="ecm_${mi}_${k.replace(/\s/g,'_')}"
+          style="width:64px;text-align:center;font-size:17px;font-weight:800;padding:8px 4px;border:1.5px solid var(--border);border-radius:8px;background:#fff;color:var(--text-primary);">
+      </div>`).join("");
+    const keys = fields.map(([k])=>k);
+    return `<div style="padding:16px 20px;border-bottom:1px solid var(--border);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <div>
+          <span style="font-size:15px;font-weight:800;">${tGarment(m.garment_type)}</span>
+          <span style="font-size:11px;color:var(--text-muted);margin-left:8px;">from #${m.order_code} · ${fmtDate(m.order_date)}</span>
+        </div>
+        <button onclick="useTheseMeasurements(${mi},'${m.garment_type.replace(/'/g,"\\'")}',${JSON.stringify(keys)})"
+          class="btn btn-primary" style="font-size:13px;font-weight:700;padding:10px 20px;">
+          ✅ Use These Measurements
+        </button>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;">${inputs}</div>
+    </div>`;
+  }).join("");
+}
+
+function useTheseMeasurements(mi, garmentType, keys) {
+  const meas={};
+  keys.forEach(k=>{
+    const el=document.getElementById("ecm_"+mi+"_"+k.replace(/\s/g,"_"));
+    if(el) meas[k]=el.value;
+  });
+  // Link to the most recent order
+  if (ecCustomerData&&ecCustomerData.orders.length>0)
+    document.getElementById("ec-repeat-of").value = ecCustomerData.orders[0].order_code;
+  const rate = parseFloat(RATE_MAP[garmentType]||0);
+  const ex = existingGarments.find(g=>g.type===garmentType);
+  if (ex) { ex.meas={...meas}; showToast("Updated: "+tGarment(garmentType),"success"); }
+  else { existingGarments.push({id:Date.now(),type:garmentType,qty:1,rate,meas:{...meas},notes:"",extraFields:[]}); showToast("Added: "+tGarment(garmentType),"success"); }
+  renderExistingGarments();
+  goExistingStep(2);
+}
+
+// ── GARMENT HELPERS (new customer uses `garments`, existing uses `existingGarments`) ─
+function updateSelectOptions() {
+  document.querySelectorAll("option[data-garment]").forEach(opt=>{opt.textContent=tGarment(opt.dataset.garment);});
+}
+document.addEventListener("DOMContentLoaded", updateSelectOptions);
+
+var _uploadPollTimer = null;
+var _uploadPollCount = 0;
+
+function openUploadPopup(flowType) {
+  var code = ORDER_CODE;
+  if (!code || code === "None" || code === "" || code === "0") {
+    showToast("Order code not ready. Enter garments first and proceed to Images step.", "warning");
+    return;
+  }
+  var url = window.location.origin + "/upload/" + code;
+  document.getElementById("popup-link").href        = url;
+  document.getElementById("popup-link").textContent = "🔗 Open: /upload/" + code;
+  document.getElementById("upload-iframe").src      = url;
+  document.getElementById("upload-popup").style.display = "flex";
+  document.getElementById("upload-status").textContent = "Waiting for photos...";
+
+  // Start polling — close popup when new photo appears
+  _uploadPollCount = 0;
+  clearInterval(_uploadPollTimer);
+  _uploadPollTimer = setInterval(function() {
+    _uploadPollCount++;
+    fetch("/images/" + code + "?ts=" + Date.now())
+      .then(function(r){ return r.text(); })
+      .then(function(html) {
+        if (html && html.trim()) {
+          var imgCount = (html.match(/<img/g) || []).length;
+          if (imgCount > 0) {
+            document.getElementById("upload-status").textContent = imgCount + " photo(s) uploaded!";
+            setTimeout(function() {
+              closeUploadPopup();
+              // Refresh the preview
+              if (typeof loadImages === "function") loadImages("img-preview");
+              if (typeof loadImages === "function") loadImages("img-preview-e");
+              showToast(imgCount + " photo(s) uploaded successfully!", "success");
+            }, 1000);
+            clearInterval(_uploadPollTimer);
+          }
+        }
+        // Stop polling after 5 min
+        if (_uploadPollCount > 150) clearInterval(_uploadPollTimer);
+      }).catch(function(){});
+  }, 2000);
+}
+
+function closeUploadPopup() {
+  clearInterval(_uploadPollTimer);
+  document.getElementById("upload-popup").style.display = "none";
+  document.getElementById("upload-iframe").src = "";
+}
+
+function closeUploadPopup() {
+  document.getElementById("upload-popup").style.display = "none";
+  document.getElementById("upload-iframe").src = "";
+}
+
+function addGarment() {
+  const type=document.getElementById("g_type").value.trim();
+  const qty=parseInt(document.getElementById("g_qty").value)||1;
+  if(!type){showToast("Select garment type","warning");return;}
+  garments.push({id:Date.now(),type,qty,rate:parseFloat(RATE_MAP[type]||0),meas:{},notes:"",extraFields:[],selectedTypes:[]});
+  renderGarments(); document.getElementById("g_type").value=""; document.getElementById("g_qty").value="1";
+}
+
+function addExistingGarment() {
+  const type=document.getElementById("eg_type").value.trim();
+  const qty=parseInt(document.getElementById("eg_qty").value)||1;
+  if(!type){showToast("Select garment type","warning");return;}
+  // Pre-fill measurements if we have them for this garment type
+  let meas={};
+  if(ecCustomerData) {
+    fetch("/api/customers/"+ecCustomerData.id+"/measurements").then(r=>r.json()).then(list=>{
+      const found=list.find(m=>m.garment_type===type);
+      if(found) meas={...found.measurements};
+      existingGarments.push({id:Date.now(),type,qty,rate:parseFloat(RATE_MAP[type]||0),meas,notes:"",extraFields:[]});
+      renderExistingGarments();
+    });
+  } else {
+    existingGarments.push({id:Date.now(),type,qty,rate:parseFloat(RATE_MAP[type]||0),meas:{},notes:"",extraFields:[],selectedTypes:[]});
+    renderExistingGarments();
+  }
+  document.getElementById("eg_type").value=""; document.getElementById("eg_qty").value="1";
+}
+
+function buildGarmentCard(g, idx, listType) {
+  const fields = MEAS_FIELDS[g.type]||["Lambai","Seeno","Shoulder"];
+  const renderFn = listType==='garments' ? 'renderGarments' : 'renderExistingGarments';
+
+  // Standard measurement cells
+  const std = fields.map(f=>`
+    <div class="meas-cell">
+      <label data-field="${f}" style="font-size:12px;font-weight:800;color:#1e1b4b;">${tField(f)}</label>
+      <input type="text" value="${g.meas[f]||''}" onchange="${listType}[${idx}].meas['${f}']=this.value" placeholder="—">
+    </div>`).join("");
+
+  // Extra custom fields
+  const extra = (g.extraFields||[]).map((ef,ei)=>`
+    <div class="meas-cell" style="position:relative;">
+      <input type="text" value="${ef.label}" onchange="${listType}[${idx}].extraFields[${ei}].label=this.value"
+        placeholder="Field" style="font-size:10px;padding:4px 6px;margin-bottom:4px;border:1px dashed var(--border);border-radius:4px;">
+      <input type="text" value="${ef.value}" onchange="${listType}[${idx}].extraFields[${ei}].value=this.value" placeholder="—">
+      <button onclick="${listType}[${idx}].extraFields.splice(${ei},1);${renderFn}()"
+        style="position:absolute;top:0;right:0;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:12px;">✕</button>
+    </div>`).join("");
+
+  // Add field button
+  const addBtn=`<div class="meas-cell"><label style="visibility:hidden;">+</label>
+    <button onclick="${listType}[${idx}].extraFields.push({label:'',value:''});${renderFn}()"
+      style="width:100%;padding:8px 6px;border:2px dashed var(--accent);border-radius:8px;background:var(--accent-light);color:var(--accent);font-size:18px;cursor:pointer;">+</button>
+    </div>`;
+
+  // Style chips (GARMENT_TYPES from DB settings)
+  const chips = GARMENT_TYPES[g.type]||[];
+  const selected = g.selectedTypes||[];
+  let chipsHtml = "";
+  if (chips.length > 0) {
+    const chipBtns = chips.map(c=>{
+      const isOn = selected.indexOf(c.k) >= 0;
+      return `<button type="button"
+        onclick="toggleGarmentType(${idx},'${c.k}','${listType}')"
+        style="padding:7px 14px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.15s;
+          ${isOn
+            ? 'background:#4f46e5;color:#fff;border:2px solid #4f46e5;'
+            : 'background:#f1f5f9;color:#475569;border:2px solid #e2e8f0;'}">${c.v}</button>`;
+    }).join("");
+    chipsHtml = `
+    <div style="margin-top:10px;padding:10px 12px;background:#f8fafc;border-radius:10px;border:1.5px solid var(--border);">
+      <div style="font-size:11px;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Style / Type</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">${chipBtns}</div>
+    </div>`;
+  }
+
+  const removeFn = listType==='garments'
+    ? `garments=garments.filter(g=>g.id!==${g.id});renderGarments()`
+    : `existingGarments=existingGarments.filter(g=>g.id!==${g.id});renderExistingGarments()`;
+
+  return `<div class="garment-card" style="margin-bottom:12px;">
+    <div class="garment-card-header">
+      <div>
+        <div class="garment-card-title">${tGarment(g.type)}</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+          <span style="font-size:12px;color:var(--text-muted);">Qty:</span>
+          <input type="number" value="${g.qty}" min="1" onchange="${listType}[${idx}].qty=parseInt(this.value)||1"
+            style="width:56px;padding:3px 6px;font-size:13px;font-weight:700;text-align:center;border:1.5px solid var(--border);border-radius:6px;">
+        </div>
+      </div>
+      <button onclick="${removeFn}" style="background:var(--danger-light);color:var(--danger);border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:700;cursor:pointer;">✕ Remove</button>
+    </div>
+    <div class="meas-grid">${std}${extra}${addBtn}</div>
+    ${chipsHtml}
+    <div style="margin-top:10px;">
+      <input type="text" value="${g.notes}" onchange="${listType}[${idx}].notes=this.value"
+        placeholder="Special notes..." style="width:100%;font-size:13px;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;">
+    </div>
+  </div>`;
+}
+
+function toggleGarmentType(idx, typeKey, listType) {
+  var arr = (listType === 'garments') ? garments : existingGarments;
+  if (!arr[idx].selectedTypes) arr[idx].selectedTypes = [];
+  var pos = arr[idx].selectedTypes.indexOf(typeKey);
+  if (pos >= 0) arr[idx].selectedTypes.splice(pos, 1);
+  else arr[idx].selectedTypes.push(typeKey);
+  if (listType === 'garments') renderGarments();
+  else renderExistingGarments();
+}
+
+function renderGarments() {
+  const box=document.getElementById("garments-list");
+  const cr=document.getElementById("garment-count-row");
+  box.innerHTML = garments.map((g,i)=>buildGarmentCard(g,i,"garments")).join("");
+  cr.style.display = garments.length?"block":"none";
+  document.getElementById("g-count-text").textContent = garments.length+" garment"+(garments.length!==1?"s":"")+" added";
+}
+
+function renderExistingGarments() {
+  const box=document.getElementById("existing-garments-list");
+  const cr=document.getElementById("existing-garment-count-row");
+  box.innerHTML = existingGarments.map((g,i)=>buildGarmentCard(g,i,"existingGarments")).join("");
+  cr.style.display = existingGarments.length?"block":"none";
+  document.getElementById("eg-count-text").textContent = existingGarments.length+" garment"+(existingGarments.length!==1?"s":"")+" added";
+  const hint=document.getElementById("ec-garment-hint");
+  if(hint) hint.textContent = existingGarments.length ? existingGarments.length+" added" : "";
+}
+
+// ── IMAGES ────────────────────────────────
+function buildQR(boxId, linkId) {
+  const box=document.getElementById(boxId); if(!box) return;
+  box.innerHTML="";
+  const url=window.location.origin+"/upload/"+ORDER_CODE;
+  const link=document.getElementById(linkId); if(link) link.href=url;
+  try{new QRCode(box,{text:url,width:170,height:170,colorDark:"#111827",colorLight:"#ffffff"});}
+  catch(e){box.innerHTML=`<a href="${url}">${url}</a>`;}
+}
+function loadImages(previewId) {
+  fetch("/images/"+ORDER_CODE+"?ts="+Date.now()).then(r=>r.text()).then(html=>{
+    const box=document.getElementById(previewId);
+    if(!html||!html.trim()){box.innerHTML='<div style="color:var(--text-muted);font-size:13px;padding:24px 0;">No images yet</div>';return;}
+    box.innerHTML=html;
+    box.querySelectorAll("img").forEach(img=>{
+      img.style.cursor="zoom-in"; img.style.transition="transform 0.2s";
+      img.onmouseover=()=>img.style.transform="scale(1.05)";
+      img.onmouseout=()=>img.style.transform="scale(1)";
+      img.onclick=()=>{
+        document.getElementById("fullscreen-img").src=img.dataset.src||img.src;
+        document.getElementById("fullscreen-ov").style.display="flex";
+      };
+    });
+  });
+}
+let imgPreviewId = "img-preview";
+function startImgPoll(previewId) { imgPreviewId=previewId||"img-preview"; loadImages(imgPreviewId); imgTimer=setInterval(()=>loadImages(imgPreviewId),4000); }
+function stopImgPoll() { clearInterval(imgTimer); imgTimer=null; }
+
+// ── PAYMENT ───────────────────────────────
+function injectPayment(containerId) {
+  const t=document.getElementById("payment-template");
+  const c=document.getElementById(containerId);
+  if(!t||!c||c.querySelector(".pay-total")) {
+    // Already injected - just recalc
+    recalcPayment();
+    return;
+  }
+  c.appendChild(t.content.cloneNode(true));
+  // Wire up onclick for mode buttons after injection
+  const cashBtns = c.querySelectorAll(".mode-cash");
+  const upiBtns  = c.querySelectorAll(".mode-upi");
+  cashBtns.forEach(b=>b.addEventListener("click",()=>setMode("cash")));
+  upiBtns.forEach(b=>b.addEventListener("click",()=>setMode("upi")));
+  // Wire up oninput for amount fields
+  c.querySelectorAll(".pay-extra,.pay-advance").forEach(inp=>inp.addEventListener("input",recalcPayment));
+  recalcPayment();
+}
+
+let activeFlow = "new"; // "new" or "existing"
+
+function getActiveGarments() {
+  return activeFlow === "existing" ? existingGarments : garments;
+}
+
+function recalcPayment() {
+  const activeG = getActiveGarments();
+  const total = activeG.reduce((s,g)=>s+(g.qty*g.rate),0);
+  document.querySelectorAll(".pay-total").forEach(el=>el.textContent=total);
+  const extra=parseFloat(document.querySelector(".pay-extra")?.value||0);
+  const payable=total+extra;
+  document.querySelectorAll(".pay-payable").forEach(el=>el.textContent=payable);
+  const advance=parseFloat(document.querySelector(".pay-advance")?.value||0);
+  document.querySelectorAll(".pay-remaining").forEach(el=>el.textContent=Math.max(0,payable-advance));
+  document.querySelectorAll(".pay-upi-amt").forEach(el=>el.textContent=advance);
+}
+
+function setMode(mode) {
+  payMode=mode; const isCash=mode==="cash";
+  document.querySelectorAll(".mode-cash").forEach(el=>{
+    el.style.cssText=isCash?"padding:12px;border:2px solid var(--success);border-radius:10px;text-align:center;cursor:pointer;font-weight:700;font-size:13px;background:var(--success-light);color:var(--success);"
+      :"padding:12px;border:2px solid var(--border);border-radius:10px;text-align:center;cursor:pointer;font-weight:700;font-size:13px;color:var(--text-secondary);";
+  });
+  document.querySelectorAll(".mode-upi").forEach(el=>{
+    el.style.cssText=!isCash?"padding:12px;border:2px solid var(--accent);border-radius:10px;text-align:center;cursor:pointer;font-weight:700;font-size:13px;background:var(--accent-light);color:var(--accent);"
+      :"padding:12px;border:2px solid var(--border);border-radius:10px;text-align:center;cursor:pointer;font-weight:700;font-size:13px;color:var(--text-secondary);";
+  });
+  document.querySelectorAll(".pay-upi-panel").forEach(el=>el.style.display=isCash?"none":"flex");
+  document.querySelectorAll(".pay-cash-panel").forEach(el=>el.style.display=isCash?"flex":"none");
+  recalcPayment();
+}
+
+// ── CONFIRM ORDER ─────────────────────────
+function confirmOrder(flow) {
+  const btnId = flow==="new" ? "confirm-btn-new" : "confirm-btn-existing";
+  const btn=document.getElementById(btnId);
+  btn.disabled=true; btn.textContent="Saving...";
+
+  const isNew = flow==="new";
+  const activeG = isNew ? garments : existingGarments;
+  const repeatOf = (!isNew&&document.getElementById("ec-repeat-of")) ? document.getElementById("ec-repeat-of").value.trim() : "";
+
+  const name     = document.getElementById(isNew?"n_name":"e_name").value.trim();
+  const mobile   = document.getElementById(isNew?"n_mobile":"e_mobile").value.trim();
+  const address  = document.getElementById(isNew?"n_address":"e_address").value.trim();
+  const odate    = document.getElementById(isNew?"n_odate":"e_odate").value;
+  const ddate    = document.getElementById(isNew?"n_ddate":"e_ddate").value;
+  const note     = document.getElementById(isNew?"n_note":"e_note").value;
+  const urgent   = document.getElementById(isNew?"n_urgent":"e_urgent").checked;
+  const custId   = isNew ? null : document.getElementById("e_id").value;
+
+  const extra    = parseFloat(document.querySelector(".pay-extra")?.value||0);
+  const advance  = parseFloat(document.querySelector(".pay-advance")?.value||0);
+  const total    = activeG.reduce((s,g)=>s+(g.qty*g.rate),0);
+  const payable  = total+extra;
+  const remaining= Math.max(0,payable-advance);
+  const extraNote= document.querySelector(".pay-extra-note")?.value||"";
+
+  const items = activeG.map(g=>{
+    const meas={...g.meas};
+    g.extraFields.forEach(ef=>{if(ef.label)meas[ef.label]=ef.value;});
+    return {type:g.type,qty:g.qty,rate:g.rate,measurements:meas,notes:g.notes,selectedTypes:g.selectedTypes||[]};
+  });
+
+  if (!name) { showToast("Customer name required","warning"); btn.disabled=false; btn.textContent="✅ Confirm Order"; return; }
+
+  const p={
+    order_code:ORDER_CODE, customer_type:flow,
+    repeat_of:repeatOf||null,
+    customer_name:name, mobile, address,
+    existing_customer_id:custId,
+    order_date:odate, delivery_date:ddate, note, is_urgent:urgent,
+    total_amount:total, extra_charges:extra, extra_note:extraNote,
+    payable_amount:payable, advance_paid:advance, remaining, payment_mode:payMode, items,
+    alt_mobile: (!isNew && document.getElementById('e_alt_mobile')) ? document.getElementById('e_alt_mobile').value.trim() : ''
+  };
+
+  fetch("/save-order",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)})
+    .then(r=>r.json()).then(d=>{
+      if(d.status==="ok"){currentCode=d.order_code;savedPayload={...p,confirmed_order_code:d.order_code,repeat_of:d.repeat_of||repeatOf};showSuccess();}
+      else{showToast("Error: "+d.message,"error");btn.disabled=false;btn.textContent="✅ Confirm Order";}
+    }).catch(()=>{showToast("Network error","error");btn.disabled=false;btn.textContent="✅ Confirm Order";});
+}
+
+function showSuccess() {
+  stopImgPoll();
+  hideAll();
+  document.getElementById("step-success").style.display="block";
+  // Mark all wizard steps done
+  ["wn","we"].forEach(p=>[1,2,3,4,5].forEach(i=>{const w=document.getElementById(p+i);if(w)w.classList.add("done");}));
+
+  document.getElementById("sc_code").textContent=currentCode;
+  document.getElementById("sticky-code").textContent="#"+currentCode;
+  const p=savedPayload;
+  document.getElementById("sc_name_pill").textContent=p.customer_name;
+  document.getElementById("sc_delivery_pill").textContent=fmtDate(p.delivery_date);
+  document.getElementById("sc_paid_pill").textContent="₹"+p.advance_paid;
+  document.getElementById("sc_due_pill").textContent="₹"+p.remaining;
+
+  const repeatOf = p.repeat_of||"";
+  if (repeatOf) {
+    document.getElementById("sc_repeat_code").textContent=repeatOf;
+    document.getElementById("sc_repeat_badge").style.display="block";
+  }
+
+  fetch("/images/"+currentCode+"?ts="+Date.now()).then(r=>r.text()).then(html=>{
+    if(html&&html.trim()){
+      const box=document.getElementById("success-img-list");
+      box.innerHTML=html;
+      box.querySelectorAll("img").forEach(img=>{
+        img.style.cssText="width:90px;height:90px;object-fit:cover;border-radius:10px;border:2px solid var(--border);cursor:zoom-in;";
+        img.onclick=()=>{document.getElementById("fullscreen-img").src=img.dataset.src||img.src;document.getElementById("fullscreen-ov").style.display="flex";};
+      });
+      document.getElementById("success-images").style.display="block";
+    }
+  });
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+// ── WHATSAPP ──────────────────────────────
+function openWAModal(){document.getElementById("wa-modal-bg").style.display="flex";}
+function sendWA(lang){
+  document.getElementById("wa-modal-bg").style.display="none";
+  const p = savedPayload;
+  const items = p.items.map(i => tGarment(i.type) + " x" + (i.qty || i.quantity || 1)).join(", ");
+  const dFmt  = fmtDate(p.delivery_date);
+  const oFmt  = fmtDate(p.order_date || "");
+  const prev  = p.repeat_of ? ("Previous Order: #" + p.repeat_of + "\n") : "";
+  const note  = p.note || "";
+  let msg = "";
+  if (lang === "hi") {
+    msg = "*उत्तम टेलर्स* - ऑर्डर पक्का हो गया\n"
+        + "\nनमस्ते " + p.customer_name + " जी!\n"
+        + "\n---------------------------------\n"
+        + "ऑर्डर नंबर: *#" + currentCode + "*\n"
+        + prev
+        + "ऑर्डर दिनांक: " + oFmt + "\n"
+        + "डिलीवरी दिनांक: *" + dFmt + "*\n"
+        + "\nकपड़े: " + items + "\n"
+        + (note ? "टिप्पणी: " + note + "\n" : "")
+        + "\n---------------------------------\n"
+        + "कुल राशि: Rs. " + p.payable_amount + "\n"
+        + "अग्रिम: Rs. " + p.advance_paid + "\n"
+        + "बकाया: Rs. " + p.remaining + "\n"
+        + "भुगतान: " + (p.payment_mode === "cash" ? "नकद" : "UPI") + "\n"
+        + "\nउत्तम टेलर्स में आने का धन्यवाद!";
+  } else {
+    msg = "*Uttam Tailors* - Order Confirmed\n"
+        + "\nHello " + p.customer_name + "!\n"
+        + "\n---------------------------------\n"
+        + "Order No: *#" + currentCode + "*\n"
+        + prev
+        + "Order Date: " + oFmt + "\n"
+        + "Delivery Date: *" + dFmt + "*\n"
+        + "\nGarments: " + items + "\n"
+        + (note ? "Note: " + note + "\n" : "")
+        + "\n---------------------------------\n"
+        + "Total: Rs. " + p.payable_amount + "\n"
+        + "Advance Paid: Rs. " + p.advance_paid + "\n"
+        + "Remaining Due: Rs. " + p.remaining + "\n"
+        + "Mode: " + (p.payment_mode === "cash" ? "Cash" : "UPI") + "\n"
+        + "\nThank you for choosing Uttam Tailors!";
+  }
+  const phone = (p.mobile || p.alt_mobile || WA_NUMBER).replace(/\D/g, "");
+  window.open("https://wa.me/" + phone + "?text=" + encodeURIComponent(msg), "_blank");
+}
+
+// ── INIT ─────────────────────────────────
+document.getElementById("step0").style.display="block";
+</script>
+{% endblock %}

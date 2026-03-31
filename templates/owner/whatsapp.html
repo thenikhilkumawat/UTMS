@@ -1,0 +1,392 @@
+{% extends "base.html" %}
+{% block title %}WhatsApp Broadcast — Uttam Tailors{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h1>💬 WhatsApp Broadcast</h1>
+    <div class="header-sub">Send messages to customers in bulk</div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <a href="/owner/notify-log" class="btn btn-ghost btn-sm" style="background:#d1fae5;color:#065f46;">📋 Notify Log</a>
+    <a href="/owner/dashboard" class="btn btn-ghost btn-sm">← Dashboard</a>
+    <button class="menu-toggle" onclick="openSidebar()">☰</button>
+  </div>
+</div>
+
+<div class="page-body" style="padding:16px 24px;">
+  <div style="display:grid;grid-template-columns:420px 1fr;gap:24px;align-items:start;">
+
+    <!-- ── LEFT: Compose ── -->
+    <div style="display:flex;flex-direction:column;gap:16px;">
+
+      <!-- Message type selector -->
+      <div class="card">
+        <div class="card-header" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);">
+          <div class="card-title" style="color:#166534;">✍️ Compose Message</div>
+        </div>
+        <div class="card-body" style="display:flex;flex-direction:column;gap:14px;">
+
+          <!-- Template picker -->
+          <div class="field-wrap" style="margin:0;">
+            <label style="font-weight:700;">Quick Templates</label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+              {% for tpl in templates %}
+              <button onclick="loadTemplate('{{ loop.index0 }}')"
+                style="padding:9px 10px;border:1.5px solid var(--border);border-radius:10px;background:#fff;cursor:pointer;font-size:12px;font-weight:700;text-align:left;display:flex;align-items:center;gap:6px;transition:all 0.15s;"
+                onmouseover="this.style.borderColor='var(--accent)';this.style.background='var(--accent-light)'"
+                onmouseout="this.style.borderColor='var(--border)';this.style.background='#fff'">
+                <span style="font-size:16px;">{{ tpl.icon }}</span>
+                <span>{{ tpl.name }}</span>
+              </button>
+              {% endfor %}
+            </div>
+          </div>
+
+          <!-- Language toggle -->
+          <div class="field-wrap" style="margin:0;">
+            <label style="font-weight:700;">Message Language</label>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
+              <button id="ml-en" onclick="setMsgLang('en')"
+                style="padding:9px;border:2px solid var(--border);border-radius:8px;background:#fff;cursor:pointer;font-size:13px;font-weight:700;">English</button>
+              <button id="ml-hi" onclick="setMsgLang('hi')"
+                style="padding:9px;border:2px solid var(--accent);border-radius:8px;background:var(--accent-light);cursor:pointer;font-size:13px;font-weight:700;color:var(--accent);">Hindi</button>
+              <button id="ml-hl" onclick="setMsgLang('hl')"
+                style="padding:9px;border:2px solid var(--border);border-radius:8px;background:#fff;cursor:pointer;font-size:13px;font-weight:700;">Hinglish</button>
+            </div>
+          </div>
+
+          <!-- Message editor -->
+          <div class="field-wrap" style="margin:0;">
+            <label style="font-weight:700;">Message <span style="color:var(--text-muted);font-size:11px;">(use {name} for customer name)</span></label>
+            <textarea id="msg-text" rows="8"
+              style="width:100%;padding:12px 14px;font-size:14px;line-height:1.6;border:2px solid var(--border);border-radius:10px;resize:vertical;font-family:inherit;"
+              oninput="updatePreview()" placeholder="Type your message here..."></textarea>
+            <div style="display:flex;justify-content:space-between;margin-top:4px;">
+              <span style="font-size:11px;color:var(--text-muted);" id="char-count">0 characters</span>
+              <span style="font-size:11px;color:var(--text-muted);">Use <strong>{name}</strong> = customer name, <strong>{shop}</strong> = shop name</span>
+            </div>
+          </div>
+
+          <!-- Custom field for festival name -->
+          <div class="field-wrap" style="margin:0;" id="festival-field" style="display:none;">
+            <label style="font-weight:700;">Festival / Occasion Name</label>
+            <input type="text" id="festival-name" placeholder="e.g. Eid, Diwali, New Year"
+              oninput="updatePreview()"
+              style="padding:10px 12px;font-size:14px;">
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Recipient selector -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">👥 Recipients</span>
+          <span id="recipient-count" style="font-size:12px;font-weight:700;background:var(--accent-light);color:var(--accent);padding:3px 10px;border-radius:10px;">0 selected</span>
+        </div>
+        <div class="card-body" style="padding:12px 16px;display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px;">
+            <button onclick="selectGroup('all')" class="btn btn-ghost btn-sm">All Customers</button>
+            <button onclick="selectGroup('due')" class="btn btn-ghost btn-sm" style="color:var(--danger);">💰 With Due</button>
+            <button onclick="selectGroup('ready')" class="btn btn-ghost btn-sm" style="color:var(--success);">🟢 Order Ready</button>
+            <button onclick="selectGroup('none')" class="btn btn-ghost btn-sm">Clear All</button>
+          </div>
+          <div style="max-height:240px;overflow-y:auto;border:1.5px solid var(--border);border-radius:10px;">
+            {% for c in customers %}
+            <label style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.1s;"
+              onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
+              <input type="checkbox" class="cust-cb" value="{{ c.id }}"
+                data-name="{{ c.name }}" data-mobile="{{ c.mobile or '' }}"
+                data-due="{{ c.due|int }}" data-ready="{{ c.has_ready }}"
+                onchange="updateRecipientCount()"
+                style="width:16px;height:16px;accent-color:var(--accent);">
+              <div style="flex:1;">
+                <div style="font-size:13px;font-weight:700;">{{ c.name }}</div>
+                <div style="font-size:11px;color:var(--text-muted);">{{ c.mobile or 'No mobile' }}{% if c.due > 0 %} · <span style="color:var(--danger);">Due ₹{{ c.due|int }}</span>{% endif %}{% if c.has_ready %} · <span style="color:var(--success);">Order Ready</span>{% endif %}</div>
+              </div>
+            </label>
+            {% else %}
+            <div style="padding:20px;text-align:center;color:var(--text-muted);">No customers with mobile numbers</div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── RIGHT: Preview + Send ── -->
+    <div style="display:flex;flex-direction:column;gap:16px;">
+
+      <!-- Message preview -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">👁️ Message Preview</span>
+          <span style="font-size:12px;color:var(--text-muted);">Shows how it'll look for first customer</span>
+        </div>
+        <div style="padding:20px;background:#e5ddd5;min-height:200px;border-radius:0 0 14px 14px;">
+          <!-- WhatsApp-style bubble -->
+          <div style="max-width:340px;margin:0 auto;">
+            <div id="msg-preview"
+              style="background:#fff;border-radius:0 12px 12px 12px;padding:14px 16px;font-size:14px;line-height:1.6;white-space:pre-wrap;box-shadow:0 1px 3px rgba(0,0,0,0.1);color:#111827;word-break:break-word;">
+              <span style="color:var(--text-muted);font-style:italic;">Select a template or type a message...</span>
+            </div>
+            <div style="font-size:10px;color:#9ca3af;text-align:right;margin-top:4px;">✓✓ Delivered</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Send instructions + button -->
+      <div class="card">
+        <div class="card-header" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);">
+          <span class="card-title" style="color:#166534;">📤 Send Messages</span>
+        </div>
+        <div class="card-body" style="display:flex;flex-direction:column;gap:14px;">
+          <div style="background:#fef3c7;border:1.5px solid #fde68a;border-radius:10px;padding:12px 16px;font-size:13px;color:#92400e;line-height:1.6;">
+            <strong>How it works:</strong><br>
+            WhatsApp does not allow bulk API sending without a paid Business API. This tool opens WhatsApp Web with the message pre-filled for each customer — you just click Send for each one.<br><br>
+            <strong>Tip:</strong> Keep WhatsApp Web open. Messages open one by one.
+          </div>
+
+          <div id="send-queue" style="display:none;background:#f0fdf4;border:1.5px solid #a7f3d0;border-radius:10px;padding:12px 16px;">
+            <div style="font-size:13px;font-weight:800;color:#065f46;margin-bottom:8px;">📋 Send Queue</div>
+            <div id="queue-list" style="max-height:200px;overflow-y:auto;"></div>
+          </div>
+
+          <button onclick="startSending()" id="send-btn"
+            style="background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border:none;border-radius:12px;padding:16px;font-size:16px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;">
+            <span style="font-size:20px;">💬</span>
+            <span id="send-btn-text">Send to Selected Customers</span>
+          </button>
+
+          <!-- Log of previously sent broadcasts -->
+          {% if broadcast_log %}
+          <div style="border-top:1px solid var(--border);padding-top:14px;">
+            <div style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">Recent Broadcasts</div>
+            {% for log in broadcast_log %}
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;">
+              <div>
+                <span style="font-weight:700;">{{ log.message_type|title }}</span>
+                <span style="color:var(--text-muted);margin-left:8px;">{{ log.sent_at_fmt }}</span>
+              </div>
+              <span style="color:var(--accent);font-weight:700;">{{ log.count }} sent</span>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+{% block extra_js %}
+<script>
+const SHOP_NAME = "{{ shop_name }}";
+const CUSTOMERS = {{ customers_json | safe }};
+
+// ── TEMPLATES ──────────────────────────────
+const TEMPLATES = [
+  {
+    name: "Order Ready",       icon: "🟢",
+    en: "*{shop}*\n\nHello {name}!\n\nYour clothes are ready for pickup. Please visit us at your earliest convenience.\n\nThank you for choosing {shop}! 🙏",
+    hi: "*{shop}*\n\nनमस्ते {name} जी!\n\nआपके कपड़े तैयार हैं। कृपया जल्द लेने आएं।\n\n{shop} में आने का धन्यवाद! 🙏",
+    hl: "*{shop}*\n\nHello {name} ji!\n\nAapke kapde tayar hain. Please jaldi lene aayein.\n\nThank you! 🙏"
+  },
+  {
+    name: "Payment Due",       icon: "💰",
+    en: "*{shop}*\n\nDear {name},\n\nThis is a friendly reminder that you have a pending payment with us.\n\nPlease visit us to clear your dues. Thank you! 🙏",
+    hi: "*{shop}*\n\nप्रिय {name} जी,\n\nआपके पास बकाया राशि है। कृपया जल्द आकर भुगतान करें।\n\n{shop} में आने का धन्यवाद! 🙏",
+    hl: "*{shop}*\n\nDear {name} ji,\n\nAapka kuch payment baaki hai. Please aakr clear kar dein.\n\nThank you! 🙏"
+  },
+  {
+    name: "Festival Wishes",   icon: "🎉",
+    en: "*{shop}*\n\nDear {name},\n\nWishing you and your family a very Happy {festival}! 🎉\n\nMay this {festival} bring joy, prosperity, and new beginnings.\n\nWith warm regards,\n{shop}",
+    hi: "*{shop}*\n\nप्रिय {name} जी,\n\nआपको और आपके परिवार को {festival} की हार्दिक शुभकामनाएं! 🎉\n\nभगवान आप पर अपनी कृपा बनाए रखें।\n\nआपका अपना,\n{shop}",
+    hl: "*{shop}*\n\nDear {name} ji,\n\nAapko aur aapke parivar ko {festival} ki hardik shubhkamnayein! 🎉\n\nKhushi aur samridhi aaye aapke ghar mein.\n\n{shop}"
+  },
+  {
+    name: "Eid Mubarak",       icon: "🌙",
+    en: "*{shop}*\n\nAssalamu Alaikum {name},\n\nEid Mubarak! 🌙✨\n\nWishing you a blessed Eid filled with happiness and peace.\n\n{shop}",
+    hi: "*{shop}*\n\nअस्सलामु अलैकुम {name} जी,\n\nईद मुबारक! 🌙✨\n\nखुशियों भरी ईद की शुभकामनाएं।\n\n{shop}",
+    hl: "*{shop}*\n\nAssalamu Alaikum {name} ji,\n\nEid Mubarak! 🌙✨\n\nAapko aur aapke ghar walon ko Eid ki bahut bahut badhai.\n\n{shop}"
+  },
+  {
+    name: "New Collection",    icon: "✨",
+    en: "*{shop}*\n\nDear {name},\n\nWe have exciting new styles available! Visit us to explore the latest collection.\n\nYour style, our craft. 🧵✨\n\n{shop}",
+    hi: "*{shop}*\n\nप्रिय {name} जी,\n\nनए और बेहतरीन डिज़ाइन आए हैं! हमारे यहाँ आकर देखें।\n\nआपका स्टाइल, हमारी कारीगरी। 🧵✨\n\n{shop}",
+    hl: "*{shop}*\n\nDear {name} ji,\n\nNaye aur behtareen designs aa gaye hain! Visit karein.\n\nAapka style, hamari kaarigari. 🧵✨\n\n{shop}"
+  },
+  {
+    name: "Shop Closed",       icon: "🚪",
+    en: "*{shop}*\n\nDear {name},\n\nPlease note our shop will be closed on {festival}.\n\nWe apologize for any inconvenience. See you soon!\n\n{shop}",
+    hi: "*{shop}*\n\nप्रिय {name} जी,\n\n{festival} के अवसर पर हमारी दुकान बंद रहेगी।\n\nअसुविधा के लिए क्षमा। जल्द मिलेंगे!\n\n{shop}",
+    hl: "*{shop}*\n\nDear {name} ji,\n\n{festival} ke din hamari dukaan band rahegi.\n\nTakleef ke liye maafi. Jald milenge!\n\n{shop}"
+  },
+  {
+    name: "General Reminder",  icon: "📢",
+    en: "*{shop}*\n\nDear {name},\n\nWe hope you are well! Just a quick reminder to visit us for all your tailoring needs.\n\nThank you for your continued support! 🙏\n\n{shop}",
+    hi: "*{shop}*\n\nप्रिय {name} जी,\n\nउम्मीद है आप ठीक हैं! किसी भी सिलाई के काम के लिए हमें याद करें।\n\nआपके विश्वास के लिए धन्यवाद! 🙏\n\n{shop}",
+    hl: "*{shop}*\n\nDear {name} ji,\n\nUmeed hai aap theek hain! Kisi bhi tailoring kaam ke liye humein yaad karein.\n\nAapke trust ke liye shukriya! 🙏\n\n{shop}"
+  },
+  {
+    name: "Diwali Wishes",     icon: "🪔",
+    en: "*{shop}*\n\nDear {name},\n\nWishing you a very Happy Diwali! 🪔✨\n\nMay the festival of lights bring happiness, prosperity and good health to you and your family.\n\n{shop}",
+    hi: "*{shop}*\n\nप्रिय {name} जी,\n\nदीपावली की हार्दिक शुभकामनाएं! 🪔✨\n\nयह दिवाली आपके जीवन में खुशियाँ और समृद्धि लाए।\n\n{shop}",
+    hl: "*{shop}*\n\nDear {name} ji,\n\nDiwali ki hardik shubhkamnayein! 🪔✨\n\nYeh Diwali aapke jeevan mein khushiyan aur samridhi laye.\n\n{shop}"
+  },
+];
+
+let msgLang = "hi";
+let currentTemplateIdx = -1;
+
+// ── INIT ─────────────────────────────────
+function setMsgLang(lang) {
+  msgLang = lang;
+  ["en","hi","hl"].forEach(l => {
+    const btn = document.getElementById("ml-" + l);
+    const active = l === lang;
+    btn.style.borderColor  = active ? "var(--accent)"       : "var(--border)";
+    btn.style.background   = active ? "var(--accent-light)" : "#fff";
+    btn.style.color        = active ? "var(--accent)"       : "var(--text-secondary)";
+    btn.style.fontWeight   = active ? "800"                 : "700";
+  });
+  if (currentTemplateIdx >= 0) loadTemplate(currentTemplateIdx);
+  else updatePreview();
+}
+
+function loadTemplate(idx) {
+  currentTemplateIdx = idx;
+  const tpl = TEMPLATES[idx];
+  const msg = tpl[msgLang] || tpl["en"];
+  document.getElementById("msg-text").value = msg;
+  // Show festival field if template uses {festival}
+  const needsFestival = msg.includes("{festival}");
+  document.getElementById("festival-field").style.display = needsFestival ? "block" : "none";
+  updatePreview();
+}
+
+function updatePreview() {
+  let msg = document.getElementById("msg-text").value;
+  const festival = document.getElementById("festival-name").value || "[Festival]";
+  const count = document.getElementById("char-count");
+  count.textContent = msg.length + " characters";
+
+  // Replace placeholders for preview (use first customer)
+  const sampleName = CUSTOMERS.length > 0 ? CUSTOMERS[0].name : "Customer";
+  msg = msg
+    .replace(/{name}/g, sampleName)
+    .replace(/{shop}/g, SHOP_NAME || "Uttam Tailors")
+    .replace(/{festival}/g, festival);
+
+  // Bold: wrap *text* with <b>
+  const formatted = msg
+    .replace(/\*(.*?)\*/g, "<b>$1</b>")
+    .replace(/\n/g, "<br>");
+
+  document.getElementById("msg-preview").innerHTML = formatted ||
+    '<span style="color:var(--text-muted);font-style:italic;">Type a message to preview...</span>';
+}
+
+// ── RECIPIENT SELECTION ───────────────────
+function selectGroup(group) {
+  document.querySelectorAll(".cust-cb").forEach(cb => {
+    if      (group === "all")   cb.checked = cb.dataset.mobile !== "";
+    else if (group === "due")   cb.checked = parseFloat(cb.dataset.due) > 0 && cb.dataset.mobile !== "";
+    else if (group === "ready") cb.checked = cb.dataset.ready === "1" && cb.dataset.mobile !== "";
+    else if (group === "none")  cb.checked = false;
+  });
+  updateRecipientCount();
+}
+
+function updateRecipientCount() {
+  const selected = [...document.querySelectorAll(".cust-cb:checked")].length;
+  document.getElementById("recipient-count").textContent = selected + " selected";
+}
+
+// ── SEND ──────────────────────────────────
+let sendQueue = [];
+let sendIdx   = 0;
+
+function startSending() {
+  const msg = document.getElementById("msg-text").value.trim();
+  if (!msg) { showToast("Write a message first", "warning"); return; }
+
+  const selected = [...document.querySelectorAll(".cust-cb:checked")];
+  if (!selected.length) { showToast("Select at least one customer", "warning"); return; }
+
+  const festival = document.getElementById("festival-name").value || "";
+
+  sendQueue = selected.map(cb => ({
+    id:     cb.value,
+    name:   cb.dataset.name,
+    mobile: cb.dataset.mobile
+  })).filter(c => c.mobile);
+
+  if (!sendQueue.length) { showToast("No customers with mobile numbers selected", "warning"); return; }
+
+  sendIdx = 0;
+  const queueList = document.getElementById("queue-list");
+  queueList.innerHTML = sendQueue.map((c,i) =>
+    `<div id="qi-${i}" style="display:flex;align-items:center;gap:8px;padding:6px 0;font-size:12px;border-bottom:1px solid #e5e7eb;">
+      <span id="qi-icon-${i}" style="font-size:14px;">⏳</span>
+      <span style="font-weight:700;">${c.name}</span>
+      <span style="color:var(--text-muted);">${c.mobile}</span>
+    </div>`
+  ).join("");
+  document.getElementById("send-queue").style.display = "block";
+
+  document.getElementById("send-btn-text").textContent = `Opening 1 of ${sendQueue.length}...`;
+  sendNext(msg, festival);
+}
+
+function sendNext(msgTemplate, festival) {
+  if (sendIdx >= sendQueue.length) {
+    document.getElementById("send-btn-text").textContent = "✅ All messages opened!";
+    showToast("All " + sendQueue.length + " messages opened in WhatsApp!", "success");
+    // Log to backend
+    fetch("/owner/api/whatsapp-log", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ count: sendQueue.length, type: "broadcast" })
+    }).catch(()=>{});
+    return;
+  }
+
+  const c = sendQueue[sendIdx];
+  let msg = msgTemplate
+    .replace(/{name}/g, c.name)
+    .replace(/{shop}/g, SHOP_NAME || "Uttam Tailors")
+    .replace(/{festival}/g, festival || "");
+
+  // Mark current as sending
+  const icon = document.getElementById("qi-icon-" + sendIdx);
+  if (icon) icon.textContent = "📤";
+
+  const phone = c.mobile.replace(/\D/g,"");
+  window.open("https://wa.me/" + phone + "?text=" + encodeURIComponent(msg), "_blank");
+
+  // Mark as sent after short delay
+  setTimeout(() => {
+    if (icon) icon.textContent = "✅";
+    sendIdx++;
+    document.getElementById("send-btn-text").textContent =
+      sendIdx < sendQueue.length
+        ? `Opening ${sendIdx+1} of ${sendQueue.length}...`
+        : "✅ All messages opened!";
+    // Auto-advance with 2s delay between each
+    if (sendIdx < sendQueue.length) {
+      setTimeout(() => sendNext(msgTemplate, festival), 2000);
+    } else {
+      document.getElementById("send-btn-text").textContent = "✅ All messages opened!";
+      showToast("Done! " + sendQueue.length + " messages sent.", "success");
+    }
+  }, 500);
+}
+
+// ── SESSION KEEP-ALIVE ────────────────────
+const SECS=5*60; let last=Date.now();
+["click","keydown","mousemove","touchstart"].forEach(ev=>document.addEventListener(ev,()=>{last=Date.now();},{passive:true}));
+setInterval(()=>{if(Math.floor((Date.now()-last)/1000)>=SECS)window.location.href="/owner/login?expired=1";},5000);
+window.addEventListener("pageshow",function(e){if(e.persisted){fetch("/owner/logout",{method:"POST",keepalive:true}).finally(()=>{window.location.href="/owner/login";})}});
+</script>
+{% endblock %}

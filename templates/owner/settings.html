@@ -1,0 +1,778 @@
+{% extends "base.html" %}
+{% block title %}Settings — Uttam Tailors{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h1>⚙️ Settings</h1>
+    <div class="header-sub">Shop configuration</div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <a href="/owner/dashboard" class="btn btn-ghost btn-sm">← Back</a>
+    <a href="/owner/logout" class="btn btn-sm" style="background:var(--danger-light);color:var(--danger);font-weight:700;">🔓 Logout</a>
+    <button class="menu-toggle" onclick="openSidebar()">☰</button>
+  </div>
+</div>
+
+<div class="page-body" style="max-width:840px;margin:0 auto;padding:24px 28px;">
+
+
+
+
+
+  <!-- ═══ GARMENT STYLE OPTIONS (Type Cards) ═══ -->
+  <div class="card mb-24" style="margin-bottom:16px;">
+    <div class="card-header" style="background:linear-gradient(135deg,#fff7ed,#ffedd5);">
+      <div>
+        <div class="card-title" style="color:#92400e;">🏷️ कपड़े के स्टाइल विकल्प</div>
+        <div style="font-size:12px;color:var(--text-muted);">ऑर्डर बनाते समय नाप के नीचे दिखने वाले बटन — सिर्फ हिंदी नाम लिखें</div>
+      </div>
+    </div>
+    <div class="card-body" style="padding:16px;">
+      <div id="chips-editor" style="display:flex;flex-direction:column;gap:14px;">
+        {% for garment_key, garment_val in garment_type_chips.items() %}
+        {% set safe = garment_key|replace(' ','_') %}
+        <div style="background:#f9fafb;border-radius:12px;padding:14px 16px;border:1.5px solid var(--border);">
+          <!-- Garment name row -->
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <span style="font-size:14px;font-weight:900;color:#1e1b4b;">{{ garment_key }}</span>
+            <span style="font-size:11px;color:var(--text-muted);">क्लिक करके हटाएं</span>
+          </div>
+          <!-- Existing chips as clickable ✕ tags -->
+          <div id="tags-{{ safe }}" style="display:flex;flex-wrap:wrap;gap:8px;min-height:32px;align-items:center;">
+            {% for chip in garment_val.split('|') %}{% if ':' in chip %}
+            {% set parts = chip.split(':',1) %}
+            {% set label = parts[1] %}
+            {% if label %}
+            <span onclick="removeChip('{{ safe }}','{{ label|replace("'","\\'") }}')"
+              style="background:#4f46e5;color:#fff;border-radius:20px;padding:6px 14px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background 0.15s;"
+              onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#4f46e5'">
+              {{ label }} <span style="font-size:11px;opacity:0.8;">✕</span>
+            </span>
+            {% endif %}
+            {% endif %}{% endfor %}
+            {% if not garment_val or garment_val|replace('|','')|replace(':','')|trim == '' %}
+            <span style="font-size:12px;color:var(--text-muted);font-style:italic;">कोई विकल्प नहीं — नीचे जोड़ें</span>
+            {% endif %}
+          </div>
+          <!-- Add new chip row -->
+          <div style="display:flex;gap:8px;margin-top:10px;">
+            <input type="text" id="new-chip-{{ safe }}"
+              placeholder="हिंदी नाम लिखें... जैसे: स्लिम"
+              onkeydown="if(event.key==='Enter'){addChip('{{ safe }}','{{ garment_key }}');event.preventDefault();}"
+              style="flex:1;padding:8px 12px;font-size:14px;border:1.5px solid #a5b4fc;border-radius:8px;background:#fff;outline:none;"
+              onfocus="this.style.borderColor='#4f46e5'" onblur="this.style.borderColor='#a5b4fc'">
+            <button onclick="addChip('{{ safe }}','{{ garment_key }}')"
+              style="padding:8px 18px;background:#4f46e5;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;white-space:nowrap;">
+              + जोड़ें
+            </button>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Add entirely new garment section -->
+      <div style="margin-top:16px;padding:14px 16px;background:#f0fdf4;border-radius:12px;border:1.5px solid #6ee7b7;">
+        <div style="font-size:13px;font-weight:800;color:#166534;margin-bottom:10px;">➕ नया कपड़ा जोड़ें</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="text" id="new-garment-name" placeholder="कपड़े का नाम (जैसे: Bandhgala)"
+            style="flex:1;padding:9px 12px;font-size:13px;border:1.5px solid #6ee7b7;border-radius:8px;background:#fff;">
+          <button onclick="addNewGarmentSection()"
+            style="padding:9px 20px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;white-space:nowrap;">
+            बनाएं
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ EMPLOYEE SKILLS ═══ -->
+  <div class="card mb-24" style="margin-bottom:16px;">
+    <div class="card-header" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);">
+      <div>
+        <div class="card-title" style="color:#166534;">👤 Employee Skills</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Set what work each employee can log. "All" = Measurement + Cutting + Stitching. "Stitch" = Stitching only.</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <table style="width:100%;border-collapse:collapse;font-size:14px;">
+        <thead>
+          <tr style="background:#f8fafc;border-bottom:2px solid var(--border);">
+            <th style="padding:10px 16px;text-align:left;font-weight:700;">Employee</th>
+            <th style="padding:10px 16px;text-align:left;font-weight:700;">Skills</th>
+            <th style="padding:10px 16px;text-align:left;font-weight:700;">Change</th>
+          </tr>
+        </thead>
+        <tbody id="emp-skills-table">
+          {% for emp in all_employees %}
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:12px 16px;font-weight:800;font-size:15px;">{{ emp.name }}</td>
+            <td style="padding:12px 16px;">
+              {% if emp.skills == 'all' %}
+              <span style="background:#dcfce7;color:#16a34a;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;">📐 Measure + ✂️ Cut + 🪡 Stitch</span>
+              {% else %}
+              <span style="background:#eef2ff;color:#4f46e5;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;">🪡 Stitching Only</span>
+              {% endif %}
+            </td>
+            <td style="padding:12px 16px;">
+              <select onchange="saveEmpSkill({{ emp.id }}, this.value)"
+                style="padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-weight:700;background:#fff;">
+                <option value="stitch" {% if emp.skills != 'all' %}selected{% endif %}>Stitching Only</option>
+                <option value="all"   {% if emp.skills == 'all' %}selected{% endif %}>All Skills (Measure+Cut+Stitch)</option>
+              </select>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══ WORK TYPE RATES ═══ -->
+  <div class="card mb-24" style="margin-bottom:16px;">
+    <div class="card-header" style="background:linear-gradient(135deg,#fff7ed,#ffedd5);">
+      <div>
+        <div class="card-title" style="color:#92400e;">⚙️ Work Type Rates (Per Piece)</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Set rates for Measurement, Cutting, Alteration. Stitching rate is per garment in Stitching Rates section.</div>
+      </div>
+    </div>
+    <div class="card-body" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+      {% for key, label, icon in [("work_rate_measurement","Measurement (Naap)","📐"),("work_rate_cutting","Cutting (Katai)","✂️"),("work_rate_alteration","Alteration (Badlaav)","🔧")] %}
+      <div>
+        <label style="font-size:13px;font-weight:700;display:block;margin-bottom:6px;">{{ icon }} {{ label }}</label>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:16px;font-weight:700;color:var(--text-muted);">₹</span>
+          <input type="number" min="0" name="{{ key }}" value="{{ work_rates_map.get(key, '0') }}"
+            style="width:100%;padding:10px 12px;font-size:18px;font-weight:900;border:2px solid var(--border);border-radius:10px;text-align:center;"
+            onchange="saveWorkRate('{{ key }}', this.value)">
+          <span style="font-size:12px;color:var(--text-muted);">/piece</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- ═══ FONT SIZE CONTROL ═══ -->
+  <div class="card mb-24" style="margin-bottom:16px;">
+    <div class="card-header" style="background:linear-gradient(135deg,#f8faff,#eef2ff);">
+      <div class="card-title">🔤 Text Size (Font Size)</div>
+      <div style="font-size:12px;color:var(--text-muted);">Controls text size across the entire system</div>
+    </div>
+    <div class="card-body">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
+        <button onclick="setFontSize('small')" id="fs-small"
+          style="padding:16px 10px;border:2px solid var(--border);border-radius:12px;background:#fff;cursor:pointer;">
+          <div style="font-size:14px;font-weight:800;">A</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Small</div>
+        </button>
+        <button onclick="setFontSize('medium')" id="fs-medium"
+          style="padding:16px 10px;border:2px solid var(--accent);border-radius:12px;background:var(--accent-light);cursor:pointer;">
+          <div style="font-size:18px;font-weight:800;color:var(--accent);">A</div>
+          <div style="font-size:11px;color:var(--accent);margin-top:4px;">Medium ✓</div>
+        </button>
+        <button onclick="setFontSize('large')" id="fs-large"
+          style="padding:16px 10px;border:2px solid var(--border);border-radius:12px;background:#fff;cursor:pointer;">
+          <div style="font-size:22px;font-weight:800;">A</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Large</div>
+        </button>
+        <button onclick="setFontSize('xlarge')" id="fs-xlarge"
+          style="padding:16px 10px;border:2px solid var(--border);border-radius:12px;background:#fff;cursor:pointer;">
+          <div style="font-size:26px;font-weight:800;">A</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">X-Large</div>
+        </button>
+      </div>
+      <div style="margin-top:12px;font-size:13px;color:var(--text-muted);">
+        Current: <strong id="current-font-size"></strong>
+      </div>
+      <div style="margin-top:14px;font-size:13px;color:var(--text-muted);">
+        <strong>What each size changes:</strong> Small (11-13px) · Medium (13-15px) · Large (15-18px) · X-Large (18-22px for measurements & labels)
+      </div>
+    </div>
+  </div>
+
+  <!-- Shop Info -->
+  <div class="card mb-24">
+    <div class="card-header"><span class="card-title">🏪 Shop Information</span></div>
+    <div class="card-body">
+      <form action="/owner/settings/save" method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="section" value="shop">
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <div class="form-grid">
+            <div class="field-wrap">
+              <label>Shop Name (English)</label>
+              <input type="text" name="shop_name" value="{{ settings.shop_name }}" placeholder="Uttam Tailors">
+            </div>
+            <div class="field-wrap">
+              <label>Shop Name (Hindi)</label>
+              <input type="text" name="shop_name_hi" value="{{ settings.shop_name_hi }}" placeholder="उत्तम टेलर्स">
+            </div>
+          </div>
+          <div class="field-wrap">
+            <label>WhatsApp Number</label>
+            <input type="tel" name="whatsapp_number" value="{{ settings.whatsapp_number }}" placeholder="91XXXXXXXXXX">
+          </div>
+          <div class="form-grid">
+            <div class="field-wrap">
+              <label>Next Order Code Starts From</label>
+              <input type="number" name="order_code_start" value="{{ settings.order_code_start }}" min="1000">
+              <span style="font-size:11px;color:var(--text-muted);">Change to reset order numbering</span>
+            </div>
+            <div class="field-wrap">
+              <label>Default Language</label>
+              <select name="default_language">
+                <option value="en" {% if settings.default_language == "en" %}selected{% endif %}>English</option>
+                <option value="hi" {% if settings.default_language == "hi" %}selected{% endif %}>Hindi</option>
+                <option value="hl" {% if settings.default_language == "hl" %}selected{% endif %}>Hinglish</option>
+              </select>
+            </div>
+          </div>
+          <div class="field-wrap">
+            <label>Upload Logo</label>
+            <input type="file" name="shop_logo" accept="image/*" style="padding:8px;">
+            <span style="font-size:11px;color:var(--text-muted);">Appears in sidebar. Square image recommended.</span>
+          </div>
+          <button type="submit" class="btn btn-primary">Save Settings</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Change PIN -->
+  <div class="card mb-24">
+    <div class="card-header"><span class="card-title">🔑 Change PIN</span></div>
+    <div class="card-body">
+      <form action="/owner/settings/save" method="POST">
+        <input type="hidden" name="section" value="pin">
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <div class="field-wrap">
+            <label>Current PIN</label>
+            <input type="password" name="current_pin" maxlength="4" inputmode="numeric" placeholder="Current 4-digit PIN">
+          </div>
+          <div class="form-grid">
+            <div class="field-wrap">
+              <label>New PIN</label>
+              <input type="password" name="new_pin" maxlength="4" inputmode="numeric" placeholder="New 4-digit PIN">
+            </div>
+            <div class="field-wrap">
+              <label>Confirm New PIN</label>
+              <input type="password" name="confirm_pin" maxlength="4" inputmode="numeric" placeholder="Repeat new PIN">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary">Change PIN</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+
+  <!-- Excel Export & Import -->
+  <div class="card mb-24">
+    <div class="card-header">
+      <span class="card-title">📊 Excel Export & Import</span>
+    </div>
+    <div class="card-body" style="display:flex;flex-direction:column;gap:20px;">
+
+      <!-- Export -->
+      <div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:12px;padding:16px 18px;">
+        <div style="font-size:14px;font-weight:800;color:#065f46;margin-bottom:6px;">📥 Export All Orders to Excel</div>
+        <div style="font-size:13px;color:#047857;margin-bottom:12px;">
+          Downloads every order with customer details, measurements, payments — all data.
+        </div>
+        <a href="/owner/export/orders" class="btn btn-success" style="display:inline-flex;">
+          Download Excel Sheet
+        </a>
+      </div>
+
+      <!-- Import -->
+      <div style="background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:12px;padding:16px 18px;">
+        <div style="font-size:14px;font-weight:800;color:#1e40af;margin-bottom:6px;">📤 Import Customers from Excel</div>
+        <div style="font-size:13px;color:#2563eb;margin-bottom:12px;">
+          Upload an Excel file (.xlsx) with columns: Name, Mobile, Address. Duplicates are skipped automatically.
+        </div>
+        <form action="/owner/import/customers" method="POST" enctype="multipart/form-data">
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <input type="file" name="customer_file" accept=".xlsx,.xls"
+              style="padding:8px;border:1.5px solid var(--border);border-radius:8px;flex:1;min-width:180px;">
+            <button type="submit" class="btn btn-primary" style="white-space:nowrap;">Upload & Import</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ EMPLOYEE MANAGEMENT ═══ -->
+  <div class="card mb-24">
+    <div class="card-header">
+      <span class="card-title">👥 Employees</span>
+      <span style="font-size:12px;color:var(--text-muted);">Manage tailors and staff for Work Log</span>
+    </div>
+    <div class="card-body">
+      <!-- Add employee form -->
+      <form action="/owner/settings/save" method="POST" style="margin-bottom:20px;">
+        <input type="hidden" name="section" value="add_employee">
+        <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end;">
+          <div class="field-wrap" style="margin:0;">
+            <label>Employee Name <span style="color:var(--danger);">*</span></label>
+            <input type="text" name="emp_name" placeholder="e.g. Ramesh, Suresh..." required>
+          </div>
+          <div class="field-wrap" style="margin:0;">
+            <label>Phone (optional)</label>
+            <input type="tel" name="emp_phone" placeholder="Mobile number">
+          </div>
+          <button type="submit" class="btn btn-primary" style="height:46px;margin-top:2px;">+ Add</button>
+        </div>
+      </form>
+
+      <!-- Employee list -->
+      {% if employees %}
+      <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+        {% for emp in employees %}
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);">
+          <div style="width:38px;height:38px;background:var(--accent-light);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:var(--accent);flex-shrink:0;">
+            {{ emp.name[0].upper() }}
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:14px;font-weight:700;">{{ emp.name }}</div>
+            {% if emp.phone %}<div style="font-size:12px;color:var(--text-muted);">{{ emp.phone }}</div>{% endif %}
+          </div>
+          <form action="/owner/settings/save" method="POST" style="margin:0;">
+            <input type="hidden" name="section" value="remove_employee">
+            <input type="hidden" name="emp_id" value="{{ emp.id }}">
+            <button type="submit" onclick="return confirm('Remove {{ emp.name }}?')"
+              style="background:var(--danger-light);color:var(--danger);border:none;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;">
+              Remove
+            </button>
+          </form>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div style="text-align:center;padding:24px;color:var(--text-muted);background:#f9fafb;border-radius:10px;">
+        <div style="font-size:24px;margin-bottom:8px;">👥</div>
+        <div style="font-weight:700;">No employees added yet</div>
+        <div style="font-size:13px;margin-top:4px;">Add employees above so they can log work</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Customer Rates -->
+  <div class="card mb-24" id="rates">
+    <div class="card-header">
+      <span class="card-title">💰 Customer Rates (₹)</span>
+      <span style="font-size:12px;color:var(--text-muted);">What you charge customers per piece</span>
+    </div>
+    <div class="card-body">
+      <form action="/owner/settings/save" method="POST" id="rates-form">
+        <input type="hidden" name="section" value="customer_rates">
+        <div class="form-grid" id="rates-grid">
+          {% for name, rate in garment_rates.items() %}
+          <div class="field-wrap" style="position:relative;">
+            <label style="display:flex;justify-content:space-between;align-items:center;">
+              <span>{{ name }}</span>
+              <button type="button" onclick="removeGarmentRate(this,'{{ name }}')"
+                style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;padding:0 4px;" title="Remove">✕</button>
+            </label>
+            <input type="number" name="customer_rate_{{ name }}" value="{{ rate }}" min="0" placeholder="0">
+          </div>
+          {% endfor %}
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 140px auto;gap:10px;align-items:end;margin-top:20px;padding-top:16px;border-top:1px dashed var(--border);">
+          <div class="field-wrap" style="margin:0;">
+            <label style="color:var(--accent);">➕ Add New Garment Type</label>
+            <input type="text" id="new-garment-name" placeholder="e.g. Boxer, Tracksuit...">
+          </div>
+          <div class="field-wrap" style="margin:0;">
+            <label>Customer Rate ₹</label>
+            <input type="number" id="new-garment-rate" placeholder="0" min="0">
+          </div>
+          <button type="button" onclick="addGarmentRate()" class="btn btn-primary" style="height:46px;margin-top:2px;">+ Add</button>
+        </div>
+        <button type="submit" class="btn btn-primary" style="margin-top:20px;">Save Customer Rates</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Rate List Image -->
+  <div class="card mb-24">
+    <div class="card-header">
+      <span class="card-title">🖼️ Rate List Image</span>
+      <span style="font-size:12px;color:var(--text-muted);">Shown on employee dashboard for customers</span>
+    </div>
+    <div class="card-body">
+      <form action="/owner/settings/save" method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="section" value="rate_image">
+        {% if settings.rate_list_image %}
+        <img src="{{ settings.rate_list_image }}" style="max-width:200px;border-radius:8px;margin-bottom:12px;display:block;">
+        {% endif %}
+        <div class="field-wrap">
+          <label>Upload Rate List Image</label>
+          <input type="file" name="rate_list_image" accept="image/*" style="padding:8px;">
+          <span style="font-size:11px;color:var(--text-muted);">Upload a photo of your printed rate list</span>
+        </div>
+        <button type="submit" class="btn btn-primary" style="margin-top:12px;">Upload Image</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ═══ STITCHING RATES (EMPLOYEE PAY) ═══ -->
+  <div class="card mb-24" id="stitch" style="border:2px solid var(--accent);border-radius:16px;">
+    <div class="card-header" style="background:linear-gradient(135deg,#eef2ff,#e0e7ff);border-radius:14px 14px 0 0;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:40px;height:40px;background:#6366f1;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;">✂️</div>
+        <div>
+          <div class="card-title" style="color:#4338ca;">Stitching Rates — Employee Pay (₹ per piece)</div>
+          <div style="font-size:12px;color:#6366f1;margin-top:2px;">Amount you pay employees for stitching each garment type</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <form action="/owner/settings/save" method="POST">
+        <input type="hidden" name="section" value="stitch_rates">
+        <div class="form-grid" id="stitch-grid">
+          {% for name, rate in stitch_rates.items() %}
+          <div class="field-wrap" style="position:relative;">
+            <label style="display:flex;justify-content:space-between;align-items:center;">
+              <span>{{ name }}</span>
+              <span style="font-size:10px;color:var(--text-muted);">per piece</span>
+            </label>
+            <input type="number" name="stitch_rate_{{ name }}" value="{{ rate }}" min="0" placeholder="0">
+          </div>
+          {% endfor %}
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 140px auto;gap:10px;align-items:end;margin-top:20px;padding-top:16px;border-top:1px dashed var(--border);">
+          <div class="field-wrap" style="margin:0;">
+            <label style="color:var(--accent);">➕ Add New Stitching Rate</label>
+            <input type="text" id="new-stitch-name" placeholder="e.g. Boxer, Tracksuit...">
+          </div>
+          <div class="field-wrap" style="margin:0;">
+            <label>Rate ₹ / piece</label>
+            <input type="number" id="new-stitch-rate" placeholder="0" min="0">
+          </div>
+          <button type="button" onclick="addStitchRate()" class="btn btn-primary" style="height:46px;margin-top:2px;">+ Add</button>
+        </div>
+        <button type="submit" class="btn btn-success" style="margin-top:20px;font-size:15px;padding:12px 28px;">Save Stitching Rates</button>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- ═══ FINANCE CATEGORIES ═══ -->
+  <div class="card mb-24">
+    <div class="card-header">
+      <div>
+        <div class="card-title">💰 Finance Categories</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Manage income and expense categories shown when adding finance entries</div>
+      </div>
+    </div>
+    <div class="card-body" style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+
+      <!-- Income categories -->
+      <div>
+        <div style="font-size:13px;font-weight:800;color:var(--success);margin-bottom:12px;">↑ Income Categories</div>
+        <div id="income-cats" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;"></div>
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="new-income-cat" placeholder="Add new category..."
+            style="flex:1;padding:8px 12px;font-size:13px;border:1.5px solid var(--border);border-radius:8px;"
+            onkeydown="if(event.key==='Enter'){addCat('income');event.preventDefault();}">
+          <button onclick="addCat('income')" class="btn btn-success btn-sm">+ Add</button>
+        </div>
+      </div>
+
+      <!-- Expense categories -->
+      <div>
+        <div style="font-size:13px;font-weight:800;color:var(--danger);margin-bottom:12px;">↓ Expense Categories</div>
+        <div id="expense-cats" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;"></div>
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="new-expense-cat" placeholder="Add new category..."
+            style="flex:1;padding:8px 12px;font-size:13px;border:1.5px solid var(--border);border-radius:8px;"
+            onkeydown="if(event.key==='Enter'){addCat('expense');event.preventDefault();}">
+          <button onclick="addCat('expense')" class="btn btn-sm" style="background:var(--danger-light);color:var(--danger);border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer;">+ Add</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Measurement Fields -->
+  <div class="card mb-24">
+    <div class="card-header">
+      <span class="card-title">📐 Measurement Fields per Garment</span>
+      <a href="/owner/measurement-fields" class="btn btn-primary btn-sm">Manage Fields →</a>
+    </div>
+    <div class="card-body" style="color:var(--text-muted);font-size:14px;">
+      Add, remove, or rename measurement fields that appear for each garment type when creating orders.
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function addStitchRate() {
+  const name = document.getElementById("new-stitch-name").value.trim();
+  const rate = document.getElementById("new-stitch-rate").value || "0";
+  if (!name) { alert("Enter garment name"); return; }
+  const grid = document.getElementById("stitch-grid");
+  const div = document.createElement("div");
+  div.className = "field-wrap"; div.style.position = "relative";
+  div.innerHTML = `<label style="display:flex;justify-content:space-between;align-items:center;">
+    <span>${name}</span><span style="font-size:10px;color:var(--text-muted);">per piece</span></label>
+    <input type="number" name="stitch_rate_${name}" value="${rate}" min="0" placeholder="0">`;
+  grid.appendChild(div);
+  document.getElementById("new-stitch-name").value="";
+  document.getElementById("new-stitch-rate").value="";
+}
+
+function addGarmentRate() {
+  const name = document.getElementById("new-garment-name").value.trim();
+  const rate = document.getElementById("new-garment-rate").value || "0";
+  if (!name) { alert("Enter garment name"); return; }
+  const grid = document.getElementById("rates-grid");
+  const div = document.createElement("div");
+  div.className = "field-wrap"; div.style.position = "relative";
+  div.innerHTML = `<label style="display:flex;justify-content:space-between;align-items:center;">
+    <span>${name}</span>
+    <button type="button" onclick="this.closest('.field-wrap').remove()"
+      style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;">✕</button></label>
+    <input type="number" name="customer_rate_${name}" value="${rate}" min="0" placeholder="0">`;
+  grid.appendChild(div);
+  document.getElementById("new-garment-name").value="";
+  document.getElementById("new-garment-rate").value="";
+}
+
+// ── Finance Categories ───────────────────
+let incCats = [], expCats = [];
+
+async function loadFinanceCats() {
+  try {
+    const r = await fetch("/owner/api/finance-categories");
+    const d = await r.json();
+    incCats = d.income  || [];
+    expCats = d.expense || [];
+    renderCats("income",  incCats);
+    renderCats("expense", expCats);
+  } catch(e) { console.error("Failed to load finance categories", e); }
+}
+
+function renderCats(type, cats) {
+  const box = document.getElementById(type + "-cats");
+  box.innerHTML = cats.map((c,i) => `
+    <div style="display:flex;align-items:center;gap:8px;background:#f9fafb;border:1px solid var(--border);border-radius:8px;padding:7px 12px;">
+      <span style="flex:1;font-size:13px;font-weight:600;text-transform:capitalize;">${c}</span>
+      <button onclick="removeCat('${type}',${i})"
+        style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;padding:0 2px;"
+        title="Remove">✕</button>
+    </div>`).join("");
+}
+
+function addCat(type) {
+  const inp = document.getElementById("new-" + type + "-cat");
+  const val = inp.value.trim().toLowerCase();
+  if (!val) return;
+  const cats = type === "income" ? incCats : expCats;
+  if (cats.includes(val)) { inp.value=""; return; }
+  cats.push(val);
+  renderCats(type, cats);
+  saveCats(type, cats);
+  inp.value = "";
+}
+
+function removeCat(type, idx) {
+  const cats = type === "income" ? incCats : expCats;
+  cats.splice(idx, 1);
+  renderCats(type, cats);
+  saveCats(type, cats);
+}
+
+async function saveCats(type, cats) {
+  await fetch("/owner/api/finance-categories/save", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({type, categories: cats})
+  });
+}
+
+// Load on page ready
+// ── CHIPS: simple Hindi-only tag management ──────────────────
+// Storage stays CODE:Label format internally; code = index (01,02...)
+// User never sees codes.
+
+function getChipLabels(safeKey) {
+  // Read current chips from DOM tags
+  var tags = document.querySelectorAll("#tags-"+safeKey+" [data-label]");
+  var labels = [];
+  tags.forEach(function(t){ labels.push(t.dataset.label); });
+  // Also parse from server-rendered chips (which use onclick)
+  if (!tags.length) {
+    var spans = document.querySelectorAll("#tags-"+safeKey+" span[onclick]");
+    spans.forEach(function(s){ var m=s.textContent.trim().replace(/✕/,'').trim(); if(m) labels.push(m); });
+  }
+  return labels;
+}
+
+function labelsToStorageVal(labels) {
+  return labels.map(function(l, i){
+    var code = String(i+1).padStart(2,'0');
+    return code+":"+l.trim();
+  }).join("|");
+}
+
+function saveChips(garmentName, safeKey) {
+  var labels = readCurrentLabels(safeKey);
+  var val = labelsToStorageVal(labels);
+  fetch("/owner/api/save-setting", {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({key:"types_"+garmentName, value:val})
+  }).then(r=>r.json()).then(d=>{
+    if(d.ok) showToast("✅ सेव हो गया: "+garmentName,"success");
+  });
+}
+
+function readCurrentLabels(safeKey) {
+  var box = document.getElementById("tags-"+safeKey);
+  if (!box) return [];
+  var spans = box.querySelectorAll("span[data-label]");
+  var labels = [];
+  spans.forEach(function(s){ labels.push(s.dataset.label); });
+  return labels;
+}
+
+function renderChipTags(safeKey, garmentName, labels) {
+  var box = document.getElementById("tags-"+safeKey);
+  if (!box) return;
+  if (!labels.length) {
+    box.innerHTML = '<span style="font-size:12px;color:var(--text-muted);font-style:italic;">कोई विकल्प नहीं — नीचे जोड़ें</span>';
+    return;
+  }
+  box.innerHTML = labels.map(function(label){
+    var esc = label.replace(/'/g,"\\'");
+    return '<span data-label="'+label+'" onclick="removeChip(\''+safeKey+'\',\''+garmentName+'\',\''+esc+'\')"'
+      +' style="background:#4f46e5;color:#fff;border-radius:20px;padding:6px 14px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background 0.15s;"'
+      +' onmouseover="this.style.background=\'#dc2626\'" onmouseout="this.style.background=\'#4f46e5\'">'
+      +label+' <span style="font-size:11px;opacity:0.8;">✕</span></span>';
+  }).join("");
+}
+
+function addChip(safeKey, garmentName) {
+  var inp = document.getElementById("new-chip-"+safeKey);
+  if (!inp) return;
+  var label = inp.value.trim();
+  if (!label) { inp.focus(); return; }
+  var labels = readCurrentLabels(safeKey);
+  if (labels.indexOf(label) >= 0) { showToast("यह पहले से है","warning"); inp.value=""; inp.focus(); return; }
+  labels.push(label);
+  renderChipTags(safeKey, garmentName, labels);
+  var val = labelsToStorageVal(labels);
+  fetch("/owner/api/save-setting", {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({key:"types_"+garmentName, value:val})
+  }).then(r=>r.json()).then(d=>{
+    if(d.ok) showToast("✅ जोड़ा: "+label,"success");
+  });
+  inp.value = "";
+  inp.focus();
+}
+
+function removeChip(safeKey, garmentName, label) {
+  if (!confirm('"'+label+'" हटाएं?')) return;
+  var labels = readCurrentLabels(safeKey).filter(function(l){ return l !== label; });
+  renderChipTags(safeKey, garmentName, labels);
+  var val = labelsToStorageVal(labels);
+  fetch("/owner/api/save-setting", {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({key:"types_"+garmentName, value:val})
+  }).then(r=>r.json()).then(d=>{
+    if(d.ok) showToast("हटा दिया: "+label,"success");
+  });
+}
+
+function addNewGarmentSection() {
+  var garment = document.getElementById("new-garment-name").value.trim();
+  if (!garment) { document.getElementById("new-garment-name").focus(); return; }
+  fetch("/owner/api/save-setting", {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({key:"types_"+garment, value:""})
+  }).then(r=>r.json()).then(d=>{
+    if(d.ok) { showToast("✅ जोड़ा: "+garment+". रीलोड हो रहा है...","success"); setTimeout(()=>location.reload(),800); }
+  });
+}
+
+// Keep old names as aliases so no broken references elsewhere
+function saveGarmentTypes(g) {}
+function addNewGarmentType() { addNewGarmentSection(); }
+function previewChips() {}
+function deleteGarmentType(garment) {
+  if (!confirm('"'+garment+'" के सभी विकल्प हटाएं?')) return;
+  fetch("/owner/api/save-setting", {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({key:"types_"+garment, value:""})
+  }).then(r=>r.json()).then(d=>{
+    if(d.ok) { showToast("हटा दिया","success"); setTimeout(()=>location.reload(),600); }
+  });
+}
+
+// On page load — convert server-rendered chips to data-label spans
+document.addEventListener("DOMContentLoaded", function(){
+  document.querySelectorAll("[id^='tags-']").forEach(function(box){
+    var safeKey = box.id.replace("tags-","");
+    var garmentName = safeKey.replace(/_/g," ");
+    // Collect labels from existing onclick spans (server-rendered)
+    var existing = box.querySelectorAll("span[onclick]");
+    var labels = [];
+    existing.forEach(function(s){
+      var txt = s.textContent.replace(/✕/g,'').trim();
+      if (txt) labels.push(txt);
+    });
+    if (labels.length) renderChipTags(safeKey, garmentName, labels);
+  });
+});
+
+function saveEmpSkill(empId, skills) {
+  fetch("/owner/api/employee-skill", {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({employee_id:empId, skills:skills})
+  }).then(r=>r.json()).then(d=>{
+    if (d.ok) showToast("Skill updated!","success");
+  });
+}
+
+function saveWorkRate(key, value) {
+  fetch("/owner/api/save-setting", {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({key:key, value:value})
+  }).then(r=>r.json()).then(d=>{
+    if(d.ok) showToast("Rate saved: ₹"+value+"/piece","success");
+  });
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+  loadFinanceCats();
+  var sz = localStorage.getItem("utms_font_size") || "medium";
+  var el = document.getElementById("current-font-size");
+  if (el) el.textContent = sz.charAt(0).toUpperCase() + sz.slice(1);
+  var btn = document.getElementById("fs-"+sz);
+  if (btn) {
+    btn.style.borderColor = "var(--accent)";
+    btn.style.background  = "var(--accent-light)";
+  }
+});
+
+function removeGarmentRate(btn, name) {
+  if (!confirm("Remove " + name + "?")) return;
+  btn.closest(".field-wrap").remove();
+  const hidden = document.createElement("input");
+  hidden.type="hidden"; hidden.name="delete_rate"; hidden.value=name;
+  document.getElementById("rates-form").appendChild(hidden);
+}
+
+// 5-min auto-logout
+const SECS=5*60; let last=Date.now();
+["click","keydown","mousemove","touchstart"].forEach(ev=>document.addEventListener(ev,()=>{last=Date.now();},{passive:true}));
+setInterval(()=>{ if(Math.floor((Date.now()-last)/1000)>=SECS) window.location.href="/owner/login?expired=1"; },5000);
+window.addEventListener("pageshow",function(e){
+  if(e.persisted){fetch("/owner/logout",{method:"POST",keepalive:true}).finally(()=>{window.location.href="/owner/login";})}
+});
+</script>
+{% endblock %}

@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Owner Login — Uttam Tailors{% endblock %}
+
+{% block content %}
+<div class="pin-screen">
+  <div class="pin-card" id="pinCard">
+    <div class="pin-logo">🔒</div>
+    <div class="pin-title" data-t="Admin Area">Admin Area</div>
+    <div class="pin-sub" data-t="Enter PIN">Enter your 4-digit PIN</div>
+
+    <div class="pin-dots">
+      <div class="pin-dot" id="d0"></div>
+      <div class="pin-dot" id="d1"></div>
+      <div class="pin-dot" id="d2"></div>
+      <div class="pin-dot" id="d3"></div>
+    </div>
+
+    <div class="pin-numpad">
+      <button class="pin-key" onclick="pinPress('1')">1</button>
+      <button class="pin-key" onclick="pinPress('2')">2</button>
+      <button class="pin-key" onclick="pinPress('3')">3</button>
+      <button class="pin-key" onclick="pinPress('4')">4</button>
+      <button class="pin-key" onclick="pinPress('5')">5</button>
+      <button class="pin-key" onclick="pinPress('6')">6</button>
+      <button class="pin-key" onclick="pinPress('7')">7</button>
+      <button class="pin-key" onclick="pinPress('8')">8</button>
+      <button class="pin-key" onclick="pinPress('9')">9</button>
+      <button class="pin-key del" onclick="pinDel()">⌫</button>
+      <button class="pin-key zero" onclick="pinPress('0')">0</button>
+      <button class="pin-key" style="visibility:hidden;"></button>
+    </div>
+
+    <div class="pin-error" id="pinError"></div>
+
+    <div style="margin-top:24px;">
+      <a href="/" class="btn btn-ghost btn-full" data-t="back">Back to Employee Side</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let pin = "";
+
+function pinPress(d) {
+  if (pin.length >= 4) return;
+  pin += d;
+  updateDots();
+  if (pin.length === 4) submitPin();
+}
+
+function pinDel() {
+  pin = pin.slice(0, -1);
+  updateDots();
+  document.getElementById("pinError").textContent = "";
+}
+
+function updateDots() {
+  for (let i = 0; i < 4; i++) {
+    const dot = document.getElementById("d" + i);
+    dot.classList.toggle("filled", i < pin.length);
+    dot.classList.remove("error");
+  }
+}
+
+function submitPin() {
+  fetch("/owner/verify-pin", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ pin: pin })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.ok) {
+      window.location.href = "/owner/dashboard";
+    } else {
+      // Shake and show error
+      for (let i = 0; i < 4; i++) document.getElementById("d" + i).classList.add("error");
+      const card = document.getElementById("pinCard");
+      card.classList.add("shake");
+      setTimeout(() => card.classList.remove("shake"), 400);
+      document.getElementById("pinError").textContent = typeof t === "function" ? t("wrong_pin") : "Wrong PIN. Try again";
+      pin = "";
+      setTimeout(updateDots, 500);
+    }
+  });
+}
+
+// Keyboard support
+document.addEventListener("keydown", e => {
+  if (e.key >= "0" && e.key <= "9") pinPress(e.key);
+  if (e.key === "Backspace") pinDel();
+});
+</script>
+{% endblock %}

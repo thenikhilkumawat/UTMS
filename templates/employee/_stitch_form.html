@@ -1,0 +1,49 @@
+<div style="display:flex;flex-direction:column;gap:10px;">
+  <!-- Order code -->
+  <div>
+    <label style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;display:block;">Order Code</label>
+    <div style="display:flex;gap:6px;">
+      <input type="text" id="wl-code-s" placeholder="3600"
+        oninput="debounceStitch()" onkeydown="if(event.key==='Enter')lookupStitch()"
+        style="flex:1;font-size:22px;font-weight:900;padding:10px 12px;border:2px solid var(--border);border-radius:10px;text-align:center;letter-spacing:2px;">
+      <button onclick="lookupStitch()" style="height:52px;padding:0 14px;background:#16a34a;color:#fff;border:none;border-radius:10px;font-size:18px;font-weight:900;cursor:pointer;">→</button>
+    </div>
+    <div id="wl-lookup-result-s" style="margin-top:6px;min-height:18px;"></div>
+  </div>
+
+  <!-- Garment select (shown after code lookup) -->
+  <div id="wl-garment-wrap-s" style="display:none;">
+    <label style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;display:block;">Kapda Type</label>
+    <select id="wl-garment-s" onchange="updateStitchProgress()"
+      style="width:100%;font-size:15px;padding:10px 12px;border:2px solid var(--border);border-radius:10px;background:#fff;">
+      <option value="">-- Kapda chunein --</option>
+    </select>
+  </div>
+
+  <!-- Progress -->
+  <div id="wl-progress-wrap-s" style="display:none;background:#f0fdf4;border-radius:10px;padding:10px 12px;">
+    <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:6px;">
+      <span id="wl-prog-label-s"></span>
+      <span id="wl-prog-text-s" style="color:#16a34a;"></span>
+    </div>
+    <div style="background:#d1fae5;border-radius:10px;height:8px;overflow:hidden;">
+      <div id="wl-prog-bar-s" style="height:100%;background:#16a34a;border-radius:10px;transition:width 0.3s;width:0%;"></div>
+    </div>
+  </div>
+
+  <!-- Quantity -->
+  <div id="wl-qty-wrap-s" style="display:none;">
+    <label style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;display:block;">Quantity</label>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button onclick="changeQtyS(-1)" style="width:40px;height:40px;border-radius:8px;border:1.5px solid var(--border);background:#f8fafc;font-size:20px;cursor:pointer;">−</button>
+      <input type="number" id="wl-qty-s" value="1" min="1"
+        style="flex:1;font-size:26px;font-weight:900;padding:8px;border:2px solid var(--border);border-radius:10px;text-align:center;">
+      <button onclick="changeQtyS(1)" style="width:40px;height:40px;border-radius:8px;border:1.5px solid var(--border);background:#f8fafc;font-size:20px;cursor:pointer;">+</button>
+    </div>
+  </div>
+
+  <!-- Submit -->
+  <button id="wl-submit-s" onclick="submitStitch()" style="display:none;width:100%;padding:13px;background:#16a34a;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:900;cursor:pointer;">
+    ✅ Silaai Log Karein
+  </button>
+</div>

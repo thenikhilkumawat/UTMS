@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+{% block title %}नाप — Uttam Tailors{% endblock %}
+{% block content %}
+
+<div style="background:#fff;border-bottom:1px solid var(--border);padding:14px 22px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:40;">
+  <div>
+    <h1 style="font-size:20px;font-weight:900;margin:0;">✂️ <span class="lang-en">Measurements & Cutting</span><span class="lang-hi" style="display:none;">नाप व कटाई</span></h1>
+    <div style="font-size:12px;color:var(--text-muted);">{{ orders|length }} <span class="lang-en">active orders</span><span class="lang-hi" style="display:none;">सक्रिय ऑर्डर</span></div>
+  </div>
+  <div style="display:flex;gap:8px;">
+    <a href="/" class="btn btn-ghost btn-sm">← <span class="lang-en">Back</span><span class="lang-hi" style="display:none;">वापस</span></a>
+    <button class="menu-toggle" onclick="openSidebar()">☰</button>
+  </div>
+</div>
+
+<div style="padding:12px 22px;background:#f8fafc;border-bottom:1px solid var(--border);display:flex;justify-content:center;">
+  <div style="display:flex;align-items:center;gap:10px;background:#fff;border:2px solid #6366f1;border-radius:14px;padding:10px 16px;max-width:500px;width:100%;box-shadow:0 2px 12px rgba(99,102,241,0.1);">
+    <span style="font-size:18px;">🔍</span>
+    <input type="text" id="m-search" oninput="filterCards()" placeholder="Order number ya naam..." style="border:none;background:transparent;font-size:16px;font-weight:600;outline:none;flex:1;">
+    <button onclick="document.getElementById('m-search').value='';filterCards()" style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--text-muted);">✕</button>
+  </div>
+</div>
+
+<div id="img-ov" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:9999;align-items:center;justify-content:center;" onclick="this.style.display='none'">
+  <img id="img-ov-src" style="max-width:92%;max-height:88%;border-radius:12px;object-fit:contain;">
+  <button style="position:absolute;top:20px;right:22px;background:rgba(255,255,255,0.15);border:none;color:#fff;width:44px;height:44px;border-radius:50%;font-size:22px;cursor:pointer;" onclick="document.getElementById('img-ov').style.display='none'">✕</button>
+</div>
+
+<!-- Employee picker modal -->
+<div id="cut-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:8000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:24px;padding:24px;width:90%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,0.25);">
+    <div style="font-size:32px;text-align:center;margin-bottom:6px;">✂️</div>
+    <div style="font-size:18px;font-weight:900;text-align:center;margin-bottom:4px;">कटाई किसने की?</div>
+    <div style="font-size:13px;color:var(--text-muted);text-align:center;margin-bottom:18px;" id="cut-modal-info"></div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      {% for emp in employees %}
+      <button onclick="markCuttingDone('{{ emp.name }}')"
+        style="padding:14px 20px;background:#f8fafc;border:2px solid #e5e7eb;border-radius:14px;font-size:16px;font-weight:800;cursor:pointer;text-align:left;display:flex;align-items:center;gap:12px;transition:all 0.15s;"
+        onmouseover="this.style.background='#eef2ff';this.style.borderColor='#6366f1'"
+        onmouseout="this.style.background='#f8fafc';this.style.borderColor='#e5e7eb'">
+        <span style="font-size:24px;">👤</span>
+        <div>
+          <div style="font-size:16px;">{{ emp.hindi_name if emp.hindi_name else emp.name }}</div>
+          {% if emp.hindi_name and emp.hindi_name != emp.name %}
+          <div style="font-size:11px;color:var(--text-muted);font-weight:600;">{{ emp.name }}</div>
+          {% endif %}
+        </div>
+      </button>
+      {% endfor %}
+    </div>
+    <button onclick="closeCutModal()" style="margin-top:14px;width:100%;padding:12px;background:#f1f5f9;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;color:#64748b;">रद्द करें</button>
+  </div>
+</div>
+
+<div style="padding:16px 22px;display:flex;flex-direction:column;gap:16px;" id="meas-list">
+{% if orders %}
+{% for o in orders %}
+<div class="meas-card" data-s="{{ o.order_code }} {{ o.customer_name|lower }}"
+  style="background:#fff;border-radius:20px;border:2.5px solid {% if o.is_urgent %}#ef4444{% elif o.status=='ready' %}#16a34a{% else %}#6366f1{% endif %};overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.07);animation:slideUp 0.25s ease-out;">
+
+  <div style="background:{% if o.is_urgent %}linear-gradient(135deg,#dc2626,#b91c1c){% elif o.status=='ready' %}linear-gradient(135deg,#16a34a,#15803d){% else %}linear-gradient(135deg,#4f46e5,#4338ca){% endif %};padding:16px 22px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+    <div>
+      <div style="font-size:30px;font-weight:900;color:#fff;line-height:1;">#{{ o.order_code }}</div>
+      <div style="font-size:16px;font-weight:700;color:rgba(255,255,255,0.9);margin-top:2px;">{{ o.customer_name }}</div>
+      {% if o.mobile %}<div style="font-size:12px;color:rgba(255,255,255,0.65);">📱 {{ o.mobile }}</div>{% endif %}
+    </div>
+    <div style="text-align:right;">
+      <div style="font-size:12px;color:rgba(255,255,255,0.6);margin-bottom:2px;"><span class="lang-en">Delivery</span><span class="lang-hi" style="display:none;">डिलीवरी</span></div>
+      <div style="font-size:20px;font-weight:900;color:#fff;">{{ o.delivery_date_fmt }}</div>
+      <div style="margin-top:5px;">
+        {% if o.is_urgent %}<span style="background:rgba(255,255,255,0.22);color:#fff;border-radius:20px;padding:3px 12px;font-size:12px;font-weight:800;">🔥 URGENT</span>
+        {% elif o.status=='ready' %}<span style="background:rgba(255,255,255,0.22);color:#fff;border-radius:20px;padding:3px 12px;font-size:12px;font-weight:800;">✓ तैयार</span>
+        {% else %}<span style="background:rgba(255,255,255,0.15);color:#fff;border-radius:20px;padding:3px 12px;font-size:12px;font-weight:600;">काम हो रहा है</span>{% endif %}
+      </div>
+    </div>
+  </div>
+
+  {% if o.images %}
+  <div style="padding:10px 22px;background:#fffbeb;border-bottom:1.5px solid #fde68a;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+    <span style="font-size:11px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:0.5px;">📷 कपड़े की फोटो</span>
+    {% for img in o.images %}
+    <img src="{{ img }}" onclick="showImg('{{ img }}')" style="width:64px;height:64px;object-fit:cover;border-radius:10px;border:2px solid #fde68a;cursor:zoom-in;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% for g in o.garments %}
+  {% set is_cut = g.cut_done %}
+  {% set row_id = o.order_code ~ '-' ~ loop.index %}
+  <div id="garment-row-{{ row_id }}"
+    style="padding:16px 22px;{% if not loop.last %}border-bottom:2px solid var(--border);{% endif %}background:{% if is_cut %}linear-gradient(135deg,#f0fdf4,#dcfce7){% else %}#fff{% endif %};transition:background 0.4s;">
+
+    <!-- Header: garment name + cut button -->
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <div style="background:{% if is_cut %}#16a34a{% else %}#4f46e5{% endif %};color:#fff;border-radius:12px;padding:7px 16px;font-size:15px;font-weight:900;" data-garment="{{ g.garment_type }}">{{ g.garment_type }}</div>
+        <div style="font-size:14px;color:var(--text-muted);font-weight:700;">× {{ g.quantity }}</div>
+        {% if g.notes %}{% set plain_note = g.notes.split('[')[0].strip() if '[' in g.notes else g.notes %}{% if plain_note %}<div style="font-size:12px;color:#92400e;background:#fef3c7;padding:3px 10px;border-radius:8px;font-weight:600;">📝 {{ plain_note }}</div>{% endif %}{% endif %}
+      </div>
+
+      {% if is_cut %}
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="background:#16a34a;color:#fff;border-radius:20px;padding:7px 16px;font-size:13px;font-weight:800;display:flex;align-items:center;gap:6px;">✅ कटाई हो गई</span>
+        <span style="font-size:12px;color:#15803d;font-weight:700;background:#dcfce7;border-radius:10px;padding:4px 10px;">{{ is_cut }}</span>
+      </div>
+      {% else %}
+      <button onclick="openCutModal('{{ o.order_code }}','{{ g.garment_type }}',{{ g.quantity }},'{{ row_id }}')"
+        style="background:#f0fdf4;border:2px solid #16a34a;color:#15803d;border-radius:14px;padding:8px 16px;font-size:13px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.15s;"
+        onmouseover="this.style.background='#16a34a';this.style.color='#fff'"
+        onmouseout="this.style.background='#f0fdf4';this.style.color='#15803d'">
+        ✂️ कटाई मार्क करें
+      </button>
+      {% endif %}
+    </div>
+
+    <!-- Measurements -->
+    {% if g.measurements %}
+    <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:stretch;">
+      {% for field, value in g.measurements.items() %}
+      {% if value %}
+      {% set hname = hindi_map.get(field, field) %}
+      <div style="background:{% if is_cut %}#dcfce7{% else %}#eef2ff{% endif %};border:2px solid {% if is_cut %}#86efac{% else %}#a5b4fc{% endif %};border-radius:10px;padding:7px 12px;text-align:center;min-width:66px;display:flex;flex-direction:column;align-items:center;gap:2px;">
+        <div style="font-size:11px;font-weight:900;color:{% if is_cut %}#15803d{% else %}#4338ca{% endif %};white-space:nowrap;">{{ hname }}</div>
+        <div style="font-size:28px;font-weight:900;color:{% if is_cut %}#14532d{% else %}#1e1b4b{% endif %};line-height:1.1;">{{ value }}</div>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+    {% else %}
+    <div style="background:#fff7ed;border:2px solid #fed7aa;border-radius:12px;padding:14px;text-align:center;color:#92400e;font-size:14px;font-weight:700;">⚠️ नाप नहीं दर्ज है</div>
+    {% endif %}
+
+    <!-- Style chips -->
+    {% if g.notes %}
+    {% set raw_notes = g.notes %}
+    {% if '[' in raw_notes and ']' in raw_notes %}
+    {% set bracket_start = raw_notes.index('[') %}
+    {% set bracket_end = raw_notes.index(']') %}
+    {% set selected_codes = raw_notes[bracket_start+1:bracket_end].split(',') %}
+    {% set gtypes = garment_types_cfg.get(g.garment_type, []) %}
+    {% if selected_codes and gtypes %}
+    <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
+      <span style="font-size:11px;font-weight:800;color:#6366f1;text-transform:uppercase;letter-spacing:0.5px;">स्टाइल:</span>
+      {% for t in gtypes %}{% if t.k in selected_codes %}<span style="background:#4f46e5;color:#fff;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:800;">{{ t.v }}</span>{% endif %}{% endfor %}
+    </div>
+    {% endif %}
+    {% endif %}
+    {% endif %}
+
+  </div>
+  {% endfor %}
+
+  {% if o.note %}<div style="padding:10px 22px;background:#fef9c3;border-top:1.5px solid #fde68a;font-size:13px;font-weight:700;color:#92400e;">📝 {{ o.note }}</div>{% endif %}
+</div>
+{% endfor %}
+{% else %}
+<div style="padding:80px 24px;text-align:center;color:var(--text-muted);">
+  <div style="font-size:72px;margin-bottom:20px;">📐</div>
+  <div style="font-size:22px;font-weight:800;">कोई सक्रिय ऑर्डर नहीं</div>
+</div>
+{% endif %}
+</div>
+
+{% endblock %}
+{% block extra_js %}
+<script>
+var _cutOrder="",_cutGarment="",_cutQty=1,_cutRowId="";
+
+function openCutModal(orderCode,garmentType,qty,rowId){
+  _cutOrder=orderCode; _cutGarment=garmentType; _cutQty=qty; _cutRowId=rowId;
+  document.getElementById("cut-modal-info").textContent="#"+orderCode+" — "+garmentType+" × "+qty;
+  document.getElementById("cut-modal").style.display="flex";
+}
+function closeCutModal(){ document.getElementById("cut-modal").style.display="none"; }
+
+function markCuttingDone(empName){
+  closeCutModal();
+  fetch("/api/work-log/add",{
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({order_code:_cutOrder,garment_type:_cutGarment,qty_done:_cutQty,employee_name:empName,notes:"Kataai — "+_cutGarment,is_non_stitch:true,rate_override:0})
+  }).then(r=>r.json()).then(function(d){
+    if(d.ok){
+      var row=document.getElementById("garment-row-"+_cutRowId);
+      if(row){
+        row.style.background="linear-gradient(135deg,#f0fdf4,#dcfce7)";
+        // Replace button with done badge
+        var btn=row.querySelector("button[onclick^='openCutModal']");
+        if(btn){
+          var badge=document.createElement("div");
+          badge.style.cssText="display:flex;align-items:center;gap:8px;";
+          badge.innerHTML='<span style="background:#16a34a;color:#fff;border-radius:20px;padding:7px 16px;font-size:13px;font-weight:800;">✅ कटाई हो गई</span><span style="font-size:12px;color:#15803d;font-weight:700;background:#dcfce7;border-radius:10px;padding:4px 10px;">'+empName+'</span>';
+          btn.parentNode.replaceChild(badge,btn);
+        }
+        // Green garment badge
+        var gb=row.querySelector("[data-garment]");
+        if(gb) gb.style.background="#16a34a";
+        // Green measurement cells
+        row.querySelectorAll("[style*='eef2ff']").forEach(function(c){c.style.background="#dcfce7";c.style.borderColor="#86efac";});
+      }
+      showToast("✅ कटाई दर्ज — "+empName,"success");
+    } else {
+      showToast("Error: "+(d.error||"कुछ गड़बड़ हुई"),"error");
+    }
+  }).catch(function(){showToast("Network error","error");});
+}
+
+function filterCards(){
+  var q=document.getElementById("m-search").value.toLowerCase().trim();
+  document.querySelectorAll(".meas-card").forEach(function(c){c.style.display=(!q||c.dataset.s.includes(q))?"":"none";});
+}
+function showImg(src){ document.getElementById("img-ov-src").src=src; document.getElementById("img-ov").style.display="flex"; }
+document.getElementById("cut-modal").addEventListener("click",function(e){if(e.target===this)closeCutModal();});
+</script>
+<style>@keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}</style>
+{% endblock %}

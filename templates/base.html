@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Uttam Tailors{% endblock %}</title>
+<link rel="stylesheet" href="/static/css/main.css">
+{% block extra_css %}{% endblock %}
+</head>
+<body>
+<div class="app-shell">
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+  <nav class="sidebar" id="sidebar">
+
+    <!-- Logo + Shop Name -->
+    <div class="sidebar-logo" style="padding:18px 16px;border-bottom:1px solid rgba(255,255,255,0.07);">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div id="sidebar-logo-box">
+          <div class="sidebar-logo-placeholder">✂️</div>
+        </div>
+        <div>
+          <div class="shop-name" id="shop-name-display" style="font-size:15px;font-weight:700;color:#fff;">Uttam Tailors</div>
+          <div style="font-size:10px;color:rgba(156,163,175,0.6);margin-top:1px;">Management System</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Language Toggle -->
+    <div class="lang-toggle">
+      <button class="lang-btn active" data-lang="en" onclick="setLang('en')">EN</button>
+      <button class="lang-btn" data-lang="hi" onclick="setLang('hi')">HI</button>
+
+    </div>
+
+    <!-- Employee Nav -->
+    <div class="sidebar-nav" id="emp-nav">
+      <div class="nav-section-label">Employee</div>
+      <a href="/" class="nav-link {% if active_page == 'dashboard' %}active{% endif %}" onclick="employeeNav()">
+        <span class="nav-icon">🏠</span><span data-t="dashboard">Dashboard</span>
+      </a>
+      <a href="/new-order" class="nav-link {% if active_page == 'new_order' %}active{% endif %}" onclick="employeeNav()">
+        <span class="nav-icon">➕</span><span data-t="new_order">New Order</span>
+      </a>
+      <a href="/order-status" class="nav-link {% if active_page == 'order_status' %}active{% endif %}" onclick="employeeNav()">
+        <span class="nav-icon">📋</span><span data-t="order_status">Order Status</span>
+        {% if urgent_count and urgent_count > 0 %}<span class="nav-badge amber">{{ urgent_count }}</span>{% endif %}
+      </a>
+      <a href="/measurements" class="nav-link {% if active_page == 'measurements' %}active{% endif %}" onclick="employeeNav()">
+        <span class="nav-icon">📐</span><span data-t="measurements">Measurements</span>
+      </a>
+      <a href="/work-log" class="nav-link {% if active_page == 'work_log' %}active{% endif %}" onclick="employeeNav()">
+        <span class="nav-icon">✂️</span><span data-t="work_log">Work Log</span>
+      </a>
+      <a href="/pickup" class="nav-link {% if active_page == 'pickup' %}active{% endif %}" onclick="employeeNav()">
+        <span class="nav-icon">🚚</span><span data-t="pickup_delivery">Pickup & Delivery</span>
+      </a>
+      <a href="/finance" class="nav-link {% if active_page == 'finance' %}active{% endif %}" onclick="employeeNav()">
+        <span class="nav-icon">💰</span><span data-t="finance">Finance</span>
+      </a>
+    </div>
+
+    <!-- Owner Nav (shown only when logged in) -->
+    {% if session.get('owner_logged_in') %}
+    <div class="sidebar-nav owner-nav-section" id="owner-nav">
+      <div class="nav-section-label" style="color:rgba(165,180,252,0.6);">Owner</div>
+      <a href="/owner/dashboard" class="nav-link {% if active_page == 'owner_dashboard' %}active{% endif %}">
+        <span class="nav-icon">👑</span><span>Admin</span>
+      </a>
+      <a href="/owner/finance" class="nav-link">
+        <span class="nav-icon">📊</span><span data-t="finance">Finance</span>
+      </a>
+      <a href="/owner/inventory" class="nav-link">
+        <span class="nav-icon">📦</span><span data-t="inventory">Inventory</span>
+      </a>
+      <a href="/owner/customers" class="nav-link">
+        <span class="nav-icon">👥</span><span data-t="customers">Customers</span>
+      </a>
+      <a href="/owner/salary" class="nav-link {% if active_page == 'salary' %}active{% endif %}">
+        <span class="nav-icon">💸</span><span>Salary</span>
+      </a>
+      <a href="/owner/whatsapp" class="nav-link">
+        <span class="nav-icon">💬</span><span data-t="send_whatsapp">WhatsApp</span>
+      </a>
+      <a href="/owner/settings" class="nav-link {% if active_page == 'settings' %}active{% endif %}">
+        <span class="nav-icon">⚙️</span><span data-t="settings">Settings</span>
+      </a>
+    </div>
+    {% endif %}
+
+    <div class="sidebar-footer">
+      {% if session.get('owner_logged_in') %}
+        <a href="/owner/logout" class="owner-btn danger-btn" style="display:flex;">
+          <span>🔓</span><span data-t="logout">Logout Owner</span>
+        </a>
+      {% else %}
+        <a href="/owner/login" class="owner-btn">
+          <span>🔒</span><span data-t="owner_login" class="lang-en">Admin</span><span class="lang-hi" style="display:none;">एडमिन</span>
+        </a>
+      {% endif %}
+    </div>
+  </nav>
+
+  <div class="main-content">{% block content %}{% endblock %}</div>
+</div>
+
+{% if show_voice %}
+<div class="voice-fab-container">
+  <div id="voice-hint">Tap a field first</div>
+  <button id="voice-fab" onclick="toggleVoice()" title="Voice Input">🎤</button>
+</div>
+{% endif %}
+
+<div class="toast-container" id="toastContainer"></div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <script>
+    document.addEventListener("DOMContentLoaded",function(){
+      {% for cat,msg in messages %}showToast("{{ msg }}","{{ cat if cat != 'message' else 'success' }}");{% endfor %}
+    });
+  </script>
+  {% endif %}
+{% endwith %}
+
+<script src="/static/js/lang.js"></script>
+<script>
+// Font size controller - loads from localStorage
+(function applyFontSize() {
+  var size = localStorage.getItem("utms_font_size") || "medium";
+  // Each size: base body, small text, labels, inputs, measurement boxes
+  var sizes = {
+    small:  {base:"12px", sm:"10px", label:"11px", input:"13px", meas:"22px", heading:"16px"},
+    medium: {base:"14px", sm:"12px", label:"12px", input:"15px", meas:"28px", heading:"20px"},
+    large:  {base:"16px", sm:"13px", label:"14px", input:"17px", meas:"36px", heading:"24px"},
+    xlarge: {base:"18px", sm:"15px", label:"16px", input:"20px", meas:"44px", heading:"28px"},
+  };
+  var s = sizes[size] || sizes.medium;
+  document.documentElement.style.setProperty("--font-size-base",  s.base);
+  document.documentElement.style.setProperty("--font-size-sm",    s.sm);
+  document.documentElement.style.setProperty("--font-size-label", s.label);
+  document.documentElement.style.setProperty("--font-size-input", s.input);
+  document.documentElement.style.setProperty("--font-size-meas",  s.meas);
+  document.documentElement.style.setProperty("--font-size-heading",s.heading);
+  // Apply to body so all text scales
+  document.body && (document.body.style.fontSize = s.base);
+})();
+function setFontSize(size) {
+  localStorage.setItem("utms_font_size", size);
+  location.reload();
+}
+</script>
+{% if show_voice %}<script src="/static/js/voice.js"></script>{% endif %}
+<script>
+function openSidebar()  { document.getElementById("sidebar").classList.add("open");    document.getElementById("sidebarOverlay").classList.add("show"); }
+function closeSidebar() { document.getElementById("sidebar").classList.remove("open"); document.getElementById("sidebarOverlay").classList.remove("show"); }
+
+function employeeNav() {
+  {% if session.get('owner_logged_in') %}
+    fetch("/owner/logout",{method:"POST",keepalive:true});
+  {% endif %}
+}
+
+function showToast(msg,type) {
+  type=type||"success";
+  const c=document.getElementById("toastContainer");
+  const t=document.createElement("div");
+  t.className="toast "+type;
+  const icons={success:"✅",error:"❌",warning:"⚠️"};
+  t.innerHTML=(icons[type]||"ℹ️")+" "+msg;
+  c.appendChild(t);
+  setTimeout(()=>{t.style.opacity="0";t.style.transition="opacity 0.3s";setTimeout(()=>t.remove(),300);},3000);
+}
+
+// Shop name + logo
+fetch("/api/settings/shop_name").then(r=>r.json()).then(d=>{
+  if(d.value) document.getElementById("shop-name-display").textContent=d.value;
+}).catch(()=>{});
+fetch("/api/settings/logo").then(r=>r.json()).then(d=>{
+  if(d.value){
+    const box=document.getElementById("sidebar-logo-box");
+    box.innerHTML=`<img src="${d.value}" class="sidebar-logo-img" alt="logo">`;
+  }
+}).catch(()=>{});
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

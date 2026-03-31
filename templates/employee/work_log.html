@@ -1,0 +1,409 @@
+{% extends "base.html" %}
+{% block title %}काम की जानकारी — Uttam Tailors{% endblock %}
+{% block extra_css %}
+<style>
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.wl-anim { animation: fadeIn 0.2s ease-out; }
+.emp-btn-card { transition: all 0.15s; cursor: pointer; }
+.emp-btn-card:hover { transform: translateY(-2px); }
+.emp-btn-card.active { border-color:#fff !important; background:rgba(255,255,255,0.22) !important; transform:translateY(-3px); box-shadow:0 8px 24px rgba(0,0,0,0.3); }
+</style>
+{% endblock %}
+{% block content %}
+
+<!-- Compact header -->
+<div style="background:#fff;border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:40;">
+  <h1 style="font-size:17px;font-weight:900;margin:0;">✂️ <span class="lang-en">Work Log</span><span class="lang-hi" style="display:none;">काम की जानकारी</span></h1>
+  <div style="display:flex;gap:8px;">
+    <a href="/" class="btn btn-ghost btn-sm">← <span class="lang-en">Back</span><span class="lang-hi" style="display:none;">वापस</span></a>
+    <button class="menu-toggle" onclick="openSidebar()">☰</button>
+  </div>
+</div>
+
+<!-- Employee cards row — centered dark navy -->
+<div style="background:linear-gradient(135deg,#1e1b4b,#312e81);padding:20px 24px;">
+  <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.4);text-align:center;margin-bottom:14px;"><span class="lang-en">SELECT EMPLOYEE</span><span class="lang-hi" style="display:none;">कर्मचारी चुनें</span></div>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;">
+    {% for emp in employees %}
+    <button id="emp-btn-{{ emp.id }}" class="emp-btn-card"
+      onclick="selectEmployee({{ emp.id }},'{{ emp.name }}','{{ emp.skills }}')"
+      style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 22px;border:2px solid rgba(255,255,255,0.12);border-radius:18px;background:rgba(255,255,255,0.07);cursor:pointer;transition:all 0.2s;min-width:100px;">
+      <div style="width:48px;height:48px;border-radius:14px;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;color:#fff;">{{ emp.name[0] }}</div>
+      <div style="text-align:center;">
+        <div style="font-size:14px;font-weight:800;color:#fff;"><span class="lang-en">{{ emp.name }}</span><span class="lang-hi" style="display:none;">{{ emp.hindi_name or emp.name }}</span></div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.5);margin-top:2px;font-weight:600;">{% if emp.skills=='all' %}नाप+कटाई+सिलाई{% else %}सिलाई{% endif %}</div>
+      </div>
+    </button>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Placeholder -->
+<div id="wl-placeholder" style="padding:60px 20px;text-align:center;color:var(--text-muted);">
+  <div style="font-size:48px;margin-bottom:12px;">☝️</div>
+  <div style="font-size:18px;font-weight:800;"><span class="lang-en">Select an employee above</span><span class="lang-hi" style="display:none;">ऊपर से कर्मचारी चुनें</span></div>
+</div>
+
+<!-- TWO-COLUMN WORK AREA -->
+<div id="work-area" style="display:none;padding:16px 20px;gap:16px;align-items:start;" class="wl-anim">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+
+    <!-- ═══ LEFT: Log Work ═══ -->
+    <div>
+      <div style="font-size:13px;font-weight:900;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;">
+        📝 <span class="lang-en">Log Work</span><span class="lang-hi" style="display:none;">काम दर्ज करें</span>
+      </div>
+
+      <!-- Work type tabs — small and clean -->
+      <div id="work-tabs" style="display:flex;gap:6px;margin-bottom:12px;background:#f1f5f9;border-radius:12px;padding:4px;">
+        <button id="tab-measure" onclick="setTab('measure')"
+          style="flex:1;padding:8px 6px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:800;color:var(--text-muted);background:transparent;display:flex;align-items:center;justify-content:center;gap:4px;transition:all 0.15s;">
+          📐 <span class="lang-en">Measure</span><span class="lang-hi" style="display:none;">नाप</span>
+        </button>
+        <button id="tab-cut" onclick="setTab('cut')"
+          style="flex:1;padding:8px 6px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:800;color:var(--text-muted);background:transparent;display:flex;align-items:center;justify-content:center;gap:4px;transition:all 0.15s;">
+          ✂️ <span class="lang-en">Cutting</span><span class="lang-hi" style="display:none;">कटाई</span>
+        </button>
+        <button id="tab-stitch" onclick="setTab('stitch')"
+          style="flex:1;padding:8px 6px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:800;color:var(--text-muted);background:transparent;display:flex;align-items:center;justify-content:center;gap:4px;transition:all 0.15s;">
+          🪡 <span class="lang-en">Stitching</span><span class="lang-hi" style="display:none;">सिलाई</span>
+        </button>
+      </div>
+
+      <!-- Log form card -->
+      <div style="background:#fff;border-radius:16px;border:1.5px solid var(--border);overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.05);">
+        <div id="form-header" style="padding:12px 16px;display:flex;align-items:center;gap:10px;">
+          <span id="form-icon" style="font-size:22px;">📐</span>
+          <div>
+            <div id="form-title" style="font-size:15px;font-weight:900;color:#fff;"></div>
+            <div id="form-sub" style="font-size:11px;color:rgba(255,255,255,0.75);"></div>
+          </div>
+        </div>
+
+        <div style="padding:14px;display:flex;flex-direction:column;gap:12px;">
+          <!-- Order code -->
+          <div>
+            <label style="font-size:10px;font-weight:800;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:5px;"><span class="lang-en">Order Code *</span><span class="lang-hi" style="display:none;">ऑर्डर कोड *</span></label>
+            <div style="display:flex;gap:6px;">
+              <input type="text" id="wl-code" placeholder="3605"
+                oninput="debounceCode()" onkeydown="if(event.key==='Enter')lookupCode()"
+                style="flex:1;font-size:26px;font-weight:900;padding:10px 14px;border:2px solid var(--border);border-radius:10px;text-align:center;letter-spacing:2px;background:#f8fafc;">
+              <button onclick="lookupCode()" style="padding:0 14px;background:#4f46e5;color:#fff;border:none;border-radius:10px;font-size:18px;cursor:pointer;">→</button>
+            </div>
+            <div id="wl-lookup-result" style="margin-top:6px;min-height:18px;"></div>
+          </div>
+
+          <!-- Garment (stitch only) -->
+          <div id="garment-row" style="display:none;">
+            <label style="font-size:10px;font-weight:800;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:5px;"><span class="lang-en">Garment *</span><span class="lang-hi" style="display:none;">कपड़ा *</span></label>
+            <select id="wl-garment" onchange="onGarmentChange()"
+              style="width:100%;font-size:14px;padding:10px 12px;border:2px solid var(--border);border-radius:10px;background:#fff;">
+              <option value="">-- चुनें --</option>
+            </select>
+            <div id="wl-progress" style="display:none;background:#f0fdf4;border-radius:8px;padding:8px 12px;margin-top:6px;">
+              <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:4px;">
+                <span id="wl-prog-label"></span><span id="wl-prog-text" style="color:#16a34a;"></span>
+              </div>
+              <div style="background:#d1fae5;border-radius:8px;height:7px;overflow:hidden;">
+                <div id="wl-prog-bar" style="height:100%;background:#16a34a;border-radius:8px;transition:width 0.3s;width:0%;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Qty -->
+          <div id="qty-row" style="display:none;">
+            <label style="font-size:10px;font-weight:800;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:5px;"><span class="lang-en">Qty Done *</span><span class="lang-hi" style="display:none;">कितने कपड़े *</span></label>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <button onclick="changeQty(-1)" style="width:44px;height:44px;border-radius:10px;border:2px solid var(--border);background:#f1f5f9;font-size:22px;font-weight:700;cursor:pointer;">−</button>
+              <input type="number" id="wl-qty" value="1" min="1"
+                style="flex:1;font-size:30px;font-weight:900;padding:8px;border:2px solid var(--border);border-radius:10px;text-align:center;background:#f8fafc;">
+              <button onclick="changeQty(1)" style="width:44px;height:44px;border-radius:10px;border:2px solid var(--border);background:#f1f5f9;font-size:22px;font-weight:700;cursor:pointer;">+</button>
+            </div>
+          </div>
+
+          <!-- Submit -->
+          <button id="wl-submit" onclick="submitLog()" style="display:none;width:100%;padding:14px;border:none;border-radius:12px;font-size:15px;font-weight:900;cursor:pointer;color:#fff;">
+            ✅ <span class="lang-en">Log Work</span><span class="lang-hi" style="display:none;">काम दर्ज करें</span>
+          </button>
+          <button id="wl-reset-btn" onclick="resetForm()" style="display:none;width:100%;padding:8px;background:none;border:1.5px solid var(--border);border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;color:var(--text-muted);">
+            ↺ <span class="lang-en">Reset</span><span class="lang-hi" style="display:none;">रीसेट</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ RIGHT: Stats & Orders ═══ -->
+    <div id="emp-stats-col">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div style="font-size:13px;font-weight:900;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;">
+          📊 <span id="stats-emp-name" style="color:var(--text-primary);">—</span>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button id="btn-week" onclick="setPeriod('week')"
+            style="padding:5px 12px;border-radius:20px;border:1.5px solid #4f46e5;background:#4f46e5;color:#fff;font-size:11px;font-weight:700;cursor:pointer;">
+            <span class="lang-en">Week</span><span class="lang-hi" style="display:none;">हफ्ता</span>
+          </button>
+          <button id="btn-month" onclick="setPeriod('month')"
+            style="padding:5px 12px;border-radius:20px;border:1.5px solid var(--border);background:#fff;color:var(--text-muted);font-size:11px;font-weight:700;cursor:pointer;">
+            <span class="lang-en">Month</span><span class="lang-hi" style="display:none;">महीना</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Stats summary row -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
+        <div style="background:#eef2ff;border-radius:12px;padding:12px;text-align:center;border:1.5px solid #c7d2fe;">
+          <div style="font-size:10px;font-weight:700;color:#6366f1;text-transform:uppercase;margin-bottom:3px;"><span class="lang-en">Pieces</span><span class="lang-hi" style="display:none;">कपड़े</span></div>
+          <div style="font-size:32px;font-weight:900;color:#4338ca;line-height:1;" id="stat-pieces">0</div>
+        </div>
+        <div style="background:#f0fdf4;border-radius:12px;padding:12px;text-align:center;border:1.5px solid #86efac;">
+          <div style="font-size:10px;font-weight:700;color:#16a34a;text-transform:uppercase;margin-bottom:3px;"><span class="lang-en">Orders</span><span class="lang-hi" style="display:none;">ऑर्डर</span></div>
+          <div style="font-size:32px;font-weight:900;color:#15803d;line-height:1;" id="stat-orders">0</div>
+        </div>
+        <div style="background:#fffbeb;border-radius:12px;padding:12px;text-align:center;border:1.5px solid #fde68a;">
+          <div style="font-size:10px;font-weight:700;color:#d97706;text-transform:uppercase;margin-bottom:3px;"><span class="lang-en">Earned</span><span class="lang-hi" style="display:none;">कमाई</span></div>
+          <div style="font-size:26px;font-weight:900;color:#b45309;line-height:1;" id="stat-earnings">₹0</div>
+        </div>
+      </div>
+
+      <!-- Daily breakdown table -->
+      <div style="background:#fff;border-radius:14px;border:1.5px solid var(--border);overflow:hidden;max-height:480px;overflow-y:auto;">
+        <div style="padding:10px 14px;background:#f8fafc;border-bottom:1px solid var(--border);font-size:12px;font-weight:800;color:var(--text-muted);">
+          <span class="lang-en">Work History</span><span class="lang-hi" style="display:none;">काम का इतिहास</span>
+        </div>
+        <div id="emp-daily-breakdown">
+          <div style="padding:36px;text-align:center;color:var(--text-muted);font-size:13px;">
+            <div style="font-size:32px;margin-bottom:8px;">📋</div>
+            <span class="lang-en">Select employee to see history</span><span class="lang-hi" style="display:none;">कर्मचारी चुनें</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end grid -->
+</div><!-- end work-area -->
+
+{% endblock %}
+{% block extra_js %}
+<script>
+var SEL_EMP_ID   = null;
+var SEL_EMP_NAME = "";
+var SEL_SKILLS   = "stitch";
+var CURRENT_TAB  = "stitch";
+var PERIOD       = "week";
+var orderData    = null;
+var codeTimer    = null;
+
+var TAB_CONFIG = {
+  measure: { bg:"#4f46e5", icon:"📐", en:"Measurement", hi:"नाप",  sub_en:"₹{{ work_rates.measure }}/piece", sub_hi:"₹{{ work_rates.measure }}/कपड़ा", rate: {{ work_rates.measure }} },
+  cut:     { bg:"#ea580c", icon:"✂️", en:"Cutting",    hi:"कटाई", sub_en:"₹{{ work_rates.cutting }}/piece", sub_hi:"₹{{ work_rates.cutting }}/कपड़ा", rate: {{ work_rates.cutting }} },
+  stitch:  { bg:"#16a34a", icon:"🪡", en:"Stitching",  hi:"सिलाई",sub_en:"Rate as per garment", sub_hi:"कपड़े के अनुसार दर", rate: null }
+};
+
+function isHindi() { return typeof currentLang !== "undefined" && currentLang === "hi"; }
+
+function selectEmployee(id, name, skills) {
+  SEL_EMP_ID   = id;
+  SEL_EMP_NAME = name;
+  SEL_SKILLS   = skills || "stitch";
+
+  // Highlight selected pill
+  document.querySelectorAll(".emp-btn-card").forEach(function(b) { b.classList.remove("active"); });
+  var sel = document.getElementById("emp-btn-" + id);
+  if (sel) sel.classList.add("active");
+
+  // Show/hide measure+cut tabs
+  var showAll = (skills === "all");
+  document.getElementById("tab-measure").style.display = showAll ? "" : "none";
+  document.getElementById("tab-cut").style.display     = showAll ? "" : "none";
+
+  document.getElementById("stats-emp-name").textContent = name;
+  document.getElementById("wl-placeholder").style.display = "none";
+  document.getElementById("work-area").style.display = "grid";
+
+  setTab(showAll ? "measure" : "stitch");
+  loadStats();
+}
+
+function setTab(tab) {
+  CURRENT_TAB = tab;
+  var cfg = TAB_CONFIG[tab];
+
+  // Active tab style
+  ["measure","cut","stitch"].forEach(function(t) {
+    var btn = document.getElementById("tab-" + t);
+    if (!btn) return;
+    btn.style.background = (t===tab) ? "#fff" : "transparent";
+    btn.style.color      = (t===tab) ? "#111" : "var(--text-muted)";
+    btn.style.boxShadow  = (t===tab) ? "0 1px 4px rgba(0,0,0,0.1)" : "none";
+  });
+
+  // Form header
+  var fh = document.getElementById("form-header");
+  fh.style.background = "linear-gradient(135deg," + cfg.bg + "," + cfg.bg + "cc)";
+  document.getElementById("form-icon").textContent  = cfg.icon;
+  document.getElementById("form-title").textContent = isHindi() ? cfg.hi : cfg.en;
+  document.getElementById("form-sub").textContent   = isHindi() ? cfg.sub_hi : cfg.sub_en;
+
+  var sb = document.getElementById("wl-submit");
+  if (sb) sb.style.background = cfg.bg;
+
+  document.getElementById("garment-row").style.display = (tab==="stitch") ? "block" : "none";
+  resetForm();
+}
+
+function debounceCode() {
+  clearTimeout(codeTimer);
+  var v = document.getElementById("wl-code").value.trim();
+  if (v.length >= 3) codeTimer = setTimeout(lookupCode, 420);
+}
+
+function lookupCode() {
+  var code = document.getElementById("wl-code").value.trim().replace("#","");
+  if (!code) return;
+  var res = document.getElementById("wl-lookup-result");
+  res.innerHTML = '<span style="font-size:12px;color:var(--text-muted);">खोज रहे हैं...</span>';
+  fetch("/api/work-log/order-info?code=" + encodeURIComponent(code))
+    .then(function(r){ return r.json(); }).then(function(data) {
+      if (data.error) {
+        res.innerHTML = '<div style="background:#fee2e2;color:#991b1b;border-radius:8px;padding:7px 10px;font-size:12px;font-weight:700;">❌ ऑर्डर नहीं मिला</div>';
+        hideQtyAndSubmit(); return;
+      }
+      orderData = data;
+      res.innerHTML = '<div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:8px;padding:8px 12px;">'
+        + '<span style="font-size:13px;font-weight:900;color:#16a34a;">✓ #'+code+' — '+data.customer_name+'</span>'
+        + '<span style="font-size:11px;color:var(--text-muted);margin-left:8px;">'+data.delivery_date_fmt+(data.is_urgent?' 🔥':'')+'</span></div>';
+
+      if (CURRENT_TAB === "stitch") {
+        var sel = document.getElementById("wl-garment");
+        sel.innerHTML = '<option value="">-- कपड़ा चुनें --</option>';
+        (data.items||[]).forEach(function(item) {
+          var rem = Math.max(0, item.required - item.logged);
+          var opt = document.createElement("option");
+          opt.value = item.garment_type;
+          opt.dataset.req    = item.required;
+          opt.dataset.logged = item.logged;
+          opt.disabled       = (rem===0);
+          opt.textContent    = item.garment_type + " — " + item.logged + "/" + item.required + (rem>0?" ("+rem+" बाकी)":" ✅");
+          sel.appendChild(opt);
+        });
+      } else {
+        showQtyAndSubmit();
+      }
+    });
+}
+
+function onGarmentChange() {
+  var sel  = document.getElementById("wl-garment");
+  var opt  = sel.options[sel.selectedIndex];
+  var req  = parseInt(opt.dataset.req||0);
+  var done = parseInt(opt.dataset.logged||0);
+  if (!sel.value) { hideQtyAndSubmit(); document.getElementById("wl-progress").style.display="none"; return; }
+  var rem = Math.max(0, req-done);
+  document.getElementById("wl-qty").value = rem||1;
+  document.getElementById("wl-qty").max   = rem||req;
+  var pct = Math.min(100, req>0?Math.round((done/req)*100):0);
+  document.getElementById("wl-prog-bar").style.width   = pct+"%";
+  document.getElementById("wl-prog-label").textContent = sel.value;
+  document.getElementById("wl-prog-text").textContent  = done+"/"+req+" हो गया";
+  document.getElementById("wl-progress").style.display = "block";
+  showQtyAndSubmit();
+}
+
+function showQtyAndSubmit() {
+  document.getElementById("qty-row").style.display      = "block";
+  document.getElementById("wl-submit").style.display    = "block";
+  document.getElementById("wl-reset-btn").style.display = "block";
+}
+function hideQtyAndSubmit() {
+  document.getElementById("qty-row").style.display      = "none";
+  document.getElementById("wl-submit").style.display    = "none";
+  document.getElementById("wl-reset-btn").style.display = "none";
+  document.getElementById("wl-progress").style.display  = "none";
+}
+function changeQty(d) {
+  var inp = document.getElementById("wl-qty");
+  inp.value = Math.max(1,(parseInt(inp.value)||1)+d);
+}
+
+function submitLog() {
+  if (!SEL_EMP_ID) { showToast("कर्मचारी चुनें","warning"); return; }
+  var code = document.getElementById("wl-code").value.trim().replace("#","");
+  var qty  = parseInt(document.getElementById("wl-qty").value)||0;
+  if (!code||qty<1) { showToast("ऑर्डर कोड और संख्या दर्ज करें","warning"); return; }
+  var isStitch = (CURRENT_TAB==="stitch");
+  var gt = isStitch ? document.getElementById("wl-garment").value : "";
+  if (isStitch && !gt) { showToast("कपड़ा चुनें","warning"); return; }
+  var cfg = TAB_CONFIG[CURRENT_TAB];
+  var btn = document.getElementById("wl-submit");
+  btn.disabled=true; btn.textContent="दर्ज हो रहा है...";
+  fetch("/api/work-log/add",{
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({
+      order_code:code, garment_type:isStitch?gt:(cfg.en+" (Order #"+code+")"),
+      qty_done:qty, employee_id:SEL_EMP_ID, employee_name:SEL_EMP_NAME,
+      notes:cfg.en, rate_override:isStitch?null:cfg.rate, is_non_stitch:!isStitch
+    })
+  }).then(function(r){return r.json();}).then(function(d){
+    btn.disabled=false;
+    btn.innerHTML='✅ <span class="lang-en">Log Work</span><span class="lang-hi" style="display:none;">काम दर्ज करें</span>';
+    applyLang();
+    if(d.ok){ showToast("✅ "+qty+" कपड़े दर्ज हुए","success"); resetForm(); setTimeout(loadStats,400); }
+    else showToast("Error: "+d.error,"error");
+  });
+}
+
+function resetForm() {
+  orderData=null;
+  document.getElementById("wl-code").value="";
+  document.getElementById("wl-qty").value="1";
+  document.getElementById("wl-lookup-result").innerHTML="";
+  var wg=document.getElementById("wl-garment"); if(wg) wg.innerHTML='<option value="">-- चुनें --</option>';
+  hideQtyAndSubmit();
+}
+
+function setPeriod(p) {
+  PERIOD=p;
+  document.getElementById("btn-week").style.background  = p==="week"  ?"#4f46e5":"#fff";
+  document.getElementById("btn-week").style.color       = p==="week"  ?"#fff":"var(--text-muted)";
+  document.getElementById("btn-month").style.background = p==="month" ?"#4f46e5":"#fff";
+  document.getElementById("btn-month").style.color      = p==="month" ?"#fff":"var(--text-muted)";
+  loadStats();
+}
+
+function loadStats() {
+  if (!SEL_EMP_ID) return;
+  fetch("/api/work-log/employee-stats?emp_id="+SEL_EMP_ID+"&period="+PERIOD)
+    .then(function(r){return r.json();}).then(function(d){ if(!d.error) renderStats(d); });
+}
+
+function renderStats(data) {
+  document.getElementById("stat-pieces").textContent   = data.total_pieces||0;
+  document.getElementById("stat-orders").textContent   = data.total_orders||0;
+  document.getElementById("stat-earnings").textContent = "₹"+(data.total_earnings||0);
+  var box = document.getElementById("emp-daily-breakdown");
+  if (!data.daily||!data.daily.length) {
+    box.innerHTML='<div style="padding:36px;text-align:center;color:var(--text-muted);font-size:13px;">इस अवधि में कोई काम नहीं</div>';
+    return;
+  }
+  box.innerHTML = data.daily.map(function(day){
+    return '<div style="border-bottom:1px solid var(--border);">'
+      +'<div style="display:flex;justify-content:space-between;padding:8px 14px;background:#f9fafb;">'
+      +'<span style="font-size:13px;font-weight:800;">'+day.date_fmt+'</span>'
+      +'<span style="font-size:12px;font-weight:900;color:#4f46e5;">'+day.total_qty+' piece · <span style="color:#16a34a;">₹'+day.day_earnings+'</span></span>'
+      +'</div>'
+      +day.entries.map(function(e){
+        return '<div style="display:flex;align-items:center;gap:10px;padding:9px 14px 9px 22px;">'
+          +'<div style="flex:1;">'
+          +'<span style="font-size:13px;font-weight:900;color:#4f46e5;">#'+e.order_code+'</span>'
+          +'<span style="font-size:12px;margin-left:8px;font-weight:700;color:var(--text-secondary);">'+e.garment_type+'</span>'
+          +'</div>'
+          +'<div style="text-align:right;">'
+          +'<div style="font-size:20px;font-weight:900;">'+e.qty_done+'</div>'
+          +(e.earnings>0?'<div style="font-size:11px;color:#16a34a;font-weight:800;">₹'+e.earnings+'</div>':'')
+          +'</div></div>';
+      }).join("")+'</div>';
+  }).join("");
+}
+</script>
+{% endblock %}

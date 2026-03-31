@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Finance — Owner{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><h1>📊 <span data-t="finance">Finance Overview</span></h1><div class="header-sub">Full financial report</div></div>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <a href="/owner/dashboard" class="btn btn-ghost btn-sm">← Dashboard</a>
+    <button class="menu-toggle" onclick="openSidebar()">☰</button>
+  </div>
+</div>
+<div class="page-body" style="padding:16px 24px;">
+
+  <!-- Date filter -->
+  <div style="background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:12px 18px;margin-bottom:18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+    <span style="font-size:13px;font-weight:700;color:var(--text-muted);">Period:</span>
+    <input type="date" id="from-date" value="{{ from_date }}" style="padding:6px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;">
+    <span style="color:var(--text-muted);">to</span>
+    <input type="date" id="to-date" value="{{ to_date }}" style="padding:6px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;">
+    <button onclick="applyFilter()" class="btn btn-primary btn-sm">Apply</button>
+    <div style="display:flex;gap:6px;margin-left:auto;">
+      <button onclick="setPreset('today')" class="btn btn-ghost btn-sm">Today</button>
+      <button onclick="setPreset('week')" class="btn btn-ghost btn-sm">This Week</button>
+      <button onclick="setPreset('month')" class="btn btn-ghost btn-sm">This Month</button>
+      <button onclick="setPreset('year')" class="btn btn-ghost btn-sm">This Year</button>
+    </div>
+  </div>
+
+  <!-- Summary cards -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;">
+    <div style="background:linear-gradient(135deg,#059669,#047857);border-radius:14px;padding:18px 20px;color:#fff;">
+      <div style="font-size:11px;font-weight:700;opacity:0.8;text-transform:uppercase;margin-bottom:6px;">Total Income</div>
+      <div style="font-size:28px;font-weight:900;">₹{{ stats.total_income }}</div>
+      <div style="font-size:11px;opacity:0.75;margin-top:4px;">Cash ₹{{ stats.cash_income }} · UPI ₹{{ stats.upi_income }}</div>
+    </div>
+    <div style="background:linear-gradient(135deg,#ef4444,#dc2626);border-radius:14px;padding:18px 20px;color:#fff;">
+      <div style="font-size:11px;font-weight:700;opacity:0.8;text-transform:uppercase;margin-bottom:6px;">Total Expense</div>
+      <div style="font-size:28px;font-weight:900;">₹{{ stats.total_expense }}</div>
+      <div style="font-size:11px;opacity:0.75;margin-top:4px;">{{ stats.expense_count }} entries</div>
+    </div>
+    <div style="background:linear-gradient(135deg,#6366f1,#4f46e5);border-radius:14px;padding:18px 20px;color:#fff;">
+      <div style="font-size:11px;font-weight:700;opacity:0.8;text-transform:uppercase;margin-bottom:6px;">Net Profit</div>
+      <div style="font-size:28px;font-weight:900;">₹{{ stats.net }}</div>
+    </div>
+    <div style="background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:14px;padding:18px 20px;color:#fff;">
+      <div style="font-size:11px;font-weight:700;opacity:0.8;text-transform:uppercase;margin-bottom:6px;">Pending Due</div>
+      <div style="font-size:28px;font-weight:900;">₹{{ stats.pending_due }}</div>
+      <div style="font-size:11px;opacity:0.75;margin-top:4px;">From active orders</div>
+    </div>
+  </div>
+
+  <!-- Transactions -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Transactions</span>
+      <span style="font-size:12px;font-weight:700;background:var(--accent-light);color:var(--accent);padding:3px 10px;border-radius:10px;">{{ transactions|length }}</span>
+    </div>
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead>
+          <tr style="background:#f8fafc;border-bottom:2px solid var(--border);">
+            <th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Date & Time</th>
+            <th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Type</th>
+            <th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Category</th>
+            <th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Note</th>
+            <th style="padding:10px 16px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Mode</th>
+            <th style="padding:10px 16px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">By</th>
+            <th style="padding:10px 16px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for tx in transactions %}
+          <tr style="border-bottom:1px solid var(--border);"
+            onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
+            <td style="padding:11px 16px;"><div style="font-size:12px;font-weight:700;">{{ tx.tx_date_fmt }}</div><div style="font-size:10px;color:var(--text-muted);">{{ tx.tx_time }}</div></td>
+            <td style="padding:11px 16px;"><span style="font-size:11px;font-weight:800;padding:2px 9px;border-radius:8px;background:{% if tx.tx_type=='income' %}#d1fae5;color:#065f46{% else %}#fee2e2;color:#dc2626{% endif %};">{% if tx.tx_type=='income' %}↑{% else %}↓{% endif %} {{ tx.tx_type|title }}</span></td>
+            <td style="padding:11px 16px;font-weight:600;">{{ tx.category|title }}</td>
+            <td style="padding:11px 16px;color:var(--text-muted);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ tx.note or '—' }}{% if tx.order_code %} <span style="color:var(--accent);font-size:10px;font-weight:700;">#{{ tx.order_code }}</span>{% endif %}</td>
+            <td style="padding:11px 16px;text-align:center;"><span style="font-size:11px;font-weight:700;background:#f1f5f9;padding:2px 8px;border-radius:7px;">{{ tx.mode|upper if tx.mode else '—' }}</span></td>
+            <td style="padding:11px 16px;text-align:center;font-size:11px;color:var(--text-muted);">{{ tx.created_by }}</td>
+            <td style="padding:11px 16px;text-align:right;font-size:15px;font-weight:900;color:{% if tx.tx_type=='income' %}var(--success){% else %}var(--danger){% endif %};">{% if tx.tx_type=='income' %}+{% else %}−{% endif %}₹{{ tx.amount|int }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="7" style="padding:48px;text-align:center;color:var(--text-muted);"><div style="font-size:28px;margin-bottom:8px;">💸</div><div style="font-weight:700;">No transactions in this period</div></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+function applyFilter() {
+  const f = document.getElementById("from-date").value;
+  const t = document.getElementById("to-date").value;
+  window.location.href = "/owner/finance?from=" + f + "&to=" + t;
+}
+function setPreset(p) {
+  const today = new Date();
+  let from, to = today.toISOString().split("T")[0];
+  if (p==="today") from = to;
+  else if (p==="week") { const d=new Date(today); d.setDate(d.getDate()-d.getDay()+1); from=d.toISOString().split("T")[0]; }
+  else if (p==="month") from = to.slice(0,7)+"-01";
+  else if (p==="year") from = to.slice(0,4)+"-01-01";
+  document.getElementById("from-date").value = from;
+  document.getElementById("to-date").value   = to;
+  applyFilter();
+}
+const SECS=5*60;let last=Date.now();
+["click","keydown","mousemove","touchstart"].forEach(ev=>document.addEventListener(ev,()=>{last=Date.now();},{passive:true}));
+setInterval(()=>{if(Math.floor((Date.now()-last)/1000)>=SECS)window.location.href="/owner/login?expired=1";},5000);
+window.addEventListener("pageshow",function(e){if(e.persisted){fetch("/owner/logout",{method:"POST",keepalive:true}).finally(()=>{window.location.href="/owner/login";})}});
+</script>
+{% endblock %}

@@ -1,0 +1,326 @@
+{% extends "base.html" %}
+{% block title %}पिकअप व डिलीवरी — Uttam Tailors{% endblock %}
+{% block extra_css %}
+<style>
+@keyframes slideUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+.pickup-card { animation: slideUp 0.25s ease-out; }
+</style>
+{% endblock %}
+{% block content %}
+
+<!-- Header -->
+<div style="background:linear-gradient(135deg,#1e1b4b,#4f46e5);padding:18px 24px;display:flex;align-items:center;justify-content:space-between;">
+  <div>
+    <h1 style="font-size:20px;font-weight:900;color:#fff;margin:0;">🚚 <span class="lang-en">Pickup & Delivery</span><span class="lang-hi" style="display:none;">पिकअप व डिलीवरी</span></h1>
+    <div style="font-size:12px;color:rgba(255,255,255,0.6);margin-top:2px;"><span class="lang-en">Search → Collect → Deliver</span><span class="lang-hi" style="display:none;">खोजें → पैसे लें → डिलीवर करें</span></div>
+  </div>
+  <div style="display:flex;gap:8px;">
+    <a href="/" style="background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.3);border-radius:10px;padding:7px 14px;font-size:13px;font-weight:700;text-decoration:none;">← <span class="lang-en">Back</span><span class="lang-hi" style="display:none;">वापस</span></a>
+    <button class="menu-toggle" onclick="openSidebar()" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:10px;padding:7px 12px;cursor:pointer;">☰</button>
+  </div>
+</div>
+
+<!-- Search -->
+<div style="background:linear-gradient(135deg,#312e81,#4f46e5);padding:20px 24px 24px;">
+  <div style="max-width:680px;margin:0 auto;">
+    <div style="display:flex;gap:10px;">
+      <input type="text" id="pickup-search"
+        placeholder="Order code, name or mobile..."
+        oninput="debounceSearch()" onkeydown="if(event.key==='Enter')doSearch()"
+        style="flex:1;font-size:18px;font-weight:700;padding:14px 18px;border:none;border-radius:14px;outline:none;letter-spacing:1px;box-shadow:0 4px 20px rgba(0,0,0,0.2);"
+        autofocus>
+      <button onclick="doSearch()" style="padding:0 24px;background:#fff;color:#4f46e5;border:none;border-radius:14px;font-size:16px;font-weight:900;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,0.2);">🔍</button>
+    </div>
+    <div id="search-results" style="margin-top:10px;"></div>
+  </div>
+</div>
+
+<!-- Main content -->
+<div style="padding:16px 20px;">
+  <div id="delivery-card" style="display:none;max-width:820px;margin:0 auto;" class="pickup-card">
+
+    <!-- Order header -->
+    <div style="background:linear-gradient(135deg,#4f46e5,#6366f1);border-radius:20px;padding:20px 24px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;box-shadow:0 8px 30px rgba(79,70,229,0.3);">
+      <div>
+        <div style="font-size:38px;font-weight:900;color:#fff;letter-spacing:3px;line-height:1;" id="dc-code">—</div>
+        <div style="font-size:17px;font-weight:800;color:rgba(255,255,255,0.95);margin-top:4px;" id="dc-customer">—</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.6);margin-top:2px;" id="dc-meta">—</div>
+      </div>
+      <div id="dc-status-badge" style="border-radius:12px;padding:8px 20px;font-size:14px;font-weight:900;color:#fff;background:rgba(255,255,255,0.2);border:2px solid rgba(255,255,255,0.35);">—</div>
+    </div>
+
+    <!-- 2-col: garments + images -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div style="background:#fff;border-radius:16px;padding:16px;border:1.5px solid var(--border);">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;"><span class="lang-en">Garments</span><span class="lang-hi" style="display:none;">कपड़े</span></div>
+        <div id="dc-garments" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+      </div>
+      <div style="background:#fffbeb;border-radius:16px;padding:16px;border:1.5px solid #fde68a;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:#92400e;margin-bottom:8px;">📷 <span class="lang-en">Cloth Photos</span><span class="lang-hi" style="display:none;">कपड़े की फोटो</span></div>
+        <div id="dc-images" style="display:flex;flex-wrap:wrap;gap:6px;min-height:20px;">
+          <div id="dc-images-placeholder" style="font-size:12px;color:var(--text-muted);font-style:italic;">Loading...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payment summary — 3 cards -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;">
+      <div style="background:#fff;border-radius:14px;padding:14px;text-align:center;border:1.5px solid var(--border);">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px;"><span class="lang-en">Total Bill</span><span class="lang-hi" style="display:none;">कुल बिल</span></div>
+        <div style="font-size:24px;font-weight:900;" id="dc-total">₹0</div>
+      </div>
+      <div style="background:#d1fae5;border-radius:14px;padding:14px;text-align:center;border:1.5px solid #6ee7b7;">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:#065f46;margin-bottom:4px;"><span class="lang-en">Advance Paid</span><span class="lang-hi" style="display:none;">अग्रिम राशि</span></div>
+        <div style="font-size:24px;font-weight:900;color:#059669;" id="dc-advance">₹0</div>
+      </div>
+      <div style="background:#fee2e2;border-radius:14px;padding:14px;text-align:center;border:1.5px solid #fca5a5;">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:#991b1b;margin-bottom:4px;"><span class="lang-en">Remaining Due</span><span class="lang-hi" style="display:none;">बाकी</span></div>
+        <div style="font-size:28px;font-weight:900;color:#dc2626;" id="dc-remaining">₹0</div>
+      </div>
+    </div>
+
+    <!-- Collect Payment section -->
+    <div id="payment-section" style="background:#fff;border-radius:18px;padding:20px;border:2px solid #e0e7ff;margin-bottom:12px;box-shadow:0 4px 20px rgba(79,70,229,0.08);">
+      <div style="font-size:15px;font-weight:900;margin-bottom:14px;">💰 <span class="lang-en">Collect Payment</span><span class="lang-hi" style="display:none;">पैसे लें</span></div>
+
+      <!-- Amount + mode row -->
+      <div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:end;margin-bottom:14px;">
+        <div>
+          <label style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;display:block;"><span class="lang-en">Amount (₹)</span><span class="lang-hi" style="display:none;">रकम (₹)</span></label>
+          <input type="number" id="dc-amount" placeholder="0" min="0"
+            style="width:100%;font-size:36px;font-weight:900;padding:12px 16px;border:2.5px solid var(--border);border-radius:14px;text-align:center;">
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;display:block;"><span class="lang-en">Mode</span><span class="lang-hi" style="display:none;">तरीका</span></label>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <button id="mode-cash" onclick="setPayMode('cash')"
+              style="padding:11px 18px;border-radius:12px;border:2px solid #16a34a;background:#16a34a;color:#fff;font-size:14px;font-weight:800;cursor:pointer;white-space:nowrap;">
+              💵 <span class="lang-en">Cash</span><span class="lang-hi" style="display:none;">नकद</span>
+            </button>
+            <button id="mode-upi" onclick="setPayMode('upi')"
+              style="padding:11px 18px;border-radius:12px;border:2px solid var(--border);background:#fff;color:var(--text-muted);font-size:14px;font-weight:800;cursor:pointer;">
+              📱 UPI
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- UPI QR panel -->
+      <div id="upi-panel" style="display:none;background:linear-gradient(135deg,#eef2ff,#f5f3ff);border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;border:1.5px solid #c7d2fe;">
+        <div style="font-size:13px;font-weight:800;color:#4338ca;margin-bottom:10px;">📱 UPI से भुगतान लें</div>
+        <img src="{{ upi_qr }}" style="max-width:180px;border-radius:12px;border:2px solid #a5b4fc;box-shadow:0 4px 16px rgba(99,102,241,0.2);" alt="UPI QR">
+        <div style="font-size:28px;font-weight:900;color:#4338ca;margin-top:10px;">₹<span id="upi-amt">0</span></div>
+      </div>
+
+      <!-- Receiver -->
+      <div style="background:#f8fafc;border:1.5px solid var(--border);border-radius:12px;padding:12px;margin-bottom:14px;">
+        <div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:8px;">👤 <span class="lang-en">Receiver (optional)</span><span class="lang-hi" style="display:none;">लेने वाला (वैकल्पिक)</span></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <input type="text" id="receiver-name" placeholder="Name..." style="padding:9px 12px;font-size:14px;border:1.5px solid var(--border);border-radius:10px;">
+          <input type="text" id="receiver-mobile" maxlength="10" placeholder="Mobile..." style="padding:9px 12px;font-size:14px;border:1.5px solid var(--border);border-radius:10px;">
+        </div>
+      </div>
+
+      <button onclick="collectAndDeliver()" id="collect-btn"
+        style="width:100%;padding:16px;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;border-radius:14px;font-size:17px;font-weight:900;cursor:pointer;box-shadow:0 4px 20px rgba(22,163,74,0.3);">
+        ✅ <span class="lang-en">Collect & Mark Delivered</span><span class="lang-hi" style="display:none;">पैसे लो और डिलीवर करो</span>
+      </button>
+    </div>
+
+    <!-- Already delivered -->
+    <div id="delivered-section" style="display:none;background:linear-gradient(135deg,#d1fae5,#a7f3d0);border:2px solid #6ee7b7;border-radius:18px;padding:20px;margin-bottom:12px;">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;">
+        <span style="font-size:44px;">✅</span>
+        <div>
+          <div style="font-size:17px;font-weight:900;color:#065f46;"><span class="lang-en">Already Delivered</span><span class="lang-hi" style="display:none;">पहले डिलीवर हो चुका</span></div>
+          <div style="font-size:13px;color:#059669;" id="delivered-date-text"></div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <button onclick="sendDeliveryWA('en')" style="padding:12px;background:#25D366;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;">💬 WhatsApp — English</button>
+        <button onclick="sendDeliveryWA('hi')" style="padding:12px;background:#075E54;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;">💬 WhatsApp — हिंदी</button>
+      </div>
+    </div>
+
+    <!-- Pending warning -->
+    <div id="pending-section" style="display:none;background:#fff7ed;border:2px solid #fed7aa;border-radius:16px;padding:16px;text-align:center;margin-bottom:12px;">
+      <div style="font-size:32px;margin-bottom:6px;">⏳</div>
+      <div style="font-size:15px;font-weight:800;color:#92400e;"><span class="lang-en">Order still pending — work in progress</span><span class="lang-hi" style="display:none;">ऑर्डर अभी तैयार नहीं</span></div>
+    </div>
+
+    <button onclick="searchAnother()" style="width:100%;padding:11px;background:none;border:1.5px solid var(--border);border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;color:var(--text-muted);">
+      ← <span class="lang-en">Search Another Order</span><span class="lang-hi" style="display:none;">दूसरा ऑर्डर खोजें</span>
+    </button>
+  </div>
+</div>
+
+<!-- Image zoom overlay -->
+<div id="img-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;align-items:center;justify-content:center;" onclick="this.style.display='none'">
+  <img id="overlay-img" style="max-width:90%;max-height:88%;border-radius:12px;object-fit:contain;">
+  <button style="position:absolute;top:20px;right:22px;background:rgba(255,255,255,0.15);border:none;color:#fff;width:44px;height:44px;border-radius:50%;font-size:22px;cursor:pointer;" onclick="document.getElementById('img-overlay').style.display='none'">✕</button>
+</div>
+
+{% endblock %}
+{% block extra_js %}
+<script>
+var currentCode  = "";
+var currentOrder = {};
+var payMode      = "cash";
+var searchTimer  = null;
+
+function debounceSearch() {
+  clearTimeout(searchTimer);
+  var q = document.getElementById("pickup-search").value.trim();
+  if (q.length >= 2) searchTimer = setTimeout(doSearch, 400);
+}
+
+function doSearch() {
+  var q = document.getElementById("pickup-search").value.trim();
+  if (!q) return;
+  var res = document.getElementById("search-results");
+  res.innerHTML = '<div style="color:rgba(255,255,255,0.7);font-size:14px;padding:6px 0;">खोज रहे हैं...</div>';
+  fetch("/api/pickup/search?q=" + encodeURIComponent(q))
+    .then(function(r){ return r.json(); }).then(function(data) {
+      if (!data.length) { res.innerHTML = '<div style="color:rgba(255,255,255,0.7);font-size:14px;padding:6px 0;">कोई ऑर्डर नहीं मिला</div>'; return; }
+      if (data.length === 1) { loadOrder(data[0].order_code); res.innerHTML = ""; return; }
+      res.innerHTML = data.map(function(o) {
+        return '<button onclick="loadOrder(\''+o.order_code+'\');document.getElementById(\'search-results\').innerHTML=\'\'"'
+          + ' style="display:flex;align-items:center;justify-content:space-between;width:100%;padding:10px 14px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:10px;color:#fff;cursor:pointer;margin-bottom:6px;font-size:14px;font-weight:700;">'
+          + '<span>#'+o.order_code+' — '+o.customer_name+'</span><span style="opacity:0.7;">'+o.mobile+'</span></button>';
+      }).join("");
+    });
+}
+
+function loadOrder(code) {
+  currentCode = code;
+  fetch("/api/pickup/order?code=" + code)
+    .then(function(r){ return r.json(); }).then(function(o) {
+      if (o.error) { showToast("Order not found","error"); return; }
+      currentOrder = o;
+
+      document.getElementById("dc-code").textContent     = "#" + o.order_code;
+      document.getElementById("dc-customer").textContent = o.customer_name;
+      document.getElementById("dc-meta").textContent     = "📱 " + (o.mobile||"—") + "  ·  Order: " + (o.order_date_fmt||"") + " → Delivery: " + (o.delivery_date_fmt||"");
+      document.getElementById("dc-total").textContent    = "₹" + (o.payable_amount||o.total||0);
+      document.getElementById("dc-advance").textContent  = "₹" + (o.advance_paid||0);
+      document.getElementById("dc-remaining").textContent= "₹" + (o.remaining||0);
+
+      // Default amount = remaining (not total)
+      var rem = parseFloat(o.remaining||0);
+      document.getElementById("dc-amount").value = rem > 0 ? rem : "";
+      document.getElementById("upi-amt").textContent = rem > 0 ? rem : 0;
+
+      // Status badge
+      var sb = document.getElementById("dc-status-badge");
+      var statusMap = {pending:"background:rgba(255,255,255,0.15)",ready:"background:#16a34a",delivered:"background:#374151"};
+      sb.style.cssText = (statusMap[o.status]||statusMap.pending) + ";border-radius:12px;padding:8px 20px;font-size:14px;font-weight:900;color:#fff;border:2px solid rgba(255,255,255,0.3);";
+      sb.textContent = o.status.toUpperCase();
+
+      // Garments
+      var garmentHtml = (o.garments||o.items||[]).map(function(it){
+        return '<span style="background:#eef2ff;border:1.5px solid #a5b4fc;border-radius:10px;padding:5px 12px;font-size:13px;font-weight:700;color:#4338ca;">'+it.garment_type+' ×'+it.quantity+'</span>';
+      }).join("");
+      document.getElementById("dc-garments").innerHTML = garmentHtml || '<span style="color:var(--text-muted);font-size:13px;">—</span>';
+
+      // Images
+      var imgBox = document.getElementById("dc-images");
+      var imgPh  = document.getElementById("dc-images-placeholder");
+      fetch("/images/" + o.order_code + "?ts=" + Date.now()).then(function(r){return r.text();}).then(function(html){
+        if (html && html.trim()) {
+          var tmp = document.createElement("div"); tmp.innerHTML = html;
+          imgBox.innerHTML = "";
+          tmp.querySelectorAll("img").forEach(function(img){
+            var src = img.getAttribute("src");
+            var el  = document.createElement("img");
+            el.src  = src;
+            el.style.cssText = "width:68px;height:68px;object-fit:cover;border-radius:10px;border:2px solid #fde68a;cursor:zoom-in;";
+            el.onclick = function(){ document.getElementById("overlay-img").src=src; document.getElementById("img-overlay").style.display="flex"; };
+            imgBox.appendChild(el);
+          });
+        } else {
+          if (imgPh) imgPh.innerHTML = '<span style="color:var(--text-muted);font-size:12px;">No photos</span>';
+        }
+      });
+
+      // Show sections
+      document.getElementById("payment-section").style.display   = (o.status==="pending"||o.status==="ready") ? "block" : "none";
+      document.getElementById("delivered-section").style.display = o.status==="delivered" ? "block" : "none";
+      document.getElementById("pending-section").style.display   = o.status==="pending" ? "block" : "none";
+      if (o.status==="delivered") {
+        document.getElementById("delivered-date-text").textContent = "Delivered on " + (o.delivered_at_fmt||"");
+        document.getElementById("payment-section").style.display = "none";
+      }
+
+      document.getElementById("delivery-card").style.display = "block";
+      document.getElementById("delivery-card").scrollIntoView({behavior:"smooth",block:"start"});
+    });
+}
+
+function setPayMode(m) {
+  payMode = m;
+  var bc = document.getElementById("mode-cash"), bu = document.getElementById("mode-upi");
+  var up = document.getElementById("upi-panel");
+  bc.style.background  = m==="cash" ? "#16a34a" : "#fff";
+  bc.style.color       = m==="cash" ? "#fff"    : "var(--text-muted)";
+  bc.style.borderColor = m==="cash" ? "#16a34a" : "var(--border)";
+  bu.style.background  = m==="upi"  ? "#6366f1" : "#fff";
+  bu.style.color       = m==="upi"  ? "#fff"    : "var(--text-muted)";
+  bu.style.borderColor = m==="upi"  ? "#6366f1" : "var(--border)";
+  up.style.display     = m==="upi"  ? "block" : "none";
+  if (m==="upi") {
+    var amt = parseFloat(document.getElementById("dc-amount").value)||0;
+    document.getElementById("upi-amt").textContent = amt;
+  }
+}
+
+// Update UPI amount when amount changes
+document.addEventListener("DOMContentLoaded", function(){
+  document.getElementById("dc-amount").addEventListener("input", function(){
+    if (payMode==="upi") document.getElementById("upi-amt").textContent = this.value||0;
+  });
+});
+
+function collectAndDeliver() {
+  var amt = parseFloat(document.getElementById("dc-amount").value)||0;
+  var rn  = (document.getElementById("receiver-name").value||"").trim();
+  var rm  = (document.getElementById("receiver-mobile").value||"").trim();
+  var btn = document.getElementById("collect-btn");
+  btn.disabled = true;
+  btn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:8px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="animation:spin 0.7s linear infinite"><circle cx="12" cy="12" r="10" stroke-opacity="0.3"/><path d="M12 2a10 10 0 0 1 10 10"/></svg> <span class="lang-en">Processing...</span><span class="lang-hi" style="display:none;">हो रहा है...</span></span>';
+  applyLang();
+  fetch("/api/pickup/collect-and-deliver",{
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({order_code:currentCode, amount:amt, mode:payMode, receiver_name:rn, receiver_mobile:rm})
+  }).then(function(r){return r.json();}).then(function(d){
+    btn.disabled = false;
+    btn.innerHTML = '✅ <span class="lang-en">Collect & Mark Delivered</span><span class="lang-hi" style="display:none;">पैसे लो और डिलीवर करो</span>';
+    applyLang();
+    if (d.ok) {
+      showToast("✅ डिलीवर हो गया! ₹"+amt+" लिए","success");
+      loadOrder(currentCode);
+    } else {
+      showToast("Error: "+d.error,"error");
+    }
+  });
+}
+
+function sendDeliveryWA(lang) {
+  var o = currentOrder;
+  var items = (o.garments||o.items||[]).map(function(i){return i.garment_type+" ×"+i.quantity;}).join(", ");
+  var msg = lang==="hi"
+    ? "*उत्तम टेलर्स*\n\nनमस्ते "+o.customer_name+" जी!\n\nआपके कपड़े डिलीवर हो गए।\n\nऑर्डर: *#"+o.order_code+"*\nकपड़े: "+items+"\n\nधन्यवाद!"
+    : "*Uttam Tailors*\n\nDear "+o.customer_name+",\n\nYour order *#"+o.order_code+"* has been delivered.\n\nItems: "+items+"\n\nThank you!";
+  if (o.mobile) window.open("https://wa.me/"+o.mobile.replace(/\D/g,"")+  "?text="+encodeURIComponent(msg),"_blank");
+}
+
+function searchAnother() {
+  document.getElementById("delivery-card").style.display = "none";
+  document.getElementById("pickup-search").value = "";
+  document.getElementById("search-results").innerHTML = "";
+  document.getElementById("pickup-search").focus();
+}
+</script>
+<style>
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+{% endblock %}

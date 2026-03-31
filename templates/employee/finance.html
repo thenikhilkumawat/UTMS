@@ -1,0 +1,291 @@
+{% extends "base.html" %}
+{% block title %}हिसाब-किताब — Uttam Tailors{% endblock %}
+{% block extra_css %}
+<style>
+@keyframes slideUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+.fin-card { animation: slideUp 0.2s ease-out; }
+</style>
+{% endblock %}
+{% block content %}
+
+<!-- Header -->
+<div style="background:#fff;border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;">
+  <div>
+    <h1 style="font-size:18px;font-weight:900;margin:0;">💰 <span class="lang-en">Finance</span><span class="lang-hi" style="display:none;">हिसाब-किताब</span></h1>
+    <div style="font-size:11px;color:var(--text-muted);"><span class="lang-en">Income & Expenses</span><span class="lang-hi" style="display:none;">आमदनी और खर्च</span></div>
+  </div>
+  <div style="display:flex;gap:8px;">
+    <a href="/" class="btn btn-ghost btn-sm">← <span class="lang-en">Back</span><span class="lang-hi" style="display:none;">वापस</span></a>
+    <button class="menu-toggle" onclick="openSidebar()">☰</button>
+  </div>
+</div>
+
+<div style="padding:14px 16px;">
+
+  <!-- Summary cards — compact -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+    <div class="fin-card" style="background:#fff;border-radius:14px;border:1.5px solid var(--border);overflow:hidden;">
+      <div style="background:linear-gradient(135deg,#4f46e5,#6366f1);padding:7px 14px;">
+        <span style="font-size:12px;font-weight:800;color:#fff;">📅 <span class="lang-en">Today</span><span class="lang-hi" style="display:none;">आज</span></span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;">
+        <div style="padding:10px 12px;border-right:1px solid var(--border);">
+          <div style="font-size:10px;font-weight:700;color:#16a34a;text-transform:uppercase;margin-bottom:2px;"><span class="lang-en">Income</span><span class="lang-hi" style="display:none;">आमदनी</span></div>
+          <div style="font-size:22px;font-weight:900;color:#15803d;">₹{{ today_income }}</div>
+          <div style="font-size:10px;color:var(--text-muted);">💵₹{{ today_cash }} · 📱₹{{ today_upi }}</div>
+        </div>
+        <div style="padding:10px 12px;">
+          <div style="font-size:10px;font-weight:700;color:#dc2626;text-transform:uppercase;margin-bottom:2px;"><span class="lang-en">Expense</span><span class="lang-hi" style="display:none;">खर्च</span></div>
+          <div style="font-size:22px;font-weight:900;color:#b91c1c;">₹{{ today_expense }}</div>
+          <div style="font-size:10px;color:var(--text-muted);">{{ today_expense_count }} entries</div>
+        </div>
+      </div>
+    </div>
+    <div class="fin-card" style="background:#fff;border-radius:14px;border:1.5px solid var(--border);overflow:hidden;">
+      <div style="background:linear-gradient(135deg,#64748b,#475569);padding:7px 14px;">
+        <span style="font-size:12px;font-weight:800;color:#fff;">📅 <span class="lang-en">Yesterday</span><span class="lang-hi" style="display:none;">कल</span></span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;">
+        <div style="padding:10px 12px;border-right:1px solid var(--border);">
+          <div style="font-size:10px;font-weight:700;color:#16a34a;text-transform:uppercase;margin-bottom:2px;"><span class="lang-en">Income</span><span class="lang-hi" style="display:none;">आमदनी</span></div>
+          <div style="font-size:22px;font-weight:900;color:#15803d;">₹{{ yesterday_income }}</div>
+          <div style="font-size:10px;color:var(--text-muted);">💵₹{{ yesterday_cash }} · 📱₹{{ yesterday_upi }}</div>
+        </div>
+        <div style="padding:10px 12px;">
+          <div style="font-size:10px;font-weight:700;color:#dc2626;text-transform:uppercase;margin-bottom:2px;"><span class="lang-en">Expense</span><span class="lang-hi" style="display:none;">खर्च</span></div>
+          <div style="font-size:22px;font-weight:900;color:#b91c1c;">₹{{ yesterday_expense }}</div>
+          <div style="font-size:10px;color:var(--text-muted);">{{ yesterday_expense_count }} entries</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Two column main: left = add entry, right = transactions -->
+  <div style="display:grid;grid-template-columns:320px 1fr;gap:14px;align-items:start;">
+
+    <!-- LEFT: Add Entry form -->
+    <div class="fin-card" style="background:#fff;border-radius:16px;border:1.5px solid var(--border);padding:16px;box-shadow:0 2px 10px rgba(0,0,0,0.05);">
+      <div style="font-size:14px;font-weight:900;margin-bottom:12px;">➕ <span class="lang-en">Add Entry</span><span class="lang-hi" style="display:none;">एंट्री जोड़ें</span></div>
+
+      <!-- Income / Expense toggle — compact -->
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <button id="btn-income" onclick="setType('income')"
+          style="flex:1;padding:9px;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;border:2px solid #16a34a;background:#16a34a;color:#fff;">
+          ↑ <span class="lang-en">Income</span><span class="lang-hi" style="display:none;">आमदनी</span>
+        </button>
+        <button id="btn-expense" onclick="setType('expense')"
+          style="flex:1;padding:9px;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;border:2px solid var(--border);background:#fff;color:var(--text-muted);">
+          ↓ <span class="lang-en">Expense</span><span class="lang-hi" style="display:none;">खर्च</span>
+        </button>
+      </div>
+
+      <!-- Amount -->
+      <div style="margin-bottom:10px;">
+        <label style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:4px;"><span class="lang-en">Amount (₹)</span><span class="lang-hi" style="display:none;">रकम (₹)</span></label>
+        <input type="number" id="f-amount" placeholder="0" min="0"
+          style="width:100%;font-size:32px;font-weight:900;padding:10px 14px;border:2px solid var(--border);border-radius:12px;text-align:center;background:#f8fafc;">
+      </div>
+
+      <!-- Category dropdown -->
+      <div style="margin-bottom:10px;">
+        <label style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:4px;"><span class="lang-en">Category</span><span class="lang-hi" style="display:none;">श्रेणी</span></label>
+        <select id="f-category"
+          style="width:100%;padding:10px 12px;font-size:14px;font-weight:700;border:2px solid var(--border);border-radius:12px;background:#fff;">
+          <option value="">-- चुनें --</option>
+        </select>
+      </div>
+
+      <!-- Mode -->
+      <div style="margin-bottom:10px;">
+        <label style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:4px;"><span class="lang-en">Mode</span><span class="lang-hi" style="display:none;">तरीका</span></label>
+        <div style="display:flex;gap:8px;">
+          <button id="mode-cash" onclick="setMode('cash')"
+            style="flex:1;padding:9px;border-radius:10px;border:2px solid #16a34a;background:#16a34a;color:#fff;font-size:13px;font-weight:800;cursor:pointer;">
+            💵 <span class="lang-en">Cash</span><span class="lang-hi" style="display:none;">नकद</span>
+          </button>
+          <button id="mode-upi" onclick="setMode('upi')"
+            style="flex:1;padding:9px;border-radius:10px;border:2px solid var(--border);background:#fff;color:var(--text-muted);font-size:13px;font-weight:800;cursor:pointer;">
+            📱 UPI
+          </button>
+        </div>
+      </div>
+
+      <!-- Note -->
+      <div style="margin-bottom:12px;">
+        <input type="text" id="f-note" placeholder="Note (optional)..."
+          style="width:100%;padding:9px 12px;font-size:13px;border:1.5px solid var(--border);border-radius:10px;">
+      </div>
+
+      <button onclick="addEntry()" id="f-submit"
+        style="width:100%;padding:13px;background:#16a34a;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:900;cursor:pointer;">
+        ✅ <span class="lang-en">Add Entry</span><span class="lang-hi" style="display:none;">जोड़ें</span>
+      </button>
+    </div>
+
+    <!-- RIGHT: Transaction list -->
+    <div class="fin-card" style="background:#fff;border-radius:16px;border:1.5px solid var(--border);overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.05);">
+
+      <!-- Filter tabs — compact pills -->
+      <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        <button id="filter-today" onclick="setFilter('today')"
+          style="padding:4px 12px;border-radius:20px;border:none;background:#4f46e5;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">
+          <span class="lang-en">Today</span><span class="lang-hi" style="display:none;">आज</span>
+        </button>
+        <button id="filter-yesterday" onclick="setFilter('yesterday')"
+          style="padding:4px 12px;border-radius:20px;border:none;background:#f1f5f9;color:var(--text-muted);font-size:12px;font-weight:700;cursor:pointer;">
+          <span class="lang-en">Yesterday</span><span class="lang-hi" style="display:none;">कल</span>
+        </button>
+        <button id="filter-all" onclick="setFilter('all')"
+          style="padding:4px 12px;border-radius:20px;border:none;background:#f1f5f9;color:var(--text-muted);font-size:12px;font-weight:700;cursor:pointer;">
+          <span class="lang-en">All</span><span class="lang-hi" style="display:none;">सब</span>
+        </button>
+        <input type="text" id="f-search" placeholder="Search..."
+          oninput="filterTx()" style="padding:4px 10px;border-radius:20px;border:1.5px solid var(--border);font-size:12px;flex:1;min-width:80px;max-width:160px;">
+      </div>
+
+      <div id="tx-list" style="max-height:calc(100vh - 320px);overflow-y:auto;">
+        {% if transactions %}
+        {% for tx in transactions %}
+        <div class="tx-row" data-date="{{ tx.tx_date }}"
+          data-s="{{ tx.category|lower }} {{ tx.note|lower if tx.note else '' }}"
+          style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid #f1f5f9;">
+          <div style="width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;background:{% if tx.tx_type=='income' %}#d1fae5{% else %}#fee2e2{% endif %};">
+            {{ "↑" if tx.tx_type=="income" else "↓" }}
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:800;text-transform:capitalize;">{{ tx.category }}</div>
+            <div style="font-size:11px;color:var(--text-muted);">
+              {{ tx.tx_time }}{% if tx.note %} · {{ tx.note }}{% endif %}{% if tx.order_code %} · #{{ tx.order_code }}{% endif %}
+            </div>
+          </div>
+          <div style="text-align:right;flex-shrink:0;">
+            <div style="font-size:16px;font-weight:900;color:{% if tx.tx_type=='income' %}#16a34a{% else %}#dc2626{% endif %};">
+              {{ "+" if tx.tx_type=="income" else "−" }}₹{{ tx.amount|int }}
+            </div>
+            <div style="font-size:10px;color:var(--text-muted);">{% if tx.mode=='upi' %}📱{% else %}💵{% endif %}</div>
+          </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div style="padding:48px;text-align:center;color:var(--text-muted);">
+          <div style="font-size:36px;margin-bottom:10px;">💸</div>
+          <div style="font-size:14px;font-weight:700;"><span class="lang-en">No transactions yet</span><span class="lang-hi" style="display:none;">कोई लेनदेन नहीं</span></div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+var txType  = "income";
+var payMode = "cash";
+var txFilter= "today";
+
+// Load categories live from API
+function loadCats() {
+  fetch("/api/finance-categories")
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      window._INCOME_CATS  = d.income  || ["Advance","Payment","Alteration","Other Income"];
+      window._EXPENSE_CATS = d.expense || ["Thread","Buttons","Fabric","Electricity","Rent","Salary","Transport","Other Expense"];
+      populateCats();
+    });
+}
+
+function populateCats() {
+  var sel  = document.getElementById("f-category");
+  var cats = (txType === "income") ? (window._INCOME_CATS||[]) : (window._EXPENSE_CATS||[]);
+  sel.innerHTML = '<option value="">-- चुनें --</option>';
+  cats.forEach(function(c) {
+    var opt = document.createElement("option");
+    opt.value = c;
+    opt.textContent = c;
+    sel.appendChild(opt);
+  });
+}
+
+function setType(t) {
+  txType = t;
+  var bi = document.getElementById("btn-income");
+  var be = document.getElementById("btn-expense");
+  bi.style.background  = t==="income" ? "#16a34a" : "#fff";
+  bi.style.color       = t==="income" ? "#fff"    : "var(--text-muted)";
+  bi.style.borderColor = t==="income" ? "#16a34a" : "var(--border)";
+  be.style.background  = t==="expense" ? "#dc2626" : "#fff";
+  be.style.color       = t==="expense" ? "#fff"    : "var(--text-muted)";
+  be.style.borderColor = t==="expense" ? "#dc2626" : "var(--border)";
+  document.getElementById("f-submit").style.background = t==="income" ? "#16a34a" : "#dc2626";
+  populateCats();
+}
+
+function setMode(m) {
+  payMode = m;
+  var bc = document.getElementById("mode-cash"), bu = document.getElementById("mode-upi");
+  bc.style.background  = m==="cash" ? "#16a34a" : "#fff";
+  bc.style.color       = m==="cash" ? "#fff"    : "var(--text-muted)";
+  bc.style.borderColor = m==="cash" ? "#16a34a" : "var(--border)";
+  bu.style.background  = m==="upi"  ? "#6366f1" : "#fff";
+  bu.style.color       = m==="upi"  ? "#fff"    : "var(--text-muted)";
+  bu.style.borderColor = m==="upi"  ? "#6366f1" : "var(--border)";
+}
+
+function setFilter(f) {
+  txFilter = f;
+  ["today","yesterday","all"].forEach(function(id){
+    var btn = document.getElementById("filter-"+id);
+    btn.style.background = (f===id) ? "#4f46e5" : "#f1f5f9";
+    btn.style.color      = (f===id) ? "#fff"    : "var(--text-muted)";
+  });
+  filterTx();
+}
+
+function filterTx() {
+  var today = new Date().toISOString().slice(0,10);
+  var yest  = new Date(Date.now()-86400000).toISOString().slice(0,10);
+  var q     = (document.getElementById("f-search").value||"").toLowerCase().trim();
+  document.querySelectorAll(".tx-row").forEach(function(row){
+    var d = row.dataset.date;
+    var dateMatch = txFilter==="all" || (txFilter==="today"&&d===today) || (txFilter==="yesterday"&&d===yest);
+    var qMatch    = !q || row.dataset.s.includes(q);
+    row.style.display = (dateMatch && qMatch) ? "" : "none";
+  });
+}
+
+function addEntry() {
+  var amt = parseFloat(document.getElementById("f-amount").value)||0;
+  var cat = document.getElementById("f-category").value;
+  var note= document.getElementById("f-note").value.trim();
+  if (amt <= 0) { showToast("रकम दर्ज करें","warning"); return; }
+  if (!cat)     { showToast("श्रेणी चुनें","warning"); return; }
+
+  var btn = document.getElementById("f-submit");
+  btn.disabled = true; btn.textContent = "सेव हो रहा है...";
+
+  fetch("/api/finance/add", {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({tx_type:txType, amount:amt, category:cat, payment_mode:payMode, note:note})
+  }).then(function(r){ return r.json(); }).then(function(d){
+    btn.disabled = false;
+    btn.innerHTML = '✅ <span class="lang-en">Add Entry</span><span class="lang-hi" style="display:none;">जोड़ें</span>';
+    applyLang();
+    if (d.ok) {
+      showToast((txType==="income"?"✅ आमदनी ₹":"✅ खर्च ₹")+amt+" दर्ज", "success");
+      document.getElementById("f-amount").value = "";
+      document.getElementById("f-note").value   = "";
+      setTimeout(function(){ location.reload(); }, 700);
+    } else {
+      showToast("Error: "+d.error, "error");
+    }
+  });
+}
+
+document.addEventListener("DOMContentLoaded", function(){
+  loadCats();
+  filterTx();
+});
+</script>
+{% endblock %}
