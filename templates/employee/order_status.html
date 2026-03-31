@@ -343,10 +343,11 @@ function filterRows() {
     const srch     = row.dataset.s;
     const matchQ   = !q || srch.includes(q);
     let matchF = true;
-    if      (activeTab === "late")      matchF = overdue && status !== "delivered";
-    else if (activeTab === "upcoming")  matchF = upcoming;
+    if      (activeTab === "late")      matchF = overdue && status !== "delivered" && status !== "cancelled";
+    else if (activeTab === "upcoming")  matchF = upcoming && status !== "cancelled";
     else if (activeTab === "ready")     matchF = status === "ready";
     else if (activeTab === "delivered") matchF = status === "delivered";
+    else if (activeTab === "all")       matchF = status !== "cancelled";
 
     const expRow = document.getElementById("exp-" + row.dataset.s.split(" ")[0]);
     row.style.display = (matchQ && matchF) ? "" : "none";
