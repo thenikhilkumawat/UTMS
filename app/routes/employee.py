@@ -439,6 +439,12 @@ def save_order():
             conn.execute("UPDATE customers SET name=?,mobile=?,address=? WHERE id=?",
                          (customer_name, mobile, address, customer_id))
         else:
+            # For new customers: block duplicate mobile numbers
+            if mobile:
+                dup = conn.execute("SELECT id, name FROM customers WHERE mobile=?", (mobile,)).fetchone()
+                if dup:
+                    conn.close()
+                    return jsonify({"status":"error","message":f"Mobile {mobile} already registered under '{dup['name']}'. Use Existing Customer flow to add a new order for them."}), 400
             cur = conn.execute("INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?)",
                                (customer_name, mobile, address, now))
             customer_id = cur.lastrowid
@@ -605,20 +611,30 @@ def api_customer_search():
                 "mobile": r["mobile"] or "", "address": r["address"] or "",
                 "matched_code": r["matched_code"]
             })
-    # Also search by name, mobile, address
+    # Also search by name, mobile, address — include order_count for "old customer" badge
     rows = conn.execute("""
-        SELECT id, name, mobile, address FROM customers
-        WHERE name LIKE ? OR mobile LIKE ? OR address LIKE ?
-        ORDER BY name ASC LIMIT 15
+        SELECT c.id, c.name, c.mobile, c.address, COUNT(o.id) as order_count
+        FROM customers c
+        LEFT JOIN orders o ON o.customer_id = c.id
+        WHERE c.name LIKE ? OR c.mobile LIKE ? OR c.address LIKE ?
+        GROUP BY c.id
+        ORDER BY c.name ASC LIMIT 15
     """, (like, like, like)).fetchall()
     seen_ids = {r["id"] for r in results}
     for r in rows:
         if r["id"] not in seen_ids:
             results.append({"id": r["id"], "name": r["name"],
-                "mobile": r["mobile"] or "", "address": r["address"] or "", "matched_code": None})
+                "mobile": r["mobile"] or "", "address": r["address"] or "",
+                "matched_code": None, "order_count": r["order_count"] or 0})
             seen_ids.add(r["id"])
+    # Also add order_count to the code-matched results
+    for res in results:
+        if "order_count" not in res:
+            cnt = conn.execute("SELECT COUNT(*) as c FROM orders WHERE customer_id=?", (res["id"],)).fetchone()
+            res["order_count"] = cnt["c"] if cnt else 0
     conn.close()
     return jsonify(results[:15])
+
 
 
 
@@ -1086,7 +1102,14 @@ def api_worklog_add():
     rate_override = data.get("rate_override")
 
     if is_non_stitch:
-        # Measurement / Cutting / Alteration — no garment validation, just log it
+        # Measurement / Cutting — cap qty to total garment quantity in the order
+        total_garment_qty = conn.execute(
+            "SELECT COALESCE(SUM(quantity),0) as t FROM order_items WHERE order_id=?",
+            (order["id"],)
+        ).fetchone()["t"] or 0
+        if total_garment_qty > 0 and qty > total_garment_qty:
+            conn.close()
+            return jsonify({"ok": False, "error": f"Quantity {qty} exceeds total garments in order ({total_garment_qty}). Cannot log more than order quantity."})
         making_rate = float(rate_override) if rate_override is not None else 0.0
         today = date.today().isoformat()
         now   = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
