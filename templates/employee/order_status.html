@@ -65,7 +65,7 @@
     <tbody id="orders-tbody">
       {% for o in orders %}
       {% set total_items = o.garments|sum(attribute='quantity') %}
-      {% set done_items  = o.garments|sum(attribute='logged') %}
+      {% set done_items  = o.garments|sum(attribute='stitch_done') %}
       {% set pct = [[(done_items * 100 // total_items) if total_items else 0, 0]|max, 100]|min %}
       <tr class="orow"
         data-status="{{ o.status }}"
@@ -131,14 +131,40 @@
           {% endif %}
         </td>
 
-        <!-- Col 5: Work Progress -->
-        <td style="padding:14px 16px;vertical-align:top;min-width:140px;">
-          <div style="font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:5px;">
-            {{ done_items }}/{{ total_items }}
-            <span class="lang-en">Items</span><span class="lang-hi" style="display:none;">कपड़े</span>
-          </div>
-          <div style="background:#e5e7eb;border-radius:6px;height:7px;overflow:hidden;width:120px;">
-            <div style="background:{% if pct >= 100 %}var(--accent){% elif pct > 0 %}#818cf8{% else %}#c7d2fe{% endif %};height:100%;border-radius:6px;width:{{ pct }}%;transition:width 0.4s;"></div>
+        <!-- Col 5: Work Progress — 3 steps per garment -->
+        {% set total_qty = o.garments|sum(attribute='quantity') %}
+        {% set naap_tot  = o.garments|sum(attribute='naap_done') %}
+        {% set cut_tot   = o.garments|sum(attribute='cut_done') %}
+        {% set stitch_tot= o.garments|sum(attribute='stitch_done') %}
+        {% set naap_pct  = [[((naap_tot * 100) // total_qty) if total_qty else 0, 0]|max, 100]|min %}
+        {% set cut_pct   = [[((cut_tot  * 100) // total_qty) if total_qty else 0, 0]|max, 100]|min %}
+        {% set stitch_pct= [[((stitch_tot*100) // total_qty) if total_qty else 0, 0]|max, 100]|min %}
+        <td style="padding:10px 16px;vertical-align:top;min-width:130px;">
+          <div style="display:flex;flex-direction:column;gap:3px;">
+            <!-- Step 1: नाप -->
+            <div style="display:flex;align-items:center;gap:5px;">
+              <span style="font-size:9px;font-weight:800;color:#4f46e5;width:28px;flex-shrink:0;">नाप</span>
+              <div style="flex:1;background:#e5e7eb;border-radius:4px;height:5px;overflow:hidden;">
+                <div style="background:#4f46e5;height:100%;border-radius:4px;width:{{ naap_pct }}%;transition:width 0.4s;"></div>
+              </div>
+              <span style="font-size:9px;color:#4f46e5;font-weight:700;width:20px;text-align:right;">{% if naap_pct >= 100 %}✓{% else %}{{ naap_pct }}%{% endif %}</span>
+            </div>
+            <!-- Step 2: कटाई -->
+            <div style="display:flex;align-items:center;gap:5px;">
+              <span style="font-size:9px;font-weight:800;color:#ea580c;width:28px;flex-shrink:0;">कटाई</span>
+              <div style="flex:1;background:#e5e7eb;border-radius:4px;height:5px;overflow:hidden;">
+                <div style="background:#ea580c;height:100%;border-radius:4px;width:{{ cut_pct }}%;transition:width 0.4s;"></div>
+              </div>
+              <span style="font-size:9px;color:#ea580c;font-weight:700;width:20px;text-align:right;">{% if cut_pct >= 100 %}✓{% else %}{{ cut_pct }}%{% endif %}</span>
+            </div>
+            <!-- Step 3: सिलाई -->
+            <div style="display:flex;align-items:center;gap:5px;">
+              <span style="font-size:9px;font-weight:800;color:#16a34a;width:28px;flex-shrink:0;">सिलाई</span>
+              <div style="flex:1;background:#e5e7eb;border-radius:4px;height:5px;overflow:hidden;">
+                <div style="background:#16a34a;height:100%;border-radius:4px;width:{{ stitch_pct }}%;transition:width 0.4s;"></div>
+              </div>
+              <span style="font-size:9px;color:#16a34a;font-weight:700;width:20px;text-align:right;">{% if stitch_pct >= 100 %}✓{% else %}{{ stitch_pct }}%{% endif %}</span>
+            </div>
           </div>
         </td>
 
