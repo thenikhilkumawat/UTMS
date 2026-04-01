@@ -509,7 +509,7 @@ def print_slip(order_code):
         <tr>
           <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;">
             <div style="font-weight:600;">{i["garment_type"]}</div>
-            {("<div style=\'font-size:11px;color:#888;margin-top:2px;\'>" + i["notes"] + "</div>") if i["notes"] else ""}
+            {("<div style=\'font-size:11px;color:#888;margin-top:2px;\'>" + __import__("re").sub(r"\s*\[.*?\]", "", i["notes"]).strip() + "</div>") if i["notes"] and __import__("re").sub(r"\s*\[.*?\]", "", i["notes"]).strip() else ""}
           </td>
           <td style="padding:10px 12px;text-align:center;border-bottom:1px solid #f0f0f0;">{i["quantity"]}</td>
           <td style="padding:10px 12px;text-align:right;border-bottom:1px solid #f0f0f0;">₹{i["rate"]}</td>
@@ -766,13 +766,24 @@ def order_status():
             "SELECT * FROM order_items WHERE order_id=?", (o["id"],)
         ).fetchall()
 
-        # Get logged quantities per garment
-        logged_map = {}
-        for lg in conn.execute(
-            "SELECT garment_type, SUM(qty_done) as total FROM work_logs WHERE order_code=? GROUP BY garment_type",
+        # Get logged quantities per garment per work type
+        wl_rows = conn.execute(
+            "SELECT garment_type, qty_done, notes FROM work_logs WHERE order_code=?",
             (o["order_code"],)
-        ).fetchall():
-            logged_map[lg["garment_type"]] = lg["total"] or 0
+        ).fetchall()
+        naap_map   = {}  # naap done per garment
+        kataai_map = {}  # kataai done per garment
+        silai_map  = {}  # stitch done per garment
+        for wl in wl_rows:
+            gt_wl = wl["garment_type"]
+            n     = (wl["notes"] or "").strip()
+            q     = wl["qty_done"] or 0
+            if any(x in n for x in ["Measurement","Naap","नाप"]):
+                naap_map[gt_wl]   = naap_map.get(gt_wl, 0) + q
+            elif any(x in n for x in ["Kataai","Cutting","कटाई"]):
+                kataai_map[gt_wl] = kataai_map.get(gt_wl, 0) + q
+            else:
+                silai_map[gt_wl]  = silai_map.get(gt_wl, 0) + q
 
         items = []
         for it in items_raw:
@@ -780,18 +791,28 @@ def order_status():
                 meas = json.loads(it["measurements"] or "{}")
             except:
                 meas = {}
-            logged = logged_map.get(it["garment_type"], 0)
-            qty    = it["quantity"]
-            pct    = min(100, int((logged / qty) * 100)) if qty else 0
+            qty        = it["quantity"]
+            gt         = it["garment_type"]
+            naap_done  = min(naap_map.get(gt, 0),   qty)
+            cut_done   = min(kataai_map.get(gt, 0), qty)
+            stitch_done= min(silai_map.get(gt, 0),  qty)
+            # Overall stitch pct (for auto-ready logic)
+            pct = min(100, int((stitch_done / qty) * 100)) if qty else 0
             items.append({
-                "garment_type": it["garment_type"],
-                "quantity":     qty,
-                "rate":         it["rate"],
-                "amount":       it["amount"],
-                "measurements": meas,
-                "notes":        it["notes"] or "",
-                "logged":       logged,
-                "progress_pct": pct
+                "garment_type":  gt,
+                "quantity":      qty,
+                "rate":          it["rate"],
+                "amount":        it["amount"],
+                "measurements":  meas,
+                "notes":         it["notes"] or "",
+                "logged":        stitch_done,
+                "progress_pct":  pct,
+                "naap_done":     naap_done,
+                "cut_done":      cut_done,
+                "stitch_done":   stitch_done,
+                "naap_pct":      min(100, int((naap_done/qty)*100)) if qty else 0,
+                "cut_pct":       min(100, int((cut_done/qty)*100))  if qty else 0,
+                "stitch_pct":    pct,
             })
 
         def fmtd(d):
@@ -1043,12 +1064,23 @@ def api_worklog_order_info():
         (order["id"],)
     ).fetchall()
 
-    logged_map = {}
-    for lg in conn.execute(
-        "SELECT garment_type, SUM(qty_done) as total FROM work_logs WHERE order_code=? GROUP BY garment_type",
-        (code,)
-    ).fetchall():
-        logged_map[lg["garment_type"]] = lg["total"] or 0
+    # Build per-garment naap/kataai/silai maps
+    wl_all = conn.execute(
+        "SELECT garment_type, qty_done, notes FROM work_logs WHERE order_code=?", (code,)
+    ).fetchall()
+    naap_map   = {}
+    kataai_map = {}
+    silai_map  = {}
+    for wl in wl_all:
+        gt_wl = wl["garment_type"]
+        n     = (wl["notes"] or "").strip()
+        q     = wl["qty_done"] or 0
+        if any(x in n for x in ["Measurement","Naap","नाप"]):
+            naap_map[gt_wl]   = naap_map.get(gt_wl, 0) + q
+        elif any(x in n for x in ["Kataai","Cutting","कटाई"]):
+            kataai_map[gt_wl] = kataai_map.get(gt_wl, 0) + q
+        else:
+            silai_map[gt_wl]  = silai_map.get(gt_wl, 0) + q
 
     def fmtd(d):
         if not d: return "—"
@@ -1056,10 +1088,13 @@ def api_worklog_order_info():
         return f"{p[2]}-{p[1]}-{p[0]}" if len(p)==3 else d
 
     items = [{
-        "garment_type": it["garment_type"],
-        "required":     it["quantity"],
-        "rate":         it["rate"],
-        "logged":       logged_map.get(it["garment_type"], 0)
+        "garment_type":  it["garment_type"],
+        "required":      it["quantity"],
+        "rate":          it["rate"],
+        "logged":        silai_map.get(it["garment_type"], 0),
+        "naap_done":     min(naap_map.get(it["garment_type"], 0),   it["quantity"]),
+        "cut_done":      min(kataai_map.get(it["garment_type"], 0), it["quantity"]),
+        "stitch_done":   min(silai_map.get(it["garment_type"], 0),  it["quantity"]),
     } for it in items_raw]
 
     conn.close()
@@ -1102,14 +1137,55 @@ def api_worklog_add():
     rate_override = data.get("rate_override")
 
     if is_non_stitch:
-        # Measurement / Cutting — cap qty to total garment quantity in the order
-        total_garment_qty = conn.execute(
-            "SELECT COALESCE(SUM(quantity),0) as t FROM order_items WHERE order_id=?",
-            (order["id"],)
-        ).fetchone()["t"] or 0
-        if total_garment_qty > 0 and qty > total_garment_qty:
-            conn.close()
-            return jsonify({"ok": False, "error": f"Quantity {qty} exceeds total garments in order ({total_garment_qty}). Cannot log more than order quantity."})
+        # Determine work type: Naap or Kataai
+        work_type = notes.strip()  # e.g. "Measurement" or "Cutting" or "Kataai — Shirt"
+        is_naap   = any(x in work_type for x in ["Measurement","Naap","नाप"])
+        is_kataai = any(x in work_type for x in ["Cutting","Kataai","कटाई"])
+
+        # garment_type: use gt if provided, else extract from notes or fall back to notes
+        garment = gt if gt else notes
+
+        # If a specific garment is given, check per-garment quantity cap & duplicate
+        if gt:
+            item = conn.execute(
+                "SELECT quantity FROM order_items WHERE order_id=? AND garment_type=?",
+                (order["id"], gt)
+            ).fetchone()
+            if not item:
+                conn.close()
+                return jsonify({"ok": False, "error": f"{gt} not found in order #{code}."})
+            max_qty = item["quantity"]
+            if qty > max_qty:
+                conn.close()
+                return jsonify({"ok": False, "error": f"Quantity {qty} exceeds garment quantity ({max_qty}) in order #{code}."})
+
+            # Duplicate check per garment per work type
+            if is_naap:
+                already = conn.execute(
+                    "SELECT COALESCE(SUM(qty_done),0) as t FROM work_logs WHERE order_code=? AND garment_type=? AND (notes LIKE 'Measurement%' OR notes LIKE 'Naap%')",
+                    (code, gt)
+                ).fetchone()["t"] or 0
+                if already >= max_qty:
+                    conn.close()
+                    return jsonify({"ok": False, "error": f"नाप (Measurement) already done for {gt} in order #{code}. Cannot add again."})
+            elif is_kataai:
+                already = conn.execute(
+                    "SELECT COALESCE(SUM(qty_done),0) as t FROM work_logs WHERE order_code=? AND garment_type=? AND (notes LIKE 'Kataai%' OR notes LIKE 'Cutting%')",
+                    (code, gt)
+                ).fetchone()["t"] or 0
+                if already >= max_qty:
+                    conn.close()
+                    return jsonify({"ok": False, "error": f"कटाई (Cutting) already done for {gt} in order #{code}. Cannot add again."})
+        else:
+            # No garment specified - cap to total order quantity
+            total_garment_qty = conn.execute(
+                "SELECT COALESCE(SUM(quantity),0) as t FROM order_items WHERE order_id=?",
+                (order["id"],)
+            ).fetchone()["t"] or 0
+            if total_garment_qty > 0 and qty > total_garment_qty:
+                conn.close()
+                return jsonify({"ok": False, "error": f"Quantity {qty} exceeds total garments in order ({total_garment_qty})."})
+
         making_rate = float(rate_override) if rate_override is not None else 0.0
         today = date.today().isoformat()
         now   = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -1117,7 +1193,7 @@ def api_worklog_add():
             INSERT INTO work_logs(order_id, order_code, garment_type, qty_done,
                                   employee_name, log_date, making_rate, notes, created_at)
             VALUES(?,?,?,?,?,?,?,?,?)
-        """, (order["id"], code, gt or notes, qty, emp_name, today, making_rate, notes, now))
+        """, (order["id"], code, garment, qty, emp_name, today, making_rate, notes, now))
         conn.commit()
         conn.close()
         return jsonify({"ok": True, "auto_ready": False, "progress": f"{notes}: {qty} piece(s) logged"})
