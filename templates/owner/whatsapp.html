@@ -15,6 +15,43 @@
 </div>
 
 <div class="page-body" style="padding:16px 24px;">
+
+  <!-- ── Order Confirmation Message Templates ─────────────────── -->
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-header" style="cursor:pointer;" onclick="var b=document.getElementById('wa-tpl-body');b.style.display=b.style.display==='none'?'block':'none';">
+      <span class="card-title">📝 Order Confirmation Message Template</span>
+      <span style="font-size:12px;color:var(--text-muted);">Click to edit — used when new order is confirmed</span>
+    </div>
+    <div id="wa-tpl-body" style="display:none;">
+      <div class="card-body">
+        <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">
+          Available variables: <strong>{name}</strong> = customer name, <strong>{shop}</strong> = shop name,
+          <strong>{code}</strong> = order #, <strong>{mobile}</strong> = mobile,
+          <strong>{items}</strong> = garments, <strong>{total}</strong>, <strong>{advance}</strong>,
+          <strong>{remaining}</strong>, <strong>{order_date}</strong>, <strong>{delivery_date}</strong>, <strong>{mode}</strong>
+        </p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div>
+            <label style="font-weight:700;font-size:13px;margin-bottom:6px;display:block;">🇬🇧 English Message</label>
+            <textarea id="wa-tpl-en" rows="12"
+              style="width:100%;padding:10px;font-size:12px;line-height:1.6;border:2px solid var(--border);border-radius:10px;resize:vertical;font-family:monospace;">{{ order_confirm_tpl_en }}</textarea>
+          </div>
+          <div>
+            <label style="font-weight:700;font-size:13px;margin-bottom:6px;display:block;">🇮🇳 Hindi Message</label>
+            <textarea id="wa-tpl-hi" rows="12"
+              style="width:100%;padding:10px;font-size:12px;line-height:1.6;border:2px solid var(--border);border-radius:10px;resize:vertical;font-family:monospace;">{{ order_confirm_tpl_hi }}</textarea>
+          </div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:10px;align-items:center;">
+          <button onclick="saveWATemplates()"
+            style="background:#6366f1;color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer;">
+            💾 Save Templates
+          </button>
+          <span id="wa-tpl-saved" style="color:#16a34a;font-weight:700;font-size:13px;display:none;">✅ Saved!</span>
+        </div>
+      </div>
+    </div>
+  </div>
   <div style="display:grid;grid-template-columns:420px 1fr;gap:24px;align-items:start;">
 
     <!-- ── LEFT: Compose ── -->
@@ -384,6 +421,20 @@ function sendNext(msgTemplate, festival) {
 }
 
 // ── SESSION KEEP-ALIVE ────────────────────
+function saveWATemplates() {
+  var en = document.getElementById("wa-tpl-en").value;
+  var hi = document.getElementById("wa-tpl-hi").value;
+  fetch("/owner/api/save-wa-template", {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({en:en, hi:hi})
+  }).then(function(r){return r.json();}).then(function(d){
+    if(d.ok){
+      var s = document.getElementById("wa-tpl-saved");
+      s.style.display="inline";
+      setTimeout(function(){ s.style.display="none"; }, 3000);
+    }
+  });
+}
 const SECS=5*60; let last=Date.now();
 ["click","keydown","mousemove","touchstart"].forEach(ev=>document.addEventListener(ev,()=>{last=Date.now();},{passive:true}));
 setInterval(()=>{if(Math.floor((Date.now()-last)/1000)>=SECS)window.location.href="/owner/login?expired=1";},5000);
