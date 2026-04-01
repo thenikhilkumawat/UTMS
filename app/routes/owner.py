@@ -651,23 +651,25 @@ def owner_customers():
         p = str(d).split("-")
         return f"{p[2]}-{p[1]}-{p[0]}" if len(p)==3 else d
 
-    customers = []
-    for r in rows:
-        order_codes = conn.execute(
-            "SELECT order_code FROM orders WHERE customer_id=? ORDER BY id DESC", (r["id"],)
-        ).fetchall()
-        codes_str = " ".join(o["order_code"] for o in order_codes)
-        customers.append({
-            "id":             r["id"],
-            "name":           r["name"],
-            "mobile":         r["mobile"] or "",
-            "address":        r["address"] or "",
-            "order_count":    r["order_count"],
-            "total_billed":   r["total_billed"] or 0,
-            "total_due":      r["total_due"] or 0,
-            "last_order_date":fmtd(r["last_order_date"]),
-            "order_codes":    codes_str
-        })
+    # Get all order codes per customer in one query
+    all_codes = conn.execute(
+        "SELECT customer_id, order_code FROM orders ORDER BY id DESC"
+    ).fetchall()
+    codes_by_cust = {}
+    for row in all_codes:
+        codes_by_cust.setdefault(row["customer_id"], []).append(row["order_code"])
+
+    customers = [{
+        "id":             r["id"],
+        "name":           r["name"],
+        "mobile":         r["mobile"] or "",
+        "address":        r["address"] or "",
+        "order_count":    r["order_count"],
+        "total_billed":   r["total_billed"] or 0,
+        "total_due":      r["total_due"] or 0,
+        "last_order_date":fmtd(r["last_order_date"]),
+        "order_codes":    " ".join(codes_by_cust.get(r["id"], []))
+    } for r in rows]
     urgent_count = conn.execute(
         "SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status!='delivered'"
     ).fetchone()["c"]
@@ -794,6 +796,12 @@ def whatsapp():
     conn.close()
 
     # Template definitions (names only for Jinja, messages in JS)
+    # Load saved custom order confirmation message templates from settings
+    order_confirm_tpl_en = get_setting("wa_order_confirm_en",
+        "*{shop}* - Order Confirmed\n\nHello {name}!\n\n---\nOrder No: *#{code}*\nCustomer: {name}\nMobile: {mobile}\nOrder Date: {order_date}\nDelivery Date: *{delivery_date}*\n\nGarments: {items}\n---\nTotal: Rs. {total}\nAdvance Paid: Rs. {advance}\nRemaining Due: Rs. {remaining}\nMode: {mode}\n\nThank you for choosing {shop}!")
+    order_confirm_tpl_hi = get_setting("wa_order_confirm_hi",
+        "*{shop}* - ऑर्डर पक्का हो गया\n\nनमस्ते {name} जी!\n\n---\nऑर्डर नंबर: *#{code}*\nग्राहक: {name}\nमोबाइल: {mobile}\nऑर्डर दिनांक: {order_date}\nडिलीवरी दिनांक: *{delivery_date}*\n\nकपड़े: {items}\n---\nकुल राशि: Rs. {total}\nअग्रिम: Rs. {advance}\nबकाया: Rs. {remaining}\nभुगतान: {mode}\n\n{shop} में आने का धन्यवाद!")
+
     templates = [
         {"name":"Order Ready",      "icon":"🟢"},
         {"name":"Payment Due",      "icon":"💰"},
@@ -812,7 +820,9 @@ def whatsapp():
         customers_json=json.dumps(customers),
         shop_name=shop_name,
         templates=templates,
-        broadcast_log=broadcast_log
+        broadcast_log=broadcast_log,
+        order_confirm_tpl_en=order_confirm_tpl_en,
+        order_confirm_tpl_hi=order_confirm_tpl_hi,
     )
 
 
@@ -873,6 +883,22 @@ def cancel_order(order_code):
     conn.close()
     flash(f"Order #{order_code} cancelled.", "success")
     return redirect(request.referrer or url_for("owner.owner_dashboard"))
+
+
+# ══════════════════════════════════════════════
+#  WHATSAPP ORDER TEMPLATE SAVE
+# ══════════════════════════════════════════════
+
+@bp.route("/api/save-wa-template", methods=["POST"])
+@owner_required
+def save_wa_template():
+    data = request.get_json(silent=True) or {}
+    from database import set_setting
+    if "en" in data:
+        set_setting("wa_order_confirm_en", data["en"])
+    if "hi" in data:
+        set_setting("wa_order_confirm_hi", data["hi"])
+    return jsonify({"ok": True})
 
 
 # ══════════════════════════════════════════════
