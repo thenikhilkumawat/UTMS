@@ -636,15 +636,20 @@ def inventory_delete(item_id):
 @owner_required
 def owner_customers():
     conn = get_db()
-    rows = conn.execute("""
-        SELECT c.id, c.name, c.mobile, c.address,
-               COUNT(o.id) as order_count,
-               COALESCE(SUM(o.payable_amount),0) as total_billed,
-               COALESCE(SUM(o.remaining),0) as total_due,
-               MAX(o.order_date) as last_order_date
-        FROM customers c LEFT JOIN orders o ON o.customer_id=c.id
-        GROUP BY c.id ORDER BY c.id DESC
-    """).fetchall()
+    try:
+        rows = conn.execute("""
+            SELECT c.id, c.name, COALESCE(c.mobile,'') as mobile,
+                   COALESCE(c.address,'') as address,
+                   COUNT(o.id) as order_count,
+                   COALESCE(SUM(o.payable_amount),0) as total_billed,
+                   COALESCE(SUM(o.remaining),0) as total_due,
+                   MAX(o.order_date) as last_order_date
+            FROM customers c LEFT JOIN orders o ON o.customer_id=c.id
+            GROUP BY c.id ORDER BY c.id DESC
+        """).fetchall()
+    except Exception as e:
+        conn.close()
+        return f"<h2>DB Error in /owner/customers</h2><pre>{e}</pre>", 500
 
     def fmtd(d):
         if not d: return "—"
@@ -909,17 +914,24 @@ def save_wa_template():
 @owner_required
 def owner_orders():
     conn = get_db()
-    rows = conn.execute("""
-        SELECT o.order_code, o.status, o.order_date, o.delivery_date,
-               o.payable_amount, o.remaining, o.is_urgent, o.note,
-               c.name as cname, c.mobile,
-               GROUP_CONCAT(oi.garment_type||' x'||oi.quantity, ', ') as garments_str
-        FROM orders o
-        LEFT JOIN customers c ON c.id=o.customer_id
-        LEFT JOIN order_items oi ON oi.order_id=o.id
-        GROUP BY o.id
-        ORDER BY o.id DESC
-    """).fetchall()
+    try:
+        rows = conn.execute("""
+            SELECT o.order_code, o.status, o.order_date, o.delivery_date,
+                   COALESCE(o.payable_amount,0) as payable_amount,
+                   COALESCE(o.remaining,0) as remaining,
+                   COALESCE(o.is_urgent,0) as is_urgent,
+                   COALESCE(o.note,'') as note,
+                   COALESCE(c.name,'—') as cname, COALESCE(c.mobile,'') as mobile,
+                   GROUP_CONCAT(oi.garment_type||' x'||oi.quantity, ', ') as garments_str
+            FROM orders o
+            LEFT JOIN customers c ON c.id=o.customer_id
+            LEFT JOIN order_items oi ON oi.order_id=o.id
+            GROUP BY o.id
+            ORDER BY o.id DESC
+        """).fetchall()
+    except Exception as e:
+        conn.close()
+        return f"<h2>DB Error in /owner/orders</h2><pre>{e}</pre>", 500
 
     def fmtd(d):
         if not d: return "—"
