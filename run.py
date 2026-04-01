@@ -13,6 +13,16 @@ app.secret_key = Config.SECRET_KEY
 app.register_blueprint(employee_bp)
 app.register_blueprint(owner_bp)
 
+# ── Run DB init on every startup (works with gunicorn on Render too) ──────
+import os as _os
+_os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)
+init_db()
+# Ensure order code starts at 3600 minimum
+from database import set_setting as _set_setting, get_setting as _get_setting
+_cur = int(_get_setting("last_order_code", "0"))
+if _cur < 3599:
+    _set_setting("last_order_code", "3599")
+
 @app.after_request
 def add_ngrok_header(response):
     response.headers["ngrok-skip-browser-warning"] = "true"
