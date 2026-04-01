@@ -202,6 +202,18 @@ var TAB_CONFIG = {
 
 function isHindi() { return typeof currentLang !== "undefined" && currentLang === "hi"; }
 
+function getWorkBadge(garmentType, notes) {
+  var n = (notes||"").trim();
+  var badge = "";
+  if (n.indexOf("Naap")!==-1 || n.indexOf("Measurement")!==-1)
+    badge = '<span style="background:#eef2ff;color:#4f46e5;border-radius:6px;padding:1px 6px;font-size:10px;font-weight:800;margin-left:5px;">📐 नाप</span>';
+  else if (n.indexOf("Kataai")!==-1 || n.indexOf("Cutting")!==-1)
+    badge = '<span style="background:#fff7ed;color:#ea580c;border-radius:6px;padding:1px 6px;font-size:10px;font-weight:800;margin-left:5px;">✂️ कटाई</span>';
+  else
+    badge = '<span style="background:#f0fdf4;color:#16a34a;border-radius:6px;padding:1px 6px;font-size:10px;font-weight:800;margin-left:5px;">🪡 सिलाई</span>';
+  return '<span style="font-size:12px;margin-left:6px;font-weight:700;color:var(--text-secondary);">'+garmentType+'</span>'+badge;
+}
+
 function translateWorkType(gt) {
   if (!isHindi()) return gt;
   // Translate known non-stitch work types
@@ -264,7 +276,7 @@ function setTab(tab) {
   var sb = document.getElementById("wl-submit");
   if (sb) sb.style.background = cfg.bg;
 
-  document.getElementById("garment-row").style.display = (tab==="stitch") ? "block" : "none";
+  document.getElementById("garment-row").style.display = "block";  // show for all tabs
   resetForm();
 }
 
@@ -290,22 +302,31 @@ function lookupCode() {
         + '<span style="font-size:13px;font-weight:900;color:#16a34a;">✓ #'+code+' — '+data.customer_name+'</span>'
         + '<span style="font-size:11px;color:var(--text-muted);margin-left:8px;">'+data.delivery_date_fmt+(data.is_urgent?' 🔥':'')+'</span></div>';
 
-      if (CURRENT_TAB === "stitch") {
-        var sel = document.getElementById("wl-garment");
-        sel.innerHTML = '<option value="">-- कपड़ा चुनें --</option>';
-        (data.items||[]).forEach(function(item) {
-          var rem = Math.max(0, item.required - item.logged);
-          var opt = document.createElement("option");
-          opt.value = item.garment_type;
-          opt.dataset.req    = item.required;
-          opt.dataset.logged = item.logged;
-          opt.disabled       = (rem===0);
-          opt.textContent    = item.garment_type + " — " + item.logged + "/" + item.required + (rem>0?" ("+rem+" बाकी)":" ✅");
-          sel.appendChild(opt);
-        });
-      } else {
-        showQtyAndSubmit();
-      }
+      var sel = document.getElementById("wl-garment");
+      sel.innerHTML = '<option value="">-- कपड़ा चुनें --</option>';
+      (data.items||[]).forEach(function(item) {
+        var opt = document.createElement("option");
+        opt.value = item.garment_type;
+        opt.dataset.req    = item.required;
+        opt.dataset.logged = item.logged;
+        opt.dataset.naap   = item.naap_done  || 0;
+        opt.dataset.cut    = item.cut_done   || 0;
+        opt.dataset.stitch = item.stitch_done|| 0;
+        if (CURRENT_TAB === "stitch") {
+          var rem = Math.max(0, item.required - (item.stitch_done||item.logged||0));
+          opt.disabled    = (rem===0);
+          opt.textContent = item.garment_type + " — " + (item.stitch_done||0) + "/" + item.required + (rem>0?" ("+rem+" बाकी)":" ✅ सिला");
+        } else if (CURRENT_TAB === "measure") {
+          var done = item.naap_done || 0;
+          opt.disabled    = (done >= item.required);
+          opt.textContent = item.garment_type + (done>=item.required ? " ✅ नाप हो गया" : " — नाप बाकी");
+        } else if (CURRENT_TAB === "cut") {
+          var done = item.cut_done || 0;
+          opt.disabled    = (done >= item.required);
+          opt.textContent = item.garment_type + (done>=item.required ? " ✅ कटाई हो गई" : " — कटाई बाकी");
+        }
+        sel.appendChild(opt);
+      });
     });
 }
 
@@ -313,16 +334,32 @@ function onGarmentChange() {
   var sel  = document.getElementById("wl-garment");
   var opt  = sel.options[sel.selectedIndex];
   var req  = parseInt(opt.dataset.req||0);
-  var done = parseInt(opt.dataset.logged||0);
   if (!sel.value) { hideQtyAndSubmit(); document.getElementById("wl-progress").style.display="none"; return; }
+  var done, label, color;
+  if (CURRENT_TAB==="measure") {
+    done=parseInt(opt.dataset.naap||0); label="नाप"; color="#4f46e5";
+  } else if (CURRENT_TAB==="cut") {
+    done=parseInt(opt.dataset.cut||0); label="कटाई"; color="#ea580c";
+  } else {
+    done=parseInt(opt.dataset.stitch||opt.dataset.logged||0); label="सिलाई"; color="#16a34a";
+  }
   var rem = Math.max(0, req-done);
-  document.getElementById("wl-qty").value = rem||1;
-  document.getElementById("wl-qty").max   = rem||req;
+  document.getElementById("wl-qty").value = rem > 0 ? rem : 1;
+  document.getElementById("wl-qty").max   = rem > 0 ? rem : req;
   var pct = Math.min(100, req>0?Math.round((done/req)*100):0);
-  document.getElementById("wl-prog-bar").style.width   = pct+"%";
-  document.getElementById("wl-prog-label").textContent = sel.value;
-  document.getElementById("wl-prog-text").textContent  = done+"/"+req+" हो गया";
-  document.getElementById("wl-progress").style.display = "block";
+  document.getElementById("wl-prog-bar").style.width       = pct+"%";
+  document.getElementById("wl-prog-bar").style.background  = color;
+  document.getElementById("wl-prog-label").textContent     = sel.value + " — " + label;
+  document.getElementById("wl-prog-text").textContent      = done+"/"+req+" हो गया";
+  document.getElementById("wl-progress").style.display     = "block";
+  if (rem <= 0) {
+    // Already done - warn and disable submit
+    document.getElementById("wl-submit").disabled = true;
+    document.getElementById("wl-prog-text").textContent = "✅ पहले से हो गया!";
+    document.getElementById("wl-prog-text").style.color = color;
+  } else {
+    document.getElementById("wl-submit").disabled = false;
+  }
   showQtyAndSubmit();
 }
 
@@ -356,9 +393,11 @@ function submitLog() {
   fetch("/api/work-log/add",{
     method:"POST", headers:{"Content-Type":"application/json"},
     body: JSON.stringify({
-      order_code:code, garment_type:isStitch?gt:(cfg.en+" (Order #"+code+")"),
+      order_code:code,
+      garment_type: gt,  // always send the garment type for all tabs
       qty_done:qty, employee_id:SEL_EMP_ID, employee_name:SEL_EMP_NAME,
-      notes:cfg.en, rate_override:isStitch?null:cfg.rate, is_non_stitch:!isStitch
+      notes: isStitch ? cfg.en : (CURRENT_TAB==="measure"?"Naap":"Kataai") + " — " + gt,
+      rate_override:isStitch?null:cfg.rate, is_non_stitch:!isStitch
     })
   }).then(function(r){return r.json();}).then(function(d){
     btn.disabled=false;
@@ -412,7 +451,7 @@ function renderStats(data) {
         return '<div style="display:flex;align-items:center;gap:10px;padding:9px 14px 9px 22px;">'
           +'<div style="flex:1;">'
           +'<span style="font-size:13px;font-weight:900;color:#4f46e5;">#'+e.order_code+'</span>'
-          +'<span style="font-size:12px;margin-left:8px;font-weight:700;color:var(--text-secondary);">'+translateWorkType(e.garment_type)+'</span>'
+          +getWorkBadge(e.garment_type, e.notes||'')
           +'</div>'
           +'<div style="text-align:right;">'
           +'<div style="font-size:20px;font-weight:900;">'+e.qty_done+'</div>'
