@@ -679,9 +679,68 @@ def owner_customers():
         "SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status!='delivered'"
     ).fetchone()["c"]
     conn.close()
-    return render_template("owner/customers.html",
-        active_page="customers", show_voice=False,
-        urgent_count=urgent_count, customers=customers, total=len(customers))
+
+    # Build customers table inline
+    rows_html = ""
+    for c in customers:
+        due_color = "#dc2626" if c["total_due"] > 0 else "#16a34a"
+        due_text  = f"₹{int(c['total_due'])}" if c["total_due"] > 0 else "✓ Paid"
+        rows_html += f"""<tr onclick="window.location='/owner/customers/{c["id"]}'"
+          style="border-bottom:1px solid #f0f0f0;cursor:pointer;"
+          onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
+          <td style="padding:12px 16px;"><div style="font-size:14px;font-weight:800;">{c["name"]}</div></td>
+          <td style="padding:12px 16px;color:#6b7280;">{c["mobile"] or "—"}</td>
+          <td style="padding:12px 16px;color:#6b7280;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{c["address"] or "—"}</td>
+          <td style="padding:12px 16px;text-align:center;font-weight:800;color:#6366f1;">{c["order_count"]}</td>
+          <td style="padding:12px 16px;text-align:right;font-weight:700;color:#6b7280;font-size:11px;">{c["order_codes"] or "—"}</td>
+          <td style="padding:12px 16px;text-align:right;font-weight:700;">₹{int(c["total_billed"])}</td>
+          <td style="padding:12px 16px;text-align:right;font-weight:700;color:{due_color};">{due_text}</td>
+          <td style="padding:12px 16px;text-align:right;color:#6b7280;font-size:12px;">{c["last_order_date"] or "—"}</td>
+        </tr>"""
+
+    html = f"""<!DOCTYPE html><html><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Customers — Owner</title>
+<style>
+body{{font-family:-apple-system,sans-serif;margin:0;background:#f9fafb;color:#111827;}}
+.header{{background:#fff;border-bottom:1px solid #e5e7eb;padding:16px 24px;display:flex;justify-content:space-between;align-items:center;}}
+h1{{font-size:20px;font-weight:900;margin:0;}}
+.body{{padding:20px 24px;}}
+table{{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 8px rgba(0,0,0,0.07);font-size:13px;}}
+th{{background:#f8fafc;padding:10px 16px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:#6b7280;border-bottom:2px solid #e5e7eb;}}
+input{{padding:10px 16px;font-size:14px;border:2px solid #e5e7eb;border-radius:10px;width:300px;outline:none;margin-bottom:16px;}}
+a.back{{background:#f1f5f9;color:#475569;padding:8px 16px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:700;}}
+a.export{{background:#d1fae5;color:#065f46;padding:8px 16px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:700;}}
+</style></head><body>
+<div class="header">
+  <div><h1>👥 Customers</h1><div style="font-size:13px;color:#6b7280;">{len(customers)} total</div></div>
+  <div style="display:flex;gap:8px;">
+    <a class="export" href="/owner/export/orders">📥 Export Excel</a>
+    <a class="back" href="/owner/dashboard">← Dashboard</a>
+  </div>
+</div>
+<div class="body">
+  <input type="text" id="srch" placeholder="Search name, mobile, order code..." oninput="filterRows()">
+  <table>
+    <thead><tr>
+      <th>Customer</th><th>Mobile</th><th>Address</th>
+      <th style="text-align:center;">Orders</th><th>Order Codes</th>
+      <th style="text-align:right;">Total Billed</th><th style="text-align:right;">Due</th>
+      <th style="text-align:right;">Last Order</th>
+    </tr></thead>
+    <tbody id="tbody">{rows_html}</tbody>
+  </table>
+</div>
+<script>
+function filterRows(){{
+  var q=document.getElementById("srch").value.toLowerCase().trim();
+  document.querySelectorAll("#tbody tr").forEach(function(r){{
+    r.style.display=(!q||r.textContent.toLowerCase().includes(q))?"":"none";
+  }});
+}}
+</script>
+</body></html>"""
+    return html
 
 
 # ══════════════════════════════════════════════
@@ -956,9 +1015,87 @@ def owner_orders():
         "SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status!='delivered'"
     ).fetchone()["c"]
     conn.close()
-    return render_template("owner/orders.html",
-        active_page="owner_orders", show_voice=False,
-        urgent_count=urgent_count, orders=orders, total=len(orders))
+
+    # Build order rows HTML inline (avoids template dependency)
+    status_colors = {
+        "delivered": "background:#d1fae5;color:#065f46",
+        "ready":     "background:#ede9fe;color:#6d28d9",
+        "cancelled": "background:#fee2e2;color:#dc2626",
+        "pending":   "background:#dbeafe;color:#1e40af",
+    }
+    rows_html = ""
+    for o in orders:
+        sc = status_colors.get(o["status"], "background:#f3f4f6;color:#374151")
+        cancel_btn = ""
+        if o["status"] not in ("delivered","cancelled"):
+            cancel_btn = f'''<form action="/owner/orders/cancel/{o["order_code"]}" method="POST" style="margin:0;"
+                onsubmit="return confirm('Cancel #{o["order_code"]}?')">
+                <button type="submit" style="background:#fee2e2;color:#dc2626;border:none;border-radius:7px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">✕ Cancel</button>
+              </form>'''
+        delete_btn = f'''<form action="/owner/orders/delete/{o["order_code"]}" method="POST" style="margin:0;"
+              onsubmit="return confirm('DELETE #{o["order_code"]} permanently?')">
+              <button type="submit" style="background:#1f2937;color:#fff;border:none;border-radius:7px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">🗑️ Delete</button>
+            </form>'''
+        note_html = f'''<div style="font-size:11px;color:#6b7280;font-style:italic;margin-top:2px;">📝 {o["note"][:30]}</div>''' if o["note"] else ""
+        urgent_badge = '<span style="background:#fee2e2;color:#dc2626;font-size:9px;font-weight:800;padding:1px 6px;border-radius:4px;">🔥 URGENT</span>' if o["is_urgent"] else ""
+        rows_html += f"""<tr style="border-bottom:1px solid #f0f0f0;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
+          <td style="padding:12px 14px;"><div style="font-size:15px;font-weight:900;color:#6366f1;">#{o["order_code"]}</div>{urgent_badge}{note_html}</td>
+          <td style="padding:12px 14px;"><div style="font-weight:700;">{o["cname"]}</div><div style="font-size:11px;color:#6b7280;">{o["mobile"]}</div></td>
+          <td style="padding:12px 14px;color:#4b5563;max-width:160px;">{o["garments"]}</td>
+          <td style="padding:12px 14px;"><div style="font-size:11px;color:#6b7280;">Order: {o["order_date"]}</div><div style="font-size:11px;color:#6b7280;">Delivery: <strong>{o["delivery_date"]}</strong></div></td>
+          <td style="padding:12px 14px;text-align:right;"><div style="font-weight:800;">₹{int(o["payable"])}</div>{"<div style='font-size:11px;color:#dc2626;font-weight:700;'>Due ₹"+str(int(o["remaining"]))+"</div>" if o["remaining"]>0 else "<div style='font-size:11px;color:#16a34a;font-weight:700;'>✓ Paid</div>"}</td>
+          <td style="padding:12px 14px;text-align:center;"><span style="font-size:11px;padding:3px 10px;border-radius:8px;font-weight:800;{sc};">{o["status"].upper()}</span></td>
+          <td style="padding:12px 14px;"><div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:center;">
+            <button onclick="window.open('/print-slip/{o["order_code"]}','_blank')" style="background:#f1f5f9;color:#475569;border:none;border-radius:7px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">🖨️ Slip</button>
+            {cancel_btn}{delete_btn}
+          </div></td>
+        </tr>"""
+
+    html = f"""<!DOCTYPE html><html><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Orders — Owner</title>
+<style>
+body{{font-family:-apple-system,sans-serif;margin:0;background:#f9fafb;color:#111827;}}
+.header{{background:#fff;border-bottom:1px solid #e5e7eb;padding:16px 24px;display:flex;justify-content:space-between;align-items:center;}}
+h1{{font-size:20px;font-weight:900;margin:0;}}
+.body{{padding:20px 24px;}}
+table{{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 8px rgba(0,0,0,0.07);font-size:13px;}}
+th{{background:#f8fafc;padding:10px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:#6b7280;border-bottom:2px solid #e5e7eb;}}
+input{{padding:10px 16px;font-size:14px;border:2px solid #e5e7eb;border-radius:10px;width:280px;outline:none;}}
+.tabs{{display:flex;gap:6px;flex-wrap:wrap;}}
+.tab{{padding:6px 14px;border-radius:8px;border:2px solid #e5e7eb;background:#fff;color:#6b7280;font-size:12px;font-weight:800;cursor:pointer;}}
+.tab.active{{background:#6366f1;color:#fff;border-color:#6366f1;}}
+a.back{{background:#f1f5f9;color:#475569;padding:8px 16px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:700;}}
+</style></head><body>
+<div class="header">
+  <div><h1>📋 Order Management</h1><div style="font-size:13px;color:#6b7280;">{len(orders)} total orders</div></div>
+  <a class="back" href="/owner/dashboard">← Dashboard</a>
+</div>
+<div class="body">
+  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;align-items:center;">
+    <input type="text" id="srch" placeholder="Search #code, name, mobile..." oninput="filterRows()">
+    <div class="tabs">
+      <button class="tab active" data-f="all" onclick="setTab('all',this)">All</button>
+      <button class="tab" data-f="pending" onclick="setTab('pending',this)">Pending</button>
+      <button class="tab" data-f="ready" onclick="setTab('ready',this)">Ready</button>
+      <button class="tab" data-f="delivered" onclick="setTab('delivered',this)">Delivered</button>
+      <button class="tab" data-f="cancelled" onclick="setTab('cancelled',this)">Cancelled</button>
+    </div>
+  </div>
+  <table>
+    <thead><tr>
+      <th>Order</th><th>Customer</th><th>Garments</th><th>Dates</th><th style="text-align:right;">Amount</th><th style="text-align:center;">Status</th><th style="text-align:center;">Actions</th>
+    </tr></thead>
+    <tbody id="tbody">{rows_html}</tbody>
+  </table>
+</div>
+<script>
+var activeTab="all";
+function setTab(k,btn){{activeTab=k;document.querySelectorAll(".tab").forEach(function(b){{b.classList.remove("active");}});btn.classList.add("active");filterRows();}}
+function filterRows(){{var q=document.getElementById("srch").value.toLowerCase().trim();document.querySelectorAll("#tbody tr").forEach(function(r){{var s=r.dataset.s||r.textContent.toLowerCase();var matchQ=!q||s.includes(q);var matchF=activeTab==="all"||r.dataset.status===activeTab;r.style.display=(matchQ&&matchF)?"":"none";}});}}
+</script>
+</body></html>"""
+    return html
 
 
 # ══════════════════════════════════════════════
