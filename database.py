@@ -251,6 +251,30 @@ def init_db():
     if "repeat_of" not in order_cols:
         cur.execute("ALTER TABLE orders ADD COLUMN repeat_of TEXT DEFAULT NULL")
 
+    # ── Employee column migrations ──────────────────────────────────────────
+    cur.execute("PRAGMA table_info(employees)")
+    emp_cols = [r[1] for r in cur.fetchall()]
+    if "skills" not in emp_cols:
+        cur.execute("ALTER TABLE employees ADD COLUMN skills TEXT DEFAULT 'stitch'")
+    if "hindi_name" not in emp_cols:
+        cur.execute("ALTER TABLE employees ADD COLUMN hindi_name TEXT DEFAULT ''")
+
+    # Set Kamal as 'all' skills by default if not already set
+    cur.execute("UPDATE employees SET skills='all' WHERE name='Kamal' AND (skills IS NULL OR skills='stitch')")
+
+    # Set Hindi names for known employees if not set
+    hindi_map = [
+        ("Kamal",     "कमल"),
+        ("Bhagwan",   "भगवान"),
+        ("Sawarmal",  "सावरमल"),
+        ("Mahesh",    "महेश"),
+        ("Manak Tau", "मानक ताऊ"),
+    ]
+    for eng, hin in hindi_map:
+        cur.execute(
+            "UPDATE employees SET hindi_name=? WHERE name=? AND (hindi_name IS NULL OR hindi_name='')",
+            (hin, eng)
+        )
 
     conn.commit()
     conn.close()
