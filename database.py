@@ -115,6 +115,8 @@ def init_db():
             name        TEXT NOT NULL UNIQUE,
             phone       TEXT DEFAULT '',
             active      INTEGER DEFAULT 1,
+            skills      TEXT DEFAULT 'stitch',
+            hindi_name  TEXT DEFAULT '',
             created_at  TEXT DEFAULT (datetime('now','localtime'))
         );
         CREATE TABLE IF NOT EXISTS measurement_fields (
