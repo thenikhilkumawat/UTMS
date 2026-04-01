@@ -237,21 +237,29 @@ def init_db():
         )
     """)
 
+    # ── Orders table column migrations ────────────────────────────────────────
     cur.execute("PRAGMA table_info(orders)")
     order_cols = [r[1] for r in cur.fetchall()]
     if "delivered_at" not in order_cols:
         cur.execute("ALTER TABLE orders ADD COLUMN delivered_at TEXT DEFAULT NULL")
-    # Add logged_by to work_logs if missing
+    if "repeat_of" not in order_cols:
+        cur.execute("ALTER TABLE orders ADD COLUMN repeat_of TEXT DEFAULT NULL")
+    if "note" not in order_cols:
+        cur.execute("ALTER TABLE orders ADD COLUMN note TEXT DEFAULT ''")
+    if "is_urgent" not in order_cols:
+        cur.execute("ALTER TABLE orders ADD COLUMN is_urgent INTEGER DEFAULT 0")
+    if "extra_charges" not in order_cols:
+        cur.execute("ALTER TABLE orders ADD COLUMN extra_charges REAL DEFAULT 0")
+
+    # ── Work logs column migrations ────────────────────────────────────────
     cur.execute("PRAGMA table_info(work_logs)")
     wl_cols = [r[1] for r in cur.fetchall()]
     if "employee_name" not in wl_cols:
         cur.execute("ALTER TABLE work_logs ADD COLUMN employee_name TEXT DEFAULT ''")
-
-    # Add repeat_of column if missing (migration for existing DBs)
-    cur.execute("PRAGMA table_info(orders)")
-    order_cols = [r[1] for r in cur.fetchall()]
-    if "repeat_of" not in order_cols:
-        cur.execute("ALTER TABLE orders ADD COLUMN repeat_of TEXT DEFAULT NULL")
+    if "notes" not in wl_cols:
+        cur.execute("ALTER TABLE work_logs ADD COLUMN notes TEXT DEFAULT ''")
+    if "making_rate" not in wl_cols:
+        cur.execute("ALTER TABLE work_logs ADD COLUMN making_rate REAL DEFAULT 0")
 
     # ── Employee column migrations ──────────────────────────────────────────
     cur.execute("PRAGMA table_info(employees)")
