@@ -1160,22 +1160,29 @@ def api_worklog_add():
                 return jsonify({"ok": False, "error": f"Quantity {qty} exceeds garment quantity ({max_qty}) in order #{code}."})
 
             # Duplicate check per garment per work type
+            # Check BOTH new format (garment_type=gt) AND old format (garment_type="Measurement (Order #X)")
             if is_naap:
                 already = conn.execute(
-                    "SELECT COALESCE(SUM(qty_done),0) as t FROM work_logs WHERE order_code=? AND garment_type=? AND (notes LIKE 'Measurement%' OR notes LIKE 'Naap%')",
+                    """SELECT COALESCE(SUM(qty_done),0) as t FROM work_logs
+                       WHERE order_code=?
+                       AND (garment_type=? OR notes LIKE 'Measurement%' OR notes LIKE 'Naap%')
+                       AND (notes LIKE 'Measurement%' OR notes LIKE 'Naap%')""",
                     (code, gt)
                 ).fetchone()["t"] or 0
                 if already >= max_qty:
                     conn.close()
-                    return jsonify({"ok": False, "error": f"नाप (Measurement) already done for {gt} in order #{code}. Cannot add again."})
+                    return jsonify({"ok": False, "error": f"नाप पहले से हो गई है {gt} ऑर्डर #{code} में। दोबारा नहीं हो सकती।"})
             elif is_kataai:
                 already = conn.execute(
-                    "SELECT COALESCE(SUM(qty_done),0) as t FROM work_logs WHERE order_code=? AND garment_type=? AND (notes LIKE 'Kataai%' OR notes LIKE 'Cutting%')",
+                    """SELECT COALESCE(SUM(qty_done),0) as t FROM work_logs
+                       WHERE order_code=?
+                       AND (garment_type=? OR notes LIKE 'Kataai%' OR notes LIKE 'Cutting%')
+                       AND (notes LIKE 'Kataai%' OR notes LIKE 'Cutting%')""",
                     (code, gt)
                 ).fetchone()["t"] or 0
                 if already >= max_qty:
                     conn.close()
-                    return jsonify({"ok": False, "error": f"कटाई (Cutting) already done for {gt} in order #{code}. Cannot add again."})
+                    return jsonify({"ok": False, "error": f"कटाई पहले से हो गई है {gt} ऑर्डर #{code} में। दोबारा नहीं हो सकती।"})
         else:
             # No garment specified - cap to total order quantity
             total_garment_qty = conn.execute(
