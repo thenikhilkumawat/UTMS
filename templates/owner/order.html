@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}Orders — Owner{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><h1>📋 Order Management</h1><div class="header-sub">{{ total }} total orders</div></div>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <a href="/owner/dashboard" class="btn btn-ghost btn-sm">← Dashboard</a>
+    <button class="menu-toggle" onclick="openSidebar()">☰</button>
+  </div>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div style="padding:12px 24px 0;">
+{% for cat,msg in messages %}
+<div style="background:{{'#d1fae5' if cat=='success' else '#fee2e2'}};color:{{'#065f46' if cat=='success' else '#dc2626'}};padding:10px 16px;border-radius:10px;font-weight:700;font-size:13px;margin-bottom:4px;">{{ msg }}</div>
+{% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
+<div class="page-body" style="padding:16px 24px;">
+  <!-- Filters -->
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center;">
+    <input type="text" id="srch" placeholder="Search #code, name, mobile, garment..."
+      oninput="filterRows()"
+      style="flex:1;min-width:200px;padding:10px 16px;font-size:14px;border:2px solid var(--border);border-radius:12px;">
+    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+      {% for key,label,color in [('all','All','#6366f1'),('pending','Pending','#3b82f6'),('ready','Ready','#10b981'),('delivered','Delivered','#6b7280'),('cancelled','Cancelled','#ef4444')] %}
+      <button class="ftab" data-f="{{ key }}" onclick="setTab('{{ key }}',this)"
+        style="padding:7px 14px;border-radius:10px;border:2px solid {% if key=='all' %}{{ color }}{% else %}var(--border){% endif %};background:{% if key=='all' %}{{ color }}{% else %}#fff{% endif %};color:{% if key=='all' %}#fff{% else %}var(--text-muted){% endif %};font-size:12px;font-weight:800;cursor:pointer;">
+        {{ label }}
+      </button>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div style="overflow-x:auto;">
+    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+      <thead>
+        <tr style="background:#f8fafc;border-bottom:2px solid var(--border);">
+          <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Order</th>
+          <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Customer</th>
+          <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Garments</th>
+          <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Dates</th>
+          <th style="padding:10px 14px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Amount</th>
+          <th style="padding:10px 14px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Status</th>
+          <th style="padding:10px 14px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="tbody">
+        {% for o in orders %}
+        <tr class="orow"
+          data-status="{{ o.status }}"
+          data-s="{{ o.order_code }} {{ o.cname|lower }} {{ o.mobile }} {{ o.garments|lower }}"
+          style="border-bottom:1px solid var(--border);transition:background 0.1s;"
+          onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
+
+          <td style="padding:12px 14px;">
+            <div style="font-size:15px;font-weight:900;color:var(--accent);">#{{ o.order_code }}</div>
+            {% if o.is_urgent %}<span style="background:#fee2e2;color:#dc2626;font-size:9px;font-weight:800;padding:1px 6px;border-radius:4px;">🔥 URGENT</span>{% endif %}
+            {% if o.note %}<div style="font-size:11px;color:var(--text-muted);margin-top:2px;font-style:italic;">📝 {{ o.note[:30] }}{% if o.note|length > 30 %}…{% endif %}</div>{% endif %}
+          </td>
+
+          <td style="padding:12px 14px;">
+            <div style="font-weight:700;">{{ o.cname }}</div>
+            {% if o.mobile %}<div style="font-size:11px;color:var(--text-muted);">{{ o.mobile }}</div>{% endif %}
+          </td>
+
+          <td style="padding:12px 14px;color:var(--text-secondary);max-width:160px;">{{ o.garments }}</td>
+
+          <td style="padding:12px 14px;">
+            <div style="font-size:11px;color:var(--text-muted);">Order: {{ o.order_date }}</div>
+            <div style="font-size:11px;color:var(--text-muted);">Delivery: <strong>{{ o.delivery_date }}</strong></div>
+          </td>
+
+          <td style="padding:12px 14px;text-align:right;">
+            <div style="font-weight:800;">₹{{ o.payable|int }}</div>
+            {% if o.remaining > 0 %}
+            <div style="font-size:11px;color:var(--danger);font-weight:700;">Due ₹{{ o.remaining|int }}</div>
+            {% else %}
+            <div style="font-size:11px;color:var(--success);font-weight:700;">✓ Paid</div>
+            {% endif %}
+          </td>
+
+          <td style="padding:12px 14px;text-align:center;">
+            <span style="font-size:11px;padding:3px 10px;border-radius:8px;font-weight:800;
+              background:{% if o.status=='delivered' %}#d1fae5;color:#065f46
+              {% elif o.status=='ready' %}#ede9fe;color:#6d28d9
+              {% elif o.status=='cancelled' %}#fee2e2;color:#dc2626
+              {% elif o.status=='pending' %}#dbeafe;color:#1e40af
+              {% else %}#f3f4f6;color:#374151{% endif %};">
+              {{ o.status|upper }}
+            </span>
+          </td>
+
+          <td style="padding:12px 14px;text-align:center;">
+            <div style="display:flex;gap:5px;justify-content:center;flex-wrap:wrap;">
+              <button onclick="window.open('/print-slip/{{ o.order_code }}','_blank')"
+                style="background:#f1f5f9;color:#475569;border:none;border-radius:7px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">
+                🖨️ Slip
+              </button>
+              {% if o.status != 'delivered' and o.status != 'cancelled' %}
+              <form action="/owner/orders/cancel/{{ o.order_code }}" method="POST" style="margin:0;"
+                onsubmit="return confirm('Cancel order #{{ o.order_code }}?')">
+                <button type="submit"
+                  style="background:#fee2e2;color:#dc2626;border:none;border-radius:7px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">
+                  ✕ Cancel
+                </button>
+              </form>
+              {% endif %}
+              <form action="/owner/orders/delete/{{ o.order_code }}" method="POST" style="margin:0;"
+                onsubmit="return confirm('⚠️ Permanently DELETE order #{{ o.order_code }}? This cannot be undone!')">
+                <button type="submit"
+                  style="background:#1f2937;color:#fff;border:none;border-radius:7px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">
+                  🗑️ Delete
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" style="padding:48px;text-align:center;color:var(--text-muted);">
+          <div style="font-size:32px;margin-bottom:8px;">📭</div>
+          <div style="font-weight:700;">No orders yet</div>
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+var activeTab = "all";
+function setTab(key, btn) {
+  activeTab = key;
+  document.querySelectorAll(".ftab").forEach(b => {
+    b.style.background = "#fff"; b.style.color = "var(--text-muted)"; b.style.borderColor = "var(--border)";
+  });
+  btn.style.background = "#6366f1"; btn.style.color = "#fff"; btn.style.borderColor = "#6366f1";
+  filterRows();
+}
+function filterRows() {
+  var q = document.getElementById("srch").value.toLowerCase().trim();
+  document.querySelectorAll(".orow").forEach(row => {
+    var matchQ = !q || row.dataset.s.includes(q);
+    var matchF = activeTab === "all" || row.dataset.status === activeTab;
+    row.style.display = (matchQ && matchF) ? "" : "none";
+  });
+}
+const SECS=5*60; let last=Date.now();
+["click","keydown","mousemove","touchstart"].forEach(ev=>document.addEventListener(ev,()=>{last=Date.now();},{passive:true}));
+setInterval(()=>{if(Math.floor((Date.now()-last)/1000)>=SECS)window.location.href="/owner/login?expired=1";},5000);
+window.addEventListener("pageshow",function(e){if(e.persisted){fetch("/owner/logout",{method:"POST",keepalive:true}).finally(()=>{window.location.href="/owner/login";})}});
+</script>
+{% endblock %}
