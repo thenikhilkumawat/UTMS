@@ -1187,23 +1187,35 @@ def api_worklog_add():
                 conn.close()
                 return jsonify({"ok": False, "error": f"Quantity {qty} exceeds garment quantity ({max_qty}) in order #{code}."})
 
-            # Duplicate check - covers both new format (gt=garment) and old format (gt="Measurement (Order #X)")
+            # Duplicate check - check by garment (new format) + order total (old format)
             if is_naap:
-                already = conn.execute(
-                    "SELECT COALESCE(SUM(qty_done),0) as t FROM work_logs WHERE order_code=? AND (notes LIKE 'Measurement%' OR notes LIKE 'Naap%')",
+                # Check per garment (new format entries where garment_type=gt)
+                already_gt = conn.execute(
+                    "SELECT COALESCE(SUM(qty_done),0) as t FROM work_logs WHERE order_code=? AND garment_type=? AND (notes LIKE 'Naap%' OR notes LIKE 'Measurement%')",
+                    (code, gt)
+                ).fetchone()["t"] or 0
+                # Check old format (garment_type contains "Measurement" - order-level entry)
+                already_old = conn.execute(
+                    "SELECT COALESCE(SUM(qty_done),0) as t FROM work_logs WHERE order_code=? AND garment_type LIKE 'Measurement%' AND (notes LIKE 'Measurement%' OR notes LIKE 'Naap%')",
                     (code,)
                 ).fetchone()["t"] or 0
+                already = already_gt + already_old
                 if already >= max_qty:
                     conn.close()
-                    return jsonify({"ok": False, "error": f"नाप पहले से हो गई है {gt} के लिए ऑर्डर #{code} में। दोबारा नहीं हो सकती।"})
+                    return jsonify({"ok": False, "error": f"नाप पहले से हो गई है {gt} के लिए ऑर्डर #{code} में। ({already}/{max_qty})"})
             elif is_kataai:
-                already = conn.execute(
-                    "SELECT COALESCE(SUM(qty_done),0) as t FROM work_logs WHERE order_code=? AND (notes LIKE 'Kataai%' OR notes LIKE 'Cutting%')",
+                already_gt = conn.execute(
+                    "SELECT COALESCE(SUM(qty_done),0) as t FROM work_logs WHERE order_code=? AND garment_type=? AND (notes LIKE 'Kataai%' OR notes LIKE 'Cutting%')",
+                    (code, gt)
+                ).fetchone()["t"] or 0
+                already_old = conn.execute(
+                    "SELECT COALESCE(SUM(qty_done),0) as t FROM work_logs WHERE order_code=? AND garment_type LIKE 'Cutting%' AND (notes LIKE 'Kataai%' OR notes LIKE 'Cutting%')",
                     (code,)
                 ).fetchone()["t"] or 0
+                already = already_gt + already_old
                 if already >= max_qty:
                     conn.close()
-                    return jsonify({"ok": False, "error": f"कटाई पहले से हो गई है {gt} के लिए ऑर्डर #{code} में। दोबारा नहीं हो सकती।"})
+                    return jsonify({"ok": False, "error": f"कटाई पहले से हो गई है {gt} के लिए ऑर्डर #{code} में। ({already}/{max_qty})"})
         else:
             # No garment specified - cap to total order quantity
             total_garment_qty = conn.execute(
