@@ -129,6 +129,9 @@
             <button onclick="selectGroup('ready')" class="btn btn-ghost btn-sm" style="color:var(--success);">🟢 Order Ready</button>
             <button onclick="selectGroup('none')" class="btn btn-ghost btn-sm">Clear All</button>
           </div>
+          <input type="text" id="cust-srch" placeholder="🔍 Search customer name..."
+            oninput="filterCustomers()"
+            style="width:100%;padding:8px 12px;font-size:13px;border:1.5px solid var(--border);border-radius:8px;margin-bottom:6px;">
           <div style="max-height:240px;overflow-y:auto;border:1.5px solid var(--border);border-radius:10px;">
             {% for c in customers %}
             <label style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.1s;"
@@ -421,6 +424,16 @@ function sendNext(msgTemplate, festival) {
 }
 
 // ── SESSION KEEP-ALIVE ────────────────────
+function filterCustomers() {
+  var q = document.getElementById("cust-srch").value.toLowerCase().trim();
+  document.querySelectorAll(".cust-cb").forEach(function(cb) {
+    var label = cb.closest("label");
+    var name = (cb.dataset.name||"").toLowerCase();
+    var mobile = (cb.dataset.mobile||"").toLowerCase();
+    label.style.display = (!q || name.includes(q) || mobile.includes(q)) ? "" : "none";
+  });
+}
+
 function saveWATemplates() {
   var en = document.getElementById("wa-tpl-en").value;
   var hi = document.getElementById("wa-tpl-hi").value;
