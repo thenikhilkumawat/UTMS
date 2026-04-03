@@ -771,6 +771,8 @@ def order_status():
             "SELECT garment_type, qty_done, notes FROM work_logs WHERE order_code=?",
             (o["order_code"],)
         ).fetchall()
+        # Get actual garment types in this order for old-format mapping
+        actual_garments = [it["garment_type"] for it in items_raw]
         naap_map   = {}  # naap done per garment
         kataai_map = {}  # kataai done per garment
         silai_map  = {}  # stitch done per garment
@@ -778,12 +780,26 @@ def order_status():
             gt_wl = wl["garment_type"]
             n     = (wl["notes"] or "").strip()
             q     = wl["qty_done"] or 0
-            if any(x in n for x in ["Measurement","Naap","नाप"]):
-                naap_map[gt_wl]   = naap_map.get(gt_wl, 0) + q
-            elif any(x in n for x in ["Kataai","Cutting","कटाई"]):
-                kataai_map[gt_wl] = kataai_map.get(gt_wl, 0) + q
+            is_naap_entry   = any(x in n for x in ["Measurement","Naap","नाप"])
+            is_kataai_entry = any(x in n for x in ["Kataai","Cutting","कटाई"])
+            # Old format: garment_type="Measurement (Order #X)" or "Cutting (Order #X)"
+            # Apply to all actual garments in the order
+            is_old_format = ("Order #" in gt_wl) or ("Order #" in n)
+            if is_naap_entry:
+                if is_old_format:
+                    # Distribute across all garments in this order
+                    for ag in actual_garments:
+                        naap_map[ag] = naap_map.get(ag, 0) + q
+                else:
+                    naap_map[gt_wl] = naap_map.get(gt_wl, 0) + q
+            elif is_kataai_entry:
+                if is_old_format:
+                    for ag in actual_garments:
+                        kataai_map[ag] = kataai_map.get(ag, 0) + q
+                else:
+                    kataai_map[gt_wl] = kataai_map.get(gt_wl, 0) + q
             else:
-                silai_map[gt_wl]  = silai_map.get(gt_wl, 0) + q
+                silai_map[gt_wl] = silai_map.get(gt_wl, 0) + q
 
         items = []
         for it in items_raw:
@@ -1064,10 +1080,11 @@ def api_worklog_order_info():
         (order["id"],)
     ).fetchall()
 
-    # Build per-garment naap/kataai/silai maps
+    # Build per-garment naap/kataai/silai maps (handles both old and new format)
     wl_all = conn.execute(
         "SELECT garment_type, qty_done, notes FROM work_logs WHERE order_code=?", (code,)
     ).fetchall()
+    actual_garments_in_order = [it["garment_type"] for it in items_raw]
     naap_map   = {}
     kataai_map = {}
     silai_map  = {}
@@ -1075,12 +1092,23 @@ def api_worklog_order_info():
         gt_wl = wl["garment_type"]
         n     = (wl["notes"] or "").strip()
         q     = wl["qty_done"] or 0
-        if any(x in n for x in ["Measurement","Naap","नाप"]):
-            naap_map[gt_wl]   = naap_map.get(gt_wl, 0) + q
-        elif any(x in n for x in ["Kataai","Cutting","कटाई"]):
-            kataai_map[gt_wl] = kataai_map.get(gt_wl, 0) + q
+        is_naap   = any(x in n for x in ["Measurement","Naap","नाप"])
+        is_kataai = any(x in n for x in ["Kataai","Cutting","कटाई"])
+        is_old    = "Order #" in gt_wl
+        if is_naap:
+            if is_old:
+                for ag in actual_garments_in_order:
+                    naap_map[ag] = naap_map.get(ag, 0) + q
+            else:
+                naap_map[gt_wl] = naap_map.get(gt_wl, 0) + q
+        elif is_kataai:
+            if is_old:
+                for ag in actual_garments_in_order:
+                    kataai_map[ag] = kataai_map.get(ag, 0) + q
+            else:
+                kataai_map[gt_wl] = kataai_map.get(gt_wl, 0) + q
         else:
-            silai_map[gt_wl]  = silai_map.get(gt_wl, 0) + q
+            silai_map[gt_wl] = silai_map.get(gt_wl, 0) + q
 
     def fmtd(d):
         if not d: return "—"
@@ -1159,30 +1187,23 @@ def api_worklog_add():
                 conn.close()
                 return jsonify({"ok": False, "error": f"Quantity {qty} exceeds garment quantity ({max_qty}) in order #{code}."})
 
-            # Duplicate check per garment per work type
-            # Check BOTH new format (garment_type=gt) AND old format (garment_type="Measurement (Order #X)")
+            # Duplicate check - covers both new format (gt=garment) and old format (gt="Measurement (Order #X)")
             if is_naap:
                 already = conn.execute(
-                    """SELECT COALESCE(SUM(qty_done),0) as t FROM work_logs
-                       WHERE order_code=?
-                       AND (garment_type=? OR notes LIKE 'Measurement%' OR notes LIKE 'Naap%')
-                       AND (notes LIKE 'Measurement%' OR notes LIKE 'Naap%')""",
-                    (code, gt)
+                    "SELECT COALESCE(SUM(qty_done),0) as t FROM work_logs WHERE order_code=? AND (notes LIKE 'Measurement%' OR notes LIKE 'Naap%')",
+                    (code,)
                 ).fetchone()["t"] or 0
                 if already >= max_qty:
                     conn.close()
-                    return jsonify({"ok": False, "error": f"नाप पहले से हो गई है {gt} ऑर्डर #{code} में। दोबारा नहीं हो सकती।"})
+                    return jsonify({"ok": False, "error": f"नाप पहले से हो गई है {gt} के लिए ऑर्डर #{code} में। दोबारा नहीं हो सकती।"})
             elif is_kataai:
                 already = conn.execute(
-                    """SELECT COALESCE(SUM(qty_done),0) as t FROM work_logs
-                       WHERE order_code=?
-                       AND (garment_type=? OR notes LIKE 'Kataai%' OR notes LIKE 'Cutting%')
-                       AND (notes LIKE 'Kataai%' OR notes LIKE 'Cutting%')""",
-                    (code, gt)
+                    "SELECT COALESCE(SUM(qty_done),0) as t FROM work_logs WHERE order_code=? AND (notes LIKE 'Kataai%' OR notes LIKE 'Cutting%')",
+                    (code,)
                 ).fetchone()["t"] or 0
                 if already >= max_qty:
                     conn.close()
-                    return jsonify({"ok": False, "error": f"कटाई पहले से हो गई है {gt} ऑर्डर #{code} में। दोबारा नहीं हो सकती।"})
+                    return jsonify({"ok": False, "error": f"कटाई पहले से हो गई है {gt} के लिए ऑर्डर #{code} में। दोबारा नहीं हो सकती।"})
         else:
             # No garment specified - cap to total order quantity
             total_garment_qty = conn.execute(
