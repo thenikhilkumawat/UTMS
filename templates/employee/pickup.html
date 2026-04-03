@@ -174,6 +174,11 @@ function debounceSearch() {
   if (q.length >= 2) searchTimer = setTimeout(doSearch, 400);
 }
 
+function doPickup(code) {
+  document.getElementById('search-results').innerHTML = '';
+  loadOrder(code);
+}
+
 function doSearch() {
   var q = document.getElementById("pickup-search").value.trim();
   if (!q) return;
@@ -196,7 +201,7 @@ function doSearch() {
       var statusColors = {pending:"#fbbf24",ready:"#34d399",delivered:"#9ca3af",cancelled:"#f87171"};
       res.innerHTML = data.map(function(o) {
         var dot = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+(statusColors[o.status]||"#9ca3af")+';margin-right:6px;"></span>';
-        return '<button onclick="document.getElementById('search-results').innerHTML='';loadOrder(''+o.order_code+'')"'
+        return '<button onclick="doPickup(\''+o.order_code+'\')"'
           + ' style="display:flex;align-items:center;justify-content:space-between;width:100%;padding:10px 14px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:10px;color:#fff;cursor:pointer;margin-bottom:6px;font-size:14px;font-weight:700;text-align:left;">'
           + '<span>'+dot+'#'+o.order_code+' — '+o.customer_name+'</span>'
           + '<span style="opacity:0.65;font-size:12px;">'+o.mobile+'</span></button>';
