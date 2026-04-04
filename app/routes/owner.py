@@ -1010,6 +1010,116 @@ def work_progress():
         urgent_count=urgent_count, orders=result, total=len(result))
 
 
+
+# ══════════════════════════════════════════════
+#  DESIGN GALLERY (Admin)
+# ══════════════════════════════════════════════
+
+@bp.route("/gallery")
+@owner_required
+def gallery_admin():
+    conn = get_db()
+    # Ensure tables exist
+    conn.execute("""CREATE TABLE IF NOT EXISTS gallery_types (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        parent_id INTEGER DEFAULT NULL,
+        sort_order INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT (datetime('now','localtime'))
+    )""")
+    conn.execute("""CREATE TABLE IF NOT EXISTS gallery_images (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        type_id INTEGER NOT NULL,
+        filename TEXT NOT NULL,
+        caption TEXT DEFAULT '',
+        sort_order INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT (datetime('now','localtime'))
+    )""")
+    conn.commit()
+    types = conn.execute("SELECT * FROM gallery_types ORDER BY parent_id NULLS FIRST, sort_order, id").fetchall()
+    images = conn.execute("SELECT * FROM gallery_images ORDER BY type_id, sort_order, id").fetchall()
+    urgent_count = conn.execute("SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status!='delivered'").fetchone()["c"]
+    conn.close()
+    return render_template("owner/gallery_admin.html",
+        active_page="gallery_admin", show_voice=False,
+        urgent_count=urgent_count, types=types, images=images)
+
+@bp.route("/gallery/add-type", methods=["POST"])
+@owner_required
+def gallery_add_type():
+    name      = request.form.get("name","").strip()
+    parent_id = request.form.get("parent_id","").strip() or None
+    if name:
+        conn = get_db()
+        conn.execute("INSERT INTO gallery_types(name,parent_id) VALUES(?,?)", (name, parent_id))
+        conn.commit(); conn.close()
+        flash(f"Type '{name}' added.", "success")
+    return redirect(url_for("owner.gallery_admin"))
+
+@bp.route("/gallery/delete-type/<int:tid>", methods=["POST"])
+@owner_required
+def gallery_delete_type(tid):
+    conn = get_db()
+    conn.execute("DELETE FROM gallery_images WHERE type_id=?", (tid,))
+    conn.execute("DELETE FROM gallery_types WHERE id=?", (tid,))
+    conn.execute("DELETE FROM gallery_types WHERE parent_id=?", (tid,))
+    conn.commit(); conn.close()
+    flash("Type deleted.", "success")
+    return redirect(url_for("owner.gallery_admin"))
+
+@bp.route("/gallery/upload-image", methods=["POST"])
+@owner_required
+def gallery_upload_image():
+    import base64, os as _os
+    type_id = request.form.get("type_id","").strip()
+    caption = request.form.get("caption","").strip()
+    file    = request.files.get("image")
+    if not type_id or not file or not file.filename:
+        flash("Please select a type and image.", "error")
+        return redirect(url_for("owner.gallery_admin"))
+    ext = _os.path.splitext(file.filename)[1].lower() or ".jpg"
+    folder = _os.path.join(Config.UPLOAD_FOLDER, "gallery")
+    _os.makedirs(folder, exist_ok=True)
+    fname = f"gal_{type_id}_{int(__import__('time').time())}{ext}"
+    file.save(_os.path.join(folder, fname))
+    conn = get_db()
+    conn.execute("INSERT INTO gallery_images(type_id,filename,caption) VALUES(?,?,?)", (type_id, fname, caption))
+    conn.commit(); conn.close()
+    flash("Image uploaded.", "success")
+    return redirect(url_for("owner.gallery_admin"))
+
+@bp.route("/gallery/delete-image/<int:iid>", methods=["POST"])
+@owner_required
+def gallery_delete_image(iid):
+    import os as _os
+    conn = get_db()
+    img = conn.execute("SELECT filename FROM gallery_images WHERE id=?", (iid,)).fetchone()
+    if img:
+        fpath = _os.path.join(Config.UPLOAD_FOLDER, "gallery", img["filename"])
+        if _os.path.exists(fpath):
+            _os.remove(fpath)
+        conn.execute("DELETE FROM gallery_images WHERE id=?", (iid,))
+        conn.commit()
+    conn.close()
+    flash("Image deleted.", "success")
+    return redirect(url_for("owner.gallery_admin"))
+
+@bp.route("/api/gallery")
+def api_gallery():
+    """Public API for employee gallery page"""
+    conn = get_db()
+    try:
+        types  = conn.execute("SELECT * FROM gallery_types ORDER BY parent_id NULLS FIRST, sort_order, id").fetchall()
+        images = conn.execute("SELECT * FROM gallery_images ORDER BY type_id, sort_order, id").fetchall()
+    except:
+        conn.close()
+        return jsonify({"types":[], "images":[]})
+    conn.close()
+    return jsonify({
+        "types":  [{"id":t["id"],"name":t["name"],"parent_id":t["parent_id"]} for t in types],
+        "images": [{"id":i["id"],"type_id":i["type_id"],"filename":i["filename"],"caption":i["caption"]} for i in images]
+    })
+
 # ══════════════════════════════════════════════
 #  FACTORY RESET
 # ══════════════════════════════════════════════
