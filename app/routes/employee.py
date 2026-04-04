@@ -766,40 +766,24 @@ def order_status():
             "SELECT * FROM order_items WHERE order_id=?", (o["id"],)
         ).fetchall()
 
-        # Get logged quantities per garment per work type
+        # Count naap/cut/stitch using simple notes-based approach (same as work_progress admin page)
         wl_rows = conn.execute(
-            "SELECT garment_type, qty_done, notes FROM work_logs WHERE order_code=?",
+            "SELECT qty_done, notes FROM work_logs WHERE order_code=?",
             (o["order_code"],)
         ).fetchall()
-        # Get actual garment types in this order for old-format mapping
-        actual_garments = [it["garment_type"] for it in items_raw]
-        naap_map   = {}  # naap done per garment
-        kataai_map = {}  # kataai done per garment
-        silai_map  = {}  # stitch done per garment
+        naap_total = kataai_total = silai_total = 0
         for wl in wl_rows:
-            gt_wl = wl["garment_type"]
-            n     = (wl["notes"] or "").strip()
-            q     = wl["qty_done"] or 0
-            is_naap_entry   = any(x in n for x in ["Measurement","Naap","नाप"])
-            is_kataai_entry = any(x in n for x in ["Kataai","Cutting","कटाई"])
-            # Old format: garment_type="Measurement (Order #X)" or "Cutting (Order #X)"
-            # Apply to all actual garments in the order
-            is_old_format = ("Order #" in gt_wl) or ("Order #" in n)
-            if is_naap_entry:
-                if is_old_format:
-                    # Distribute across all garments in this order
-                    for ag in actual_garments:
-                        naap_map[ag] = naap_map.get(ag, 0) + q
-                else:
-                    naap_map[gt_wl] = naap_map.get(gt_wl, 0) + q
-            elif is_kataai_entry:
-                if is_old_format:
-                    for ag in actual_garments:
-                        kataai_map[ag] = kataai_map.get(ag, 0) + q
-                else:
-                    kataai_map[gt_wl] = kataai_map.get(gt_wl, 0) + q
+            n = (wl["notes"] or "").strip()
+            q = wl["qty_done"] or 0
+            if any(x in n for x in ["Measurement","Naap","नाप"]):
+                naap_total += q
+            elif any(x in n for x in ["Kataai","Cutting","कटाई"]):
+                kataai_total += q
             else:
-                silai_map[gt_wl] = silai_map.get(gt_wl, 0) + q
+                silai_total += q
+
+        # Total garment quantity for this order
+        total_order_qty = sum(it["quantity"] for it in items_raw) or 1
 
         items = []
         for it in items_raw:
@@ -807,12 +791,13 @@ def order_status():
                 meas = json.loads(it["measurements"] or "{}")
             except:
                 meas = {}
-            qty        = it["quantity"]
-            gt         = it["garment_type"]
-            naap_done  = min(naap_map.get(gt, 0),   qty)
-            cut_done   = min(kataai_map.get(gt, 0), qty)
-            stitch_done= min(silai_map.get(gt, 0),  qty)
-            # Overall stitch pct (for auto-ready logic)
+            qty = it["quantity"]
+            gt  = it["garment_type"]
+            # Per-garment share of totals (proportional)
+            share = qty / total_order_qty
+            naap_done   = min(qty, int(naap_total   * share + 0.999))
+            cut_done    = min(qty, int(kataai_total  * share + 0.999))
+            stitch_done = min(qty, int(silai_total   * share + 0.999))
             pct = min(100, int((stitch_done / qty) * 100)) if qty else 0
             items.append({
                 "garment_type":  gt,
@@ -826,8 +811,8 @@ def order_status():
                 "naap_done":     naap_done,
                 "cut_done":      cut_done,
                 "stitch_done":   stitch_done,
-                "naap_pct":      min(100, int((naap_done/qty)*100)) if qty else 0,
-                "cut_pct":       min(100, int((cut_done/qty)*100))  if qty else 0,
+                "naap_pct":      min(100, int((naap_done/qty)*100))   if qty else 0,
+                "cut_pct":       min(100, int((cut_done/qty)*100))    if qty else 0,
                 "stitch_pct":    pct,
             })
 
@@ -872,6 +857,7 @@ def order_status():
         "upcoming":  sum(1 for o in orders if o["due_soon"] and not o["overdue"] and o["status"]!="delivered"),
         "ready":     sum(1 for o in orders if o["status"]=="ready"),
         "delivered": sum(1 for o in orders if o["status"]=="delivered"),
+        "cancelled": sum(1 for o in orders if o["status"]=="cancelled"),
         "urgent":    sum(1 for o in orders if o["is_urgent"] and o["status"]!="delivered"),
     }
     conn.close()
@@ -889,6 +875,7 @@ def order_status():
         total=counts["total"], late_count=counts["late"],
         upcoming_count=counts["upcoming"],
         ready_count=counts["ready"], delivered_count=counts["delivered"],
+        cancelled_count=counts["cancelled"],
         hindi_map=HINDI_MAP)
 
 
