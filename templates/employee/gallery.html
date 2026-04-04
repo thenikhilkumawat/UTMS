@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% block title %}Design Gallery — Uttam Tailors{% endblock %}
+{% block extra_css %}
+<style>
+.type-tab { transition: all 0.15s; cursor: pointer; }
+.type-tab:hover { transform: translateY(-2px); }
+.type-tab.active { box-shadow: 0 4px 16px rgba(99,102,241,0.3); }
+.img-card { transition: transform 0.2s; cursor: pointer; }
+.img-card:hover { transform: scale(1.04); }
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>🎨 <span class="lang-en">Design Gallery</span><span class="lang-hi" style="display:none;">डिजाइन गैलरी</span></h1>
+    <div class="header-sub"><span class="lang-en">Browse cloth design samples</span><span class="lang-hi" style="display:none;">कपड़े के डिजाइन देखें</span></div>
+  </div>
+  <button class="menu-toggle" onclick="openSidebar()">☰</button>
+</div>
+
+<div class="page-body" style="padding:16px 20px;">
+  <!-- Loading state -->
+  <div id="gallery-loading" style="text-align:center;padding:60px 20px;color:var(--text-muted);">
+    <div style="font-size:48px;margin-bottom:12px;">🎨</div>
+    <div style="font-size:16px;font-weight:700;">Loading gallery...</div>
+  </div>
+
+  <!-- Gallery content -->
+  <div id="gallery-content" style="display:none;">
+    <!-- Parent type tabs -->
+    <div id="parent-tabs" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;"></div>
+
+    <!-- Subtype tabs (if any) -->
+    <div id="subtype-tabs" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;min-height:0;"></div>
+
+    <!-- Images grid -->
+    <div id="images-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;"></div>
+
+    <!-- Empty state -->
+    <div id="no-images" style="display:none;text-align:center;padding:60px 20px;color:var(--text-muted);">
+      <div style="font-size:48px;margin-bottom:12px;">📷</div>
+      <div style="font-size:15px;font-weight:700;">No images in this category yet</div>
+      <div style="font-size:13px;margin-top:6px;">Admin can add images from Admin → Design Gallery</div>
+    </div>
+  </div>
+</div>
+
+<!-- Fullscreen overlay -->
+<div id="img-overlay" onclick="this.style.display='none'" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:9999;align-items:center;justify-content:center;flex-direction:column;">
+  <button onclick="prevImg(event)" style="position:absolute;left:16px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.15);border:none;color:#fff;width:50px;height:50px;border-radius:50%;font-size:24px;cursor:pointer;">‹</button>
+  <img id="overlay-img" style="max-width:88%;max-height:80%;border-radius:12px;object-fit:contain;">
+  <div id="overlay-caption" style="color:rgba(255,255,255,0.7);font-size:14px;font-weight:700;margin-top:12px;text-align:center;"></div>
+  <div id="overlay-counter" style="color:rgba(255,255,255,0.4);font-size:12px;margin-top:4px;"></div>
+  <button onclick="nextImg(event)" style="position:absolute;right:16px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.15);border:none;color:#fff;width:50px;height:50px;border-radius:50%;font-size:24px;cursor:pointer;">›</button>
+  <button onclick="document.getElementById('img-overlay').style.display='none'" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.15);border:none;color:#fff;width:40px;height:40px;border-radius:50%;font-size:20px;cursor:pointer;">✕</button>
+</div>
+
+{% endblock %}
+{% block extra_js %}
+<script>
+var ALL_TYPES = [], ALL_IMAGES = [];
+var currentParentId = null, currentSubtypeId = null;
+var currentImgList = [], currentImgIdx = 0;
+
+fetch("/owner/api/gallery")
+  .then(function(r){return r.json();})
+  .then(function(data){
+    ALL_TYPES  = data.types  || [];
+    ALL_IMAGES = data.images || [];
+    document.getElementById("gallery-loading").style.display = "none";
+    document.getElementById("gallery-content").style.display = "block";
+    if (!ALL_TYPES.length) {
+      document.getElementById("no-images").style.display = "block";
+      document.getElementById("no-images").innerHTML = '<div style="font-size:48px;margin-bottom:12px;">🎨</div><div style="font-size:15px;font-weight:700;">No categories yet</div><div style="font-size:13px;margin-top:6px;">Admin can create categories from Admin → Design Gallery</div>';
+      return;
+    }
+    renderParentTabs();
+  });
+
+function renderParentTabs() {
+  var parents = ALL_TYPES.filter(function(t){ return !t.parent_id; });
+  var container = document.getElementById("parent-tabs");
+  container.innerHTML = parents.map(function(t, i) {
+    return '<button class="type-tab" onclick="selectParent('+t.id+')" id="ptab-'+t.id+'"'
+      + ' style="padding:10px 20px;border-radius:12px;border:2px solid var(--border);background:#fff;color:var(--text-muted);font-size:14px;font-weight:800;cursor:pointer;">'
+      + t.name + '</button>';
+  }).join("");
+  if (parents.length > 0) selectParent(parents[0].id);
+}
+
+function selectParent(pid) {
+  currentParentId = pid; currentSubtypeId = null;
+  // Update tab styles
+  document.querySelectorAll("[id^='ptab-']").forEach(function(b){
+    b.style.background = "#fff"; b.style.color = "var(--text-muted)"; b.style.borderColor = "var(--border)";
+    b.classList.remove("active");
+  });
+  var active = document.getElementById("ptab-"+pid);
+  if (active) { active.style.background="var(--accent)"; active.style.color="#fff"; active.style.borderColor="var(--accent)"; active.classList.add("active"); }
+
+  // Subtypes
+  var subtypes = ALL_TYPES.filter(function(t){ return t.parent_id == pid; });
+  var stContainer = document.getElementById("subtype-tabs");
+  if (subtypes.length > 0) {
+    stContainer.innerHTML = '<span style="font-size:11px;font-weight:700;color:var(--text-muted);align-self:center;">Subtype:</span>'
+      + subtypes.map(function(t){
+          return '<button class="type-tab" onclick="selectSubtype('+t.id+')" id="stab-'+t.id+'"'
+            + ' style="padding:6px 14px;border-radius:10px;border:2px solid var(--border);background:#fff;color:var(--text-muted);font-size:12px;font-weight:800;cursor:pointer;">'
+            + t.name + '</button>';
+        }).join("");
+    stContainer.style.display = "flex";
+  } else {
+    stContainer.innerHTML = "";
+    stContainer.style.display = "none";
+  }
+  showImages(pid, null);
+}
+
+function selectSubtype(sid) {
+  currentSubtypeId = sid;
+  document.querySelectorAll("[id^='stab-']").forEach(function(b){
+    b.style.background = "#fff"; b.style.color = "var(--text-muted)"; b.style.borderColor = "var(--border)";
+  });
+  var active = document.getElementById("stab-"+sid);
+  if (active) { active.style.background="#6366f1"; active.style.color="#fff"; active.style.borderColor="#6366f1"; }
+  showImages(currentParentId, sid);
+}
+
+function showImages(parentId, subtypeId) {
+  var targetTypeId = subtypeId || parentId;
+  // If no subtype selected, include parent images + subtype images
+  var imgs = ALL_IMAGES.filter(function(i){
+    if (subtypeId) return i.type_id == subtypeId;
+    // Show parent images + all subtypes
+    var childIds = ALL_TYPES.filter(function(t){ return t.parent_id == parentId; }).map(function(t){ return t.id; });
+    return i.type_id == parentId || childIds.indexOf(i.type_id) !== -1;
+  });
+
+  var grid = document.getElementById("images-grid");
+  var noImg = document.getElementById("no-images");
+  currentImgList = imgs;
+
+  if (!imgs.length) {
+    grid.innerHTML = "";
+    noImg.style.display = "block";
+    return;
+  }
+  noImg.style.display = "none";
+
+  // Find type name for each image
+  var typeMap = {};
+  ALL_TYPES.forEach(function(t){ typeMap[t.id] = t.name; });
+
+  grid.innerHTML = imgs.map(function(img, idx) {
+    var src = "/static/order_images/gallery/" + img.filename;
+    var typeName = typeMap[img.type_id] || "";
+    return '<div class="img-card" onclick="openOverlay('+idx+')" style="background:#fff;border-radius:16px;overflow:hidden;border:1.5px solid var(--border);box-shadow:0 2px 12px rgba(0,0,0,0.06);">'
+      + '<div style="aspect-ratio:1;overflow:hidden;background:#f3f4f6;">'
+      + '<img src="'+src+'" style="width:100%;height:100%;object-fit:cover;" loading="lazy" onerror="this.parentElement.innerHTML=\'<div style=\\\"display:flex;align-items:center;justify-content:center;height:100%;font-size:36px;color:#d1d5db;\\\">🖼️</div>\'">'
+      + '</div>'
+      + '<div style="padding:10px 12px;">'
+      + '<div style="font-size:12px;font-weight:700;color:var(--text-primary);">'+typeName+'</div>'
+      + (img.caption ? '<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">'+img.caption+'</div>' : '')
+      + '</div></div>';
+  }).join("");
+}
+
+function openOverlay(idx) {
+  currentImgIdx = idx;
+  showOverlayImg();
+  document.getElementById("img-overlay").style.display = "flex";
+}
+
+function showOverlayImg() {
+  var img = currentImgList[currentImgIdx];
+  if (!img) return;
+  var typeMap = {}; ALL_TYPES.forEach(function(t){ typeMap[t.id] = t.name; });
+  document.getElementById("overlay-img").src = "/static/order_images/gallery/" + img.filename;
+  document.getElementById("overlay-caption").textContent = img.caption || typeMap[img.type_id] || "";
+  document.getElementById("overlay-counter").textContent = (currentImgIdx+1) + " / " + currentImgList.length;
+}
+
+function prevImg(e) { e.stopPropagation(); currentImgIdx = (currentImgIdx - 1 + currentImgList.length) % currentImgList.length; showOverlayImg(); }
+function nextImg(e) { e.stopPropagation(); currentImgIdx = (currentImgIdx + 1) % currentImgList.length; showOverlayImg(); }
+
+// Keyboard navigation
+document.addEventListener("keydown", function(e) {
+  if (document.getElementById("img-overlay").style.display !== "none") {
+    if (e.key === "ArrowLeft") prevImg(e);
+    else if (e.key === "ArrowRight") nextImg(e);
+    else if (e.key === "Escape") document.getElementById("img-overlay").style.display = "none";
+  }
+});
+</script>
+{% endblock %}
