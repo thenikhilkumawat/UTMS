@@ -25,7 +25,7 @@
 
 <!-- Filter tabs -->
 <div style="background:#fff;border-bottom:1px solid var(--border);padding:0 28px;display:flex;gap:0;">
-  {% set tabs = [('all','All Orders',total),('late','Late',late_count),('upcoming','Upcoming',upcoming_count),('ready','Ready',ready_count),('delivered','Delivered',delivered_count)] %}
+  {% set tabs = [('all','All Orders',total),('late','Late',late_count),('upcoming','Upcoming',upcoming_count),('ready','Ready',ready_count),('delivered','Delivered',delivered_count),('cancelled','Cancelled',cancelled_count)] %}
   {% for key,label,count in tabs %}
   <button class="sched-tab {% if loop.first %}active{% endif %}" data-f="{{ key }}" onclick="setTab('{{ key }}',this)"
     style="padding:12px 18px;font-size:13px;font-weight:700;border:none;border-bottom:3px solid {% if loop.first %}var(--accent){% else %}transparent{% endif %};background:transparent;cursor:pointer;color:{% if loop.first %}var(--accent){% else %}var(--text-muted){% endif %};">
@@ -132,6 +132,7 @@
         </td>
 
         <!-- Col 5: Work Progress — single bar with 3 segments -->
+        {# Use pre-computed values from backend directly #}
         {% set total_qty  = o.garments|sum(attribute='quantity') %}
         {% set naap_tot   = o.garments|sum(attribute='naap_done') %}
         {% set cut_tot    = o.garments|sum(attribute='cut_done') %}
@@ -139,10 +140,6 @@
         {% set naap_pct   = [[((naap_tot * 100) // total_qty) if total_qty else 0, 0]|max, 100]|min %}
         {% set cut_pct    = [[((cut_tot  * 100) // total_qty) if total_qty else 0, 0]|max, 100]|min %}
         {% set stitch_pct = [[((stitch_tot*100) // total_qty) if total_qty else 0, 0]|max, 100]|min %}
-        {# Each segment gets 1/3 of the bar. Filled = colored, empty = grey #}
-        {% set s1 = (naap_pct // 3)|int %}
-        {% set s2 = (cut_pct  // 3)|int %}
-        {% set s3 = (stitch_pct// 3)|int %}
         <td style="padding:10px 16px;vertical-align:top;min-width:130px;">
           <!-- Step labels -->
           <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
@@ -178,6 +175,8 @@
           <span style="background:#fee2e2;color:#dc2626;border:1.5px solid #fca5a5;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:800;">⏰ LATE</span>
           {% elif o.due_soon %}
           <span style="background:#fef3c7;color:#d97706;border:1.5px solid #fde68a;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:800;"><span class="lang-en">UPCOMING</span><span class="lang-hi" style="display:none;">जल्द</span></span>
+          {% elif o.status == "cancelled" %}
+          <span style="background:#fee2e2;color:#dc2626;border:1.5px solid #fca5a5;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;"><span class="lang-en">CANCELLED</span><span class="lang-hi" style="display:none;">रद्द</span></span>
           {% elif not o.is_urgent %}
           <span style="background:#eff6ff;color:#3b82f6;border:1.5px solid #bfdbfe;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;"><span class="lang-en">In Progress</span><span class="lang-hi" style="display:none;">काम हो रहा है</span></span>
           {% endif %}
@@ -369,7 +368,8 @@ function filterRows() {
     else if (activeTab === "upcoming")  matchF = upcoming && status !== "cancelled";
     else if (activeTab === "ready")     matchF = status === "ready";
     else if (activeTab === "delivered") matchF = status === "delivered";
-    else if (activeTab === "all")       matchF = status !== "cancelled";
+    else if (activeTab === "cancelled") matchF = status === "cancelled";
+    // All tab shows everything including cancelled
 
     const expRow = document.getElementById("exp-" + row.dataset.s.split(" ")[0]);
     row.style.display = (matchQ && matchF) ? "" : "none";
