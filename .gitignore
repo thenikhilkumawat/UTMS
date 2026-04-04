@@ -1,0 +1,14 @@
+# Database - never deploy this, keep it on Render only
+uttam.db
+
+# Uploaded images - never deploy these
+static/order_images/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# OS files
+.DS_Store
+Thumbs.db
