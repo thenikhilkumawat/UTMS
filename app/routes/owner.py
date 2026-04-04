@@ -1195,20 +1195,25 @@ def factory_reset():
     if password != "8899":
         flash("Incorrect reset password.", "error")
         return redirect(url_for("owner.settings"))
-    conn = get_db()
-    # Wipe all operational data - keep settings and employees
-    conn.execute("DELETE FROM work_logs")
-    conn.execute("DELETE FROM order_items")
-    conn.execute("DELETE FROM finance")
-    conn.execute("DELETE FROM orders")
-    conn.execute("DELETE FROM customers")
-    conn.execute("DELETE FROM salary_advances")
-    conn.execute("DELETE FROM notify_log")
-    # Reset order code counter
-    set_setting("last_order_code", "3599")
-    conn.commit()
-    conn.close()
-    flash("✅ System reset successfully. All orders, customers and work logs cleared.", "success")
+    try:
+        conn = get_db()
+        conn.execute("DELETE FROM work_logs")
+        conn.execute("DELETE FROM order_items")
+        conn.execute("DELETE FROM finance")
+        conn.execute("DELETE FROM orders")
+        conn.execute("DELETE FROM customers")
+        conn.execute("DELETE FROM salary_advances")
+        try:
+            conn.execute("DELETE FROM notify_log")
+        except: pass
+        # Reset order code counter using same connection
+        conn.execute("UPDATE settings SET value='3599' WHERE key='last_order_code'")
+        conn.execute("INSERT OR IGNORE INTO settings(key,value) VALUES('last_order_code','3599')")
+        conn.commit()
+        conn.close()
+        flash("✅ System reset! All orders and customers cleared. Rates and settings kept.", "success")
+    except Exception as e:
+        flash(f"Reset failed: {str(e)}", "error")
     return redirect(url_for("owner.settings"))
 
 
