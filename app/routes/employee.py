@@ -751,7 +751,8 @@ def order_status():
 
     raw = conn.execute("""
         SELECT o.*, c.name as cname, c.mobile,
-               COALESCE(o.repeat_of,'') as repeat_of
+               COALESCE(o.repeat_of,'') as repeat_of,
+               (SELECT COUNT(*) FROM orders o2 WHERE o2.customer_id=o.customer_id) as customer_order_count
         FROM orders o
         LEFT JOIN customers c ON c.id = o.customer_id
         ORDER BY
@@ -848,7 +849,8 @@ def order_status():
             "days_left":        days_left if (dl and not overdue) else 999,
             "delivered_at":     (o["delivered_at"] if "delivered_at" in o.keys() else "") or "",
             "delivered_at_fmt": fmtd(((o["delivered_at"] if "delivered_at" in o.keys() else "") or "")[:10]),
-            "garments":         items
+            "garments":         items,
+            "customer_order_count": o["customer_order_count"] or 1
         })
 
     counts = {
@@ -934,6 +936,15 @@ def api_collect_payment():
 # ══════════════════════════════════════════════
 #  WORK LOG MODULE
 # ══════════════════════════════════════════════
+
+
+@bp.route("/gallery")
+def gallery():
+    conn = get_db()
+    urgent_count = conn.execute("SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status!='delivered'").fetchone()["c"]
+    conn.close()
+    return render_template("employee/gallery.html",
+        active_page="gallery", show_voice=False, urgent_count=urgent_count)
 
 @bp.route("/work-log")
 def work_log():
