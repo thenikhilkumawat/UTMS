@@ -385,8 +385,9 @@ function submitLog() {
   var qty  = parseInt(document.getElementById("wl-qty").value)||0;
   if (!code||qty<1) { showToast("ऑर्डर कोड और संख्या दर्ज करें","warning"); return; }
   var isStitch = (CURRENT_TAB==="stitch");
-  var gt = isStitch ? document.getElementById("wl-garment").value : "";
-  if (isStitch && !gt) { showToast("कपड़ा चुनें","warning"); return; }
+  // Always read garment from dropdown for ALL tabs (naap, cut, stitch)
+  var gt = document.getElementById("wl-garment").value;
+  if (!gt) { showToast("कपड़ा चुनें","warning"); return; }
   var cfg = TAB_CONFIG[CURRENT_TAB];
   var btn = document.getElementById("wl-submit");
   btn.disabled=true; btn.textContent="दर्ज हो रहा है...";
@@ -396,7 +397,7 @@ function submitLog() {
       order_code:code,
       garment_type: gt,  // always send the garment type for all tabs
       qty_done:qty, employee_id:SEL_EMP_ID, employee_name:SEL_EMP_NAME,
-      notes: isStitch ? cfg.en : (CURRENT_TAB==="measure"?"Naap":"Kataai") + " — " + gt,
+      notes: isStitch ? cfg.en : (CURRENT_TAB==="measure"?"Naap":"Kataai") + " — " + gt,  // gt is now always the garment name
       rate_override:isStitch?null:cfg.rate, is_non_stitch:!isStitch
     })
   }).then(function(r){return r.json();}).then(function(d){
