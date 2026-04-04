@@ -505,19 +505,16 @@
     </div>
   </div>
 
-</div>
-{% endblock %}
-
 
   <!-- ── Danger Zone: Factory Reset ─────────────────── -->
-  <div class="card" style="border:2px solid #fca5a5;margin-top:24px;">
+  <div class="card" style="border:2px solid #fca5a5;margin-top:24px;margin-bottom:24px;">
     <div class="card-header" style="background:linear-gradient(135deg,#fff5f5,#fee2e2);">
       <span class="card-title" style="color:#dc2626;">⚠️ Danger Zone — Factory Reset</span>
     </div>
     <div class="card-body">
       <p style="font-size:13px;color:#6b7280;margin-bottom:16px;">
         This will permanently delete <strong>all orders, customers, work logs, finance entries and salary data</strong>.
-        Settings and employee records will be kept. This action cannot be undone.
+        Settings and employee records will be kept. This cannot be undone.
       </p>
       <form action="/owner/reset" method="POST"
         onsubmit="return confirm('⚠️ FINAL WARNING: This will wipe ALL data. Are you absolutely sure?')">
@@ -536,6 +533,8 @@
     </div>
   </div>
 
+</div>
+{% endblock %}
 
 {% block extra_js %}
 <script>
