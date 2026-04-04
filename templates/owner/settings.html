@@ -506,6 +506,50 @@
   </div>
 
 
+
+  <!-- ── Database Backup & Restore ─────────────────── -->
+  <div class="card" style="border:2px solid #bfdbfe;margin-top:24px;margin-bottom:0;">
+    <div class="card-header" style="background:linear-gradient(135deg,#eff6ff,#dbeafe);">
+      <span class="card-title" style="color:#1e40af;">💾 Database Backup & Restore</span>
+      <span style="font-size:12px;color:#3b82f6;font-weight:600;">Important for Render free tier</span>
+    </div>
+    <div class="card-body">
+      <div style="background:#fefce8;border:1.5px solid #fde047;border-radius:10px;padding:12px 16px;margin-bottom:16px;">
+        <div style="font-size:13px;font-weight:800;color:#854d0e;margin-bottom:4px;">⚠️ Render Free Tier Warning</div>
+        <div style="font-size:12px;color:#713f12;line-height:1.6;">
+          Render's free plan does not support persistent storage. <strong>Every time you deploy new code, your database gets wiped.</strong><br>
+          <strong>Solution:</strong> Download your database before deploying → restore it after deploying.
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <!-- Download -->
+        <div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:12px;padding:16px;">
+          <div style="font-size:13px;font-weight:800;color:#15803d;margin-bottom:6px;">📥 Step 1: Before Deploying</div>
+          <div style="font-size:12px;color:#166534;margin-bottom:12px;">Download your database first to save all orders and customer data.</div>
+          <a href="/owner/backup/download"
+            style="display:block;text-align:center;background:#16a34a;color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;font-weight:800;text-decoration:none;">
+            ⬇️ Download Backup
+          </a>
+        </div>
+
+        <!-- Restore -->
+        <div style="background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:12px;padding:16px;">
+          <div style="font-size:13px;font-weight:800;color:#1d4ed8;margin-bottom:6px;">📤 Step 2: After Deploying</div>
+          <div style="font-size:12px;color:#1e40af;margin-bottom:12px;">Upload your backup file to restore all data after a deploy.</div>
+          <form action="/owner/backup/restore" method="POST" enctype="multipart/form-data">
+            <input type="file" name="db_file" accept=".db" required
+              style="width:100%;font-size:12px;padding:6px;border:1.5px solid #93c5fd;border-radius:8px;margin-bottom:8px;background:#fff;box-sizing:border-box;">
+            <button type="submit"
+              style="width:100%;background:#2563eb;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:14px;font-weight:800;cursor:pointer;">
+              ⬆️ Restore Backup
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ── Danger Zone: Factory Reset ─────────────────── -->
   <div class="card" style="border:2px solid #fca5a5;margin-top:24px;margin-bottom:24px;">
     <div class="card-header" style="background:linear-gradient(135deg,#fff5f5,#fee2e2);">
