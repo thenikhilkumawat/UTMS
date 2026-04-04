@@ -1136,7 +1136,7 @@ def backup_download():
     db_path = Config.DATABASE
     if not os.path.exists(db_path):
         flash("Database file not found.", "error")
-        return redirect(url_for("owner.owner_settings"))
+        return redirect(url_for("owner.settings"))
     # Copy to temp to avoid locking issues
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".db")
     shutil.copy2(db_path, tmp.name)
@@ -1149,22 +1149,40 @@ def backup_download():
 @owner_required
 def backup_restore():
     """Restore database from uploaded backup file."""
-    import shutil, os
+    import shutil, os, sqlite3, tempfile
     from config import Config
-    file = request.files.get("db_file")
-    if not file or not file.filename:
-        flash("Please select a backup file.", "error")
-        return redirect(url_for("owner.owner_settings"))
-    if not file.filename.endswith(".db"):
-        flash("Invalid file. Must be a .db file.", "error")
-        return redirect(url_for("owner.owner_settings"))
-    db_path = Config.DATABASE
-    # Backup current DB first just in case
-    if os.path.exists(db_path):
-        shutil.copy2(db_path, db_path + ".prev")
-    file.save(db_path)
-    flash("✅ Database restored successfully! All your orders and data are back.", "success")
-    return redirect(url_for("owner.owner_settings"))
+    try:
+        file = request.files.get("db_file")
+        if not file or not file.filename:
+            flash("Please select a backup file.", "error")
+            return redirect(url_for("owner.settings"))
+        if not (file.filename.endswith(".db") or file.filename.endswith(".sqlite")):
+            flash("Invalid file. Must be a .db file.", "error")
+            return redirect(url_for("owner.settings"))
+
+        # Save uploaded file to a temp location first
+        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".db")
+        file.save(tmp.name)
+        tmp.close()
+
+        # Validate it's a real SQLite database
+        try:
+            test_conn = sqlite3.connect(tmp.name)
+            test_conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
+            test_conn.close()
+        except Exception as ve:
+            os.unlink(tmp.name)
+            flash(f"Invalid database file: {ve}", "error")
+            return redirect(url_for("owner.settings"))
+
+        db_path = Config.DATABASE
+        # Replace the live database with the uploaded one
+        shutil.copy2(tmp.name, db_path)
+        os.unlink(tmp.name)
+        flash("✅ Database restored successfully! All your orders and data are back.", "success")
+    except Exception as e:
+        flash(f"Restore failed: {str(e)}", "error")
+    return redirect(url_for("owner.settings"))
 
 # ══════════════════════════════════════════════
 #  FACTORY RESET
@@ -1176,7 +1194,7 @@ def factory_reset():
     password = request.form.get("reset_password","").strip()
     if password != "8899":
         flash("Incorrect reset password.", "error")
-        return redirect(url_for("owner.owner_settings"))
+        return redirect(url_for("owner.settings"))
     conn = get_db()
     # Wipe all operational data - keep settings and employees
     conn.execute("DELETE FROM work_logs")
@@ -1191,7 +1209,7 @@ def factory_reset():
     conn.commit()
     conn.close()
     flash("✅ System reset successfully. All orders, customers and work logs cleared.", "success")
-    return redirect(url_for("owner.owner_settings"))
+    return redirect(url_for("owner.settings"))
 
 
 # ══════════════════════════════════════════════
