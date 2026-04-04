@@ -1,10 +1,75 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session, jsonify, flash
+from flask import Blueprint, render_template, render_template_string, request, redirect, url_for, session, jsonify, flash
 import json
 from functools import wraps
 from datetime import date, datetime, timedelta
 from database import get_db, get_setting, set_setting
 
 bp = Blueprint("owner", __name__, url_prefix="/owner")
+
+
+ORDERS_PAGE = """{% extends 'base.html' %}
+{% block title %}Orders — Owner{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><h1>📋 Order Management</h1><div class="header-sub">{{ total }} total orders</div></div>
+  <div style="display:flex;gap:8px;align-items:center;"><a href="/owner/dashboard" class="btn btn-ghost btn-sm">← Dashboard</a><button class="menu-toggle" onclick="openSidebar()">☰</button></div>
+</div>
+{% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}<div style="padding:12px 24px 0;">{% for cat,msg in messages %}<div style="background:{{'#d1fae5' if cat=='success' else '#fee2e2'}};color:{{'#065f46' if cat=='success' else '#dc2626'}};padding:10px 16px;border-radius:10px;font-weight:700;font-size:13px;margin-bottom:4px;">{{ msg }}</div>{% endfor %}</div>{% endif %}{% endwith %}
+<div class="page-body" style="padding:16px 24px;">
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center;">
+    <input type="text" id="srch" placeholder="Search #code, name, mobile..." oninput="filterRows()" style="flex:1;min-width:200px;padding:10px 16px;font-size:14px;border:2px solid var(--border);border-radius:12px;">
+    <div style="display:flex;gap:6px;flex-wrap:wrap;">{% for key,label in [('all','All'),('pending','Pending'),('ready','Ready'),('delivered','Delivered'),('cancelled','Cancelled')] %}<button class="ftab" onclick="setTab('{{ key }}',this)" style="padding:7px 14px;border-radius:10px;border:2px solid {% if key=='all' %}var(--accent){% else %}var(--border){% endif %};background:{% if key=='all' %}var(--accent){% else %}#fff{% endif %};color:{% if key=='all' %}#fff{% else %}var(--text-muted){% endif %};font-size:12px;font-weight:800;cursor:pointer;">{{ label }}</button>{% endfor %}</div>
+  </div>
+  <div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:13px;">
+    <thead><tr style="background:#f8fafc;border-bottom:2px solid var(--border);"><th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Order</th><th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Customer</th><th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Garments</th><th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Dates</th><th style="padding:10px 14px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Amount</th><th style="padding:10px 14px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Status</th><th style="padding:10px 14px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Actions</th></tr></thead>
+    <tbody id="tbody">{% for o in orders %}<tr class="orow" data-status="{{ o.status }}" data-s="{{ o.order_code }} {{ o.cname|lower }} {{ o.mobile }} {{ o.garments|lower }}" style="border-bottom:1px solid var(--border);" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''"><td style="padding:12px 14px;"><div style="font-size:15px;font-weight:900;color:var(--accent);">#{{ o.order_code }}</div>{% if o.is_urgent %}<span style="background:#fee2e2;color:#dc2626;font-size:9px;font-weight:800;padding:1px 6px;border-radius:4px;">🔥</span>{% endif %}{% if o.note %}<div style="font-size:11px;color:var(--text-muted);font-style:italic;">📝 {{ o.note[:30] }}</div>{% endif %}</td><td style="padding:12px 14px;"><div style="font-weight:700;">{{ o.cname }}</div>{% if o.mobile %}<div style="font-size:11px;color:var(--text-muted);">{{ o.mobile }}</div>{% endif %}</td><td style="padding:12px 14px;color:var(--text-secondary);max-width:140px;">{{ o.garments }}</td><td style="padding:12px 14px;"><div style="font-size:11px;color:var(--text-muted);">Order: {{ o.order_date }}</div><div style="font-size:11px;color:var(--text-muted);">Delivery: <strong>{{ o.delivery_date }}</strong></div></td><td style="padding:12px 14px;text-align:right;"><div style="font-weight:800;">₹{{ o.payable|int }}</div>{% if o.remaining > 0 %}<div style="font-size:11px;color:var(--danger);font-weight:700;">Due ₹{{ o.remaining|int }}</div>{% else %}<div style="font-size:11px;color:var(--success);font-weight:700;">✓ Paid</div>{% endif %}</td><td style="padding:12px 14px;text-align:center;"><span style="font-size:11px;padding:3px 10px;border-radius:8px;font-weight:800;background:{% if o.status=='delivered' %}#d1fae5;color:#065f46{% elif o.status=='ready' %}#ede9fe;color:#6d28d9{% elif o.status=='cancelled' %}#fee2e2;color:#dc2626{% else %}#dbeafe;color:#1e40af{% endif %};">{{ o.status|upper }}</span></td><td style="padding:12px 14px;text-align:center;"><div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;"><button onclick="window.open('/print-slip/{{ o.order_code }}','_blank')" style="background:var(--accent-light);color:var(--accent);border:none;border-radius:7px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;">🖨️</button>{% if o.status != 'delivered' and o.status != 'cancelled' %}<form action="/owner/orders/cancel/{{ o.order_code }}" method="POST" style="margin:0;" onsubmit="return confirm('Cancel #{{ o.order_code }}?')"><button type="submit" style="background:var(--danger-light);color:var(--danger);border:none;border-radius:7px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;">✕</button></form>{% endif %}<form action="/owner/orders/delete/{{ o.order_code }}" method="POST" style="margin:0;" onsubmit="return confirm('DELETE #{{ o.order_code }}?')"><button type="submit" style="background:#1f2937;color:#fff;border:none;border-radius:7px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;">🗑️</button></form></div></td></tr>{% else %}<tr><td colspan="7" style="padding:40px;text-align:center;color:var(--text-muted);">No orders yet</td></tr>{% endfor %}</tbody>
+  </table></div>
+</div>
+{% endblock %}
+{% block extra_js %}<script>var activeTab="all";function setTab(k,btn){activeTab=k;document.querySelectorAll(".ftab").forEach(function(b){b.style.background="#fff";b.style.color="var(--text-muted)";b.style.borderColor="var(--border)";});btn.style.background="var(--accent)";btn.style.color="#fff";btn.style.borderColor="var(--accent)";filterRows();}function filterRows(){var q=document.getElementById("srch").value.toLowerCase().trim();document.querySelectorAll(".orow").forEach(function(r){r.style.display=(!q||r.dataset.s.includes(q))&&(activeTab==="all"||r.dataset.status===activeTab)?"":"none";});}const SECS=5*60;let last=Date.now();["click","keydown","mousemove","touchstart"].forEach(ev=>document.addEventListener(ev,()=>{last=Date.now();},{passive:true}));setInterval(()=>{if(Math.floor((Date.now()-last)/1000)>=SECS)window.location.href="/owner/login?expired=1";},5000);window.addEventListener("pageshow",function(e){if(e.persisted){fetch("/owner/logout",{method:"POST",keepalive:true}).finally(()=>{window.location.href="/owner/login";})}});</script>{% endblock %}
+"""
+
+CUSTOMERS_PAGE = """{% extends 'base.html' %}
+{% block title %}Customers — Owner{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><h1>👥 Customers</h1><div class="header-sub">{{ total }} total</div></div>
+  <div style="display:flex;gap:8px;align-items:center;"><a href="/owner/export/orders" class="btn btn-ghost btn-sm" style="background:#d1fae5;color:#065f46;">📥 Export</a><a href="/owner/dashboard" class="btn btn-ghost btn-sm">← Dashboard</a><button class="menu-toggle" onclick="openSidebar()">☰</button></div>
+</div>
+<div class="page-body" style="padding:16px 24px;">
+  <input type="text" id="srch" placeholder="Search name, mobile, order code..." oninput="filterRows()" style="padding:11px 16px;font-size:14px;border:2px solid var(--border);border-radius:12px;width:100%;max-width:400px;margin-bottom:16px;">
+  <div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:13px;">
+    <thead><tr style="background:#f8fafc;border-bottom:2px solid var(--border);"><th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Customer</th><th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Mobile</th><th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Address</th><th style="padding:10px 16px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Orders</th><th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Codes</th><th style="padding:10px 16px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Billed</th><th style="padding:10px 16px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Due</th><th style="padding:10px 16px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Last Order</th></tr></thead>
+    <tbody id="tbody">{% for c in customers %}<tr class="crow" data-s="{{ c.name|lower }} {{ c.mobile }} {{ c.address|lower }} {{ c.order_codes }}" onclick="window.location='/owner/customers/{{ c.id }}'" style="border-bottom:1px solid var(--border);cursor:pointer;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''"><td style="padding:12px 16px;"><div style="font-size:14px;font-weight:800;">{{ c.name }}</div></td><td style="padding:12px 16px;color:var(--text-muted);">{{ c.mobile or '—' }}</td><td style="padding:12px 16px;color:var(--text-muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ c.address or '—' }}</td><td style="padding:12px 16px;text-align:center;font-weight:800;color:var(--accent);">{{ c.order_count }}</td><td style="padding:12px 16px;color:var(--text-muted);font-size:11px;">{{ c.order_codes or '—' }}</td><td style="padding:12px 16px;text-align:right;font-weight:700;">₹{{ c.total_billed|int }}</td><td style="padding:12px 16px;text-align:right;font-weight:700;color:{% if c.total_due > 0 %}var(--danger){% else %}var(--success){% endif %};">{% if c.total_due > 0 %}₹{{ c.total_due|int }}{% else %}✓ Paid{% endif %}</td><td style="padding:12px 16px;text-align:right;color:var(--text-muted);font-size:12px;">{{ c.last_order_date or '—' }}</td></tr>{% else %}<tr><td colspan="8" style="padding:40px;text-align:center;color:var(--text-muted);">No customers yet</td></tr>{% endfor %}</tbody>
+  </table></div>
+</div>
+{% endblock %}
+{% block extra_js %}<script>function filterRows(){var q=document.getElementById("srch").value.toLowerCase().trim();document.querySelectorAll(".crow").forEach(function(r){r.style.display=(!q||r.dataset.s.includes(q))?"":"none";});}const SECS=5*60;let last=Date.now();["click","keydown","mousemove","touchstart"].forEach(ev=>document.addEventListener(ev,()=>{last=Date.now();},{passive:true}));setInterval(()=>{if(Math.floor((Date.now()-last)/1000)>=SECS)window.location.href="/owner/login?expired=1";},5000);window.addEventListener("pageshow",function(e){if(e.persisted){fetch("/owner/logout",{method:"POST",keepalive:true}).finally(()=>{window.location.href="/owner/login";})}});</script>{% endblock %}
+"""
+
+WORK_PROGRESS_PAGE = """{% extends 'base.html' %}
+{% block title %}Work Progress — Owner{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><h1>📊 Work Progress</h1><div class="header-sub">{{ total }} active orders</div></div>
+  <div style="display:flex;gap:8px;"><a href="/owner/dashboard" class="btn btn-ghost btn-sm">← Dashboard</a><button class="menu-toggle" onclick="openSidebar()">☰</button></div>
+</div>
+<div class="page-body" style="padding:16px 24px;">
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
+    <button class="wtab active" onclick="setWTab('all',this)" style="padding:7px 14px;border-radius:10px;border:2px solid var(--accent);background:var(--accent);color:#fff;font-size:12px;font-weight:800;cursor:pointer;">All</button>
+    <button class="wtab" onclick="setWTab('naap',this)" style="padding:7px 14px;border-radius:10px;border:2px solid var(--border);background:#fff;color:var(--text-muted);font-size:12px;font-weight:800;cursor:pointer;">📐 नाप Pending</button>
+    <button class="wtab" onclick="setWTab('cut',this)" style="padding:7px 14px;border-radius:10px;border:2px solid var(--border);background:#fff;color:var(--text-muted);font-size:12px;font-weight:800;cursor:pointer;">✂️ कटाई Pending</button>
+    <button class="wtab" onclick="setWTab('stitch',this)" style="padding:7px 14px;border-radius:10px;border:2px solid var(--border);background:#fff;color:var(--text-muted);font-size:12px;font-weight:800;cursor:pointer;">🪡 सिलाई Pending</button>
+    <button class="wtab" onclick="setWTab('done',this)" style="padding:7px 14px;border-radius:10px;border:2px solid var(--border);background:#fff;color:var(--text-muted);font-size:12px;font-weight:800;cursor:pointer;">✅ All Done</button>
+  </div>
+  <div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 8px rgba(0,0,0,0.07);">
+    <thead><tr style="background:#f8fafc;border-bottom:2px solid var(--border);"><th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Order</th><th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Customer</th><th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Garments</th><th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Delivery</th><th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);min-width:180px;">Progress</th><th style="padding:10px 16px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Pending</th></tr></thead>
+    <tbody id="wp-tbody">{% for o in orders %}{% set all_done = o.naap_pct >= 100 and o.cut_pct >= 100 and o.stitch_pct >= 100 %}<tr class="wrow" data-naap="{{ 'pending' if o.naap_pct < 100 else 'done' }}" data-cut="{{ 'pending' if o.cut_pct < 100 else 'done' }}" data-stitch="{{ 'pending' if o.stitch_pct < 100 else 'done' }}" data-alldone="{{ 'yes' if all_done else 'no' }}" style="border-bottom:1px solid var(--border);" onmouseover="this.style.background='#fafbff'" onmouseout="this.style.background=''"><td style="padding:12px 16px;"><div style="font-size:15px;font-weight:900;color:var(--accent);">#{{ o.order_code }}</div>{% if o.is_urgent %}<span style="background:#fee2e2;color:#dc2626;font-size:9px;font-weight:800;padding:1px 6px;border-radius:4px;">🔥 URGENT</span>{% endif %}</td><td style="padding:12px 16px;"><div style="font-weight:700;">{{ o.cname }}</div>{% if o.mobile %}<div style="font-size:11px;color:var(--text-muted);">{{ o.mobile }}</div>{% endif %}</td><td style="padding:12px 16px;color:var(--text-secondary);max-width:130px;font-size:12px;">{{ o.garments }}</td><td style="padding:12px 16px;"><div style="font-size:13px;font-weight:700;">{{ o.delivery_date }}</div><div style="font-size:11px;color:var(--text-muted);">{{ o.status|upper }}</div></td><td style="padding:12px 16px;"><div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font-size:9px;font-weight:800;color:{% if o.naap_pct>=100 %}#4f46e5{% else %}#9ca3af{% endif %};">नाप{% if o.naap_pct>=100 %} ✓{% else %} {{ o.naap_pct }}%{% endif %}</span><span style="font-size:9px;font-weight:800;color:{% if o.cut_pct>=100 %}#ea580c{% else %}#9ca3af{% endif %};">कटाई{% if o.cut_pct>=100 %} ✓{% else %} {{ o.cut_pct }}%{% endif %}</span><span style="font-size:9px;font-weight:800;color:{% if o.stitch_pct>=100 %}#16a34a{% else %}#9ca3af{% endif %};">सिलाई{% if o.stitch_pct>=100 %} ✓{% else %} {{ o.stitch_pct }}%{% endif %}</span></div><div style="display:flex;gap:2px;height:10px;"><div style="flex:1;background:#e5e7eb;border-radius:4px;overflow:hidden;"><div style="height:100%;background:#4f46e5;width:{{ o.naap_pct }}%;"></div></div><div style="flex:1;background:#e5e7eb;border-radius:4px;overflow:hidden;"><div style="height:100%;background:#ea580c;width:{{ o.cut_pct }}%;"></div></div><div style="flex:1;background:#e5e7eb;border-radius:4px;overflow:hidden;"><div style="height:100%;background:#16a34a;width:{{ o.stitch_pct }}%;"></div></div></div></td><td style="padding:12px 16px;text-align:center;">{% if all_done %}<span style="background:#d1fae5;color:#065f46;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:800;">✅ All Done</span>{% else %}<div style="display:flex;flex-direction:column;gap:3px;align-items:center;">{% if o.naap_pct < 100 %}<span style="background:#eef2ff;color:#4f46e5;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:800;">📐 नाप</span>{% endif %}{% if o.cut_pct < 100 %}<span style="background:#fff7ed;color:#ea580c;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:800;">✂️ कटाई</span>{% endif %}{% if o.stitch_pct < 100 %}<span style="background:#f0fdf4;color:#16a34a;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:800;">🪡 सिलाई</span>{% endif %}</div>{% endif %}</td></tr>{% else %}<tr><td colspan="6" style="padding:40px;text-align:center;color:var(--text-muted);">All orders delivered!</td></tr>{% endfor %}</tbody>
+  </table></div>
+</div>
+{% endblock %}
+{% block extra_js %}<script>function setWTab(key,btn){document.querySelectorAll(".wtab").forEach(function(b){b.style.background="#fff";b.style.color="var(--text-muted)";b.style.borderColor="var(--border)";});btn.style.background="var(--accent)";btn.style.color="#fff";btn.style.borderColor="var(--accent)";document.querySelectorAll(".wrow").forEach(function(r){var show=key==="all"||(key==="naap"&&r.dataset.naap==="pending")||(key==="cut"&&r.dataset.cut==="pending")||(key==="stitch"&&r.dataset.stitch==="pending")||(key==="done"&&r.dataset.alldone==="yes");r.style.display=show?"":"none";});}const SECS=5*60;let last=Date.now();["click","keydown","mousemove","touchstart"].forEach(ev=>document.addEventListener(ev,()=>{last=Date.now();},{passive:true}));setInterval(()=>{if(Math.floor((Date.now()-last)/1000)>=SECS)window.location.href="/owner/login?expired=1";},5000);window.addEventListener("pageshow",function(e){if(e.persisted){fetch("/owner/logout",{method:"POST",keepalive:true}).finally(()=>{window.location.href="/owner/login";})}});</script>{% endblock %}
+"""
 
 def fmt_d(d):
     """Format date string from YYYY-MM-DD to DD-MM-YYYY"""
@@ -680,7 +745,7 @@ def owner_customers():
     ).fetchone()["c"]
     conn.close()
 
-    return render_template("owner/customers.html",
+    return render_template_string(CUSTOMERS_PAGE,
         active_page="customers", show_voice=False,
         urgent_count=urgent_count, customers=customers, total=len(customers))
 
@@ -940,7 +1005,7 @@ def work_progress():
         "SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status!='delivered'"
     ).fetchone()["c"]
     conn.close()
-    return render_template("owner/work_progress.html",
+    return render_template_string(WORK_PROGRESS_PAGE,
         active_page="work_progress", show_voice=False,
         urgent_count=urgent_count, orders=result, total=len(result))
 
@@ -1055,7 +1120,7 @@ def owner_orders():
     ).fetchone()["c"]
     conn.close()
 
-    return render_template("owner/orders.html",
+    return render_template_string(ORDERS_PAGE,
         active_page="owner_orders", show_voice=False,
         urgent_count=urgent_count, orders=orders, total=len(orders))
 
