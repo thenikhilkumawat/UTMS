@@ -951,18 +951,21 @@ def work_log():
     conn = get_db()
     today = date.today().isoformat()
     # Ensure skills column exists (for existing databases) - skip for PostgreSQL
+    # Skip ALTER TABLE for PostgreSQL - columns already created in init_db
     import os as _os
     if not _os.environ.get("DATABASE_URL"):
         try:
             conn.execute("ALTER TABLE employees ADD COLUMN skills TEXT DEFAULT 'stitch'")
             conn.commit()
         except Exception:
-            pass
+            try: conn.execute("ROLLBACK")
+            except: pass
         try:
             conn.execute("ALTER TABLE employees ADD COLUMN hindi_name TEXT")
             conn.commit()
         except Exception:
-            pass
+            try: conn.execute("ROLLBACK")
+            except: pass
     # Set default skills and Hindi names
     hindi_map = {"Kamal":"कमल","Bhagwan":"भगवान","Sawarmal":"सावरमल","Mahesh":"महेश","Manak Tau":"मानक ताऊ"}
     conn.execute("UPDATE employees SET skills='all' WHERE name='Kamal' AND (skills IS NULL OR skills='stitch')")
