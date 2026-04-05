@@ -360,6 +360,16 @@ function setTab(f, btn) {
   filterRows();
 }
 
+// Auto-select tab from URL param e.g. ?tab=pending
+(function() {
+  var params = new URLSearchParams(window.location.search);
+  var tab = params.get('tab');
+  if (tab) {
+    var btn = document.querySelector('[data-f="' + tab + '"]');
+    if (btn) setTab(tab, btn);
+  }
+})();
+
 function filterRows() {
   const q = document.getElementById("srch").value.toLowerCase().trim();
   document.querySelectorAll(".orow").forEach(row => {
