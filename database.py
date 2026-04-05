@@ -35,6 +35,9 @@ if USE_PG:
                          lambda m: f"STRING_AGG(CAST({m.group(1)} AS TEXT), '{m.group(2)}')", sql)
             sql = re.sub(r"INSERT\s+OR\s+IGNORE\s+INTO",  "INSERT INTO", sql, flags=re.IGNORECASE)
             sql = re.sub(r"INSERT\s+OR\s+REPLACE\s+INTO", "INSERT INTO", sql, flags=re.IGNORECASE)
+            # ALTER TABLE ADD COLUMN → ADD COLUMN IF NOT EXISTS (PostgreSQL 9.6+)
+            sql = re.sub(r"ALTER TABLE (\w+) ADD COLUMN (\w+)",
+                         r"ALTER TABLE  ADD COLUMN IF NOT EXISTS ", sql, flags=re.IGNORECASE)
             # Add ON CONFLICT for settings upsert
             if "INTO settings" in sql and "ON CONFLICT" not in sql:
                 sql = sql.rstrip().rstrip(";") + " ON CONFLICT(key) DO UPDATE SET value=EXCLUDED.value"
