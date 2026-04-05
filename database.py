@@ -22,6 +22,10 @@ if USE_PG:
             self._cur = cur
 
         def _fix(self, sql, params):
+            # Escape literal % in LIKE patterns BEFORE replacing ? with %s
+            # e.g. LIKE 'types_%' → LIKE 'types_%%' so psycopg2 doesn't treat it as param
+            import re as _re
+            sql = _re.sub(r"%(?![s{])", "%%", sql)
             sql = sql.replace("?", "%s")
             sql = sql.replace("datetime('now','localtime')", "NOW()")
             sql = sql.replace("datetime('now')",             "NOW()")
