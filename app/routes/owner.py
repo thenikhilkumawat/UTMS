@@ -710,7 +710,7 @@ def owner_customers():
                    COALESCE(SUM(o.remaining),0) as total_due,
                    MAX(o.order_date) as last_order_date
             FROM customers c LEFT JOIN orders o ON o.customer_id=c.id
-            GROUP BY c.id ORDER BY c.id DESC
+            GROUP BY c.id, c.name, c.mobile, c.address ORDER BY c.id DESC
         """).fetchall()
     except Exception as e:
         conn.close()
@@ -848,7 +848,7 @@ def whatsapp():
         FROM customers c
         LEFT JOIN orders o ON o.customer_id=c.id AND o.status!='delivered'
         WHERE c.mobile IS NOT NULL AND c.mobile != ''
-        GROUP BY c.id ORDER BY c.name
+        GROUP BY c.id, c.name, c.mobile, c.address ORDER BY c.name
     """).fetchall()
 
     customers = [{"id":r["id"],"name":r["name"],"mobile":r["mobile"] or "",
@@ -967,7 +967,7 @@ def work_progress():
         LEFT JOIN customers c ON c.id=o.customer_id
         LEFT JOIN order_items oi ON oi.order_id=o.id
         WHERE o.status NOT IN ('delivered','cancelled')
-        GROUP BY o.id
+        GROUP BY o.id, o.order_code, o.status, o.delivery_date, o.is_urgent, c.name, c.mobile
         ORDER BY o.delivery_date ASC, o.is_urgent DESC
     """).fetchall()
 
@@ -1028,25 +1028,13 @@ def work_progress():
 @owner_required
 def gallery_admin():
     conn = get_db()
-    # Ensure tables exist
-    conn.execute("""CREATE TABLE IF NOT EXISTS gallery_types (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        parent_id INTEGER DEFAULT NULL,
-        sort_order INTEGER DEFAULT 0,
-        created_at TEXT DEFAULT (datetime('now','localtime'))
-    )""")
-    conn.execute("""CREATE TABLE IF NOT EXISTS gallery_images (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        type_id INTEGER NOT NULL,
-        filename TEXT NOT NULL,
-        caption TEXT DEFAULT '',
-        sort_order INTEGER DEFAULT 0,
-        created_at TEXT DEFAULT (datetime('now','localtime'))
-    )""")
-    conn.commit()
-    types = conn.execute("SELECT * FROM gallery_types ORDER BY parent_id NULLS FIRST, sort_order, id").fetchall()
-    images = conn.execute("SELECT * FROM gallery_images ORDER BY type_id, sort_order, id").fetchall()
+    # Tables already created by init_db
+    try:
+        types = conn.execute("SELECT * FROM gallery_types ORDER BY parent_id NULLS FIRST, sort_order, id").fetchall()
+        images = conn.execute("SELECT * FROM gallery_images ORDER BY type_id, sort_order, id").fetchall()
+    except Exception:
+        types = []
+        images = []
     urgent_count = conn.execute("SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status!='delivered'").fetchone()["c"]
     conn.close()
     return render_template("owner/gallery_admin.html",
@@ -1283,7 +1271,10 @@ def owner_orders():
             FROM orders o
             LEFT JOIN customers c ON c.id=o.customer_id
             LEFT JOIN order_items oi ON oi.order_id=o.id
-            GROUP BY o.id
+            GROUP BY o.id, o.order_code, o.status, o.order_date, o.delivery_date,
+                     o.total_amount, o.extra_charges, o.payable_amount, o.advance_paid,
+                     o.remaining, o.payment_mode, o.is_urgent, o.note, o.repeat_of,
+                     o.delivered_at, o.created_at, c.name, c.mobile, c.address
             ORDER BY o.id DESC
         """).fetchall()
     except Exception as e:
@@ -1358,7 +1349,10 @@ def owner_customer_detail(customer_id):
     orders = conn.execute("""
         SELECT o.*, STRING_AGG(CAST(oi.garment_type||' x'||oi.quantity AS TEXT), ', ') as garments_str
         FROM orders o LEFT JOIN order_items oi ON oi.order_id=o.id
-        WHERE o.customer_id=? GROUP BY o.id ORDER BY o.id DESC
+        WHERE o.customer_id=? GROUP BY o.id, o.order_code, o.status, o.order_date,
+                 o.delivery_date, o.payable_amount, o.advance_paid, o.remaining,
+                 o.payment_mode, o.is_urgent, o.note, o.delivered_at
+        ORDER BY o.id DESC
     """, (customer_id,)).fetchall()
 
     def fmtd(d):
