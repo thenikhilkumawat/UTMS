@@ -29,51 +29,65 @@
     <a href="/owner/dashboard" class="btn btn-sm btn-ghost" style="font-size:12px;margin-left:auto;">Today (Auto)</a>
   </div>
 
-  <!-- Row 1: 4 stat cards -->
+  <!-- Row 1: 4 clickable stat cards -->
   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px;">
 
-    <div class="stat-card green" style="padding:22px 20px;">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
-        <div class="stat-label">Income · {{ selected_date.split('-')|reverse|join('-') if selected_date else '—' }}</div>
+    <a href="/owner/finance?filter=today&date={{ selected_date }}" style="text-decoration:none;">
+      <div class="stat-card green" style="padding:22px 20px;cursor:pointer;transition:transform 0.15s,box-shadow 0.15s;"
+        onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,0.12)'"
+        onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+          <div class="stat-label">Income · {{ selected_date.split('-')|reverse|join('-') if selected_date else '—' }}</div>
+          <span style="font-size:10px;color:#16a34a;font-weight:700;">View →</span>
+        </div>
+        <div class="stat-value" style="font-size:34px;margin-bottom:10px;color:var(--text-primary);">₹{{ stats.today_income }}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <span style="font-size:12px;padding:4px 10px;border-radius:10px;font-weight:700;{% if stats.today_cash > 0 %}background:#14532d;color:#86efac;{% else %}background:#f1f5f9;color:#94a3b8;{% endif %}">Cash ₹{{ stats.today_cash }}</span>
+          <span style="font-size:12px;padding:4px 10px;border-radius:10px;font-weight:700;{% if stats.today_upi > 0 %}background:#1e3a5f;color:#93c5fd;{% else %}background:#f1f5f9;color:#94a3b8;{% endif %}">UPI ₹{{ stats.today_upi }}</span>
+        </div>
       </div>
-      <div class="stat-value" style="font-size:34px;margin-bottom:10px;color:var(--text-primary);">₹{{ stats.today_income }}</div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;">
-        <span style="font-size:12px;padding:4px 10px;border-radius:10px;font-weight:700;
-          {% if stats.today_cash > 0 %}background:#14532d;color:#86efac;{% else %}background:#f1f5f9;color:#94a3b8;{% endif %}">
-          Cash ₹{{ stats.today_cash }}
-        </span>
-        <span style="font-size:12px;padding:4px 10px;border-radius:10px;font-weight:700;
-          {% if stats.today_upi > 0 %}background:#1e3a5f;color:#93c5fd;{% else %}background:#f1f5f9;color:#94a3b8;{% endif %}">
-          UPI ₹{{ stats.today_upi }}
-        </span>
+    </a>
+
+    <a href="/owner/finance?filter=today&date={{ selected_date }}&type=expense" style="text-decoration:none;">
+      <div class="stat-card red" style="padding:22px 20px;cursor:pointer;transition:transform 0.15s,box-shadow 0.15s;"
+        onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,0.12)'"
+        onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+          <div class="stat-label">Expense · {{ selected_date.split('-')|reverse|join('-') if selected_date else '—' }}</div>
+          <span style="font-size:10px;color:#dc2626;font-weight:700;">View →</span>
+        </div>
+        <div class="stat-value" style="font-size:34px;color:var(--text-primary);">₹{{ stats.today_expense }}</div>
       </div>
-    </div>
+    </a>
 
-    <div class="stat-card red" style="padding:22px 20px;">
-      <div class="stat-label" style="margin-bottom:10px;">Expense · {{ selected_date.split('-')|reverse|join('-') if selected_date else '—' }}</div>
-      <div class="stat-value" style="font-size:34px;color:var(--text-primary);">₹{{ stats.today_expense }}</div>
-    </div>
-
-    <div class="stat-card blue" style="padding:22px 20px;">
-      <div class="stat-label" style="margin-bottom:10px;">This Month Income</div>
-      <div class="stat-value" style="font-size:34px;margin-bottom:8px;color:var(--text-primary);">₹{{ stats.month_income }}</div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;">
-        <span style="font-size:12px;padding:3px 9px;border-radius:10px;font-weight:700;
-          {% if stats.month_cash > 0 %}background:#14532d;color:#86efac;{% else %}background:#f1f5f9;color:#94a3b8;{% endif %}">
-          Cash ₹{{ stats.month_cash }}
-        </span>
-        <span style="font-size:12px;padding:3px 9px;border-radius:10px;font-weight:700;
-          {% if stats.month_upi > 0 %}background:#1e3a5f;color:#93c5fd;{% else %}background:#f1f5f9;color:#94a3b8;{% endif %}">
-          UPI ₹{{ stats.month_upi }}
-        </span>
+    <a href="/owner/finance?filter=month" style="text-decoration:none;">
+      <div class="stat-card blue" style="padding:22px 20px;cursor:pointer;transition:transform 0.15s,box-shadow 0.15s;"
+        onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,0.12)'"
+        onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+          <div class="stat-label">This Month Income</div>
+          <span style="font-size:10px;color:#2563eb;font-weight:700;">View →</span>
+        </div>
+        <div class="stat-value" style="font-size:34px;margin-bottom:8px;color:var(--text-primary);">₹{{ stats.month_income }}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <span style="font-size:12px;padding:3px 9px;border-radius:10px;font-weight:700;{% if stats.month_cash > 0 %}background:#14532d;color:#86efac;{% else %}background:#f1f5f9;color:#94a3b8;{% endif %}">Cash ₹{{ stats.month_cash }}</span>
+          <span style="font-size:12px;padding:3px 9px;border-radius:10px;font-weight:700;{% if stats.month_upi > 0 %}background:#1e3a5f;color:#93c5fd;{% else %}background:#f1f5f9;color:#94a3b8;{% endif %}">UPI ₹{{ stats.month_upi }}</span>
+        </div>
       </div>
-    </div>
+    </a>
 
-    <div class="stat-card amber" style="padding:22px 20px;">
-      <div class="stat-label" style="margin-bottom:10px;">Pending Dues</div>
-      <div class="stat-value" style="font-size:34px;color:var(--text-primary);">₹{{ stats.pending_dues }}</div>
-      <div class="stat-sub">{{ stats.pending_orders }} orders</div>
-    </div>
+    <a href="/owner/orders?filter=dues" style="text-decoration:none;">
+      <div class="stat-card amber" style="padding:22px 20px;cursor:pointer;transition:transform 0.15s,box-shadow 0.15s;"
+        onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,0.12)'"
+        onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+          <div class="stat-label">Pending Dues</div>
+          <span style="font-size:10px;color:#d97706;font-weight:700;">View →</span>
+        </div>
+        <div class="stat-value" style="font-size:34px;color:var(--text-primary);">₹{{ stats.pending_dues }}</div>
+        <div class="stat-sub">{{ stats.pending_orders }} orders with due</div>
+      </div>
+    </a>
   </div>
 
   <!-- Row 2: Transactions table (full width, most important) -->
