@@ -2,241 +2,205 @@
 {% block title %}Pickup & Delivery — Uttam Tailors{% endblock %}
 {% block extra_css %}
 <style>
-@keyframes slideUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+@keyframes slideUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
 @keyframes spin { to { transform: rotate(360deg); } }
-.pickup-card { animation: slideUp 0.3s ease-out; }
+.pickup-card { animation: slideUp 0.25s ease-out; }
 .pay-btn { transition: all 0.15s; }
 .pay-btn:active { transform: scale(0.97); }
-.step-dot { width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;flex-shrink:0; }
 </style>
 {% endblock %}
 {% block content %}
 
-<!-- Hero Search Header -->
-<div style="background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);padding:28px 24px 32px;position:relative;overflow:hidden;">
-  <div style="position:absolute;inset:0;background:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2220%22 cy=%2220%22 r=%2240%22 fill=%22rgba(255,255,255,0.03)%22/><circle cx=%2280%22 cy=%2270%22 r=%2260%22 fill=%22rgba(99,102,241,0.08)%22/></svg>');pointer-events:none;"></div>
-  <div style="position:relative;max-width:700px;margin:0 auto;">
-    <!-- Title row -->
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+<!-- Search Header -->
+<div style="background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);padding:24px 28px 28px;position:relative;overflow:hidden;">
+  <div style="position:absolute;inset:0;background:radial-gradient(circle at 80% 50%,rgba(99,102,241,0.15),transparent 60%);pointer-events:none;"></div>
+  <div style="position:relative;max-width:900px;margin:0 auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
       <div>
-        <h1 style="font-size:22px;font-weight:900;color:#fff;margin:0;letter-spacing:-0.5px;">
+        <h1 style="font-size:20px;font-weight:900;color:#fff;margin:0;">
           🚚 <span class="lang-en">Pickup & Delivery</span><span class="lang-hi" style="display:none;">पिकअप व डिलीवरी</span>
         </h1>
-        <div style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:4px;display:flex;align-items:center;gap:12px;">
-          <span>① <span class="lang-en">Search</span><span class="lang-hi" style="display:none;">खोजें</span></span>
-          <span style="color:rgba(255,255,255,0.2);">→</span>
-          <span>② <span class="lang-en">Collect</span><span class="lang-hi" style="display:none;">पैसे लें</span></span>
-          <span style="color:rgba(255,255,255,0.2);">→</span>
-          <span>③ <span class="lang-en">Deliver</span><span class="lang-hi" style="display:none;">डिलीवर</span></span>
+        <div style="font-size:11px;color:rgba(255,255,255,0.45);margin-top:3px;">
+          ① Search &nbsp;→&nbsp; ② Collect &nbsp;→&nbsp; ③ Deliver
         </div>
       </div>
       <div style="display:flex;gap:8px;">
-        <a href="/" style="background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:10px;padding:7px 14px;font-size:13px;font-weight:700;text-decoration:none;">← <span class="lang-en">Back</span><span class="lang-hi" style="display:none;">वापस</span></a>
+        <a href="/" style="background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:10px;padding:7px 14px;font-size:13px;font-weight:700;text-decoration:none;">← Back</a>
         <button class="menu-toggle" onclick="openSidebar()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;border-radius:10px;padding:7px 12px;cursor:pointer;">☰</button>
       </div>
     </div>
-
-    <!-- Search box -->
     <div style="display:flex;gap:10px;">
       <div style="flex:1;position:relative;">
-        <span style="position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:18px;pointer-events:none;">🔍</span>
+        <span style="position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:16px;pointer-events:none;">🔍</span>
         <input type="text" id="pickup-search"
           placeholder="Order code, name or mobile..."
           oninput="debounceSearch()" onkeydown="if(event.key==='Enter')doSearch()"
-          style="width:100%;font-size:17px;font-weight:700;padding:15px 18px 15px 50px;border:none;border-radius:16px;outline:none;letter-spacing:0.5px;box-shadow:0 8px 32px rgba(0,0,0,0.3);background:#fff;"
+          style="width:100%;font-size:16px;font-weight:700;padding:13px 16px 13px 46px;border:none;border-radius:14px;outline:none;box-shadow:0 6px 24px rgba(0,0,0,0.25);background:#fff;box-sizing:border-box;"
           autofocus>
       </div>
-      <button onclick="doSearch()" style="padding:0 22px;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;border-radius:16px;font-size:20px;cursor:pointer;box-shadow:0 8px 24px rgba(99,102,241,0.4);">→</button>
+      <button onclick="doSearch()" style="padding:0 22px;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;border-radius:14px;font-size:18px;cursor:pointer;box-shadow:0 6px 20px rgba(99,102,241,0.4);">→</button>
     </div>
-    <div id="search-results" style="margin-top:10px;"></div>
+    <div id="search-results" style="margin-top:8px;"></div>
   </div>
 </div>
 
-<!-- Main content -->
-<div style="padding:20px;max-width:780px;margin:0 auto;">
+<!-- Main -->
+<div style="padding:20px 24px;max-width:1000px;margin:0 auto;">
+
   <!-- Empty state -->
-  <div id="empty-state" style="text-align:center;padding:60px 20px;">
-    <div style="font-size:72px;margin-bottom:16px;opacity:0.4;">📦</div>
-    <div style="font-size:18px;font-weight:800;color:var(--text-muted);">
-      <span class="lang-en">Enter order code or customer name to get started</span>
-      <span class="lang-hi" style="display:none;">ऑर्डर कोड या नाम डालें</span>
-    </div>
+  <div id="empty-state" style="text-align:center;padding:50px 20px;">
+    <div style="font-size:64px;opacity:0.25;margin-bottom:12px;">📦</div>
+    <div style="font-size:16px;font-weight:700;color:var(--text-muted);">Enter order code or customer name</div>
   </div>
 
-  <!-- Delivery card (shown after search) -->
+  <!-- Result card — 2 column layout -->
   <div id="delivery-card" style="display:none;" class="pickup-card">
 
-    <!-- ══ ORDER HEADER CARD ══ -->
-    <div style="background:linear-gradient(135deg,#1e1b4b,#4338ca);border-radius:20px;padding:20px 24px;margin-bottom:14px;box-shadow:0 8px 32px rgba(67,56,202,0.35);position:relative;overflow:hidden;">
-      <div style="position:absolute;right:-20px;top:-20px;width:120px;height:120px;background:rgba(255,255,255,0.05);border-radius:50%;pointer-events:none;"></div>
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
-        <div>
-          <div style="font-size:42px;font-weight:900;color:#fff;letter-spacing:2px;line-height:1;" id="dc-code">—</div>
-          <div style="font-size:18px;font-weight:800;color:rgba(255,255,255,0.95);margin-top:6px;" id="dc-customer">—</div>
-          <div style="font-size:12px;color:rgba(255,255,255,0.55);margin-top:4px;" id="dc-meta">—</div>
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
-          <div id="dc-status-badge" style="border-radius:12px;padding:8px 18px;font-size:13px;font-weight:900;color:#fff;background:rgba(255,255,255,0.15);border:2px solid rgba(255,255,255,0.3);">—</div>
-          <button onclick="searchAnother()" style="background:rgba(255,255,255,0.12);color:#fff;border:1px solid rgba(255,255,255,0.25);border-radius:10px;padding:5px 14px;font-size:12px;font-weight:700;cursor:pointer;">
-            ← <span class="lang-en">Search another</span><span class="lang-hi" style="display:none;">दूसरा ऑर्डर</span>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- ══ INFO GRID ══ -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
-
-      <!-- Garments card -->
-      <div style="background:#fff;border-radius:16px;padding:16px;border:1.5px solid #e0e7ff;box-shadow:0 2px 8px rgba(99,102,241,0.08);">
-        <div style="font-size:10px;font-weight:800;text-transform:uppercase;color:#6366f1;margin-bottom:10px;letter-spacing:0.8px;">
-          👕 <span class="lang-en">Garments</span><span class="lang-hi" style="display:none;">कपड़े</span>
-        </div>
-        <div id="dc-garments" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
-      </div>
-
-      <!-- Payment summary card -->
-      <div style="background:#fff;border-radius:16px;padding:16px;border:1.5px solid #e0e7ff;box-shadow:0 2px 8px rgba(99,102,241,0.08);">
-        <div style="font-size:10px;font-weight:800;text-transform:uppercase;color:#6366f1;margin-bottom:10px;letter-spacing:0.8px;">
-          💰 <span class="lang-en">Payment</span><span class="lang-hi" style="display:none;">भुगतान</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
-          <span style="font-size:12px;color:var(--text-muted);">Total Bill</span>
-          <span style="font-size:14px;font-weight:800;" id="dc-total">—</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
-          <span style="font-size:12px;color:var(--text-muted);">Advance Paid</span>
-          <span style="font-size:14px;font-weight:700;color:#16a34a;" id="dc-advance">—</span>
-        </div>
-        <div style="border-top:1px dashed #e5e7eb;margin:8px 0;"></div>
-        <div style="display:flex;justify-content:space-between;">
-          <span style="font-size:13px;font-weight:800;color:#dc2626;"><span class="lang-en">Remaining Due</span><span class="lang-hi" style="display:none;">बाकी</span></span>
-          <span style="font-size:18px;font-weight:900;color:#dc2626;" id="dc-remaining">—</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Photos strip -->
-    <div id="photos-strip" style="display:none;background:#fffbeb;border-radius:16px;padding:14px 16px;margin-bottom:14px;border:1.5px solid #fde68a;">
-      <div style="font-size:10px;font-weight:800;text-transform:uppercase;color:#92400e;margin-bottom:10px;letter-spacing:0.8px;">📷 <span class="lang-en">Cloth Photos</span><span class="lang-hi" style="display:none;">कपड़े की फोटो</span></div>
-      <div id="dc-images" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
-    </div>
-
-    <!-- ══ PAYMENT SECTION ══ -->
-    <div id="payment-section" style="display:none;">
-      <div style="background:#fff;border-radius:20px;padding:20px;border:1.5px solid var(--border);box-shadow:0 2px 12px rgba(0,0,0,0.06);">
-        <div style="font-size:14px;font-weight:900;color:var(--text-primary);margin-bottom:16px;">
-          💵 <span class="lang-en">Collect Payment</span><span class="lang-hi" style="display:none;">पैसे लें</span>
-        </div>
-
-        <!-- Amount input -->
-        <div style="margin-bottom:14px;">
-          <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:6px;">
-            <span class="lang-en">Amount (₹)</span><span class="lang-hi" style="display:none;">रकम (₹)</span>
-          </label>
-          <input type="number" id="dc-amount" min="0" placeholder="0"
-            style="width:100%;font-size:36px;font-weight:900;padding:12px 16px;border:2px solid var(--border);border-radius:14px;text-align:center;background:#f8fafc;outline:none;box-sizing:border-box;"
-            oninput="if(payMode==='upi') document.getElementById('upi-amt').textContent=this.value||0;">
-        </div>
-
-        <!-- Payment mode -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
-          <button id="mode-cash" onclick="setPayMode('cash')" class="pay-btn"
-            style="padding:12px;border-radius:12px;border:2px solid #16a34a;background:#16a34a;color:#fff;font-size:15px;font-weight:800;cursor:pointer;">
-            💵 <span class="lang-en">Cash</span><span class="lang-hi" style="display:none;">नकद</span>
-          </button>
-          <button id="mode-upi" onclick="setPayMode('upi')" class="pay-btn"
-            style="padding:12px;border-radius:12px;border:2px solid var(--border);background:#fff;color:var(--text-muted);font-size:15px;font-weight:800;cursor:pointer;">
-            📱 UPI
-          </button>
-        </div>
-
-        <!-- UPI QR panel -->
-        <div id="upi-panel" style="display:none;background:linear-gradient(135deg,#eef2ff,#f5f3ff);border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;border:1.5px solid #c7d2fe;">
-          <div style="font-size:13px;font-weight:800;color:#4338ca;margin-bottom:10px;">📱 UPI से भुगतान लें</div>
-          <img src="{{ upi_qr }}" style="max-width:180px;border-radius:12px;border:2px solid #a5b4fc;box-shadow:0 4px 16px rgba(99,102,241,0.2);" alt="UPI QR">
-          <div style="font-size:28px;font-weight:900;color:#4338ca;margin-top:10px;">₹<span id="upi-amt">0</span></div>
-        </div>
-
-        <!-- Receiver -->
-        <div style="background:#f8fafc;border:1.5px solid var(--border);border-radius:12px;padding:12px;margin-bottom:14px;">
-          <div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:8px;">
-            👤 <span class="lang-en">Receiver (optional)</span><span class="lang-hi" style="display:none;">लेने वाला (वैकल्पिक)</span>
+    <!-- TOP: order header strip -->
+    <div style="background:linear-gradient(135deg,#1e1b4b,#4338ca);border-radius:18px;padding:18px 22px;margin-bottom:14px;box-shadow:0 6px 24px rgba(67,56,202,0.3);position:relative;overflow:hidden;">
+      <div style="position:absolute;right:-10px;top:-10px;width:100px;height:100px;background:rgba(255,255,255,0.04);border-radius:50%;"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+        <div style="display:flex;align-items:center;gap:16px;">
+          <div style="font-size:36px;font-weight:900;color:#fff;letter-spacing:2px;" id="dc-code">—</div>
+          <div>
+            <div style="font-size:17px;font-weight:800;color:#fff;" id="dc-customer">—</div>
+            <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:2px;" id="dc-meta">—</div>
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-            <input type="text" id="receiver-name" placeholder="Name..."
-              style="padding:9px 12px;font-size:14px;border:1.5px solid var(--border);border-radius:10px;background:#fff;">
-            <input type="text" id="receiver-mobile" maxlength="10" placeholder="Mobile..."
-              style="padding:9px 12px;font-size:14px;border:1.5px solid var(--border);border-radius:10px;background:#fff;">
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div id="dc-status-badge" style="border-radius:10px;padding:6px 16px;font-size:12px;font-weight:900;color:#fff;background:rgba(255,255,255,0.15);border:2px solid rgba(255,255,255,0.25);">—</div>
+          <button onclick="searchAnother()" style="background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:10px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;">← New Search</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TWO COLUMNS -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start;">
+
+      <!-- ══ LEFT COLUMN: Order info ══ -->
+      <div style="display:flex;flex-direction:column;gap:12px;">
+
+        <!-- Garments + Payment summary row -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <!-- Garments -->
+          <div style="background:#fff;border-radius:14px;padding:14px;border:1.5px solid #e0e7ff;">
+            <div style="font-size:9px;font-weight:800;text-transform:uppercase;color:#6366f1;margin-bottom:8px;letter-spacing:0.8px;">👕 Garments</div>
+            <div id="dc-garments" style="display:flex;flex-wrap:wrap;gap:5px;"></div>
+          </div>
+          <!-- Payment summary -->
+          <div style="background:#fff;border-radius:14px;padding:14px;border:1.5px solid #e0e7ff;">
+            <div style="font-size:9px;font-weight:800;text-transform:uppercase;color:#6366f1;margin-bottom:8px;letter-spacing:0.8px;">💰 Payment</div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+              <span style="font-size:11px;color:var(--text-muted);">Total</span>
+              <span style="font-size:13px;font-weight:800;" id="dc-total">—</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+              <span style="font-size:11px;color:var(--text-muted);">Advance</span>
+              <span style="font-size:13px;font-weight:700;color:#16a34a;" id="dc-advance">—</span>
+            </div>
+            <div style="border-top:1px dashed #e5e7eb;margin:6px 0;"></div>
+            <div style="display:flex;justify-content:space-between;">
+              <span style="font-size:12px;font-weight:800;color:#dc2626;">Due</span>
+              <span style="font-size:16px;font-weight:900;color:#dc2626;" id="dc-remaining">—</span>
+            </div>
           </div>
         </div>
 
-        <!-- Collect button -->
-        <button onclick="collectAndDeliver()" id="collect-btn"
-          style="width:100%;padding:18px;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;border-radius:16px;font-size:17px;font-weight:900;cursor:pointer;box-shadow:0 6px 24px rgba(22,163,74,0.35);letter-spacing:0.3px;">
-          ✅ <span class="lang-en">Collect & Mark Delivered</span><span class="lang-hi" style="display:none;">पैसे लो और डिलीवर करो</span>
-        </button>
+        <!-- Photos -->
+        <div id="photos-strip" style="display:none;background:#fffbeb;border-radius:14px;padding:12px 14px;border:1.5px solid #fde68a;">
+          <div style="font-size:9px;font-weight:800;text-transform:uppercase;color:#92400e;margin-bottom:8px;">📷 Cloth Photos</div>
+          <div id="dc-images" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+        </div>
 
-        <!-- WhatsApp notify -->
-        <div id="wa-notify-row" style="display:flex;gap:8px;margin-top:10px;">
-          <button onclick="sendDeliveryWA('hi')"
-            style="flex:1;padding:11px;background:#d1fae5;color:#065f46;border:none;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;">
-            📲 WhatsApp (हिंदी)
+        <!-- Already Delivered -->
+        <div id="delivered-section" style="display:none;background:linear-gradient(135deg,#d1fae5,#a7f3d0);border:2px solid #6ee7b7;border-radius:16px;padding:20px;text-align:center;">
+          <div style="font-size:40px;margin-bottom:6px;">✅</div>
+          <div style="font-size:16px;font-weight:900;color:#065f46;">Already Delivered</div>
+          <div style="font-size:12px;color:#047857;margin-top:3px;" id="delivered-date-text"></div>
+          <div style="display:flex;gap:8px;justify-content:center;margin-top:12px;">
+            <button onclick="sendDeliveryWA('hi')" style="background:#059669;color:#fff;border:none;border-radius:10px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;">📲 WA हिंदी</button>
+            <button onclick="sendDeliveryWA('en')" style="background:#059669;color:#fff;border:none;border-radius:10px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;">📲 WA EN</button>
+          </div>
+        </div>
+
+        <!-- Pending (not ready) -->
+        <div id="pending-section" style="display:none;background:#fffbeb;border:2px solid #fde68a;border-radius:16px;padding:18px;text-align:center;">
+          <div style="font-size:40px;margin-bottom:6px;">⏳</div>
+          <div style="font-size:15px;font-weight:900;color:#92400e;">Order Not Ready Yet</div>
+          <div style="font-size:12px;color:#b45309;margin-top:4px;">Status must be "Ready" to deliver.</div>
+        </div>
+      </div>
+
+      <!-- ══ RIGHT COLUMN: Collect Payment ══ -->
+      <div id="payment-section" style="display:none;">
+        <div style="background:#fff;border-radius:18px;padding:18px;border:1.5px solid var(--border);box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+          <div style="font-size:13px;font-weight:900;color:var(--text-primary);margin-bottom:14px;">💵 Collect Payment</div>
+
+          <!-- Amount -->
+          <div style="margin-bottom:12px;">
+            <label style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:5px;">Amount (₹)</label>
+            <input type="number" id="dc-amount" min="0" placeholder="0"
+              style="width:100%;font-size:32px;font-weight:900;padding:10px 14px;border:2px solid var(--border);border-radius:12px;text-align:center;background:#f8fafc;outline:none;box-sizing:border-box;"
+              oninput="if(payMode==='upi') document.getElementById('upi-amt').textContent=this.value||0;">
+          </div>
+
+          <!-- Mode -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+            <button id="mode-cash" onclick="setPayMode('cash')" class="pay-btn"
+              style="padding:10px;border-radius:10px;border:2px solid #16a34a;background:#16a34a;color:#fff;font-size:14px;font-weight:800;cursor:pointer;">
+              💵 Cash
+            </button>
+            <button id="mode-upi" onclick="setPayMode('upi')" class="pay-btn"
+              style="padding:10px;border-radius:10px;border:2px solid var(--border);background:#fff;color:var(--text-muted);font-size:14px;font-weight:800;cursor:pointer;">
+              📱 UPI
+            </button>
+          </div>
+
+          <!-- UPI panel -->
+          <div id="upi-panel" style="display:none;background:#eef2ff;border-radius:12px;padding:14px;margin-bottom:12px;text-align:center;border:1.5px solid #c7d2fe;">
+            <div style="font-size:12px;font-weight:800;color:#4338ca;margin-bottom:8px;">📱 UPI से भुगतान लें</div>
+            <img src="{{ upi_qr }}" style="max-width:150px;border-radius:10px;border:2px solid #a5b4fc;" alt="UPI QR">
+            <div style="font-size:24px;font-weight:900;color:#4338ca;margin-top:8px;">₹<span id="upi-amt">0</span></div>
+          </div>
+
+          <!-- Receiver -->
+          <div style="background:#f8fafc;border:1.5px solid var(--border);border-radius:10px;padding:10px;margin-bottom:12px;">
+            <div style="font-size:10px;font-weight:700;color:var(--text-muted);margin-bottom:6px;">👤 Receiver (optional)</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+              <input type="text" id="receiver-name" placeholder="Name..."
+                style="padding:8px 10px;font-size:13px;border:1.5px solid var(--border);border-radius:8px;background:#fff;">
+              <input type="text" id="receiver-mobile" maxlength="10" placeholder="Mobile..."
+                style="padding:8px 10px;font-size:13px;border:1.5px solid var(--border);border-radius:8px;background:#fff;">
+            </div>
+          </div>
+
+          <!-- Collect button -->
+          <button onclick="collectAndDeliver()" id="collect-btn"
+            style="width:100%;padding:16px;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;border-radius:14px;font-size:16px;font-weight:900;cursor:pointer;box-shadow:0 4px 16px rgba(22,163,74,0.3);margin-bottom:8px;">
+            ✅ Collect & Mark Delivered
           </button>
-          <button onclick="sendDeliveryWA('en')"
-            style="flex:1;padding:11px;background:#d1fae5;color:#065f46;border:none;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;">
-            📲 WhatsApp (EN)
-          </button>
+
+          <!-- WhatsApp -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+            <button onclick="sendDeliveryWA('hi')" style="padding:9px;background:#d1fae5;color:#065f46;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">📲 WA हिंदी</button>
+            <button onclick="sendDeliveryWA('en')" style="padding:9px;background:#d1fae5;color:#065f46;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">📲 WA English</button>
+          </div>
         </div>
       </div>
     </div>
-
-    <!-- ══ PENDING (not ready yet) ══ -->
-    <div id="pending-section" style="display:none;">
-      <div style="background:linear-gradient(135deg,#fffbeb,#fef3c7);border:2px solid #fde68a;border-radius:18px;padding:20px;text-align:center;">
-        <div style="font-size:48px;margin-bottom:8px;">⏳</div>
-        <div style="font-size:16px;font-weight:900;color:#92400e;">
-          <span class="lang-en">Order Not Ready Yet</span><span class="lang-hi" style="display:none;">ऑर्डर अभी तैयार नहीं</span>
-        </div>
-        <div style="font-size:13px;color:#b45309;margin-top:6px;">
-          <span class="lang-en">Stitching is still in progress. Status must be "Ready" to deliver.</span>
-          <span class="lang-hi" style="display:none;">कपड़े अभी तैयार नहीं। डिलीवरी के लिए "Ready" होना जरूरी है।</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- ══ ALREADY DELIVERED ══ -->
-    <div id="delivered-section" style="display:none;">
-      <div style="background:linear-gradient(135deg,#d1fae5,#a7f3d0);border:2px solid #6ee7b7;border-radius:18px;padding:24px;text-align:center;">
-        <div style="font-size:52px;margin-bottom:8px;">✅</div>
-        <div style="font-size:18px;font-weight:900;color:#065f46;">
-          <span class="lang-en">Already Delivered</span><span class="lang-hi" style="display:none;">पहले डिलीवर हो चुका</span>
-        </div>
-        <div style="font-size:13px;color:#047857;margin-top:4px;" id="delivered-date-text"></div>
-        <div style="display:flex;gap:8px;justify-content:center;margin-top:16px;">
-          <button onclick="sendDeliveryWA('hi')" style="background:#059669;color:#fff;border:none;border-radius:10px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;">📲 WhatsApp (हिंदी)</button>
-          <button onclick="sendDeliveryWA('en')" style="background:#059669;color:#fff;border:none;border-radius:10px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;">📲 WhatsApp (EN)</button>
-        </div>
-      </div>
-    </div>
-
   </div>
 </div>
 
 <!-- Fullscreen image overlay -->
-<div id="img-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.94);z-index:9999;align-items:center;justify-content:center;">
-  <button onclick="document.getElementById('img-overlay').style.display='none'"
-    style="position:absolute;top:20px;right:22px;background:rgba(255,255,255,0.15);border:none;color:#fff;width:44px;height:44px;border-radius:50%;font-size:22px;cursor:pointer;">✕</button>
+<div id="img-overlay" onclick="this.style.display='none'" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.94);z-index:9999;align-items:center;justify-content:center;">
+  <button onclick="document.getElementById('img-overlay').style.display='none'" style="position:absolute;top:20px;right:22px;background:rgba(255,255,255,0.15);border:none;color:#fff;width:44px;height:44px;border-radius:50%;font-size:22px;cursor:pointer;">✕</button>
   <img id="overlay-img" style="max-width:92%;max-height:88%;border-radius:12px;object-fit:contain;">
 </div>
 
 {% endblock %}
 {% block extra_js %}
 <script>
-var currentCode  = "";
-var currentOrder = {};
-var payMode      = "cash";
-var searchTimer  = null;
+var currentCode = "", currentOrder = {}, payMode = "cash", searchTimer = null;
 
 function debounceSearch() {
   clearTimeout(searchTimer);
@@ -253,26 +217,19 @@ function doSearch() {
   var q = document.getElementById("pickup-search").value.trim();
   if (!q) return;
   var res = document.getElementById("search-results");
-  res.innerHTML = '<div style="color:rgba(255,255,255,0.7);font-size:14px;padding:8px 0;">खोज रहे हैं...</div>';
+  res.innerHTML = '<div style="color:rgba(255,255,255,0.6);font-size:13px;padding:6px;">खोज रहे हैं...</div>';
   fetch("/api/pickup/search?q=" + encodeURIComponent(q))
     .then(function(r){ return r.json(); })
     .then(function(data) {
-      if (!data.length) {
-        res.innerHTML = '<div style="color:rgba(255,255,255,0.6);font-size:14px;padding:10px 0;">⚠️ कोई ऑर्डर नहीं मिला</div>';
-        return;
-      }
+      if (!data.length) { res.innerHTML = '<div style="color:rgba(255,255,255,0.5);font-size:13px;padding:8px;">⚠️ कोई ऑर्डर नहीं मिला</div>'; return; }
       if (data.length === 1) { res.innerHTML = ""; loadOrder(data[0].order_code); return; }
-      var statusColors = {pending:"#fbbf24",ready:"#34d399",delivered:"#9ca3af",cancelled:"#f87171"};
+      var sc = {pending:"#fbbf24",ready:"#34d399",delivered:"#9ca3af",cancelled:"#f87171"};
       res.innerHTML = data.map(function(o) {
-        var dot = '<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:'+(statusColors[o.status]||"#9ca3af")+';margin-right:8px;flex-shrink:0;"></span>';
         return '<button onclick="doPickup(\''+o.order_code+'\')"'
-          + ' style="display:flex;align-items:center;justify-content:space-between;width:100%;padding:12px 16px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:12px;color:#fff;cursor:pointer;margin-bottom:6px;font-size:14px;font-weight:700;text-align:left;backdrop-filter:blur(4px);">'
-          + '<span style="display:flex;align-items:center;">'+dot+'#'+o.order_code+' — '+o.customer_name+'</span>'
-          + '<span style="opacity:0.6;font-size:12px;">'+o.mobile+'</span></button>';
+          +' style="display:flex;align-items:center;justify-content:space-between;width:100%;padding:10px 14px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:#fff;cursor:pointer;margin-bottom:5px;font-size:13px;font-weight:700;">'
+          +'<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+(sc[o.status]||"#9ca3af")+';margin-right:8px;"></span>#'+o.order_code+' — '+o.customer_name+'</span>'
+          +'<span style="opacity:0.55;font-size:11px;">'+o.mobile+'</span></button>';
       }).join("");
-    })
-    .catch(function() {
-      res.innerHTML = '<div style="color:#fca5a5;font-size:13px;padding:8px 0;">⚠️ खोज में समस्या हुई।</div>';
     });
 }
 
@@ -283,68 +240,48 @@ function loadOrder(code) {
     .then(function(r){ return r.json(); }).then(function(o) {
       if (o.error) { showToast("Order not found","error"); return; }
       currentOrder = o;
-
       document.getElementById("dc-code").textContent     = "#" + o.order_code;
       document.getElementById("dc-customer").textContent = o.customer_name;
-      document.getElementById("dc-meta").textContent     = "📱 " + (o.mobile||"—") + "  ·  Order: " + (o.order_date_fmt||"") + " → Delivery: " + (o.delivery_date_fmt||"");
+      document.getElementById("dc-meta").textContent     = "📱 " + (o.mobile||"—") + "  ·  Order: " + (o.order_date_fmt||"") + " → " + (o.delivery_date_fmt||"");
       document.getElementById("dc-total").textContent    = "₹" + (o.payable_amount||o.total||0);
       document.getElementById("dc-advance").textContent  = "₹" + (o.advance_paid||0);
       document.getElementById("dc-remaining").textContent= "₹" + (o.remaining||0);
-
       var rem = parseFloat(o.remaining||0);
       document.getElementById("dc-amount").value = rem > 0 ? rem : "";
       document.getElementById("upi-amt").textContent = rem > 0 ? rem : 0;
 
-      // Status badge
       var sb = document.getElementById("dc-status-badge");
-      var statusStyles = {
-        pending:   "background:rgba(251,191,36,0.2);border-color:rgba(251,191,36,0.5);",
-        ready:     "background:#16a34a;border-color:#15803d;",
-        delivered: "background:rgba(55,65,81,0.6);border-color:rgba(255,255,255,0.2);",
-        cancelled: "background:rgba(239,68,68,0.3);border-color:rgba(239,68,68,0.5);"
-      };
-      sb.style.cssText = (statusStyles[o.status]||statusStyles.pending) + "border-radius:12px;padding:8px 18px;font-size:13px;font-weight:900;color:#fff;border:2px solid;";
+      var ss = {pending:"background:rgba(251,191,36,0.2);border-color:rgba(251,191,36,0.5);",ready:"background:#16a34a;border-color:#15803d;",delivered:"background:rgba(55,65,81,0.5);border-color:rgba(255,255,255,0.15);",cancelled:"background:rgba(239,68,68,0.3);border-color:rgba(239,68,68,0.5);"};
+      sb.style.cssText = (ss[o.status]||ss.pending) + "border-radius:10px;padding:6px 16px;font-size:12px;font-weight:900;color:#fff;border:2px solid;";
       sb.textContent = o.status.toUpperCase();
 
-      // Garments
       document.getElementById("dc-garments").innerHTML = (o.garments||o.items||[]).map(function(it){
-        return '<span style="background:#eef2ff;border:1.5px solid #a5b4fc;border-radius:10px;padding:6px 14px;font-size:13px;font-weight:800;color:#4338ca;">'+it.garment_type+' ×'+it.quantity+'</span>';
-      }).join("") || '<span style="color:var(--text-muted);font-size:13px;">—</span>';
+        return '<span style="background:#eef2ff;border:1.5px solid #a5b4fc;border-radius:8px;padding:4px 12px;font-size:12px;font-weight:800;color:#4338ca;">'+it.garment_type+' ×'+it.quantity+'</span>';
+      }).join("") || '<span style="color:var(--text-muted);font-size:12px;">—</span>';
 
-      // Images
       fetch("/images/" + o.order_code + "?ts=" + Date.now()).then(function(r){return r.text();}).then(function(html){
         var imgBox = document.getElementById("dc-images");
         var strip  = document.getElementById("photos-strip");
         if (html && html.trim()) {
-          var tmp = document.createElement("div"); tmp.innerHTML = html;
-          imgBox.innerHTML = "";
+          var tmp = document.createElement("div"); tmp.innerHTML = html; imgBox.innerHTML = "";
           tmp.querySelectorAll("img").forEach(function(img){
             var src = img.getAttribute("src");
-            var el  = document.createElement("img");
-            el.src  = src;
-            el.style.cssText = "width:72px;height:72px;object-fit:cover;border-radius:12px;border:2px solid #fde68a;cursor:zoom-in;transition:transform 0.15s;";
-            el.onmouseover = function(){ this.style.transform="scale(1.05)"; };
-            el.onmouseout  = function(){ this.style.transform="scale(1)"; };
+            var el = document.createElement("img");
+            el.src = src; el.style.cssText = "width:64px;height:64px;object-fit:cover;border-radius:10px;border:2px solid #fde68a;cursor:zoom-in;";
             el.onclick = function(){ document.getElementById("overlay-img").src=src; document.getElementById("img-overlay").style.display="flex"; };
             imgBox.appendChild(el);
           });
           strip.style.display = "block";
-        } else {
-          strip.style.display = "none";
-        }
+        } else { strip.style.display = "none"; }
       });
 
-      // Show/hide sections
       document.getElementById("payment-section").style.display  = (o.status==="pending"||o.status==="ready") ? "block" : "none";
       document.getElementById("delivered-section").style.display = o.status==="delivered" ? "block" : "none";
       document.getElementById("pending-section").style.display   = o.status==="pending" ? "block" : "none";
-      if (o.status==="delivered") {
-        document.getElementById("delivered-date-text").textContent = "Delivered on " + (o.delivered_at_fmt||"");
-      }
+      if (o.status==="delivered") document.getElementById("delivered-date-text").textContent = "Delivered on " + (o.delivered_at_fmt||"");
 
       document.getElementById("delivery-card").style.display = "block";
       document.getElementById("delivery-card").scrollIntoView({behavior:"smooth",block:"start"});
-      // Reset receiver fields
       document.getElementById("receiver-name").value = "";
       document.getElementById("receiver-mobile").value = "";
     });
@@ -353,12 +290,8 @@ function loadOrder(code) {
 function setPayMode(m) {
   payMode = m;
   var bc = document.getElementById("mode-cash"), bu = document.getElementById("mode-upi");
-  bc.style.background  = m==="cash" ? "#16a34a" : "#fff";
-  bc.style.color       = m==="cash" ? "#fff"    : "var(--text-muted)";
-  bc.style.borderColor = m==="cash" ? "#16a34a" : "var(--border)";
-  bu.style.background  = m==="upi"  ? "#6366f1" : "#fff";
-  bu.style.color       = m==="upi"  ? "#fff"    : "var(--text-muted)";
-  bu.style.borderColor = m==="upi"  ? "#6366f1" : "var(--border)";
+  bc.style.background = m==="cash" ? "#16a34a" : "#fff"; bc.style.color = m==="cash" ? "#fff" : "var(--text-muted)"; bc.style.borderColor = m==="cash" ? "#16a34a" : "var(--border)";
+  bu.style.background = m==="upi"  ? "#6366f1" : "#fff"; bu.style.color = m==="upi"  ? "#fff" : "var(--text-muted)"; bu.style.borderColor = m==="upi"  ? "#6366f1" : "var(--border)";
   document.getElementById("upi-panel").style.display = m==="upi" ? "block" : "none";
   if (m==="upi") document.getElementById("upi-amt").textContent = document.getElementById("dc-amount").value||0;
 }
@@ -369,15 +302,14 @@ function collectAndDeliver() {
   var rm  = (document.getElementById("receiver-mobile").value||"").trim();
   var btn = document.getElementById("collect-btn");
   btn.disabled = true;
-  btn.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:8px;"><circle cx="12" cy="12" r="10" stroke-opacity="0.3"/><path d="M12 2a10 10 0 0 1 10 10"/></svg> दर्ज हो रहा है...';
+  btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:6px;"><circle cx="12" cy="12" r="10" stroke-opacity="0.3"/><path d="M12 2a10 10 0 0 1 10 10"/></svg> Processing...';
   fetch("/api/pickup/collect-and-deliver",{
     method:"POST", headers:{"Content-Type":"application/json"},
     body: JSON.stringify({order_code:currentCode, amount:amt, mode:payMode, receiver_name:rn, receiver_mobile:rm})
   }).then(function(r){return r.json();}).then(function(d){
     btn.disabled = false;
-    btn.innerHTML = '✅ <span class="lang-en">Collect & Mark Delivered</span><span class="lang-hi" style="display:none;">पैसे लो और डिलीवर करो</span>';
-    applyLang();
-    if (d.ok) { showToast("✅ डिलीवर हो गया! ₹"+amt+" लिए","success"); loadOrder(currentCode); }
+    btn.innerHTML = '✅ Collect & Mark Delivered';
+    if (d.ok) { showToast("✅ Delivered! ₹"+amt+" collected","success"); loadOrder(currentCode); }
     else showToast("Error: "+d.error,"error");
   });
 }
@@ -387,12 +319,12 @@ function sendDeliveryWA(lang) {
   var items = (o.garments||o.items||[]).map(function(i){return i.garment_type+" ×"+i.quantity;}).join(", ");
   var rn = (document.getElementById("receiver-name").value||"").trim();
   var rm = (document.getElementById("receiver-mobile").value||"").trim();
-  var receiverLine_hi = (rn||rm) ? "\n\n👤 लेने वाले का नाम: *"+(rn||"—")+"*\n📱 मोबाइल: *"+(rm||"—")+"*" : "";
-  var receiverLine_en = (rn||rm) ? "\n\n👤 Collected by: *"+(rn||"—")+"*\n📱 Mobile: *"+(rm||"—")+"*" : "";
+  var rhi = (rn||rm)?"\n\n👤 लेने वाले: *"+(rn||"—")+"*\n📱 *"+(rm||"—")+"*":"";
+  var ren = (rn||rm)?"\n\n👤 Collected by: *"+(rn||"—")+"*\n📱 *"+(rm||"—")+"*":"";
   var msg = lang==="hi"
-    ? "*उत्तम टेलर्स*\n\nनमस्ते "+o.customer_name+" जी!\n\nआपके कपड़े डिलीवर हो गए।\n\nऑर्डर: *#"+o.order_code+"*\nकपड़े: "+items+receiverLine_hi+"\n\n✅ यह संदेश आपकी सुरक्षा के लिए भेजा गया है।\n\nधन्यवाद!"
-    : "*Uttam Tailors*\n\nDear "+o.customer_name+",\n\nYour order *#"+o.order_code+"* has been delivered.\n\nItems: "+items+receiverLine_en+"\n\n✅ This message is sent for your security.\n\nThank you!";
-  if (o.mobile) window.open("https://wa.me/"+o.mobile.replace(/\D/g,"")+  "?text="+encodeURIComponent(msg),"_blank");
+    ? "*उत्तम टेलर्स*\n\nनमस्ते "+o.customer_name+" जी!\nआपके कपड़े डिलीवर हो गए।\n\nऑर्डर: *#"+o.order_code+"*\nकपड़े: "+items+rhi+"\n\n✅ धन्यवाद!"
+    : "*Uttam Tailors*\n\nDear "+o.customer_name+",\nOrder *#"+o.order_code+"* delivered.\n\nItems: "+items+ren+"\n\n✅ Thank you!";
+  if (o.mobile) window.open("https://wa.me/"+o.mobile.replace(/\D/g,"")+"?text="+encodeURIComponent(msg),"_blank");
 }
 
 function searchAnother() {
