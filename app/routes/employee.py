@@ -950,17 +950,19 @@ def gallery():
 def work_log():
     conn = get_db()
     today = date.today().isoformat()
-    # Ensure skills column exists (for existing databases)
-    try:
-        conn.execute("ALTER TABLE employees ADD COLUMN skills TEXT DEFAULT 'stitch'")
-        conn.commit()
-    except Exception:
-        pass
-    try:
-        conn.execute("ALTER TABLE employees ADD COLUMN hindi_name TEXT")
-        conn.commit()
-    except Exception:
-        pass
+    # Ensure skills column exists (for existing databases) - skip for PostgreSQL
+    import os as _os
+    if not _os.environ.get("DATABASE_URL"):
+        try:
+            conn.execute("ALTER TABLE employees ADD COLUMN skills TEXT DEFAULT 'stitch'")
+            conn.commit()
+        except Exception:
+            pass
+        try:
+            conn.execute("ALTER TABLE employees ADD COLUMN hindi_name TEXT")
+            conn.commit()
+        except Exception:
+            pass
     # Set default skills and Hindi names
     hindi_map = {"Kamal":"कमल","Bhagwan":"भगवान","Sawarmal":"सावरमल","Mahesh":"महेश","Manak Tau":"मानक ताऊ"}
     conn.execute("UPDATE employees SET skills='all' WHERE name='Kamal' AND (skills IS NULL OR skills='stitch')")
@@ -1620,7 +1622,7 @@ def customers():
                COALESCE(SUM(o.remaining),0) as remaining_total
         FROM customers c
         LEFT JOIN orders o ON o.customer_id = c.id
-        GROUP BY c.id ORDER BY c.id DESC
+        GROUP BY c.id, c.name, c.mobile, c.address ORDER BY c.id DESC
     """).fetchall()
 
     def fmtd(d):
@@ -1635,7 +1637,11 @@ def customers():
             FROM orders o
             LEFT JOIN order_items oi ON oi.order_id = o.id
             WHERE o.customer_id=?
-            GROUP BY o.id ORDER BY o.id DESC
+            GROUP BY o.id, o.order_code, o.status, o.order_date, o.delivery_date,
+                 o.total_amount, o.extra_charges, o.payable_amount, o.advance_paid,
+                 o.remaining, o.payment_mode, o.is_urgent, o.note, o.repeat_of,
+                 o.delivered_at, o.created_at, c.name, c.mobile
+        ORDER BY o.id DESC
         """, (c["id"],)).fetchall()
         order_list = [{
             "order_code":       o["order_code"],
@@ -1669,7 +1675,10 @@ def customers():
         ords = conn2.execute("""
             SELECT o.*, STRING_AGG(CAST(oi.garment_type||' x'||oi.quantity AS TEXT), ', ') as garments_str
             FROM orders o LEFT JOIN order_items oi ON oi.order_id = o.id
-            WHERE o.customer_id=? GROUP BY o.id ORDER BY o.id DESC
+            WHERE o.customer_id=? GROUP BY o.id, o.order_code, o.status, o.order_date,
+                 o.delivery_date, o.payable_amount, o.advance_paid, o.remaining,
+                 o.payment_mode, o.is_urgent, o.note, o.delivered_at
+        ORDER BY o.id DESC
         """, (cu["id"],)).fetchall()
         cu["orders"] = [{
             "order_code":       o["order_code"],
