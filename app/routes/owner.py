@@ -312,7 +312,8 @@ def settings():
         conn2.execute("UPDATE employees SET skills='all' WHERE name='Kamal' AND (skills IS NULL OR skills='stitch')")
         conn2.commit()
     except Exception:
-        pass
+        try: conn2._conn.rollback()
+        except Exception: pass
     all_employees = conn2.execute(
         "SELECT id, name, COALESCE(skills,'stitch') as skills FROM employees WHERE active=1 ORDER BY name"
     ).fetchall()
