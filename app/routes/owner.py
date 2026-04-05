@@ -17,7 +17,7 @@ ORDERS_PAGE = """{% extends 'base.html' %}
 {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}<div style="padding:12px 24px 0;">{% for cat,msg in messages %}<div style="background:{{'#d1fae5' if cat=='success' else '#fee2e2'}};color:{{'#065f46' if cat=='success' else '#dc2626'}};padding:10px 16px;border-radius:10px;font-weight:700;font-size:13px;margin-bottom:4px;">{{ msg }}</div>{% endfor %}</div>{% endif %}{% endwith %}
 <div class="page-body" style="padding:16px 24px;">
   <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center;">
-    <input type="text" id="srch" placeholder="Search #code, name, mobile..." oninput="filterRows()" style="flex:1;min-width:200px;padding:10px 16px;font-size:14px;border:2px solid var(--border);border-radius:12px;">
+    <input type="text" id="srch" placeholder="Search #code, name, mobile..." oninput="filterRows()" style="flex:1;min-width:200px;padding:10px 16px;font-size:14px;border:2px solid var(--border);border-radius:12px;"><span id="dues-badge" style="display:none;background:#fef3c7;color:#b45309;border:1.5px solid #fde68a;border-radius:10px;padding:6px 14px;font-size:12px;font-weight:800;">💰 Showing orders with pending dues</span>
     <div style="display:flex;gap:6px;flex-wrap:wrap;">{% for key,label in [('all','All'),('pending','Pending'),('ready','Ready'),('delivered','Delivered'),('cancelled','Cancelled')] %}<button class="ftab" onclick="setTab('{{ key }}',this)" style="padding:7px 14px;border-radius:10px;border:2px solid {% if key=='all' %}var(--accent){% else %}var(--border){% endif %};background:{% if key=='all' %}var(--accent){% else %}#fff{% endif %};color:{% if key=='all' %}#fff{% else %}var(--text-muted){% endif %};font-size:12px;font-weight:800;cursor:pointer;">{{ label }}</button>{% endfor %}</div>
   </div>
   <div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:13px;">
@@ -26,7 +26,7 @@ ORDERS_PAGE = """{% extends 'base.html' %}
   </table></div>
 </div>
 {% endblock %}
-{% block extra_js %}<script>var activeTab="all";function setTab(k,btn){activeTab=k;document.querySelectorAll(".ftab").forEach(function(b){b.style.background="#fff";b.style.color="var(--text-muted)";b.style.borderColor="var(--border)";});btn.style.background="var(--accent)";btn.style.color="#fff";btn.style.borderColor="var(--accent)";filterRows();}function filterRows(){var q=document.getElementById("srch").value.toLowerCase().trim();document.querySelectorAll(".orow").forEach(function(r){r.style.display=(!q||r.dataset.s.includes(q))&&(activeTab==="all"||r.dataset.status===activeTab)?"":"none";});}const SECS=5*60;let last=Date.now();["click","keydown","mousemove","touchstart"].forEach(ev=>document.addEventListener(ev,()=>{last=Date.now();},{passive:true}));setInterval(()=>{if(Math.floor((Date.now()-last)/1000)>=SECS)window.location.href="/owner/login?expired=1";},5000);window.addEventListener("pageshow",function(e){if(e.persisted){fetch("/owner/logout",{method:"POST",keepalive:true}).finally(()=>{window.location.href="/owner/login";})}});</script>{% endblock %}
+{% block extra_js %}<script>var activeTab="all";function setTab(k,btn){activeTab=k;document.querySelectorAll(".ftab").forEach(function(b){b.style.background="#fff";b.style.color="var(--text-muted)";b.style.borderColor="var(--border)";});btn.style.background="var(--accent)";btn.style.color="#fff";btn.style.borderColor="var(--accent)";filterRows();}function filterRows(){var q=document.getElementById("srch").value.toLowerCase().trim();document.querySelectorAll(".orow").forEach(function(r){var hasDue=parseFloat(r.dataset.remaining||0)>0;var matchQ=!q||r.dataset.s.includes(q);var matchF=activeTab==="all"||r.dataset.status===activeTab;var matchDues=activeFilter!=="dues"||(hasDue&&r.dataset.status!=="delivered"&&r.dataset.status!=="cancelled");r.style.display=(matchQ&&matchF&&matchDues)?"":"none";});}var activeFilter="{{filter_mode}}";if(activeFilter==="dues"){document.getElementById("dues-badge").style.display="inline-block";}const SECS=5*60;let last=Date.now();["click","keydown","mousemove","touchstart"].forEach(ev=>document.addEventListener(ev,()=>{last=Date.now();},{passive:true}));setInterval(()=>{if(Math.floor((Date.now()-last)/1000)>=SECS)window.location.href="/owner/login?expired=1";},5000);window.addEventListener("pageshow",function(e){if(e.persisted){fetch("/owner/logout",{method:"POST",keepalive:true}).finally(()=>{window.location.href="/owner/login";})}});</script>{% endblock %}
 """
 
 CUSTOMERS_PAGE = """{% extends 'base.html' %}
@@ -467,7 +467,7 @@ def add_measurement_field():
     field   = request.form.get("field_name","").strip()
     if garment and field:
         conn = get_db()
-        conn.execute("INSERT OR IGNORE INTO measurement_fields(garment_type,field_name,sort_order) VALUES(?,?,99)",(garment,field))
+        conn.execute("INSERT INTO measurement_fields (garment_type,field_name,sort_order) VALUES (?,?,99) ON CONFLICT DO NOTHING",(garment,field))
         conn.commit(); conn.close()
         flash(f"Field added to {garment}!", "success")
     return redirect(url_for("owner.measurement_fields"))
@@ -758,8 +758,17 @@ def owner_customers():
 @owner_required
 def owner_finance():
     today = date.today().isoformat()
-    from_date = request.args.get("from", today[:7]+"-01")
-    to_date   = request.args.get("to",   today)
+    # Support ?filter=today or ?filter=month from dashboard cards
+    filt = request.args.get("filter", "")
+    if filt == "today":
+        from_date = request.args.get("date", today)
+        to_date   = from_date
+    elif filt == "month":
+        from_date = today[:7] + "-01"
+        to_date   = today
+    else:
+        from_date = request.args.get("from", today[:7]+"-01")
+        to_date   = request.args.get("to",   today)
 
     conn = get_db()
     rows = conn.execute("""
@@ -952,7 +961,7 @@ def work_progress():
     orders = conn.execute("""
         SELECT o.order_code, o.status, o.delivery_date, o.is_urgent,
                COALESCE(c.name,'—') as cname, COALESCE(c.mobile,'') as mobile,
-               GROUP_CONCAT(oi.garment_type||' x'||oi.quantity, ', ') as garments_str,
+               STRING_AGG(CAST(oi.garment_type||' x'||oi.quantity AS TEXT), ', ') as garments_str,
                SUM(oi.quantity) as total_qty
         FROM orders o
         LEFT JOIN customers c ON c.id=o.customer_id
@@ -1070,22 +1079,28 @@ def gallery_delete_type(tid):
 @bp.route("/gallery/upload-image", methods=["POST"])
 @owner_required
 def gallery_upload_image():
-    import base64, os as _os
-    type_id = request.form.get("type_id","").strip()
-    caption = request.form.get("caption","").strip()
-    file    = request.files.get("image")
-    if not type_id or not file or not file.filename:
-        flash("Please select a type and image.", "error")
-        return redirect(url_for("owner.gallery_admin"))
-    ext = _os.path.splitext(file.filename)[1].lower() or ".jpg"
-    folder = _os.path.join(Config.UPLOAD_FOLDER, "gallery")
-    _os.makedirs(folder, exist_ok=True)
-    fname = f"gal_{type_id}_{int(__import__('time').time())}{ext}"
-    file.save(_os.path.join(folder, fname))
-    conn = get_db()
-    conn.execute("INSERT INTO gallery_images(type_id,filename,caption) VALUES(?,?,?)", (type_id, fname, caption))
-    conn.commit(); conn.close()
-    flash("Image uploaded.", "success")
+    import os as _os, time as _time
+    try:
+        type_id = request.form.get("type_id","").strip()
+        caption = request.form.get("caption","").strip()
+        file    = request.files.get("image")
+        if not type_id or not file or not file.filename:
+            flash("Please select a category and image.", "error")
+            return redirect(url_for("owner.gallery_admin"))
+        ext = _os.path.splitext(file.filename)[1].lower()
+        if ext not in [".jpg",".jpeg",".png",".gif",".webp"]:
+            ext = ".jpg"
+        # Use static folder which is always writable
+        folder = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.dirname(__file__))), "static", "order_images", "gallery")
+        _os.makedirs(folder, exist_ok=True)
+        fname = f"gal_{type_id}_{int(_time.time())}{ext}"
+        file.save(_os.path.join(folder, fname))
+        conn = get_db()
+        conn.execute("INSERT INTO gallery_images(type_id,filename,caption) VALUES(?,?,?)", (type_id, fname, caption))
+        conn.commit(); conn.close()
+        flash("Image uploaded successfully.", "success")
+    except Exception as e:
+        flash(f"Upload failed: {str(e)}", "error")
     return redirect(url_for("owner.gallery_admin"))
 
 @bp.route("/gallery/delete-image/<int:iid>", methods=["POST"])
@@ -1208,7 +1223,7 @@ def factory_reset():
         except: pass
         # Reset order code counter using same connection
         conn.execute("UPDATE settings SET value='3599' WHERE key='last_order_code'")
-        conn.execute("INSERT OR IGNORE INTO settings(key,value) VALUES('last_order_code','3599')")
+        conn.execute("INSERT INTO settings (key,value) VALUES ('last_order_code','3599') ON CONFLICT DO NOTHING")
         conn.commit()
         conn.close()
         flash("✅ System reset! All orders and customers cleared. Rates and settings kept.", "success")
@@ -1264,7 +1279,7 @@ def owner_orders():
                    COALESCE(o.is_urgent,0) as is_urgent,
                    COALESCE(o.note,'') as note,
                    COALESCE(c.name,'—') as cname, COALESCE(c.mobile,'') as mobile,
-                   GROUP_CONCAT(oi.garment_type||' x'||oi.quantity, ', ') as garments_str
+                   STRING_AGG(CAST(oi.garment_type||' x'||oi.quantity AS TEXT), ', ') as garments_str
             FROM orders o
             LEFT JOIN customers c ON c.id=o.customer_id
             LEFT JOIN order_items oi ON oi.order_id=o.id
@@ -1299,9 +1314,11 @@ def owner_orders():
     ).fetchone()["c"]
     conn.close()
 
+    filter_mode = request.args.get("filter", "")
     return render_template_string(ORDERS_PAGE,
         active_page="owner_orders", show_voice=False,
-        urgent_count=urgent_count, orders=orders, total=len(orders))
+        urgent_count=urgent_count, orders=orders, total=len(orders),
+        filter_mode=filter_mode)
 
 # ══════════════════════════════════════════════
 #  ORDER DELETE (Owner)
@@ -1339,7 +1356,7 @@ def owner_customer_detail(customer_id):
         return "Customer not found", 404
 
     orders = conn.execute("""
-        SELECT o.*, GROUP_CONCAT(oi.garment_type||' x'||oi.quantity, ', ') as garments_str
+        SELECT o.*, STRING_AGG(CAST(oi.garment_type||' x'||oi.quantity AS TEXT), ', ') as garments_str
         FROM orders o LEFT JOIN order_items oi ON oi.order_id=o.id
         WHERE o.customer_id=? GROUP BY o.id ORDER BY o.id DESC
     """, (customer_id,)).fetchall()
