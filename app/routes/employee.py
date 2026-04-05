@@ -183,7 +183,7 @@ def new_order():
     for gname, val in DEFAULT_CHIPS.items():
         existing = conn2.execute("SELECT value FROM settings WHERE key=?", ("types_"+gname,)).fetchone()
         if not existing:
-            conn2.execute("INSERT OR IGNORE INTO settings(key,value) VALUES(?,?)", ("types_"+gname, val))
+            conn2.execute("INSERT INTO settings (key,value) VALUES (?,?) ON CONFLICT DO NOTHING", ("types_"+gname, val))
         else:
             # Replace if value looks like old English (no Hindi chars)
             old_val = existing["value"] or ""
@@ -1224,7 +1224,15 @@ def api_worklog_add():
                 conn.close()
                 return jsonify({"ok": False, "error": f"Quantity {qty} exceeds total garments in order ({total_garment_qty})."})
 
-        making_rate = float(rate_override) if rate_override is not None else 0.0
+        # Read correct rate from settings if not overridden
+        if rate_override is not None and float(rate_override) > 0:
+            making_rate = float(rate_override)
+        elif is_naap:
+            making_rate = float(get_setting("work_rate_measurement", "0") or 0)
+        elif is_kataai:
+            making_rate = float(get_setting("work_rate_cutting", "25") or 25)
+        else:
+            making_rate = float(get_setting("work_rate_alteration", "15") or 15)
         today = date.today().isoformat()
         now   = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         conn.execute("""
@@ -1623,7 +1631,7 @@ def customers():
     customers_list = []
     for c in all_c:
         orders = conn.execute("""
-            SELECT o.*, GROUP_CONCAT(oi.garment_type||' x'||oi.quantity, ', ') as garments_str
+            SELECT o.*, STRING_AGG(CAST(oi.garment_type||' x'||oi.quantity AS TEXT), ', ') as garments_str
             FROM orders o
             LEFT JOIN order_items oi ON oi.order_id = o.id
             WHERE o.customer_id=?
@@ -1659,7 +1667,7 @@ def customers():
     final_list = []
     for cu in customers_list:
         ords = conn2.execute("""
-            SELECT o.*, GROUP_CONCAT(oi.garment_type||' x'||oi.quantity, ', ') as garments_str
+            SELECT o.*, STRING_AGG(CAST(oi.garment_type||' x'||oi.quantity AS TEXT), ', ') as garments_str
             FROM orders o LEFT JOIN order_items oi ON oi.order_id = o.id
             WHERE o.customer_id=? GROUP BY o.id ORDER BY o.id DESC
         """, (cu["id"],)).fetchall()
