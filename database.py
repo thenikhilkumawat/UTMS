@@ -47,7 +47,15 @@ if USE_PG:
 
         def execute(self, sql, params=None):
             sql, params = self._fix(sql, params)
-            self._cur.execute(sql, params)
+            try:
+                self._cur.execute(sql, params)
+            except Exception as e:
+                # Rollback aborted transaction so connection stays usable
+                try:
+                    self._cur.connection.rollback()
+                except Exception:
+                    pass
+                raise e
             return self
 
         def fetchone(self):
@@ -89,10 +97,10 @@ if USE_PG:
 
     def get_db():
         url = os.environ["DATABASE_URL"]
-        # Render gives postgres:// but psycopg2 needs postgresql://
         if url.startswith("postgres://"):
             url = url.replace("postgres://", "postgresql://", 1)
         conn = psycopg2.connect(url)
+        conn.autocommit = False
         return _Conn(conn)
 
 else:
