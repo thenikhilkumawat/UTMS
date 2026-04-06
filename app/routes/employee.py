@@ -221,12 +221,11 @@ def new_order():
 def upload_images(order_code):
     if request.method == "POST":
         import base64 as _b64
+        from io import BytesIO
         files = request.files.getlist("photos")
         conn = get_db()
-        # Get order_id — order may not exist yet (step 3 before save)
         order = conn.execute("SELECT id FROM orders WHERE order_code=?", (order_code,)).fetchone()
         order_id = order["id"] if order else -1
-        # For temp images before order saved, use order_id=0 with order_code in file_path prefix
         existing_count = conn.execute(
             "SELECT COUNT(*) as c FROM order_images WHERE order_id=? OR file_path LIKE ?",
             (order_id, f"temp:{order_code}:%")
@@ -237,14 +236,23 @@ def upload_images(order_code):
             if saved >= slots: break
             if f and f.filename:
                 img_data = f.read()
-                ext = os.path.splitext(f.filename)[1].lower() or ".jpg"
-                mime = "image/jpeg" if ext in [".jpg",".jpeg"] else ("image/png" if ext==".png" else "image/gif")
+                # Compress image using Pillow — resize to max 600px, JPEG quality 55%
+                try:
+                    from PIL import Image as PILImage
+                    img = PILImage.open(BytesIO(img_data))
+                    img = img.convert("RGB")
+                    # Resize to max 600px keeping aspect ratio
+                    img.thumbnail((600, 600), PILImage.LANCZOS)
+                    buf = BytesIO()
+                    img.save(buf, format="JPEG", quality=55, optimize=True)
+                    img_data = buf.getvalue()
+                except Exception:
+                    pass  # If Pillow fails, use original
                 b64 = _b64.b64encode(img_data).decode("utf-8")
-                data_url = f"data:{mime};base64,{b64}"
+                data_url = f"data:image/jpeg;base64,{b64}"
                 if order_id != -1:
                     conn.execute("INSERT INTO order_images(order_id, file_path) VALUES(?,?)", (order_id, data_url))
                 else:
-                    # Store temporarily with order_code prefix
                     conn.execute("INSERT INTO order_images(order_id, file_path) VALUES(?,?)", (0, f"temp:{order_code}:{data_url}"))
                 saved += 1
         conn.commit()
@@ -475,6 +483,9 @@ def save_order():
             cur = conn.execute("INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?)",
                                (customer_name, mobile, address, now))
             customer_id = cur.lastrowid
+            if not customer_id:
+                row = conn.execute("SELECT id FROM customers WHERE mobile=? ORDER BY id DESC LIMIT 1", (mobile,)).fetchone()
+                customer_id = row["id"] if row else None
 
         repeat_of = (data.get("repeat_of") or "").strip() or None
 
@@ -485,7 +496,11 @@ def save_order():
             VALUES(?,?,?,?,?,?,?,?,?,?,'pending',?,?,?,?)
         """,(order_code,customer_id,order_date,delivery_date,total_amount,extra_charges,
              payable_amount,advance_paid,remaining,payment_mode,is_urgent,note,repeat_of,now))
+        # Get the real order_id - lastrowid OR query by order_code
         order_id = cur.lastrowid
+        if not order_id:
+            row = conn.execute("SELECT id FROM orders WHERE order_code=?", (order_code,)).fetchone()
+            order_id = row["id"] if row else None
 
         # Items
         for it in items:
