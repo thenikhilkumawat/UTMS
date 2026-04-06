@@ -904,31 +904,57 @@ def api_update_status():
 
 @bp.route("/api/order/collect-payment", methods=["POST"])
 def api_collect_payment():
-    data   = request.get_json(silent=True) or {}
-    code   = data.get("order_code","")
-    amount = float(data.get("amount", 0))
-    mode   = data.get("mode","cash")
-    if amount <= 0:
+    data     = request.get_json(silent=True) or {}
+    code     = data.get("order_code","")
+    amount   = float(data.get("amount", 0))
+    mode     = data.get("mode","cash")
+    discount = data.get("discount", False)  # True = waive remaining balance
+    if amount < 0:
         return jsonify({"ok": False, "error": "Invalid amount"})
     conn = get_db()
     order = conn.execute(
-        "SELECT id, remaining, advance_paid FROM orders WHERE order_code=?", (code,)
+        "SELECT id, remaining, advance_paid, payable_amount FROM orders WHERE order_code=?", (code,)
     ).fetchone()
     if not order:
         conn.close()
         return jsonify({"ok": False, "error": "Order not found"})
-    new_rem = max(0, round(order["remaining"] - amount, 2))
-    new_adv = round(order["advance_paid"] + amount, 2)
     today = date.today().isoformat()
     now   = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    conn.execute("UPDATE orders SET remaining=?, advance_paid=? WHERE order_code=?",
-                 (new_rem, new_adv, code))
-    conn.execute("""INSERT INTO finance(tx_date,tx_type,category,amount,mode,order_id,note,created_by,created_at)
-        VALUES(?,'income','payment',?,?,?,?,'employee',?)""",
-        (today, amount, mode, order["id"], f"Balance collected for order #{code}", now))
-    if new_rem == 0:
+
+    if discount:
+        # Customer paid less — waive the remaining balance, mark as complete
+        waived = round(order["remaining"] - amount, 2)
+        new_adv = round(order["advance_paid"] + amount, 2)
+        note = f"Collected ₹{int(amount)} for order #{code}. Discount/waived ₹{int(waived)}."
+        conn.execute("UPDATE orders SET remaining=0, advance_paid=? WHERE order_code=?",
+                     (new_adv, code))
+        if amount > 0:
+            conn.execute("""INSERT INTO finance(tx_date,tx_type,category,amount,mode,order_id,note,created_by,created_at)
+                VALUES(?,'income','payment',?,?,?,?,'employee',?)""",
+                (today, amount, mode, order["id"], note, now))
+        if waived > 0:
+            conn.execute("""INSERT INTO finance(tx_date,tx_type,category,amount,mode,order_id,note,created_by,created_at)
+                VALUES(?,'expense','discount',?,?,?,?,'employee',?)""",
+                (today, waived, mode, order["id"], f"Discount given on order #{code}", now))
         conn.execute("UPDATE orders SET status='delivered', delivered_at=? WHERE order_code=? AND status='ready'",
                      (now, code))
+        new_rem = 0
+    else:
+        # Normal payment
+        if amount <= 0:
+            conn.close()
+            return jsonify({"ok": False, "error": "Invalid amount"})
+        new_rem = max(0, round(order["remaining"] - amount, 2))
+        new_adv = round(order["advance_paid"] + amount, 2)
+        conn.execute("UPDATE orders SET remaining=?, advance_paid=? WHERE order_code=?",
+                     (new_rem, new_adv, code))
+        conn.execute("""INSERT INTO finance(tx_date,tx_type,category,amount,mode,order_id,note,created_by,created_at)
+            VALUES(?,'income','payment',?,?,?,?,'employee',?)""",
+            (today, amount, mode, order["id"], f"Balance collected for order #{code}", now))
+        if new_rem == 0:
+            conn.execute("UPDATE orders SET status='delivered', delivered_at=? WHERE order_code=? AND status='ready'",
+                         (now, code))
+
     conn.commit()
     conn.close()
     return jsonify({"ok": True, "remaining": new_rem})
