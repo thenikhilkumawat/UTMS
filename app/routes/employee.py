@@ -480,12 +480,11 @@ def save_order():
                 if dup:
                     conn.close()
                     return jsonify({"status":"error","message":f"Mobile {mobile} already registered under '{dup['name']}'. Use Existing Customer flow to add a new order for them."}), 400
-            cur = conn.execute("INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?)",
+            conn.execute("INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?)",
                                (customer_name, mobile, address, now))
-            customer_id = cur.lastrowid
-            if not customer_id:
-                row = conn.execute("SELECT id FROM customers WHERE mobile=? ORDER BY id DESC LIMIT 1", (mobile,)).fetchone()
-                customer_id = row["id"] if row else None
+            # Get customer_id by querying - more reliable than lastrowid in PostgreSQL
+            row = conn.execute("SELECT id FROM customers WHERE name=? ORDER BY id DESC LIMIT 1", (customer_name,)).fetchone()
+            customer_id = row["id"] if row else None
 
         repeat_of = (data.get("repeat_of") or "").strip() or None
 
@@ -496,11 +495,9 @@ def save_order():
             VALUES(?,?,?,?,?,?,?,?,?,?,'pending',?,?,?,?)
         """,(order_code,customer_id,order_date,delivery_date,total_amount,extra_charges,
              payable_amount,advance_paid,remaining,payment_mode,is_urgent,note,repeat_of,now))
-        # Get the real order_id - lastrowid OR query by order_code
-        order_id = cur.lastrowid
-        if not order_id:
-            row = conn.execute("SELECT id FROM orders WHERE order_code=?", (order_code,)).fetchone()
-            order_id = row["id"] if row else None
+        # Get order_id by querying - reliable for both SQLite and PostgreSQL
+        row = conn.execute("SELECT id FROM orders WHERE order_code=?", (order_code,)).fetchone()
+        order_id = row["id"] if row else None
 
         # Items
         for it in items:
