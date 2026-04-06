@@ -164,9 +164,15 @@
           </div>
 
           <!-- Collect button -->
-          <button onclick="collectAndDeliver()" id="collect-btn"
+          <button onclick="collectAndDeliver(false)" id="collect-btn"
             style="width:100%;padding:16px;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;border-radius:14px;font-size:16px;font-weight:900;cursor:pointer;box-shadow:0 4px 16px rgba(22,163,74,0.3);margin-bottom:8px;">
             ✅ Collect & Mark Delivered
+          </button>
+
+          <!-- Discount button -->
+          <button onclick="collectAndDeliver(true)" id="discount-btn"
+            style="width:100%;padding:12px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:8px;">
+            🏷️ Accept Amount &amp; Close (Discount/Waive Remaining)
           </button>
 
           <!-- WhatsApp -->
@@ -299,21 +305,35 @@ function setPayMode(m) {
   if (m==="upi") document.getElementById("upi-amt").textContent = document.getElementById("dc-amount").value||0;
 }
 
-function collectAndDeliver() {
+function collectAndDeliver(isDiscount) {
   var amt = parseFloat(document.getElementById("dc-amount").value)||0;
+  var rem = parseFloat(document.getElementById("dc-remaining").textContent.replace("₹",""))||0;
   var rn  = (document.getElementById("receiver-name").value||"").trim();
   var rm  = (document.getElementById("receiver-mobile").value||"").trim();
-  var btn = document.getElementById("collect-btn");
+
+  if (isDiscount) {
+    var msg = amt > 0
+      ? "Accept ₹"+amt+" and waive remaining ₹"+(rem-amt)+"? Order will be marked delivered."
+      : "Waive full remaining ₹"+rem+"? Order will be marked delivered with no payment.";
+    if (!confirm(msg)) return;
+  }
+
+  var btn = isDiscount ? document.getElementById("discount-btn") : document.getElementById("collect-btn");
   btn.disabled = true;
-  btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:6px;"><circle cx="12" cy="12" r="10" stroke-opacity="0.3"/><path d="M12 2a10 10 0 0 1 10 10"/></svg> Processing...';
+  btn.innerHTML = "Processing...";
+
   fetch("/api/pickup/collect-and-deliver",{
     method:"POST", headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({order_code:currentCode, amount:amt, mode:payMode, receiver_name:rn, receiver_mobile:rm})
+    body: JSON.stringify({order_code:currentCode, amount:amt, mode:payMode,
+                          receiver_name:rn, receiver_mobile:rm, discount:isDiscount})
   }).then(function(r){return r.json();}).then(function(d){
     btn.disabled = false;
-    btn.innerHTML = '✅ Collect & Mark Delivered';
-    if (d.ok) { showToast("✅ Delivered! ₹"+amt+" collected","success"); loadOrder(currentCode); }
-    else showToast("Error: "+d.error,"error");
+    btn.innerHTML = isDiscount ? "🏷️ Accept Amount & Close (Discount/Waive Remaining)" : "✅ Collect & Mark Delivered";
+    if (d.ok) {
+      var msg = isDiscount ? "✅ Order closed! ₹"+amt+" collected, remaining waived." : "✅ Delivered! ₹"+amt+" collected";
+      showToast(msg,"success");
+      loadOrder(currentCode);
+    } else showToast("Error: "+d.error,"error");
   });
 }
 
