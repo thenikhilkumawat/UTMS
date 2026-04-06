@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+{% block title %}Order #{{ order.order_code }} — Admin{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>
+      📋 Order #{{ order.order_code }}
+      {% if order.is_urgent %}<span style="background:#fee2e2;color:#dc2626;font-size:12px;font-weight:800;padding:2px 8px;border-radius:6px;margin-left:8px;">🔥 URGENT</span>{% endif %}
+      <span style="font-size:13px;padding:4px 12px;border-radius:8px;font-weight:800;margin-left:8px;background:{% if order.status=='delivered' %}#d1fae5;color:#065f46{% elif order.status=='ready' %}#ede9fe;color:#6d28d9{% elif order.status=='cancelled' %}#fee2e2;color:#dc2626{% else %}#dbeafe;color:#1e40af{% endif %};">{{ order.status|upper }}</span>
+    </h1>
+    <div class="header-sub">{{ order.order_date }} → Delivery: {{ order.delivery_date }}</div>
+  </div>
+  <div style="display:flex;gap:8px;">
+    <a href="/owner/orders" class="btn btn-ghost btn-sm">← Orders</a>
+    <button onclick="window.open('/print-slip/{{ order.order_code }}','_blank')" class="btn btn-ghost btn-sm">🖨️ Print Slip</button>
+    <button class="menu-toggle" onclick="openSidebar()">☰</button>
+  </div>
+</div>
+
+<div class="page-body" style="padding:16px 24px;display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;">
+
+  <!-- ══ LEFT COLUMN ══ -->
+  <div style="display:flex;flex-direction:column;gap:14px;">
+
+    <!-- Customer Info -->
+    <div class="card">
+      <div class="card-header"><span class="card-title">👤 Customer</span></div>
+      <div class="card-body">
+        <div style="font-size:18px;font-weight:900;margin-bottom:4px;">{{ order.cname }}</div>
+        <div style="font-size:14px;color:var(--text-muted);">📱 {{ order.mobile }}</div>
+        {% if order.address and order.address != '—' %}
+        <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">📍 {{ order.address }}</div>
+        {% endif %}
+        {% if order.note %}
+        <div style="margin-top:10px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:8px 12px;font-size:13px;color:#92400e;">📝 {{ order.note }}</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Garments + Measurements -->
+    <div class="card">
+      <div class="card-header"><span class="card-title">👕 Garments & Measurements</span></div>
+      <div class="card-body" style="padding:0;">
+        {% for g in garments %}
+        <div style="padding:14px 16px;{% if not loop.last %}border-bottom:1px solid var(--border);{% endif %}">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <div style="font-size:15px;font-weight:800;">{{ g.type }} <span style="color:var(--text-muted);font-size:13px;">×{{ g.qty }}</span></div>
+            <div style="font-size:14px;font-weight:700;color:var(--accent);">₹{{ g.amount|int }}</div>
+          </div>
+          {% if g.measurements %}
+          <div style="display:flex;flex-wrap:wrap;gap:6px;">
+            {% for k,v in g.measurements.items() %}{% if v %}
+            <span style="background:#f1f5f9;border-radius:6px;padding:3px 10px;font-size:12px;font-weight:600;">
+              <span style="color:var(--text-muted);">{{ k }}:</span> <strong>{{ v }}</strong>
+            </span>
+            {% endif %}{% endfor %}
+          </div>
+          {% endif %}
+          {% if g.notes %}
+          <div style="margin-top:6px;font-size:12px;color:var(--text-muted);">Style: {{ g.notes }}</div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Work Progress -->
+    <div class="card">
+      <div class="card-header"><span class="card-title">📊 Work Progress</span></div>
+      <div class="card-body">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+          <span style="font-size:11px;font-weight:800;color:{% if order.naap_pct>=100 %}#4f46e5{% else %}#9ca3af{% endif %};">नाप{% if order.naap_pct>=100 %} ✓{% else %} {{ order.naap_pct }}%{% endif %}</span>
+          <span style="font-size:11px;font-weight:800;color:{% if order.cut_pct>=100 %}#ea580c{% else %}#9ca3af{% endif %};">कटाई{% if order.cut_pct>=100 %} ✓{% else %} {{ order.cut_pct }}%{% endif %}</span>
+          <span style="font-size:11px;font-weight:800;color:{% if order.stitch_pct>=100 %}#16a34a{% else %}#9ca3af{% endif %};">सिलाई{% if order.stitch_pct>=100 %} ✓{% else %} {{ order.stitch_pct }}%{% endif %}</span>
+        </div>
+        <div style="display:flex;gap:3px;height:12px;margin-bottom:14px;">
+          <div style="flex:1;background:#e5e7eb;border-radius:4px;overflow:hidden;"><div style="height:100%;background:#4f46e5;width:{{ order.naap_pct }}%;"></div></div>
+          <div style="flex:1;background:#e5e7eb;border-radius:4px;overflow:hidden;"><div style="height:100%;background:#ea580c;width:{{ order.cut_pct }}%;"></div></div>
+          <div style="flex:1;background:#e5e7eb;border-radius:4px;overflow:hidden;"><div style="height:100%;background:#16a34a;width:{{ order.stitch_pct }}%;"></div></div>
+        </div>
+        {% if work_logs %}
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">Work Log Entries</div>
+        {% for wl in work_logs %}
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;">
+          <div>
+            <span style="font-weight:700;">{{ wl.employee_name or '—' }}</span>
+            <span style="color:var(--text-muted);margin-left:6px;">{{ wl.notes or wl.garment_type }}</span>
+          </div>
+          <div style="text-align:right;">
+            <span style="font-weight:700;">{{ wl.qty_done }} pcs</span>
+            <span style="color:var(--text-muted);font-size:11px;margin-left:6px;">{{ wl.log_date }}</span>
+          </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div style="color:var(--text-muted);font-size:13px;">No work logged yet</div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ RIGHT COLUMN ══ -->
+  <div style="display:flex;flex-direction:column;gap:14px;">
+
+    <!-- Payment Summary -->
+    <div class="card">
+      <div class="card-header"><span class="card-title">💰 Payment</span></div>
+      <div class="card-body">
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
+          <span style="color:var(--text-muted);">Total Bill</span>
+          <span style="font-weight:700;">₹{{ order.total_amount|int }}</span>
+        </div>
+        {% if order.extra_charges > 0 %}
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
+          <span style="color:var(--text-muted);">Extra Charges</span>
+          <span style="font-weight:700;">₹{{ order.extra_charges|int }}</span>
+        </div>
+        {% endif %}
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
+          <span style="font-weight:800;">Net Payable</span>
+          <span style="font-weight:900;color:var(--accent);">₹{{ order.payable|int }}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
+          <span style="color:var(--text-muted);">Advance Paid</span>
+          <span style="font-weight:700;color:#16a34a;">₹{{ order.advance|int }}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:10px 0;">
+          <span style="font-weight:800;color:{% if order.remaining > 0 %}#dc2626{% else %}#16a34a{% endif %};">
+            {% if order.remaining > 0 %}Remaining Due{% else %}✓ Fully Paid{% endif %}
+          </span>
+          <span style="font-size:20px;font-weight:900;color:{% if order.remaining > 0 %}#dc2626{% else %}#16a34a{% endif %};">
+            ₹{{ order.remaining|int }}
+          </span>
+        </div>
+        <div style="font-size:12px;color:var(--text-muted);">Mode: {{ order.payment_mode|upper }}</div>
+
+        <!-- Finance transactions -->
+        {% if finance %}
+        <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px;">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">Payment History</div>
+          {% for f in finance %}
+          <div style="display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-bottom:1px solid var(--border);">
+            <div>
+              <span style="font-weight:700;color:{% if f.tx_type=='income' %}#16a34a{% else %}#dc2626{% endif %};">{{ '+' if f.tx_type=='income' else '-' }}₹{{ f.amount|int }}</span>
+              <span style="color:var(--text-muted);margin-left:6px;font-size:11px;">{{ f.category }}</span>
+              {% if f.note %}<span style="color:var(--text-muted);font-size:11px;"> · {{ f.note[:30] }}</span>{% endif %}
+            </div>
+            <span style="color:var(--text-muted);font-size:11px;">{{ f.tx_date }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Images -->
+    <div class="card">
+      <div class="card-header"><span class="card-title">📷 Cloth Photos</span></div>
+      <div class="card-body">
+        {% if images %}
+        <div style="display:flex;flex-wrap:wrap;gap:10px;">
+          {% for img in images %}
+          <img src="{{ img }}" onclick="openOverlay('{{ img }}')"
+            style="width:100px;height:100px;object-fit:cover;border-radius:10px;border:2px solid var(--border);cursor:zoom-in;transition:transform 0.15s;"
+            onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+          {% endfor %}
+        </div>
+        {% else %}
+        <div style="color:var(--text-muted);font-size:13px;text-align:center;padding:20px;">No photos uploaded for this order</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="card">
+      <div class="card-header"><span class="card-title">⚡ Actions</span></div>
+      <div class="card-body" style="display:flex;flex-wrap:wrap;gap:8px;">
+        <button onclick="window.open('/print-slip/{{ order.order_code }}','_blank')"
+          style="background:#eef2ff;color:#6366f1;border:none;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer;">🖨️ Print Slip</button>
+        {% if order.status not in ['delivered','cancelled'] %}
+        <form action="/owner/orders/cancel/{{ order.order_code }}" method="POST"
+          onsubmit="return confirm('Cancel order #{{ order.order_code }}?')">
+          <button type="submit" style="background:#fee2e2;color:#dc2626;border:none;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer;">✕ Cancel Order</button>
+        </form>
+        {% endif %}
+        <form action="/owner/orders/delete/{{ order.order_code }}" method="POST"
+          onsubmit="return confirm('DELETE order #{{ order.order_code }} permanently?')">
+          <button type="submit" style="background:#1f2937;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer;">🗑️ Delete</button>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Image Overlay -->
+<div id="img-overlay" onclick="this.style.display='none'" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.94);z-index:9999;align-items:center;justify-content:center;">
+  <img id="overlay-img" style="max-width:90%;max-height:90%;border-radius:12px;object-fit:contain;">
+  <button onclick="document.getElementById('img-overlay').style.display='none'" style="position:absolute;top:20px;right:20px;background:rgba(255,255,255,0.15);border:none;color:#fff;width:40px;height:40px;border-radius:50%;font-size:20px;cursor:pointer;">✕</button>
+</div>
+
+{% endblock %}
+{% block extra_js %}
+<script>
+function openOverlay(src) {
+  document.getElementById("overlay-img").src = src;
+  document.getElementById("img-overlay").style.display = "flex";
+}
+const SECS=5*60;let last=Date.now();
+["click","keydown","mousemove","touchstart"].forEach(ev=>document.addEventListener(ev,()=>{last=Date.now();},{passive:true}));
+setInterval(()=>{if(Math.floor((Date.now()-last)/1000)>=SECS)window.location.href="/owner/login?expired=1";},5000);
+window.addEventListener("pageshow",function(e){if(e.persisted){fetch("/owner/logout",{method:"POST",keepalive:true}).finally(()=>{window.location.href="/owner/login";})}});
+</script>
+{% endblock %}
