@@ -1,4 +1,17 @@
+# Database
 uttam.db
-static/order_images/
+
+# Order images - ignore actual image files but keep folder structure
+static/order_images/**/*.jpg
+static/order_images/**/*.jpeg
+static/order_images/**/*.png
+static/order_images/**/*.gif
+static/order_images/**/*.webp
+static/order_images/gallery/**
+
+# Python cache
 __pycache__/
 *.pyc
+*.pyo
+.DS_Store
+Thumbs.db
