@@ -73,16 +73,12 @@ if USE_PG:
         @property
         @property
         def lastrowid(self):
-            """Get last inserted row ID - works for both PostgreSQL and SQLite"""
             try:
-                # Try psycopg2 style (PostgreSQL)
                 self._cur.execute("SELECT lastval()")
                 row = self._cur.fetchone()
-                if row:
-                    return int(row[0])
+                return int(row[0]) if row else None
             except Exception:
-                pass
-            return None
+                return None
 
         @property
         def rowcount(self):
