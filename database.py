@@ -71,10 +71,12 @@ if USE_PG:
             return [_Row(zip(cols, r)) for r in rows]
 
         @property
+        @property
         def lastrowid(self):
             try:
                 self._cur.execute("SELECT lastval()")
-                return self._cur.fetchone()[0]
+                row = self._cur.fetchone()
+                return row[0] if row else None
             except: return None
 
         @property
