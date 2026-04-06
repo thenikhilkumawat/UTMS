@@ -220,19 +220,31 @@ def new_order():
 @bp.route("/upload/<order_code>", methods=["GET","POST"])
 def upload_images(order_code):
     if request.method == "POST":
+        import base64 as _b64
         files = request.files.getlist("photos")
-        folder = os.path.join(Config.UPLOAD_FOLDER, order_code)
-        os.makedirs(folder, exist_ok=True)
-        existing = [f for f in os.listdir(folder) if f.lower().endswith((".jpg",".jpeg",".png",".gif"))]
-        slots = max(0, 5 - len(existing))
+        conn = get_db()
+        # Get order_id
+        order = conn.execute("SELECT id FROM orders WHERE order_code=?", (order_code,)).fetchone()
+        if not order:
+            conn.close()
+            return "<html><body>Order not found</body></html>"
+        order_id = order["id"]
+        # Count existing images
+        existing_count = conn.execute("SELECT COUNT(*) as c FROM order_images WHERE order_id=?", (order_id,)).fetchone()["c"] or 0
+        slots = max(0, 5 - existing_count)
         saved = 0
         for f in files:
             if saved >= slots: break
             if f and f.filename:
+                img_data = f.read()
                 ext = os.path.splitext(f.filename)[1].lower() or ".jpg"
-                fname = f"{int(time.time())}_{len(existing)+saved+1}{ext}"
-                f.save(os.path.join(folder, fname))
+                mime = "image/jpeg" if ext in [".jpg",".jpeg"] else ("image/png" if ext==".png" else "image/gif")
+                b64 = _b64.b64encode(img_data).decode("utf-8")
+                data_url = f"data:{mime};base64,{b64}"
+                conn.execute("INSERT INTO order_images(order_id, file_path) VALUES(?,?)", (order_id, data_url))
                 saved += 1
+        conn.commit()
+        conn.close()
         msg = f"Uploaded {saved} image(s). Max 5 per order." if saved else ("Max 5 images reached." if slots==0 else "No image selected.")
         return f"""<html><body style="font-family:sans-serif;padding:30px;text-align:center;">
         <h2>{"✅ Done!" if saved else "⚠️"}</h2><p>{msg}</p>
@@ -390,14 +402,17 @@ function submitPhotos() {{
 
 @bp.route("/images/<order_code>")
 def list_images(order_code):
-    folder = os.path.join(Config.UPLOAD_FOLDER, order_code)
-    if not os.path.isdir(folder):
+    conn = get_db()
+    order = conn.execute("SELECT id FROM orders WHERE order_code=?", (order_code,)).fetchone()
+    if not order:
+        conn.close()
         return ""
-    files = sorted(f for f in os.listdir(folder) if f.lower().endswith((".jpg",".jpeg",".png",".gif")))
-    if not files:
+    rows = conn.execute("SELECT file_path FROM order_images WHERE order_id=? ORDER BY id", (order["id"],)).fetchall()
+    conn.close()
+    if not rows:
         return ""
     return "".join(
-        f'<img src="/static/order_images/{order_code}/{f}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:2px solid #e5e7eb;cursor:pointer;" onclick="openFull(this.src)">' for f in files
+        f'<img src="{r["file_path"]}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:2px solid #e5e7eb;cursor:pointer;" onclick="openFull(this.src)">' for r in rows
     )
 
 
@@ -1840,12 +1855,12 @@ def measurements_page():
             "garments":          garments
         })
 
-    # Load images for each order
+    # Load images for each order from DB
     for o in order_list:
-        folder = os.path.join(Config.UPLOAD_FOLDER, o["order_code"])
-        if os.path.isdir(folder):
-            files = sorted(f for f in os.listdir(folder) if f.lower().endswith((".jpg",".jpeg",".png",".gif")))
-            o["images"] = [f"/static/order_images/{o['order_code']}/{f}" for f in files]
+        order_row = conn.execute("SELECT id FROM orders WHERE order_code=?", (o["order_code"],)).fetchone()
+        if order_row:
+            img_rows = conn.execute("SELECT file_path FROM order_images WHERE order_id=? ORDER BY id", (order_row["id"],)).fetchall()
+            o["images"] = [r["file_path"] for r in img_rows]
         else:
             o["images"] = []
 
