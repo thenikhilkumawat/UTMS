@@ -22,7 +22,7 @@ ORDERS_PAGE = """{% extends 'base.html' %}
   </div>
   <div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:13px;">
     <thead><tr style="background:#f8fafc;border-bottom:2px solid var(--border);"><th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Order</th><th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Customer</th><th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Garments</th><th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Dates</th><th style="padding:10px 14px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Amount</th><th style="padding:10px 14px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Status</th><th style="padding:10px 14px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Actions</th></tr></thead>
-    <tbody id="tbody">{% for o in orders %}<tr class="orow" data-status="{{ o.status }}" data-s="{{ o.order_code }} {{ o.cname|lower }} {{ o.mobile }} {{ o.garments|lower }}" style="border-bottom:1px solid var(--border);" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''"><td style="padding:12px 14px;"><div style="font-size:15px;font-weight:900;color:var(--accent);">#{{ o.order_code }}</div>{% if o.is_urgent %}<span style="background:#fee2e2;color:#dc2626;font-size:9px;font-weight:800;padding:1px 6px;border-radius:4px;">🔥</span>{% endif %}{% if o.note %}<div style="font-size:11px;color:var(--text-muted);font-style:italic;">📝 {{ o.note[:30] }}</div>{% endif %}</td><td style="padding:12px 14px;"><div style="font-weight:700;">{{ o.cname }}</div>{% if o.mobile %}<div style="font-size:11px;color:var(--text-muted);">{{ o.mobile }}</div>{% endif %}</td><td style="padding:12px 14px;color:var(--text-secondary);max-width:140px;">{{ o.garments }}</td><td style="padding:12px 14px;"><div style="font-size:11px;color:var(--text-muted);">Order: {{ o.order_date }}</div><div style="font-size:11px;color:var(--text-muted);">Delivery: <strong>{{ o.delivery_date }}</strong></div></td><td style="padding:12px 14px;text-align:right;"><div style="font-weight:800;">₹{{ o.payable|int }}</div>{% if o.remaining > 0 %}<div style="font-size:11px;color:var(--danger);font-weight:700;">Due ₹{{ o.remaining|int }}</div>{% else %}<div style="font-size:11px;color:var(--success);font-weight:700;">✓ Paid</div>{% endif %}</td><td style="padding:12px 14px;text-align:center;"><span style="font-size:11px;padding:3px 10px;border-radius:8px;font-weight:800;background:{% if o.status=='delivered' %}#d1fae5;color:#065f46{% elif o.status=='ready' %}#ede9fe;color:#6d28d9{% elif o.status=='cancelled' %}#fee2e2;color:#dc2626{% else %}#dbeafe;color:#1e40af{% endif %};">{{ o.status|upper }}</span></td><td style="padding:12px 14px;text-align:center;"><div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;"><button onclick="window.open('/print-slip/{{ o.order_code }}','_blank')" style="background:var(--accent-light);color:var(--accent);border:none;border-radius:7px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;">🖨️</button>{% if o.status != 'delivered' and o.status != 'cancelled' %}<form action="/owner/orders/cancel/{{ o.order_code }}" method="POST" style="margin:0;" onsubmit="return confirm('Cancel #{{ o.order_code }}?')"><button type="submit" style="background:var(--danger-light);color:var(--danger);border:none;border-radius:7px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;">✕</button></form>{% endif %}<form action="/owner/orders/delete/{{ o.order_code }}" method="POST" style="margin:0;" onsubmit="return confirm('DELETE #{{ o.order_code }}?')"><button type="submit" style="background:#1f2937;color:#fff;border:none;border-radius:7px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;">🗑️</button></form></div></td></tr>{% else %}<tr><td colspan="7" style="padding:40px;text-align:center;color:var(--text-muted);">No orders yet</td></tr>{% endfor %}</tbody>
+    <tbody id="tbody">{% for o in orders %}<tr class="orow" data-status="{{ o.status }}" data-s="{{ o.order_code }} {{ o.cname|lower }} {{ o.mobile }} {{ o.garments|lower }}" style="border-bottom:1px solid var(--border);" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''"><td style="padding:12px 14px;"><div style="font-size:15px;font-weight:900;color:var(--accent);">#{{ o.order_code }}</div>{% if o.is_urgent %}<span style="background:#fee2e2;color:#dc2626;font-size:9px;font-weight:800;padding:1px 6px;border-radius:4px;">🔥</span>{% endif %}{% if o.note %}<div style="font-size:11px;color:var(--text-muted);font-style:italic;">📝 {{ o.note[:30] }}</div>{% endif %}</td><td style="padding:12px 14px;"><div style="font-weight:700;">{{ o.cname }}</div>{% if o.mobile %}<div style="font-size:11px;color:var(--text-muted);">{{ o.mobile }}</div>{% endif %}</td><td style="padding:12px 14px;color:var(--text-secondary);max-width:140px;">{{ o.garments }}</td><td style="padding:12px 14px;"><div style="font-size:11px;color:var(--text-muted);">Order: {{ o.order_date }}</div><div style="font-size:11px;color:var(--text-muted);">Delivery: <strong>{{ o.delivery_date }}</strong></div></td><td style="padding:12px 14px;text-align:right;"><div style="font-weight:800;">₹{{ o.payable|int }}</div>{% if o.remaining > 0 %}<div style="font-size:11px;color:var(--danger);font-weight:700;">Due ₹{{ o.remaining|int }}</div>{% else %}<div style="font-size:11px;color:var(--success);font-weight:700;">✓ Paid</div>{% endif %}</td><td style="padding:12px 14px;text-align:center;"><span style="font-size:11px;padding:3px 10px;border-radius:8px;font-weight:800;background:{% if o.status=='delivered' %}#d1fae5;color:#065f46{% elif o.status=='ready' %}#ede9fe;color:#6d28d9{% elif o.status=='cancelled' %}#fee2e2;color:#dc2626{% else %}#dbeafe;color:#1e40af{% endif %};">{{ o.status|upper }}</span></td><td style="padding:12px 14px;text-align:center;"><div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;"><button onclick="window.location='/owner/orders/detail/{{ o.order_code }}'" style="background:#eef2ff;color:#6366f1;border:none;border-radius:7px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;">👁️</button><button onclick="window.open('/print-slip/{{ o.order_code }}','_blank')" style="background:var(--accent-light);color:var(--accent);border:none;border-radius:7px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;">🖨️</button>{% if o.status != 'delivered' and o.status != 'cancelled' %}<form action="/owner/orders/cancel/{{ o.order_code }}" method="POST" style="margin:0;" onsubmit="return confirm('Cancel #{{ o.order_code }}?')"><button type="submit" style="background:var(--danger-light);color:var(--danger);border:none;border-radius:7px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;">✕</button></form>{% endif %}<form action="/owner/orders/delete/{{ o.order_code }}" method="POST" style="margin:0;" onsubmit="return confirm('DELETE #{{ o.order_code }}?')"><button type="submit" style="background:#1f2937;color:#fff;border:none;border-radius:7px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;">🗑️</button></form></div></td></tr>{% else %}<tr><td colspan="7" style="padding:40px;text-align:center;color:var(--text-muted);">No orders yet</td></tr>{% endfor %}</tbody>
   </table></div>
 </div>
 {% endblock %}
@@ -1220,6 +1220,121 @@ def factory_reset():
         flash(f"Reset failed: {str(e)}", "error")
     return redirect(url_for("owner.settings"))
 
+
+
+# ══════════════════════════════════════════════
+#  ADMIN ORDER DETAIL PAGE
+# ══════════════════════════════════════════════
+
+@bp.route("/orders/detail/<order_code>")
+@owner_required
+def order_detail(order_code):
+    conn = get_db()
+    import json as _json, os as _os
+    from config import Config
+
+    o = conn.execute("""
+        SELECT o.*, c.name as cname, c.mobile, c.address,
+               COALESCE(o.note,'') as note
+        FROM orders o
+        LEFT JOIN customers c ON c.id=o.customer_id
+        WHERE o.order_code=?
+    """, (order_code,)).fetchone()
+
+    if not o:
+        conn.close()
+        return "<h2>Order not found</h2>", 404
+
+    items = conn.execute(
+        "SELECT * FROM order_items WHERE order_id=?", (o["id"],)
+    ).fetchall()
+
+    wl_rows = conn.execute("""
+        SELECT garment_type, qty_done, notes, employee_name, log_date, making_rate
+        FROM work_logs WHERE order_code=? ORDER BY log_date, id
+    """, (order_code,)).fetchall()
+
+    finance = conn.execute("""
+        SELECT tx_date, tx_type, category, amount, mode, note
+        FROM finance WHERE order_id=? ORDER BY id
+    """, (o["id"],)).fetchall()
+
+    urgent_count = conn.execute(
+        "SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status!='delivered'"
+    ).fetchone()["c"]
+    conn.close()
+
+    # Work progress
+    naap_done = kataai_done = silai_done = 0
+    for wl in wl_rows:
+        n = (wl["notes"] or "").strip()
+        q = wl["qty_done"] or 0
+        if any(x in n for x in ["Measurement","Naap","नाप"]):
+            naap_done += q
+        elif any(x in n for x in ["Kataai","Cutting","कटाई"]):
+            kataai_done += q
+        else:
+            silai_done += q
+
+    total_qty = sum(it["quantity"] for it in items) or 1
+
+    def fmtd(d):
+        if not d: return "—"
+        p = str(d).split("-")
+        return f"{p[2]}-{p[1]}-{p[0]}" if len(p)==3 else d
+
+    # Images from filesystem
+    images = []
+    folder = _os.path.join(Config.UPLOAD_FOLDER, order_code)
+    if _os.path.isdir(folder):
+        images = [f"/static/order_images/{order_code}/{f}"
+                  for f in sorted(_os.listdir(folder))
+                  if f.lower().endswith((".jpg",".jpeg",".png",".gif",".webp"))]
+
+    garments = []
+    for it in items:
+        try:
+            meas = _json.loads(it["measurements"] or "{}")
+        except:
+            meas = {}
+        garments.append({
+            "type": it["garment_type"],
+            "qty":  it["quantity"],
+            "rate": it["rate"],
+            "amount": it["amount"],
+            "measurements": meas,
+            "notes": it["notes"] or ""
+        })
+
+    order_data = {
+        "order_code":    o["order_code"],
+        "status":        o["status"],
+        "is_urgent":     o["is_urgent"],
+        "note":          o["note"],
+        "order_date":    fmtd(o["order_date"]),
+        "delivery_date": fmtd(o["delivery_date"]),
+        "delivered_at":  fmtd((o["delivered_at"] or "")[:10]),
+        "cname":         o["cname"] or "—",
+        "mobile":        o["mobile"] or "—",
+        "address":       o["address"] or "—",
+        "total_amount":  o["total_amount"] or 0,
+        "extra_charges": o["extra_charges"] or 0,
+        "payable":       o["payable_amount"] or 0,
+        "advance":       o["advance_paid"] or 0,
+        "remaining":     o["remaining"] or 0,
+        "payment_mode":  o["payment_mode"] or "cash",
+        "naap_pct":      min(100, int(naap_done/total_qty*100)),
+        "cut_pct":       min(100, int(kataai_done/total_qty*100)),
+        "stitch_pct":    min(100, int(silai_done/total_qty*100)),
+        "total_qty":     total_qty,
+    }
+
+    return render_template("owner/order_detail.html",
+        active_page="owner_orders", show_voice=False,
+        urgent_count=urgent_count,
+        order=order_data, garments=garments,
+        work_logs=wl_rows, finance=finance, images=images,
+        fmtd=fmtd)
 
 # ══════════════════════════════════════════════
 #  ORDER CANCEL
