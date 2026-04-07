@@ -1465,11 +1465,14 @@ def api_order_detail(order_code):
         except: meas={}
         garments.append({"type":it["garment_type"],"qty":it["quantity"],"rate":it["rate"],"amount":it["amount"],"measurements":meas,"notes":it["notes"] or ""})
 
-    # Images from filesystem
+    # Images - DB first (Cloudinary), then filesystem fallback
     images=[]
-    folder=_os.path.join(Config.UPLOAD_FOLDER, order_code)
-    if _os.path.isdir(folder):
-        images=[f"/static/order_images/{order_code}/{f}" for f in sorted(_os.listdir(folder)) if f.lower().endswith((".jpg",".jpeg",".png",".gif",".webp"))]
+    img_rows=conn.execute("SELECT file_path FROM order_images WHERE order_id=? ORDER BY id",(o["id"],)).fetchall()
+    images=[r["file_path"] for r in img_rows if r["file_path"] and not r["file_path"].startswith("temp:")]
+    if not images:
+        folder=_os.path.join(Config.UPLOAD_FOLDER, order_code)
+        if _os.path.isdir(folder):
+            images=[f"/static/order_images/{order_code}/{f}" for f in sorted(_os.listdir(folder)) if f.lower().endswith((".jpg",".jpeg",".png",".gif",".webp"))]
 
     return jsonify({
         "order": {
