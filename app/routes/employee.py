@@ -220,19 +220,59 @@ def new_order():
 @bp.route("/upload/<order_code>", methods=["GET","POST"])
 def upload_images(order_code):
     if request.method == "POST":
+        import os as _os
         files = request.files.getlist("photos")
-        folder = os.path.join(Config.UPLOAD_FOLDER, order_code)
-        os.makedirs(folder, exist_ok=True)
-        existing = [f for f in os.listdir(folder) if f.lower().endswith((".jpg",".jpeg",".png",".gif",".webp"))]
-        slots = max(0, 5 - len(existing))
+        use_cloudinary = bool(_os.environ.get("CLOUDINARY_CLOUD_NAME"))
         saved = 0
-        for f in files:
-            if saved >= slots: break
-            if f and f.filename:
-                ext = os.path.splitext(f.filename)[1].lower() or ".jpg"
-                fname = f"{int(time.time())}_{len(existing)+saved+1}{ext}"
-                f.save(os.path.join(folder, fname))
-                saved += 1
+
+        if use_cloudinary:
+            import cloudinary
+            import cloudinary.uploader
+            cloudinary.config(
+                cloud_name = _os.environ.get("CLOUDINARY_CLOUD_NAME"),
+                api_key    = _os.environ.get("CLOUDINARY_API_KEY"),
+                api_secret = _os.environ.get("CLOUDINARY_API_SECRET")
+            )
+            # Count existing images in DB for this order
+            conn = get_db()
+            order = conn.execute("SELECT id FROM orders WHERE order_code=?", (order_code,)).fetchone()
+            order_id = order["id"] if order else 0
+            existing_count = conn.execute(
+                "SELECT COUNT(*) as c FROM order_images WHERE order_id=?", (order_id,)
+            ).fetchone()["c"] or 0
+            slots = max(0, 5 - existing_count)
+            for f in files:
+                if saved >= slots: break
+                if f and f.filename:
+                    result = cloudinary.uploader.upload(
+                        f,
+                        folder=f"uttam_tailors/{order_code}",
+                        public_id=f"{order_code}_{int(time.time())}_{saved+1}",
+                        overwrite=True
+                    )
+                    url = result.get("secure_url")
+                    if url:
+                        if order_id:
+                            conn.execute("INSERT INTO order_images(order_id, file_path) VALUES(?,?)", (order_id, url))
+                        else:
+                            conn.execute("INSERT INTO order_images(order_id, file_path) VALUES(?,?)", (0, f"temp:{order_code}:{url}"))
+                        saved += 1
+            conn.commit()
+            conn.close()
+        else:
+            # Fallback: local folder
+            folder = os.path.join(Config.UPLOAD_FOLDER, order_code)
+            os.makedirs(folder, exist_ok=True)
+            existing = [f for f in os.listdir(folder) if f.lower().endswith((".jpg",".jpeg",".png",".gif",".webp"))]
+            slots = max(0, 5 - len(existing))
+            for f in files:
+                if saved >= slots: break
+                if f and f.filename:
+                    ext = os.path.splitext(f.filename)[1].lower() or ".jpg"
+                    fname = f"{int(time.time())}_{len(existing)+saved+1}{ext}"
+                    f.save(os.path.join(folder, fname))
+                    saved += 1
+
         msg = f"Uploaded {saved} image(s). Max 5 per order." if saved else ("Max 5 images reached." if slots==0 else "No image selected.")
         return f"""<html><body style="font-family:sans-serif;padding:30px;text-align:center;">
         <h2>{"✅ Done!" if saved else "⚠️"}</h2><p>{msg}</p>
@@ -390,14 +430,32 @@ function submitPhotos() {{
 
 @bp.route("/images/<order_code>")
 def list_images(order_code):
-    folder = os.path.join(Config.UPLOAD_FOLDER, order_code)
-    if not os.path.isdir(folder):
-        return ""
-    files = sorted(f for f in os.listdir(folder) if f.lower().endswith((".jpg",".jpeg",".png",".gif",".webp")))
-    if not files:
+    import os as _os
+    srcs = []
+
+    # Try DB first (Cloudinary URLs stored here)
+    conn = get_db()
+    order = conn.execute("SELECT id FROM orders WHERE order_code=?", (order_code,)).fetchone()
+    if order:
+        rows = conn.execute("SELECT file_path FROM order_images WHERE order_id=? ORDER BY id", (order["id"],)).fetchall()
+        srcs = [r["file_path"] for r in rows if r["file_path"] and not r["file_path"].startswith("temp:")]
+    # Also check temp images
+    temp_rows = conn.execute("SELECT file_path FROM order_images WHERE order_id=0 AND file_path LIKE ?", (f"temp:{order_code}:%",)).fetchall()
+    for r in temp_rows:
+        srcs.append(r["file_path"][len(f"temp:{order_code}:"):])
+    conn.close()
+
+    # Fallback: local folder
+    if not srcs:
+        folder = os.path.join(Config.UPLOAD_FOLDER, order_code)
+        if os.path.isdir(folder):
+            files = sorted(f for f in os.listdir(folder) if f.lower().endswith((".jpg",".jpeg",".png",".gif",".webp")))
+            srcs = [f"/static/order_images/{order_code}/{f}" for f in files]
+
+    if not srcs:
         return ""
     return "".join(
-        f'<img src="/static/order_images/{order_code}/{f}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:2px solid #e5e7eb;cursor:pointer;" onclick="openFull(this.src)">' for f in files
+        f'<img src="{src}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:2px solid #e5e7eb;cursor:pointer;" onclick="openFull(this.src)">' for src in srcs
     )
 
 
@@ -482,6 +540,17 @@ def save_order():
                 VALUES(?,'income','advance',?,?,?,?,'employee',?)""",
                 (order_date, advance_paid, payment_mode, order_id,
                  f"Advance for order #{order_code}", now))
+
+        # Link temp images (Cloudinary URLs stored before order existed)
+        if order_id:
+            temp_imgs = conn.execute(
+                "SELECT id, file_path FROM order_images WHERE order_id=0 AND file_path LIKE ?",
+                (f"temp:{order_code}:%",)
+            ).fetchall()
+            for img in temp_imgs:
+                real_url = img["file_path"][len(f"temp:{order_code}:"):]
+                conn.execute("UPDATE order_images SET order_id=?, file_path=? WHERE id=?",
+                             (order_id, real_url, img["id"]))
 
         conn.commit()
         conn.close()
@@ -1868,14 +1937,19 @@ def measurements_page():
             "garments":          garments
         })
 
-    # Load images for each order from filesystem
+    # Load images for each order - DB first (Cloudinary), then filesystem fallback
     for o in order_list:
-        folder = os.path.join(Config.UPLOAD_FOLDER, o["order_code"])
-        if os.path.isdir(folder):
-            files = sorted(f for f in os.listdir(folder) if f.lower().endswith((".jpg",".jpeg",".png",".gif",".webp")))
-            o["images"] = [f"/static/order_images/{o['order_code']}/{f}" for f in files]
-        else:
-            o["images"] = []
+        order_row = conn.execute("SELECT id FROM orders WHERE order_code=?", (o["order_code"],)).fetchone()
+        imgs = []
+        if order_row:
+            img_rows = conn.execute("SELECT file_path FROM order_images WHERE order_id=? ORDER BY id", (order_row["id"],)).fetchall()
+            imgs = [r["file_path"] for r in img_rows if r["file_path"] and not r["file_path"].startswith("temp:")]
+        if not imgs:
+            folder = os.path.join(Config.UPLOAD_FOLDER, o["order_code"])
+            if os.path.isdir(folder):
+                files = sorted(f for f in os.listdir(folder) if f.lower().endswith((".jpg",".jpeg",".png",".gif",".webp")))
+                imgs = [f"/static/order_images/{o['order_code']}/{f}" for f in files]
+        o["images"] = imgs
 
     conn.close()
     return render_template("employee/measurements.html",
