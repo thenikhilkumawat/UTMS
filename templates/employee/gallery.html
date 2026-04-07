@@ -152,7 +152,7 @@ function showImages(parentId, subtypeId) {
   ALL_TYPES.forEach(function(t){ typeMap[t.id] = t.name; });
 
   grid.innerHTML = imgs.map(function(img, idx) {
-    var src = "/static/order_images/gallery/" + img.filename;
+    var src = img.filename.startsWith("http") ? img.filename : "/static/order_images/gallery/" + img.filename;
     var typeName = typeMap[img.type_id] || "";
     return '<div class="img-card" onclick="openOverlay('+idx+')" style="background:#fff;border-radius:16px;overflow:hidden;border:1.5px solid var(--border);box-shadow:0 2px 12px rgba(0,0,0,0.06);">'
       + '<div style="aspect-ratio:1;overflow:hidden;background:#f3f4f6;">'
@@ -175,7 +175,7 @@ function showOverlayImg() {
   var img = currentImgList[currentImgIdx];
   if (!img) return;
   var typeMap = {}; ALL_TYPES.forEach(function(t){ typeMap[t.id] = t.name; });
-  document.getElementById("overlay-img").src = "/static/order_images/gallery/" + img.filename;
+  document.getElementById("overlay-img").src = img.filename.startsWith("http") ? img.filename : "/static/order_images/gallery/" + img.filename;
   document.getElementById("overlay-caption").textContent = img.caption || typeMap[img.type_id] || "";
   document.getElementById("overlay-counter").textContent = (currentImgIdx+1) + " / " + currentImgList.length;
 }
