@@ -75,7 +75,7 @@
     </div>
 
     <!-- TWO COLUMNS -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start;">
+    <div id="two-col-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start;">
 
       <!-- ══ LEFT COLUMN: Order info ══ -->
       <div style="display:flex;flex-direction:column;gap:12px;">
@@ -284,9 +284,14 @@ function loadOrder(code) {
         } else { strip.style.display = "none"; }
       });
 
-      document.getElementById("payment-section").style.display  = (o.status==="pending"||o.status==="ready") ? "block" : "none";
-      document.getElementById("delivered-section").style.display = o.status==="delivered" ? "block" : "none";
+      var isDelivered = o.status === "delivered";
+      var isActive = (o.status==="pending"||o.status==="ready");
+      document.getElementById("payment-section").style.display  = isActive ? "block" : "none";
+      document.getElementById("delivered-section").style.display = isDelivered ? "block" : "none";
       document.getElementById("pending-section").style.display   = o.status==="pending" ? "block" : "none";
+      // When delivered: make left column full width, hide right column gap
+      var grid = document.getElementById("two-col-grid");
+      if(grid) grid.style.gridTemplateColumns = isDelivered ? "1fr" : "1fr 1fr";
       if (o.status==="delivered") document.getElementById("delivered-date-text").textContent = "Delivered on " + (o.delivered_at_fmt||"");
 
       document.getElementById("delivery-card").style.display = "block";
