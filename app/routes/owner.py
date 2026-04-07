@@ -21,8 +21,9 @@ ORDERS_PAGE = """{% extends 'base.html' %}
     <span id="dues-badge" style="display:none;background:#fef3c7;color:#b45309;border:1.5px solid #fde68a;border-radius:10px;padding:6px 14px;font-size:12px;font-weight:800;">💰 Pending dues only</span>
     <div style="display:flex;gap:6px;flex-wrap:wrap;">
       {% for key,label in [('all','All'),('pending','Pending'),('ready','Ready'),('delivered','Delivered'),('cancelled','Cancelled')] %}
-      <button class="ftab" onclick="setTab('{{ key }}',this)" style="padding:7px 14px;border-radius:10px;border:2px solid {% if key=='all' %}var(--accent){% else %}var(--border){% endif %};background:{% if key=='all' %}var(--accent){% else %}#fff{% endif %};color:{% if key=='all' %}#fff{% else %}var(--text-muted){% endif %};font-size:12px;font-weight:800;cursor:pointer;">{{ label }}</button>
+      <button class="ftab" onclick="setTab('{{ key }}',this);showSection('orders')" style="padding:7px 14px;border-radius:10px;border:2px solid {% if key=='all' %}var(--accent){% else %}var(--border){% endif %};background:{% if key=='all' %}var(--accent){% else %}#fff{% endif %};color:{% if key=='all' %}#fff{% else %}var(--text-muted){% endif %};font-size:12px;font-weight:800;cursor:pointer;">{{ label }}</button>
       {% endfor %}
+      <button id="wp-tab-btn" onclick="showSection('workprogress')" style="padding:7px 14px;border-radius:10px;border:2px solid #ea580c;background:#fff;color:#ea580c;font-size:12px;font-weight:800;cursor:pointer;">📊 Work Progress</button>
     </div>
   </div>
   <div style="overflow-x:auto;">
@@ -81,6 +82,62 @@ ORDERS_PAGE = """{% extends 'base.html' %}
     </table>
   </div>
 </div>
+
+  <!-- ══ WORK PROGRESS SECTION ══ -->
+  <div id="wp-section" style="display:none;margin-top:0;">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+      <button onclick="setWpFilter('all',this)" class="wpf" style="padding:6px 14px;border-radius:10px;border:2px solid var(--accent);background:var(--accent);color:#fff;font-size:12px;font-weight:800;cursor:pointer;">All</button>
+      <button onclick="setWpFilter('naap',this)" class="wpf" style="padding:6px 14px;border-radius:10px;border:2px solid var(--border);background:#fff;color:var(--text-muted);font-size:12px;font-weight:800;cursor:pointer;">📐 नाप Pending</button>
+      <button onclick="setWpFilter('cut',this)" class="wpf" style="padding:6px 14px;border-radius:10px;border:2px solid var(--border);background:#fff;color:var(--text-muted);font-size:12px;font-weight:800;cursor:pointer;">✂️ कटाई Pending</button>
+      <button onclick="setWpFilter('stitch',this)" class="wpf" style="padding:6px 14px;border-radius:10px;border:2px solid var(--border);background:#fff;color:var(--text-muted);font-size:12px;font-weight:800;cursor:pointer;">🪡 सिलाई Pending</button>
+      <button onclick="setWpFilter('done',this)" class="wpf" style="padding:6px 14px;border-radius:10px;border:2px solid var(--border);background:#fff;color:var(--text-muted);font-size:12px;font-weight:800;cursor:pointer;">✅ All Done</button>
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+      <thead><tr style="background:#f8fafc;border-bottom:2px solid var(--border);">
+        <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Order</th>
+        <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Customer</th>
+        <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Garments</th>
+        <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Delivery</th>
+        <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Progress</th>
+        <th style="padding:10px 14px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Pending</th>
+      </tr></thead>
+      <tbody id="wp-tbody">
+        {% for o in wp_orders %}
+        {% set all_done = o.naap_pct >= 100 and o.cut_pct >= 100 and o.stitch_pct >= 100 %}
+        <tr class="wrow" data-naap="{{ 'done' if o.naap_pct>=100 else 'pending' }}" data-cut="{{ 'done' if o.cut_pct>=100 else 'pending' }}" data-stitch="{{ 'done' if o.stitch_pct>=100 else 'pending' }}" data-alldone="{{ 'yes' if all_done else 'no' }}" style="border-bottom:1px solid var(--border);" onmouseover="this.style.background='#fafbff'" onmouseout="this.style.background=''">
+          <td style="padding:12px 14px;"><div style="font-size:15px;font-weight:900;color:var(--accent);">#{{ o.order_code }}</div>{% if o.is_urgent %}<span style="background:#fee2e2;color:#dc2626;font-size:9px;font-weight:800;padding:1px 6px;border-radius:4px;">🔥</span>{% endif %}</td>
+          <td style="padding:12px 14px;"><div style="font-weight:700;">{{ o.cname }}</div><div style="font-size:11px;color:var(--text-muted);">{{ o.mobile }}</div></td>
+          <td style="padding:12px 14px;color:var(--text-secondary);max-width:130px;font-size:12px;">{{ o.garments }}</td>
+          <td style="padding:12px 14px;"><div style="font-size:13px;font-weight:700;">{{ o.delivery_date }}</div><div style="font-size:11px;color:var(--text-muted);">{{ o.status|upper }}</div></td>
+          <td style="padding:12px 14px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+              <span style="font-size:9px;font-weight:800;color:{% if o.naap_pct>=100 %}#4f46e5{% else %}#9ca3af{% endif %};">नाप {% if o.naap_pct>=100 %}✓{% else %}{{ o.naap_pct }}%{% endif %}</span>
+              <span style="font-size:9px;font-weight:800;color:{% if o.cut_pct>=100 %}#ea580c{% else %}#9ca3af{% endif %};">कटाई {% if o.cut_pct>=100 %}✓{% else %}{{ o.cut_pct }}%{% endif %}</span>
+              <span style="font-size:9px;font-weight:800;color:{% if o.stitch_pct>=100 %}#16a34a{% else %}#9ca3af{% endif %};">सिलाई {% if o.stitch_pct>=100 %}✓{% else %}{{ o.stitch_pct }}%{% endif %}</span>
+            </div>
+            <div style="display:flex;gap:2px;height:10px;">
+              <div style="flex:1;background:#e5e7eb;border-radius:4px;overflow:hidden;"><div style="height:100%;background:#4f46e5;width:{{ o.naap_pct }}%;"></div></div>
+              <div style="flex:1;background:#e5e7eb;border-radius:4px;overflow:hidden;"><div style="height:100%;background:#ea580c;width:{{ o.cut_pct }}%;"></div></div>
+              <div style="flex:1;background:#e5e7eb;border-radius:4px;overflow:hidden;"><div style="height:100%;background:#16a34a;width:{{ o.stitch_pct }}%;"></div></div>
+            </div>
+          </td>
+          <td style="padding:12px 14px;text-align:center;">
+            {% if all_done %}<span style="background:#d1fae5;color:#065f46;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:800;">✅ All Done</span>
+            {% else %}<div style="display:flex;flex-direction:column;gap:3px;align-items:center;">
+              {% if o.naap_pct < 100 %}<span style="background:#eef2ff;color:#4f46e5;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:800;">📐 नाप</span>{% endif %}
+              {% if o.cut_pct < 100 %}<span style="background:#fff7ed;color:#ea580c;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:800;">✂️ कटाई</span>{% endif %}
+              {% if o.stitch_pct < 100 %}<span style="background:#f0fdf4;color:#16a34a;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:800;">🪡 सिलाई</span>{% endif %}
+            </div>{% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" style="padding:40px;text-align:center;color:var(--text-muted);">All orders delivered! 🎉</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
 {% endblock %}
 {% block extra_js %}<script>
 var activeTab="all", activeFilter="{{filter_mode}}";
@@ -93,14 +150,22 @@ function setTab(k,btn){activeTab=k;document.querySelectorAll(".ftab").forEach(fu
 function filterRows(){
   var q=document.getElementById("srch").value.toLowerCase().trim();
   document.querySelectorAll(".orow").forEach(function(r){
-    if(r.classList.contains("detail-row")){r.style.display="none";return;}
+    if(r.classList.contains("detail-row")){return;} // skip detail rows - handled below
     var hasDue=parseFloat(r.dataset.remaining||0)>0;
     var matchQ=!q||r.dataset.s.includes(q);
     var matchF=activeTab==="all"||r.dataset.status===activeTab;
     var matchDues=activeFilter!=="dues"||(hasDue&&r.dataset.status!=="delivered"&&r.dataset.status!=="cancelled");
-    r.style.display=(matchQ&&matchF&&matchDues)?"":"none";
+    var show=(matchQ&&matchF&&matchDues);
+    r.style.display=show?"":"none";
+    // Also hide detail row if parent is hidden
+    var code=r.querySelector("[id^='arrow-']");
+    if(code){
+      var codeVal=code.id.replace("arrow-","");
+      var dr=document.getElementById("detail-"+codeVal);
+      if(dr&&!show) dr.style.display="none";
+    }
   });
-  expandedCode=null;
+  if(!document.querySelector(".orow:not(.detail-row)[style='']")){expandedCode=null;}
 }
 
 function toggleDetail(code) {
@@ -201,8 +266,33 @@ function openImgOverlay(src){
   ov.style.display="flex";
 }
 
-var activeTab="all";
-function setTab(k,btn){activeTab=k;document.querySelectorAll(".ftab").forEach(function(b){b.style.background="#fff";b.style.color="var(--text-muted)";b.style.borderColor="var(--border)";});btn.style.background="var(--accent)";btn.style.color="#fff";btn.style.borderColor="var(--accent)";filterRows();}
+function showSection(sec){
+  var ordSec=document.querySelector(".page-body > div[style*='overflow-x']");
+  var wpSec=document.getElementById("wp-section");
+  var wpBtn=document.getElementById("wp-tab-btn");
+  if(sec==="workprogress"){
+    if(ordSec) ordSec.style.display="none";
+    if(wpSec) wpSec.style.display="block";
+    wpBtn.style.background="#ea580c"; wpBtn.style.color="#fff";
+    document.querySelectorAll(".ftab").forEach(function(b){b.style.background="#fff";b.style.color="var(--text-muted)";b.style.borderColor="var(--border)";});
+  } else {
+    if(ordSec) ordSec.style.display="block";
+    if(wpSec) wpSec.style.display="none";
+    wpBtn.style.background="#fff"; wpBtn.style.color="#ea580c";
+  }
+}
+
+var wpFilter="all";
+function setWpFilter(f,btn){
+  wpFilter=f;
+  document.querySelectorAll(".wpf").forEach(function(b){b.style.background="#fff";b.style.color="var(--text-muted)";b.style.borderColor="var(--border)";});
+  btn.style.background=btn.style.borderColor||"var(--accent)"; btn.style.color="#fff";
+  document.querySelectorAll(".wrow").forEach(function(r){
+    var show=f==="all"||(f==="naap"&&r.dataset.naap==="pending")||(f==="cut"&&r.dataset.cut==="pending")||(f==="stitch"&&r.dataset.stitch==="pending")||(f==="done"&&r.dataset.alldone==="yes");
+    r.style.display=show?"":"none";
+  });
+}
+
 const SECS=5*60;let last=Date.now();["click","keydown","mousemove","touchstart"].forEach(ev=>document.addEventListener(ev,()=>{last=Date.now();},{passive:true}));setInterval(()=>{if(Math.floor((Date.now()-last)/1000)>=SECS)window.location.href="/owner/login?expired=1";},5000);
 window.addEventListener("pageshow",function(e){if(e.persisted){fetch("/owner/logout",{method:"POST",keepalive:true}).finally(()=>{window.location.href="/owner/login";})}});
 </script>{% endblock %}
@@ -1256,14 +1346,30 @@ def gallery_upload_image():
         if not type_id or not file or not file.filename:
             flash("Please select a category and image.", "error")
             return redirect(url_for("owner.gallery_admin"))
-        ext = _os.path.splitext(file.filename)[1].lower()
-        if ext not in [".jpg",".jpeg",".png",".gif",".webp"]:
-            ext = ".jpg"
-        # Use static folder which is always writable
-        folder = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.dirname(__file__))), "static", "order_images", "gallery")
-        _os.makedirs(folder, exist_ok=True)
-        fname = f"gal_{type_id}_{int(_time.time())}{ext}"
-        file.save(_os.path.join(folder, fname))
+
+        use_cloudinary = bool(_os.environ.get("CLOUDINARY_CLOUD_NAME"))
+        if use_cloudinary:
+            import cloudinary, cloudinary.uploader
+            cloudinary.config(
+                cloud_name=_os.environ.get("CLOUDINARY_CLOUD_NAME"),
+                api_key=_os.environ.get("CLOUDINARY_API_KEY"),
+                api_secret=_os.environ.get("CLOUDINARY_API_SECRET")
+            )
+            result = cloudinary.uploader.upload(
+                file,
+                folder="uttam_tailors/gallery",
+                public_id=f"gal_{type_id}_{int(_time.time())}",
+                overwrite=True
+            )
+            fname = result.get("secure_url","")
+        else:
+            ext = _os.path.splitext(file.filename)[1].lower()
+            if ext not in [".jpg",".jpeg",".png",".gif",".webp"]: ext = ".jpg"
+            folder = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.dirname(__file__))), "static", "order_images", "gallery")
+            _os.makedirs(folder, exist_ok=True)
+            fname = f"gal_{type_id}_{int(_time.time())}{ext}"
+            file.save(_os.path.join(folder, fname))
+
         conn = get_db()
         conn.execute("INSERT INTO gallery_images(type_id,filename,caption) VALUES(?,?,?)", (type_id, fname, caption))
         conn.commit(); conn.close()
@@ -1679,6 +1785,44 @@ def owner_orders():
         "garments":      r["garments_str"] or "—"
     } for r in rows]
 
+    # Work progress data for combined page
+    try:
+        wp_rows = conn.execute("""
+            SELECT o.order_code, o.status, o.delivery_date, o.is_urgent,
+                   COALESCE(c.name,'—') as cname, COALESCE(c.mobile,'') as mobile,
+                   STRING_AGG(CAST(oi.garment_type||' x'||oi.quantity AS TEXT), ', ') as garments_str,
+                   SUM(oi.quantity) as total_qty
+            FROM orders o
+            LEFT JOIN customers c ON c.id=o.customer_id
+            LEFT JOIN order_items oi ON oi.order_id=o.id
+            WHERE o.status NOT IN ('delivered','cancelled')
+            GROUP BY o.id, o.order_code, o.status, o.delivery_date, o.is_urgent, c.name, c.mobile
+            ORDER BY o.delivery_date ASC, o.is_urgent DESC
+        """).fetchall()
+    except:
+        wp_rows = []
+
+    wp_result = []
+    for o in wp_rows:
+        wl = conn.execute("SELECT qty_done, notes FROM work_logs WHERE order_code=?", (o["order_code"],)).fetchall()
+        naap=kataai=silai=0
+        for w in wl:
+            n=(w["notes"] or "").strip(); q=w["qty_done"] or 0
+            if any(x in n for x in ["Measurement","Naap"]): naap+=q
+            elif any(x in n for x in ["Kataai","Cutting"]): kataai+=q
+            else: silai+=q
+        tq=o["total_qty"] or 1
+        wp_result.append({
+            "order_code": o["order_code"], "status": o["status"],
+            "cname": o["cname"], "mobile": o["mobile"],
+            "delivery_date": fmtd(o["delivery_date"]),
+            "is_urgent": o["is_urgent"], "garments": o["garments_str"] or "—",
+            "total_qty": tq,
+            "naap_pct": min(100,int(min(naap,tq)/tq*100)),
+            "cut_pct":  min(100,int(min(kataai,tq)/tq*100)),
+            "stitch_pct": min(100,int(min(silai,tq)/tq*100)),
+        })
+
     urgent_count = conn.execute(
         "SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status!='delivered'"
     ).fetchone()["c"]
@@ -1688,7 +1832,7 @@ def owner_orders():
     return render_template_string(ORDERS_PAGE,
         active_page="owner_orders", show_voice=False,
         urgent_count=urgent_count, orders=orders, total=len(orders),
-        filter_mode=filter_mode)
+        filter_mode=filter_mode, wp_orders=wp_result)
 
 # ══════════════════════════════════════════════
 #  ORDER DELETE (Owner)
