@@ -8,89 +8,108 @@ bp = Blueprint("owner", __name__, url_prefix="/owner")
 
 
 ORDERS_PAGE = """{% extends 'base.html' %}
-{% block title %}Orders — Owner{% endblock %}
+{% block title %}Orders & Progress — Owner{% endblock %}
 {% block content %}
 <div class="page-header">
-  <div><h1>📋 Order Management</h1><div class="header-sub">{{ total }} total orders</div></div>
-  <div style="display:flex;gap:8px;align-items:center;"><a href="/owner/dashboard" class="btn btn-ghost btn-sm">← Dashboard</a><button class="menu-toggle" onclick="openSidebar()">☰</button></div>
+  <div><h1>📋 Orders & Progress</h1><div class="header-sub">{{ total }} orders total</div></div>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <a href="/owner/dashboard" class="btn btn-ghost btn-sm">← Dashboard</a>
+    <button class="menu-toggle" onclick="openSidebar()">☰</button>
+  </div>
 </div>
-{% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}<div style="padding:12px 24px 0;">{% for cat,msg in messages %}<div style="background:{{'#d1fae5' if cat=='success' else '#fee2e2'}};color:{{'#065f46' if cat=='success' else '#dc2626'}};padding:10px 16px;border-radius:10px;font-weight:700;font-size:13px;margin-bottom:4px;">{{ msg }}</div>{% endfor %}</div>{% endif %}{% endwith %}
-<div class="page-body" style="padding:16px 24px;">
-  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center;">
-    <input type="text" id="srch" placeholder="Search #code, name, mobile..." oninput="filterRows()" style="flex:1;min-width:200px;padding:10px 16px;font-size:14px;border:2px solid var(--border);border-radius:12px;">
-    <span id="dues-badge" style="display:none;background:#fef3c7;color:#b45309;border:1.5px solid #fde68a;border-radius:10px;padding:6px 14px;font-size:12px;font-weight:800;">💰 Pending dues only</span>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;">
-      {% for key,label in [('all','All'),('pending','Pending'),('ready','Ready'),('delivered','Delivered'),('cancelled','Cancelled')] %}
-      <button class="ftab" onclick="setTab('{{ key }}',this);showSection('orders')" style="padding:7px 14px;border-radius:10px;border:2px solid {% if key=='all' %}var(--accent){% else %}var(--border){% endif %};background:{% if key=='all' %}var(--accent){% else %}#fff{% endif %};color:{% if key=='all' %}#fff{% else %}var(--text-muted){% endif %};font-size:12px;font-weight:800;cursor:pointer;">{{ label }}</button>
-      {% endfor %}
-      <button id="wp-tab-btn" onclick="showSection('workprogress')" style="padding:7px 14px;border-radius:10px;border:2px solid #ea580c;background:#fff;color:#ea580c;font-size:12px;font-weight:800;cursor:pointer;">📊 Work Progress</button>
+{% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}<div style="padding:8px 24px 0;">{% for cat,msg in messages %}<div style="background:{{'#d1fae5' if cat=='success' else '#fee2e2'}};color:{{'#065f46' if cat=='success' else '#dc2626'}};padding:10px 16px;border-radius:10px;font-weight:700;font-size:13px;margin-bottom:4px;">{{ msg }}</div>{% endfor %}</div>{% endif %}{% endwith %}
+
+<div class="page-body" style="padding:12px 24px;">
+
+  <!-- ═══ TAB SWITCHER ═══ -->
+  <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:16px;">
+    <button id="tab-orders-btn" onclick="switchTab('orders')"
+      style="padding:10px 24px;font-size:14px;font-weight:800;border:none;background:none;border-bottom:3px solid var(--accent);color:var(--accent);cursor:pointer;margin-bottom:-2px;">
+      📋 Order Management
+    </button>
+    <button id="tab-wp-btn" onclick="switchTab('workprogress')"
+      style="padding:10px 24px;font-size:14px;font-weight:800;border:none;background:none;border-bottom:3px solid transparent;color:var(--text-muted);cursor:pointer;margin-bottom:-2px;">
+      📊 Work Progress
+    </button>
+  </div>
+
+  <!-- ═══ ORDERS TAB ═══ -->
+  <div id="tab-orders">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center;">
+      <input type="text" id="srch" placeholder="Search #code, name, mobile..." oninput="filterOrders()"
+        style="flex:1;min-width:200px;padding:10px 16px;font-size:14px;border:2px solid var(--border);border-radius:12px;outline:none;">
+      <span id="dues-badge" style="display:none;background:#fef3c7;color:#b45309;border:1.5px solid #fde68a;border-radius:10px;padding:6px 14px;font-size:12px;font-weight:800;">💰 Pending dues only</span>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        {% for key,label in [('all','All'),('pending','Pending'),('ready','Ready'),('delivered','Delivered'),('cancelled','Cancelled')] %}
+        <button class="ftab" data-key="{{ key }}" onclick="setTab('{{ key }}',this)"
+          style="padding:7px 14px;border-radius:10px;border:2px solid {% if key=='all' %}var(--accent){% else %}var(--border){% endif %};background:{% if key=='all' %}var(--accent){% else %}#fff{% endif %};color:{% if key=='all' %}#fff{% else %}var(--text-muted){% endif %};font-size:12px;font-weight:800;cursor:pointer;">{{ label }}</button>
+        {% endfor %}
+      </div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead><tr style="background:#f8fafc;border-bottom:2px solid var(--border);">
+          <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Order</th>
+          <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Customer</th>
+          <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Garments</th>
+          <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Dates</th>
+          <th style="padding:10px 14px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Amount</th>
+          <th style="padding:10px 14px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Status</th>
+          <th style="padding:10px 14px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Actions</th>
+        </tr></thead>
+        <tbody id="tbody">
+          {% for o in orders %}
+          <tr class="orow" data-status="{{ o.status }}" data-remaining="{{ o.remaining }}"
+            data-s="{{ o.order_code }} {{ o.cname|lower }} {{ o.mobile }} {{ o.garments|lower }}"
+            style="border-bottom:1px solid var(--border);cursor:pointer;"
+            onclick="toggleDetail('{{ o.order_code }}')"
+            onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
+            <td style="padding:12px 14px;">
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span id="arrow-{{ o.order_code }}" style="font-size:10px;color:var(--text-muted);transition:transform 0.2s;display:inline-block;">▶</span>
+                <div style="font-size:15px;font-weight:900;color:var(--accent);">#{{ o.order_code }}</div>
+                {% if o.is_urgent %}<span style="background:#fee2e2;color:#dc2626;font-size:9px;font-weight:800;padding:1px 6px;border-radius:4px;">🔥</span>{% endif %}
+              </div>
+              {% if o.note %}<div style="font-size:11px;color:var(--text-muted);font-style:italic;padding-left:18px;">📝 {{ o.note[:30] }}</div>{% endif %}
+            </td>
+            <td style="padding:12px 14px;"><div style="font-weight:700;">{{ o.cname }}</div>{% if o.mobile %}<div style="font-size:11px;color:var(--text-muted);">{{ o.mobile }}</div>{% endif %}</td>
+            <td style="padding:12px 14px;color:var(--text-secondary);max-width:140px;">{{ o.garments }}</td>
+            <td style="padding:12px 14px;"><div style="font-size:11px;color:var(--text-muted);">Order: {{ o.order_date }}</div><div style="font-size:11px;color:var(--text-muted);">Delivery: <strong>{{ o.delivery_date }}</strong></div></td>
+            <td style="padding:12px 14px;text-align:right;"><div style="font-weight:800;">₹{{ o.payable|int }}</div>{% if o.remaining > 0 %}<div style="font-size:11px;color:var(--danger);font-weight:700;">Due ₹{{ o.remaining|int }}</div>{% else %}<div style="font-size:11px;color:var(--success);font-weight:700;">✓ Paid</div>{% endif %}</td>
+            <td style="padding:12px 14px;text-align:center;"><span style="font-size:11px;padding:3px 10px;border-radius:8px;font-weight:800;background:{% if o.status=='delivered' %}#d1fae5;color:#065f46{% elif o.status=='ready' %}#ede9fe;color:#6d28d9{% elif o.status=='cancelled' %}#fee2e2;color:#dc2626{% else %}#dbeafe;color:#1e40af{% endif %};">{{ o.status|upper }}</span></td>
+            <td style="padding:12px 14px;text-align:center;" onclick="event.stopPropagation()">
+              <div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;">
+                <button onclick="window.open('/print-slip/{{ o.order_code }}','_blank')" style="background:var(--accent-light);color:var(--accent);border:none;border-radius:7px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;">🖨️</button>
+                {% if o.status != 'delivered' and o.status != 'cancelled' %}
+                <form action="/owner/orders/cancel/{{ o.order_code }}" method="POST" style="margin:0;" onsubmit="return confirm('Cancel #{{ o.order_code }}?')"><button type="submit" style="background:var(--danger-light);color:var(--danger);border:none;border-radius:7px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;">✕</button></form>
+                {% endif %}
+                <form action="/owner/orders/delete/{{ o.order_code }}" method="POST" style="margin:0;" onsubmit="return confirm('DELETE #{{ o.order_code }}?')"><button type="submit" style="background:#1f2937;color:#fff;border:none;border-radius:7px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;">🗑️</button></form>
+              </div>
+            </td>
+          </tr>
+          <!-- Expandable Detail Row -->
+          <tr id="detail-{{ o.order_code }}" style="display:none;background:#f8faff;border-bottom:2px solid var(--accent);">
+            <td colspan="7" style="padding:0;">
+              <div id="detail-content-{{ o.order_code }}" style="padding:16px 20px;">
+                <div style="color:var(--text-muted);font-size:13px;text-align:center;padding:16px;">Loading...</div>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="7" style="padding:40px;text-align:center;color:var(--text-muted);">No orders yet</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
   </div>
-  <div style="overflow-x:auto;">
-    <table style="width:100%;border-collapse:collapse;font-size:13px;">
-      <thead><tr style="background:#f8fafc;border-bottom:2px solid var(--border);">
-        <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Order</th>
-        <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Customer</th>
-        <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Garments</th>
-        <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Dates</th>
-        <th style="padding:10px 14px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Amount</th>
-        <th style="padding:10px 14px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Status</th>
-        <th style="padding:10px 14px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Actions</th>
-      </tr></thead>
-      <tbody id="tbody">
-        {% for o in orders %}
-        <tr class="orow" data-status="{{ o.status }}" data-remaining="{{ o.remaining }}" data-s="{{ o.order_code }} {{ o.cname|lower }} {{ o.mobile }} {{ o.garments|lower }}"
-          style="border-bottom:1px solid var(--border);cursor:pointer;"
-          onclick="toggleDetail('{{ o.order_code }}')"
-          onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
-          <td style="padding:12px 14px;">
-            <div style="display:flex;align-items:center;gap:6px;">
-              <span id="arrow-{{ o.order_code }}" style="font-size:10px;color:var(--text-muted);transition:transform 0.2s;">▶</span>
-              <div style="font-size:15px;font-weight:900;color:var(--accent);">#{{ o.order_code }}</div>
-            </div>
-            {% if o.is_urgent %}<span style="background:#fee2e2;color:#dc2626;font-size:9px;font-weight:800;padding:1px 6px;border-radius:4px;">🔥</span>{% endif %}
-            {% if o.note %}<div style="font-size:11px;color:var(--text-muted);font-style:italic;">📝 {{ o.note[:30] }}</div>{% endif %}
-          </td>
-          <td style="padding:12px 14px;"><div style="font-weight:700;">{{ o.cname }}</div>{% if o.mobile %}<div style="font-size:11px;color:var(--text-muted);">{{ o.mobile }}</div>{% endif %}</td>
-          <td style="padding:12px 14px;color:var(--text-secondary);max-width:140px;">{{ o.garments }}</td>
-          <td style="padding:12px 14px;"><div style="font-size:11px;color:var(--text-muted);">Order: {{ o.order_date }}</div><div style="font-size:11px;color:var(--text-muted);">Delivery: <strong>{{ o.delivery_date }}</strong></div></td>
-          <td style="padding:12px 14px;text-align:right;"><div style="font-weight:800;">₹{{ o.payable|int }}</div>{% if o.remaining > 0 %}<div style="font-size:11px;color:var(--danger);font-weight:700;">Due ₹{{ o.remaining|int }}</div>{% else %}<div style="font-size:11px;color:var(--success);font-weight:700;">✓ Paid</div>{% endif %}</td>
-          <td style="padding:12px 14px;text-align:center;"><span style="font-size:11px;padding:3px 10px;border-radius:8px;font-weight:800;background:{% if o.status=='delivered' %}#d1fae5;color:#065f46{% elif o.status=='ready' %}#ede9fe;color:#6d28d9{% elif o.status=='cancelled' %}#fee2e2;color:#dc2626{% else %}#dbeafe;color:#1e40af{% endif %};">{{ o.status|upper }}</span></td>
-          <td style="padding:12px 14px;text-align:center;" onclick="event.stopPropagation()">
-            <div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;">
-              <button onclick="window.open('/print-slip/{{ o.order_code }}','_blank')" style="background:var(--accent-light);color:var(--accent);border:none;border-radius:7px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;">🖨️</button>
-              {% if o.status != 'delivered' and o.status != 'cancelled' %}
-              <form action="/owner/orders/cancel/{{ o.order_code }}" method="POST" style="margin:0;" onsubmit="return confirm('Cancel #{{ o.order_code }}?')"><button type="submit" style="background:var(--danger-light);color:var(--danger);border:none;border-radius:7px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;">✕</button></form>
-              {% endif %}
-              <form action="/owner/orders/delete/{{ o.order_code }}" method="POST" style="margin:0;" onsubmit="return confirm('DELETE #{{ o.order_code }}?')"><button type="submit" style="background:#1f2937;color:#fff;border:none;border-radius:7px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;">🗑️</button></form>
-            </div>
-          </td>
-        </tr>
-        <!-- Expandable detail row -->
-        <tr id="detail-{{ o.order_code }}" class="detail-row orow" data-status="{{ o.status }}" data-remaining="{{ o.remaining }}" data-s="{{ o.order_code }} {{ o.cname|lower }} {{ o.mobile }}" style="display:none;background:#f8faff;border-bottom:2px solid var(--accent);border-top:none;">
-          <td colspan="7" style="padding:0;">
-            <div style="padding:16px 20px;" id="detail-content-{{ o.order_code }}">
-              <div style="color:var(--text-muted);font-size:13px;text-align:center;padding:20px;">Loading...</div>
-            </div>
-          </td>
-        </tr>
-        {% endfor %}
-        {% if not orders %}
-        <tr><td colspan="7" style="padding:40px;text-align:center;color:var(--text-muted);">No orders yet</td></tr>
-        {% endif %}
-      </tbody>
-    </table>
-  </div>
-</div>
 
-  <!-- ══ WORK PROGRESS SECTION ══ -->
-  <div id="wp-section" style="display:none;margin-top:0;">
+  <!-- ═══ WORK PROGRESS TAB ═══ -->
+  <div id="tab-workprogress" style="display:none;">
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
-      <button onclick="setWpFilter('all',this)" class="wpf" style="padding:6px 14px;border-radius:10px;border:2px solid var(--accent);background:var(--accent);color:#fff;font-size:12px;font-weight:800;cursor:pointer;">All</button>
-      <button onclick="setWpFilter('naap',this)" class="wpf" style="padding:6px 14px;border-radius:10px;border:2px solid var(--border);background:#fff;color:var(--text-muted);font-size:12px;font-weight:800;cursor:pointer;">📐 नाप Pending</button>
-      <button onclick="setWpFilter('cut',this)" class="wpf" style="padding:6px 14px;border-radius:10px;border:2px solid var(--border);background:#fff;color:var(--text-muted);font-size:12px;font-weight:800;cursor:pointer;">✂️ कटाई Pending</button>
-      <button onclick="setWpFilter('stitch',this)" class="wpf" style="padding:6px 14px;border-radius:10px;border:2px solid var(--border);background:#fff;color:var(--text-muted);font-size:12px;font-weight:800;cursor:pointer;">🪡 सिलाई Pending</button>
-      <button onclick="setWpFilter('done',this)" class="wpf" style="padding:6px 14px;border-radius:10px;border:2px solid var(--border);background:#fff;color:var(--text-muted);font-size:12px;font-weight:800;cursor:pointer;">✅ All Done</button>
+      {% for key,label in [('all','All Active'),('naap','📐 नाप Pending'),('cut','✂️ कटाई Pending'),('stitch','🪡 सिलाई Pending'),('done','✅ All Done')] %}
+      <button class="wpf" data-key="{{ key }}" onclick="setWpFilter('{{ key }}',this)"
+        style="padding:7px 14px;border-radius:10px;border:2px solid {% if key=='all' %}var(--accent){% else %}var(--border){% endif %};background:{% if key=='all' %}var(--accent){% else %}#fff{% endif %};color:{% if key=='all' %}#fff{% else %}var(--text-muted){% endif %};font-size:12px;font-weight:800;cursor:pointer;">{{ label }}</button>
+      {% endfor %}
     </div>
     <table style="width:100%;border-collapse:collapse;font-size:13px;">
       <thead><tr style="background:#f8fafc;border-bottom:2px solid var(--border);">
@@ -104,7 +123,13 @@ ORDERS_PAGE = """{% extends 'base.html' %}
       <tbody id="wp-tbody">
         {% for o in wp_orders %}
         {% set all_done = o.naap_pct >= 100 and o.cut_pct >= 100 and o.stitch_pct >= 100 %}
-        <tr class="wrow" data-naap="{{ 'done' if o.naap_pct>=100 else 'pending' }}" data-cut="{{ 'done' if o.cut_pct>=100 else 'pending' }}" data-stitch="{{ 'done' if o.stitch_pct>=100 else 'pending' }}" data-alldone="{{ 'yes' if all_done else 'no' }}" style="border-bottom:1px solid var(--border);" onmouseover="this.style.background='#fafbff'" onmouseout="this.style.background=''">
+        <tr class="wrow"
+          data-naap="{{ 'done' if o.naap_pct>=100 else 'pending' }}"
+          data-cut="{{ 'done' if o.cut_pct>=100 else 'pending' }}"
+          data-stitch="{{ 'done' if o.stitch_pct>=100 else 'pending' }}"
+          data-alldone="{{ 'yes' if all_done else 'no' }}"
+          style="border-bottom:1px solid var(--border);"
+          onmouseover="this.style.background='#fafbff'" onmouseout="this.style.background=''">
           <td style="padding:12px 14px;"><div style="font-size:15px;font-weight:900;color:var(--accent);">#{{ o.order_code }}</div>{% if o.is_urgent %}<span style="background:#fee2e2;color:#dc2626;font-size:9px;font-weight:800;padding:1px 6px;border-radius:4px;">🔥</span>{% endif %}</td>
           <td style="padding:12px 14px;"><div style="font-weight:700;">{{ o.cname }}</div><div style="font-size:11px;color:var(--text-muted);">{{ o.mobile }}</div></td>
           <td style="padding:12px 14px;color:var(--text-secondary);max-width:130px;font-size:12px;">{{ o.garments }}</td>
@@ -138,162 +163,180 @@ ORDERS_PAGE = """{% extends 'base.html' %}
   </div>
 </div>
 
+<!-- Image Overlay -->
+<div id="img-overlay-orders" onclick="this.style.display='none'" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;align-items:center;justify-content:center;">
+  <img id="ov-img-orders" style="max-width:90%;max-height:90%;border-radius:12px;object-fit:contain;">
+  <button onclick="document.getElementById('img-overlay-orders').style.display='none';event.stopPropagation();" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.15);border:none;color:#fff;width:44px;height:44px;border-radius:50%;font-size:22px;cursor:pointer;">✕</button>
+</div>
+
 {% endblock %}
 {% block extra_js %}<script>
-var activeTab="all", activeFilter="{{filter_mode}}";
-var expandedCode = null;
-
-if(activeFilter==="dues") document.getElementById("dues-badge").style.display="inline-block";
-
-function setTab(k,btn){activeTab=k;document.querySelectorAll(".ftab").forEach(function(b){b.style.background="#fff";b.style.color="var(--text-muted)";b.style.borderColor="var(--border)";});btn.style.background="var(--accent)";btn.style.color="#fff";btn.style.borderColor="var(--accent)";filterRows();}
-
-function filterRows(){
-  var q=document.getElementById("srch").value.toLowerCase().trim();
-  document.querySelectorAll(".orow").forEach(function(r){
-    if(r.classList.contains("detail-row")){return;} // skip detail rows - handled below
-    var hasDue=parseFloat(r.dataset.remaining||0)>0;
-    var matchQ=!q||r.dataset.s.includes(q);
-    var matchF=activeTab==="all"||r.dataset.status===activeTab;
-    var matchDues=activeFilter!=="dues"||(hasDue&&r.dataset.status!=="delivered"&&r.dataset.status!=="cancelled");
-    var show=(matchQ&&matchF&&matchDues);
-    r.style.display=show?"":"none";
-    // Also hide detail row if parent is hidden
-    var code=r.querySelector("[id^='arrow-']");
-    if(code){
-      var codeVal=code.id.replace("arrow-","");
-      var dr=document.getElementById("detail-"+codeVal);
-      if(dr&&!show) dr.style.display="none";
-    }
-  });
-  if(!document.querySelector(".orow:not(.detail-row)[style='']")){expandedCode=null;}
+// ── Tab switching ────────────────────────────────
+var currentTab = "orders";
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById("tab-orders").style.display = tab==="orders" ? "block" : "none";
+  document.getElementById("tab-workprogress").style.display = tab==="workprogress" ? "block" : "none";
+  var ob = document.getElementById("tab-orders-btn");
+  var wb = document.getElementById("tab-wp-btn");
+  ob.style.borderBottomColor = tab==="orders" ? "var(--accent)" : "transparent";
+  ob.style.color = tab==="orders" ? "var(--accent)" : "var(--text-muted)";
+  wb.style.borderBottomColor = tab==="workprogress" ? "#ea580c" : "transparent";
+  wb.style.color = tab==="workprogress" ? "#ea580c" : "var(--text-muted)";
 }
 
+// ── Orders Tab ────────────────────────────────────
+var activeTab = "all";
+var activeFilter = "{{filter_mode}}";
+var expandedCode = null;
+
+if (activeFilter === "dues") document.getElementById("dues-badge").style.display = "inline-block";
+
+function setTab(k, btn) {
+  activeTab = k;
+  document.querySelectorAll(".ftab").forEach(function(b) {
+    b.style.background="#fff"; b.style.color="var(--text-muted)"; b.style.borderColor="var(--border)";
+  });
+  btn.style.background="var(--accent)"; btn.style.color="#fff"; btn.style.borderColor="var(--accent)";
+  filterOrders();
+}
+
+function filterOrders() {
+  var q = document.getElementById("srch").value.toLowerCase().trim();
+  document.querySelectorAll("#tbody tr.orow").forEach(function(r) {
+    var hasDue = parseFloat(r.dataset.remaining||0) > 0;
+    var matchQ = !q || r.dataset.s.includes(q);
+    var matchF = activeTab==="all" || r.dataset.status===activeTab;
+    var matchDues = activeFilter!=="dues" || (hasDue && r.dataset.status!=="delivered" && r.dataset.status!=="cancelled");
+    var show = matchQ && matchF && matchDues;
+    r.style.display = show ? "" : "none";
+    // hide detail row too
+    var code = r.querySelector("[id^='arrow-']");
+    if (code) {
+      var dr = document.getElementById("detail-" + code.id.replace("arrow-",""));
+      if (dr && !show) dr.style.display = "none";
+    }
+  });
+}
+
+// ── Expandable rows ───────────────────────────────
 function toggleDetail(code) {
-  var detailRow = document.getElementById("detail-"+code);
-  var arrow = document.getElementById("arrow-"+code);
-  if(expandedCode && expandedCode !== code) {
-    // Close previously open
-    var prev = document.getElementById("detail-"+expandedCode);
-    var prevArrow = document.getElementById("arrow-"+expandedCode);
-    if(prev) prev.style.display="none";
-    if(prevArrow) prevArrow.style.transform="rotate(0deg)";
+  var dr = document.getElementById("detail-" + code);
+  var arrow = document.getElementById("arrow-" + code);
+  if (!dr) return;
+  // Close previous
+  if (expandedCode && expandedCode !== code) {
+    var prev = document.getElementById("detail-" + expandedCode);
+    var prevArrow = document.getElementById("arrow-" + expandedCode);
+    if (prev) prev.style.display = "none";
+    if (prevArrow) prevArrow.style.transform = "rotate(0deg)";
   }
-  if(detailRow.style.display==="none"||detailRow.style.display==="") {
-    detailRow.style.display="table-row";
-    arrow.style.transform="rotate(90deg)";
-    expandedCode=code;
+  if (dr.style.display === "none" || dr.style.display === "") {
+    dr.style.display = "table-row";
+    arrow.style.transform = "rotate(90deg)";
+    expandedCode = code;
     loadDetail(code);
   } else {
-    detailRow.style.display="none";
-    arrow.style.transform="rotate(0deg)";
-    expandedCode=null;
+    dr.style.display = "none";
+    arrow.style.transform = "rotate(0deg)";
+    expandedCode = null;
   }
 }
 
 function loadDetail(code) {
-  var container = document.getElementById("detail-content-"+code);
-  // Check if already loaded
-  if(container.dataset.loaded==="1") return;
-  fetch("/owner/api/order-detail/"+code)
-    .then(function(r){return r.json();})
-    .then(function(d){
-      if(d.error){container.innerHTML='<div style="color:var(--danger);">Error loading details</div>';return;}
-      var o=d.order;
-      var html='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">';
+  var container = document.getElementById("detail-content-" + code);
+  if (container.dataset.loaded === "1") return;
+  fetch("/owner/api/order-detail/" + code)
+    .then(function(r){ return r.json(); })
+    .then(function(d) {
+      if (d.error) { container.innerHTML='<div style="color:var(--danger);padding:12px;">Error loading details</div>'; return; }
+      var o = d.order;
+      var html = '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">';
 
       // Col 1: Customer + Payment
-      html+='<div>';
-      html+='<div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">👤 Customer & Payment</div>';
-      html+='<div style="font-size:15px;font-weight:800;">'+o.cname+'</div>';
-      html+='<div style="font-size:12px;color:var(--text-muted);">📱 '+o.mobile+'</div>';
-      if(o.address&&o.address!='—') html+='<div style="font-size:12px;color:var(--text-muted);">📍 '+o.address+'</div>';
-      html+='<div style="margin-top:10px;background:#f8fafc;border-radius:8px;padding:10px;">';
-      html+='<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><span style="color:var(--text-muted);">Total Bill</span><span style="font-weight:700;">₹'+Math.round(o.payable)+'</span></div>';
-      html+='<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><span style="color:var(--text-muted);">Advance</span><span style="font-weight:700;color:#16a34a;">₹'+Math.round(o.advance)+'</span></div>';
-      html+='<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-top:1px solid var(--border);margin-top:3px;"><span style="font-weight:800;color:'+(o.remaining>0?'#dc2626':'#16a34a')+';">'+(o.remaining>0?'Due':'✓ Paid')+'</span><span style="font-weight:900;color:'+(o.remaining>0?'#dc2626':'#16a34a')+';">₹'+Math.round(o.remaining)+'</span></div>';
-      html+='</div></div>';
+      html += '<div>';
+      html += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">👤 Customer & Payment</div>';
+      html += '<div style="font-size:15px;font-weight:800;">' + o.cname + '</div>';
+      html += '<div style="font-size:12px;color:var(--text-muted);">📱 ' + o.mobile + '</div>';
+      if (o.address && o.address!='—') html += '<div style="font-size:12px;color:var(--text-muted);">📍 ' + o.address + '</div>';
+      html += '<div style="margin-top:10px;background:#f8fafc;border-radius:8px;padding:10px;">';
+      html += '<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><span style="color:var(--text-muted);">Total Bill</span><span style="font-weight:700;">₹' + Math.round(o.payable) + '</span></div>';
+      html += '<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><span style="color:var(--text-muted);">Advance</span><span style="font-weight:700;color:#16a34a;">₹' + Math.round(o.advance) + '</span></div>';
+      html += '<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-top:1px solid var(--border);margin-top:3px;"><span style="font-weight:800;color:' + (o.remaining>0?'#dc2626':'#16a34a') + ';">' + (o.remaining>0?'Due':'✓ Paid') + '</span><span style="font-weight:900;color:' + (o.remaining>0?'#dc2626':'#16a34a') + ';">₹' + Math.round(o.remaining) + '</span></div>';
+      html += '</div></div>';
 
       // Col 2: Garments + Measurements
-      html+='<div>';
-      html+='<div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">👕 Garments & Measurements</div>';
-      d.garments.forEach(function(g){
-        html+='<div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;">';
-        html+='<div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="font-weight:800;">'+g.type+' ×'+g.qty+'</span><span style="color:var(--accent);font-weight:700;">₹'+Math.round(g.amount)+'</span></div>';
-        if(g.measurements&&Object.keys(g.measurements).length>0){
-          html+='<div style="display:flex;flex-wrap:wrap;gap:4px;">';
-          Object.entries(g.measurements).forEach(function(kv){if(kv[1]) html+='<span style="background:#f1f5f9;border-radius:5px;padding:2px 8px;font-size:11px;"><span style="color:var(--text-muted);">'+kv[0]+':</span> <strong>'+kv[1]+'</strong></span>';});
-          html+='</div>';
+      html += '<div>';
+      html += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">👕 Garments & Measurements</div>';
+      d.garments.forEach(function(g) {
+        html += '<div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;">';
+        html += '<div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="font-weight:800;">' + g.type + ' ×' + g.qty + '</span><span style="color:var(--accent);font-weight:700;">₹' + Math.round(g.amount) + '</span></div>';
+        if (g.measurements && Object.keys(g.measurements).length > 0) {
+          html += '<div style="display:flex;flex-wrap:wrap;gap:4px;">';
+          Object.entries(g.measurements).forEach(function(kv) { if (kv[1]) html += '<span style="background:#f1f5f9;border-radius:5px;padding:2px 8px;font-size:11px;"><span style="color:var(--text-muted);">' + kv[0] + ':</span> <strong>' + kv[1] + '</strong></span>'; });
+          html += '</div>';
         }
-        if(g.notes) html+='<div style="font-size:11px;color:var(--text-muted);margin-top:4px;">'+g.notes+'</div>';
-        html+='</div>';
+        if (g.notes) html += '<div style="font-size:11px;color:var(--text-muted);margin-top:4px;">' + g.notes + '</div>';
+        html += '</div>';
       });
-      html+='</div>';
+      html += '</div>';
 
-      // Col 3: Progress + Images
-      html+='<div>';
-      html+='<div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">📊 Progress & Photos</div>';
-      html+='<div style="display:flex;justify-content:space-between;margin-bottom:4px;">';
-      html+='<span style="font-size:10px;font-weight:800;color:'+(o.naap_pct>=100?'#4f46e5':'#9ca3af')+';">नाप '+(o.naap_pct>=100?'✓':o.naap_pct+'%')+'</span>';
-      html+='<span style="font-size:10px;font-weight:800;color:'+(o.cut_pct>=100?'#ea580c':'#9ca3af')+';">कटाई '+(o.cut_pct>=100?'✓':o.cut_pct+'%')+'</span>';
-      html+='<span style="font-size:10px;font-weight:800;color:'+(o.stitch_pct>=100?'#16a34a':'#9ca3af')+';">सिलाई '+(o.stitch_pct>=100?'✓':o.stitch_pct+'%')+'</span>';
-      html+='</div>';
-      html+='<div style="display:flex;gap:2px;height:10px;margin-bottom:12px;">';
-      html+='<div style="flex:1;background:#e5e7eb;border-radius:4px;overflow:hidden;"><div style="height:100%;background:#4f46e5;width:'+o.naap_pct+'%;"></div></div>';
-      html+='<div style="flex:1;background:#e5e7eb;border-radius:4px;overflow:hidden;"><div style="height:100%;background:#ea580c;width:'+o.cut_pct+'%;"></div></div>';
-      html+='<div style="flex:1;background:#e5e7eb;border-radius:4px;overflow:hidden;"><div style="height:100%;background:#16a34a;width:'+o.stitch_pct+'%;"></div></div>';
-      html+='</div>';
-      if(d.images&&d.images.length>0){
-        html+='<div style="display:flex;flex-wrap:wrap;gap:6px;">';
-        d.images.forEach(function(src){
-          html+='<img src="'+src+'" onclick="openImgOverlay(\''+src+'\')" style="width:70px;height:70px;object-fit:cover;border-radius:8px;border:2px solid var(--border);cursor:zoom-in;">';
+      // Col 3: Progress + Photos
+      html += '<div>';
+      html += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">📊 Progress & Photos</div>';
+      html += '<div style="display:flex;justify-content:space-between;margin-bottom:4px;">';
+      html += '<span style="font-size:10px;font-weight:800;color:' + (o.naap_pct>=100?'#4f46e5':'#9ca3af') + ';">नाप ' + (o.naap_pct>=100?'✓':o.naap_pct+'%') + '</span>';
+      html += '<span style="font-size:10px;font-weight:800;color:' + (o.cut_pct>=100?'#ea580c':'#9ca3af') + ';">कटाई ' + (o.cut_pct>=100?'✓':o.cut_pct+'%') + '</span>';
+      html += '<span style="font-size:10px;font-weight:800;color:' + (o.stitch_pct>=100?'#16a34a':'#9ca3af') + ';">सिलाई ' + (o.stitch_pct>=100?'✓':o.stitch_pct+'%') + '</span>';
+      html += '</div>';
+      html += '<div style="display:flex;gap:2px;height:10px;margin-bottom:12px;">';
+      html += '<div style="flex:1;background:#e5e7eb;border-radius:4px;overflow:hidden;"><div style="height:100%;background:#4f46e5;width:' + o.naap_pct + '%;"></div></div>';
+      html += '<div style="flex:1;background:#e5e7eb;border-radius:4px;overflow:hidden;"><div style="height:100%;background:#ea580c;width:' + o.cut_pct + '%;"></div></div>';
+      html += '<div style="flex:1;background:#e5e7eb;border-radius:4px;overflow:hidden;"><div style="height:100%;background:#16a34a;width:' + o.stitch_pct + '%;"></div></div>';
+      html += '</div>';
+      if (d.images && d.images.length > 0) {
+        html += '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
+        d.images.forEach(function(src) {
+          html += '<img src="' + src + '" onclick="openImgOverlay(\'' + src.replace(/'/g,"\\'")+  '\')" style="width:70px;height:70px;object-fit:cover;border-radius:8px;border:2px solid var(--border);cursor:zoom-in;">';
         });
-        html+='</div>';
+        html += '</div>';
       } else {
-        html+='<div style="font-size:12px;color:var(--text-muted);">No photos</div>';
+        html += '<div style="font-size:12px;color:var(--text-muted);">No photos uploaded</div>';
       }
-      html+='</div>';
-      html+='</div>';
-      container.innerHTML=html;
-      container.dataset.loaded="1";
+      html += '</div>';
+      html += '</div>';
+      container.innerHTML = html;
+      container.dataset.loaded = "1";
     })
-    .catch(function(){container.innerHTML='<div style="color:var(--danger);padding:12px;">Could not load details.</div>';});
+    .catch(function(){ container.innerHTML = '<div style="color:var(--danger);padding:12px;">Could not load details.</div>'; });
 }
 
-function openImgOverlay(src){
-  var ov=document.getElementById("img-overlay-orders");
-  if(!ov){ov=document.createElement("div");ov.id="img-overlay-orders";ov.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;display:flex;align-items:center;justify-content:center;";ov.onclick=function(){ov.style.display="none";};ov.innerHTML='<img id="ov-img-orders" style="max-width:90%;max-height:90%;border-radius:12px;"><button onclick="document.getElementById(\'img-overlay-orders\').style.display=\'none\'" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.15);border:none;color:#fff;width:40px;height:40px;border-radius:50%;font-size:20px;cursor:pointer;">✕</button>';document.body.appendChild(ov);}
-  document.getElementById("ov-img-orders").src=src;
-  ov.style.display="flex";
+function openImgOverlay(src) {
+  document.getElementById("ov-img-orders").src = src;
+  document.getElementById("img-overlay-orders").style.display = "flex";
 }
 
-function showSection(sec){
-  var ordSec=document.querySelector(".page-body > div[style*='overflow-x']");
-  var wpSec=document.getElementById("wp-section");
-  var wpBtn=document.getElementById("wp-tab-btn");
-  if(sec==="workprogress"){
-    if(ordSec) ordSec.style.display="none";
-    if(wpSec) wpSec.style.display="block";
-    wpBtn.style.background="#ea580c"; wpBtn.style.color="#fff";
-    document.querySelectorAll(".ftab").forEach(function(b){b.style.background="#fff";b.style.color="var(--text-muted)";b.style.borderColor="var(--border)";});
-  } else {
-    if(ordSec) ordSec.style.display="block";
-    if(wpSec) wpSec.style.display="none";
-    wpBtn.style.background="#fff"; wpBtn.style.color="#ea580c";
-  }
-}
-
-var wpFilter="all";
-function setWpFilter(f,btn){
-  wpFilter=f;
-  document.querySelectorAll(".wpf").forEach(function(b){b.style.background="#fff";b.style.color="var(--text-muted)";b.style.borderColor="var(--border)";});
-  btn.style.background=btn.style.borderColor||"var(--accent)"; btn.style.color="#fff";
-  document.querySelectorAll(".wrow").forEach(function(r){
-    var show=f==="all"||(f==="naap"&&r.dataset.naap==="pending")||(f==="cut"&&r.dataset.cut==="pending")||(f==="stitch"&&r.dataset.stitch==="pending")||(f==="done"&&r.dataset.alldone==="yes");
-    r.style.display=show?"":"none";
+// ── Work Progress Tab ─────────────────────────────
+var wpFilter = "all";
+function setWpFilter(f, btn) {
+  wpFilter = f;
+  document.querySelectorAll(".wpf").forEach(function(b) {
+    b.style.background="#fff"; b.style.color="var(--text-muted)"; b.style.borderColor="var(--border)";
+  });
+  btn.style.background = "var(--accent)"; btn.style.color = "#fff"; btn.style.borderColor = "var(--accent)";
+  document.querySelectorAll(".wrow").forEach(function(r) {
+    var show = f==="all" || (f==="naap"&&r.dataset.naap==="pending") || (f==="cut"&&r.dataset.cut==="pending") || (f==="stitch"&&r.dataset.stitch==="pending") || (f==="done"&&r.dataset.alldone==="yes");
+    r.style.display = show ? "" : "none";
   });
 }
 
-const SECS=5*60;let last=Date.now();["click","keydown","mousemove","touchstart"].forEach(ev=>document.addEventListener(ev,()=>{last=Date.now();},{passive:true}));setInterval(()=>{if(Math.floor((Date.now()-last)/1000)>=SECS)window.location.href="/owner/login?expired=1";},5000);
+// ── Auto switch if filter=dues ────────────────────
+if (activeFilter === "dues") { filterOrders(); }
+
+// ── Session timeout ───────────────────────────────
+const SECS=5*60; let last=Date.now();
+["click","keydown","mousemove","touchstart"].forEach(ev=>document.addEventListener(ev,()=>{last=Date.now();},{passive:true}));
+setInterval(()=>{if(Math.floor((Date.now()-last)/1000)>=SECS)window.location.href="/owner/login?expired=1";},5000);
 window.addEventListener("pageshow",function(e){if(e.persisted){fetch("/owner/logout",{method:"POST",keepalive:true}).finally(()=>{window.location.href="/owner/login";})}});
 </script>{% endblock %}
 """
