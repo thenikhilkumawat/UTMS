@@ -458,7 +458,7 @@ def list_images(order_code):
     if not srcs:
         return ""
     return "".join(
-        f'<img src="{src}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:2px solid #e5e7eb;cursor:pointer;" onclick="openFull(this.src)">' for src in srcs
+        f'<img src="{src}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:2px solid #e5e7eb;cursor:zoom-in;">' for src in srcs
     )
 
 
@@ -930,6 +930,25 @@ def order_status():
             "garments":         items,
             "customer_order_count": o["customer_order_count"] or 1
         })
+
+    # Load images for each order
+    import os as _os
+    for ord_dict in orders:
+        code = ord_dict["order_code"]
+        imgs = []
+        # Try DB first (Cloudinary)
+        order_row = conn.execute("SELECT id FROM orders WHERE order_code=?", (code,)).fetchone()
+        if order_row:
+            img_rows = conn.execute("SELECT file_path FROM order_images WHERE order_id=? ORDER BY id LIMIT 5", (order_row["id"],)).fetchall()
+            imgs = [r["file_path"] for r in img_rows if r["file_path"] and not r["file_path"].startswith("temp:")]
+        # Fallback: local folder
+        if not imgs:
+            from config import Config as _Cfg
+            folder = _os.path.join(_Cfg.UPLOAD_FOLDER, code)
+            if _os.path.isdir(folder):
+                files = sorted(f for f in _os.listdir(folder) if f.lower().endswith((".jpg",".jpeg",".png",".gif",".webp")))
+                imgs = [f"/static/order_images/{code}/{f}" for f in files]
+        ord_dict["images"] = imgs
 
     counts = {
         "total":     len(orders),
