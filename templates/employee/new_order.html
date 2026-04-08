@@ -647,6 +647,7 @@ function goNewStep(n) {
   const map = {2:"step-n2",3:"step-n3",4:"step-n4",5:"step-n5"};
   showStep(map[n]);
   if (n===3) { buildQR("qr-box","qr-link"); startImgPoll("img-preview"); }
+  if (n===4) { stopImgPoll(); }
   if (n===4) { const t=new Date().toISOString().split("T")[0]; if(!document.getElementById("n_odate").value) document.getElementById("n_odate").value=t; document.getElementById("n_ddate").min=t; }
   if (n===5) { injectPayment("payment-inner-new"); recalcPayment(); }
 }
@@ -922,32 +923,31 @@ function openUploadPopup(flowType) {
   document.getElementById("upload-popup").style.display = "flex";
   document.getElementById("upload-status").textContent = "Waiting for photos...";
 
-  // Start polling — close popup when new photo appears
+  // Detect upload completion by checking iframe content for "Done!" message
   _uploadPollCount = 0;
   clearInterval(_uploadPollTimer);
   _uploadPollTimer = setInterval(function() {
     _uploadPollCount++;
-    fetch("/images/" + code + "?ts=" + Date.now())
-      .then(function(r){ return r.text(); })
-      .then(function(html) {
-        if (html && html.trim()) {
-          var imgCount = (html.match(/<img/g) || []).length;
-          if (imgCount > 0) {
-            document.getElementById("upload-status").textContent = imgCount + " photo(s) uploaded!";
-            setTimeout(function() {
-              closeUploadPopup();
-              // Refresh the preview
-              if (typeof loadImages === "function") loadImages("img-preview");
-              if (typeof loadImages === "function") loadImages("img-preview-e");
-              showToast(imgCount + " photo(s) uploaded successfully!", "success");
-            }, 1000);
-            clearInterval(_uploadPollTimer);
-          }
-        }
-        // Stop polling after 5 min
-        if (_uploadPollCount > 150) clearInterval(_uploadPollTimer);
-      }).catch(function(){});
-  }, 2000);
+    // Check if iframe contains "Done!" text
+    try {
+      var iframe = document.getElementById("upload-iframe");
+      var iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+      var iframeText = iframeDoc.body ? iframeDoc.body.innerText : "";
+      if (iframeText.indexOf("Done!") !== -1 || iframeText.indexOf("Uploaded") !== -1) {
+        document.getElementById("upload-status").textContent = "✅ Photo uploaded!";
+        clearInterval(_uploadPollTimer);
+        setTimeout(function() {
+          closeUploadPopup();
+          if (typeof loadImages === "function") loadImages("img-preview");
+          if (typeof loadImages === "function") loadImages("img-preview-e");
+          showToast("Photo uploaded successfully!", "success");
+        }, 800);
+        return;
+      }
+    } catch(e) {}
+    // Stop after 3 min
+    if (_uploadPollCount > 90) clearInterval(_uploadPollTimer);
+  }, 1000);
 }
 
 function closeUploadPopup() {
@@ -1116,7 +1116,7 @@ function loadImages(previewId) {
   });
 }
 let imgPreviewId = "img-preview";
-function startImgPoll(previewId) { imgPreviewId=previewId||"img-preview"; loadImages(imgPreviewId); imgTimer=setInterval(()=>loadImages(imgPreviewId),4000); }
+function startImgPoll(previewId) { imgPreviewId=previewId||"img-preview"; loadImages(imgPreviewId); imgTimer=setInterval(()=>loadImages(imgPreviewId),8000); }
 function stopImgPoll() { clearInterval(imgTimer); imgTimer=null; }
 
 // ── PAYMENT ───────────────────────────────
