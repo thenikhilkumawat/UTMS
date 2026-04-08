@@ -221,62 +221,65 @@ def new_order():
 def upload_images(order_code):
     if request.method == "POST":
         import os as _os
-        files = request.files.getlist("photos")
-        use_cloudinary = bool(_os.environ.get("CLOUDINARY_CLOUD_NAME"))
-        saved = 0
+        try:
+            files = request.files.getlist("photos")
+            use_cloudinary = bool(_os.environ.get("CLOUDINARY_CLOUD_NAME"))
+            saved = 0
+            slots = 5
 
-        if use_cloudinary:
-            import cloudinary
-            import cloudinary.uploader
-            cloudinary.config(
-                cloud_name = _os.environ.get("CLOUDINARY_CLOUD_NAME"),
-                api_key    = _os.environ.get("CLOUDINARY_API_KEY"),
-                api_secret = _os.environ.get("CLOUDINARY_API_SECRET")
-            )
-            # Count existing images in DB for this order
-            conn = get_db()
-            order = conn.execute("SELECT id FROM orders WHERE order_code=?", (order_code,)).fetchone()
-            order_id = order["id"] if order else 0
-            existing_count = conn.execute(
-                "SELECT COUNT(*) as c FROM order_images WHERE order_id=?", (order_id,)
-            ).fetchone()["c"] or 0
-            slots = max(0, 5 - existing_count)
-            for f in files:
-                if saved >= slots: break
-                if f and f.filename:
-                    result = cloudinary.uploader.upload(
-                        f,
-                        folder=f"uttam_tailors/{order_code}",
-                        public_id=f"{order_code}_{int(time.time())}_{saved+1}",
-                        overwrite=True
-                    )
-                    url = result.get("secure_url")
-                    if url:
-                        if order_id:
-                            conn.execute("INSERT INTO order_images(order_id, file_path) VALUES(?,?)", (order_id, url))
-                        else:
-                            conn.execute("INSERT INTO order_images(order_id, file_path) VALUES(?,?)", (0, f"temp:{order_code}:{url}"))
+            if use_cloudinary:
+                import cloudinary, cloudinary.uploader
+                cloudinary.config(
+                    cloud_name = _os.environ.get("CLOUDINARY_CLOUD_NAME"),
+                    api_key    = _os.environ.get("CLOUDINARY_API_KEY"),
+                    api_secret = _os.environ.get("CLOUDINARY_API_SECRET")
+                )
+                conn = get_db()
+                order = conn.execute("SELECT id FROM orders WHERE order_code=?", (order_code,)).fetchone()
+                order_id = order["id"] if order else 0
+                existing_count = conn.execute(
+                    "SELECT COUNT(*) as c FROM order_images WHERE order_id=?", (order_id,)
+                ).fetchone()["c"] or 0
+                slots = max(0, 5 - existing_count)
+                for f in files:
+                    if saved >= slots: break
+                    if f and f.filename:
+                        result = cloudinary.uploader.upload(
+                            f,
+                            folder=f"uttam_tailors/{order_code}",
+                            public_id=f"{order_code}_{int(time.time())}_{saved+1}",
+                            overwrite=True
+                        )
+                        url = result.get("secure_url")
+                        if url:
+                            if order_id:
+                                conn.execute("INSERT INTO order_images(order_id, file_path) VALUES(?,?)", (order_id, url))
+                            else:
+                                conn.execute("INSERT INTO order_images(order_id, file_path) VALUES(?,?)", (0, f"temp:{order_code}:{url}"))
+                            saved += 1
+                conn.commit()
+                conn.close()
+            else:
+                folder = os.path.join(Config.UPLOAD_FOLDER, order_code)
+                os.makedirs(folder, exist_ok=True)
+                existing = [f for f in os.listdir(folder) if f.lower().endswith((".jpg",".jpeg",".png",".gif",".webp"))]
+                slots = max(0, 5 - len(existing))
+                for f in files:
+                    if saved >= slots: break
+                    if f and f.filename:
+                        ext = os.path.splitext(f.filename)[1].lower() or ".jpg"
+                        fname = f"{int(time.time())}_{len(existing)+saved+1}{ext}"
+                        f.save(os.path.join(folder, fname))
                         saved += 1
-            conn.commit()
-            conn.close()
-        else:
-            # Fallback: local folder
-            folder = os.path.join(Config.UPLOAD_FOLDER, order_code)
-            os.makedirs(folder, exist_ok=True)
-            existing = [f for f in os.listdir(folder) if f.lower().endswith((".jpg",".jpeg",".png",".gif",".webp"))]
-            slots = max(0, 5 - len(existing))
-            for f in files:
-                if saved >= slots: break
-                if f and f.filename:
-                    ext = os.path.splitext(f.filename)[1].lower() or ".jpg"
-                    fname = f"{int(time.time())}_{len(existing)+saved+1}{ext}"
-                    f.save(os.path.join(folder, fname))
-                    saved += 1
 
-        msg = f"Uploaded {saved} image(s). Max 5 per order." if saved else ("Max 5 images reached." if slots==0 else "No image selected.")
-        return f"""<html><body style="font-family:sans-serif;padding:30px;text-align:center;">
-        <h2>{"✅ Done!" if saved else "⚠️"}</h2><p>{msg}</p>
-        <a href="" style="color:#6366f1;font-weight:700;">← Upload more</a></body></html>"""
+            msg = f"Uploaded {saved} image(s). Max 5 per order." if saved else ("Max 5 images reached." if slots==0 else "No image selected.")
+            return f"""<html><body style="font-family:sans-serif;padding:30px;text-align:center;">
+            <h2>{"✅ Done!" if saved else "⚠️"}</h2><p>{msg}</p>
+            <a href="" style="color:#6366f1;font-weight:700;">← Upload more</a></body></html>"""
+        except Exception as e:
+            return f"""<html><body style="font-family:sans-serif;padding:30px;text-align:center;">
+            <h2>⚠️ Upload Error</h2><p>{str(e)}</p>
+            <a href="" style="color:#6366f1;font-weight:700;">← Try again</a></body></html>"""
     return f"""<!DOCTYPE html>
 <html>
 <head>
@@ -519,6 +522,10 @@ def save_order():
              payable_amount,advance_paid,remaining,payment_mode,is_urgent,note,repeat_of,now))
         row = conn.execute("SELECT id FROM orders WHERE order_code=?", (order_code,)).fetchone()
         order_id = row["id"] if row else None
+        if not order_id:
+            import time as _t; _t.sleep(0.1)
+            row2 = conn.execute("SELECT id FROM orders WHERE order_code=?", (order_code,)).fetchone()
+            order_id = row2["id"] if row2 else None
 
         # Items
         for it in items:
