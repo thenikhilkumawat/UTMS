@@ -931,19 +931,24 @@ def order_status():
             "customer_order_count": o["customer_order_count"] or 1
         })
 
-    # Load images for each order
+    # Load ALL images in ONE query (fast, no N+1)
     import os as _os
+    all_imgs = conn.execute("""
+        SELECT o.order_code, oi.file_path
+        FROM order_images oi
+        JOIN orders o ON o.id = oi.order_id
+        WHERE oi.file_path IS NOT NULL AND oi.file_path NOT LIKE 'temp:%'
+        ORDER BY oi.id
+    """).fetchall()
+    imgs_by_code = {}
+    for row in all_imgs:
+        imgs_by_code.setdefault(row["order_code"], []).append(row["file_path"])
+    # Assign images + fallback to local folder
+    from config import Config as _Cfg
     for ord_dict in orders:
         code = ord_dict["order_code"]
-        imgs = []
-        # Try DB first (Cloudinary)
-        order_row = conn.execute("SELECT id FROM orders WHERE order_code=?", (code,)).fetchone()
-        if order_row:
-            img_rows = conn.execute("SELECT file_path FROM order_images WHERE order_id=? ORDER BY id LIMIT 5", (order_row["id"],)).fetchall()
-            imgs = [r["file_path"] for r in img_rows if r["file_path"] and not r["file_path"].startswith("temp:")]
-        # Fallback: local folder
+        imgs = imgs_by_code.get(code, [])
         if not imgs:
-            from config import Config as _Cfg
             folder = _os.path.join(_Cfg.UPLOAD_FOLDER, code)
             if _os.path.isdir(folder):
                 files = sorted(f for f in _os.listdir(folder) if f.lower().endswith((".jpg",".jpeg",".png",".gif",".webp")))
