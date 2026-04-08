@@ -618,6 +618,7 @@ def settings_save():
         new_code = request.form.get("order_code_start","").strip()
         if new_code.isdigit():
             set_setting("last_order_code", str(int(new_code) - 1))  # next call will increment to this
+        from database import invalidate_settings_cache; invalidate_settings_cache()
         flash("Shop settings saved!", "success")
     elif section == "pin":
         current = request.form.get("current_pin","")
@@ -641,11 +642,13 @@ def settings_save():
         for key, val in request.form.items():
             if key.startswith("customer_rate_") and val.strip():
                 set_setting(key, val)
+        from database import invalidate_settings_cache; invalidate_settings_cache()
         flash("Customer rates saved!", "success")
     elif section == "stitch_rates":
         for key, val in request.form.items():
             if key.startswith("stitch_rate_") and val.strip():
                 set_setting(key, val)
+        from database import invalidate_settings_cache; invalidate_settings_cache()
         flash("Stitching rates saved!", "success")
     elif section == "rate_image":
         import base64
@@ -683,6 +686,7 @@ def settings_save():
         for key, val in request.form.items():
             if key.startswith("rate_") and val.strip():
                 set_setting(key, val)
+        from database import invalidate_settings_cache; invalidate_settings_cache()
         flash("Rates saved!", "success")
     return redirect(url_for("owner.settings"))
 
