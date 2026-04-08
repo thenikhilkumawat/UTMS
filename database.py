@@ -98,13 +98,53 @@ if USE_PG:
         def __enter__(self): return self
         def __exit__(self, *a): self._conn.commit(); self._conn.close()
 
+    # Connection pool - reuse connections instead of creating new ones
+    _pool = []
+    _pool_max = 5
+
     def get_db():
         url = os.environ["DATABASE_URL"]
         if url.startswith("postgres://"):
             url = url.replace("postgres://", "postgresql://", 1)
-        conn = psycopg2.connect(url)
-        conn.autocommit = False
-        return _Conn(conn)
+        # Try to reuse a connection from pool
+        while _pool:
+            conn = _pool.pop()
+            try:
+                conn._conn.cursor().execute("SELECT 1")
+                return conn
+            except Exception:
+                pass  # Connection dead, create new one
+        raw = psycopg2.connect(url)
+        raw.autocommit = False
+        return _Conn(raw)
+
+    class _ConnPooled(_Conn):
+        def close(self):
+            try:
+                self._conn.rollback()
+                if len(_pool) < _pool_max:
+                    _pool.append(self)
+                else:
+                    self._conn.close()
+            except Exception:
+                try: self._conn.close()
+                except: pass
+
+    def get_db():
+        url = os.environ["DATABASE_URL"]
+        if url.startswith("postgres://"):
+            url = url.replace("postgres://", "postgresql://", 1)
+        while _pool:
+            pooled = _pool.pop()
+            try:
+                pooled._conn.cursor().execute("SELECT 1")
+                pooled._conn.rollback()
+                return pooled
+            except Exception:
+                pass
+        raw = psycopg2.connect(url, connect_timeout=10)
+        raw.autocommit = False
+        return _ConnPooled(raw)
 
 else:
     import sqlite3
