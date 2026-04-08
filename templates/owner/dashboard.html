@@ -56,7 +56,10 @@
           <div class="stat-label">Expense · {{ selected_date.split('-')|reverse|join('-') if selected_date else '—' }}</div>
           <span style="font-size:10px;color:#dc2626;font-weight:700;">View →</span>
         </div>
-        <div class="stat-value" style="font-size:34px;color:var(--text-primary);">₹{{ stats.today_expense }}</div>
+        <div class="stat-value" style="font-size:34px;margin-bottom:10px;color:var(--text-primary);">₹{{ stats.today_expense }}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <span style="font-size:12px;padding:4px 10px;border-radius:10px;font-weight:700;background:#f1f5f9;color:#94a3b8;">Cash ₹{{ stats.get('today_expense_cash', 0) }}</span>
+        </div>
       </div>
     </a>
 
