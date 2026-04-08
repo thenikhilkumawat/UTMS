@@ -33,19 +33,21 @@ ORDERS_PAGE = """{% extends 'base.html' %}
     </button>
   </div>
 
+  <!-- Search + Filter (always visible) -->
+  <div id="orders-filter-bar" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center;">
+    <input type="text" id="srch" placeholder="Search #code, name, mobile..." oninput="filterOrders()"
+      style="flex:1;min-width:200px;padding:10px 16px;font-size:14px;border:2px solid var(--border);border-radius:12px;outline:none;">
+    <span id="dues-badge" style="display:none;background:#fef3c7;color:#b45309;border:1.5px solid #fde68a;border-radius:10px;padding:6px 14px;font-size:12px;font-weight:800;">💰 Pending dues only</span>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+      {% for key,label in [('all','All'),('pending','Pending'),('ready','Ready'),('delivered','Delivered'),('cancelled','Cancelled')] %}
+      <button class="ftab" data-key="{{ key }}" onclick="setTab('{{ key }}',this)"
+        style="padding:7px 14px;border-radius:10px;border:2px solid {% if key=='all' %}var(--accent){% else %}var(--border){% endif %};background:{% if key=='all' %}var(--accent){% else %}#fff{% endif %};color:{% if key=='all' %}#fff{% else %}var(--text-muted){% endif %};font-size:12px;font-weight:800;cursor:pointer;">{{ label }}</button>
+      {% endfor %}
+    </div>
+  </div>
+
   <!-- ═══ ORDERS TAB ═══ -->
   <div id="tab-orders">
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center;">
-      <input type="text" id="srch" placeholder="Search #code, name, mobile..." oninput="filterOrders()"
-        style="flex:1;min-width:200px;padding:10px 16px;font-size:14px;border:2px solid var(--border);border-radius:12px;outline:none;">
-      <span id="dues-badge" style="display:none;background:#fef3c7;color:#b45309;border:1.5px solid #fde68a;border-radius:10px;padding:6px 14px;font-size:12px;font-weight:800;">💰 Pending dues only</span>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;">
-        {% for key,label in [('all','All'),('pending','Pending'),('ready','Ready'),('delivered','Delivered'),('cancelled','Cancelled')] %}
-        <button class="ftab" data-key="{{ key }}" onclick="setTab('{{ key }}',this)"
-          style="padding:7px 14px;border-radius:10px;border:2px solid {% if key=='all' %}var(--accent){% else %}var(--border){% endif %};background:{% if key=='all' %}var(--accent){% else %}#fff{% endif %};color:{% if key=='all' %}#fff{% else %}var(--text-muted){% endif %};font-size:12px;font-weight:800;cursor:pointer;">{{ label }}</button>
-        {% endfor %}
-      </div>
-    </div>
     <div style="overflow-x:auto;">
       <table style="width:100%;border-collapse:collapse;font-size:13px;">
         <thead><tr style="background:#f8fafc;border-bottom:2px solid var(--border);">
@@ -177,6 +179,9 @@ function switchTab(tab) {
   currentTab = tab;
   document.getElementById("tab-orders").style.display = tab==="orders" ? "block" : "none";
   document.getElementById("tab-workprogress").style.display = tab==="workprogress" ? "block" : "none";
+  // Show/hide orders filter bar
+  var fb = document.getElementById("orders-filter-bar");
+  if (fb) fb.style.display = tab==="orders" ? "flex" : "none";
   var ob = document.getElementById("tab-orders-btn");
   var wb = document.getElementById("tab-wp-btn");
   ob.style.borderBottomColor = tab==="orders" ? "var(--accent)" : "transparent";
