@@ -71,7 +71,6 @@ if USE_PG:
             return [_Row(zip(cols, r)) for r in rows]
 
         @property
-        @property
         def lastrowid(self):
             try:
                 self._cur.execute("SELECT lastval()")
@@ -87,16 +86,32 @@ if USE_PG:
     class _Conn:
         def __init__(self, conn):
             self._conn = conn
+            self._closed = False
         def execute(self, sql, params=None):
             cur = _Cursor(self._conn.cursor())
             cur.execute(sql, params or [])
             return cur
         def cursor(self):
             return _Cursor(self._conn.cursor())
-        def commit(self):   self._conn.commit()
-        def close(self):    self._conn.close()
+        def commit(self):
+            if not self._closed:
+                self._conn.commit()
+        def close(self):
+            if not self._closed:
+                self._closed = True
+                try:
+                    self._conn.close()
+                except Exception:
+                    pass
         def __enter__(self): return self
-        def __exit__(self, *a): self._conn.commit(); self._conn.close()
+        def __exit__(self, *a):
+            try:
+                self._conn.commit()
+            except Exception:
+                pass
+            self.close()
+        def __del__(self):
+            self.close()
 
     def get_db():
         url = os.environ["DATABASE_URL"]
