@@ -1,4 +1,3 @@
-
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600&display=swap');
 
 :root {
@@ -27,7 +26,7 @@
   --urgent-light:    #ffedd5;
   --radius-sm: 6px; --radius-md: 10px; --radius-lg: 14px; --radius-xl: 20px;
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.08); --shadow-md: 0 4px 16px rgba(0,0,0,0.1); --shadow-lg: 0 10px 32px rgba(0,0,0,0.14);
-  --font-main: 'Outfit','Noto Sans Devanagari',sans-serif;
+  --font-main: 'Outfit','Noto Sans Devanagari','Segoe UI',Tahoma,Arial,sans-serif;
   --font-size-base: 14px;
   --font-size-sm: 12px;
   --font-size-label: 12px;
