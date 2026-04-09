@@ -173,73 +173,91 @@ ORDERS_PAGE = """{% extends 'base.html' %}
 
 {% endblock %}
 {% block extra_js %}<script>
-// ── Tab switching ────────────────────────────────
-var currentTab = "orders";
-function switchTab(tab) {
-  currentTab = tab;
-  var isOrders = tab === "orders";
-  document.getElementById("tab-orders").style.display = isOrders ? "block" : "none";
-  document.getElementById("tab-workprogress").style.display = isOrders ? "none" : "block";
-  // Show/hide orders filter bar
-  var fb = document.getElementById("orders-filter-bar");
-  if (fb) fb.style.display = isOrders ? "flex" : "none";
-  // Update tab button styles
-  var ob = document.getElementById("tab-orders-btn");
-  var wb = document.getElementById("tab-wp-btn");
-  ob.style.borderBottomColor = isOrders ? "var(--accent)" : "transparent";
-  ob.style.color = isOrders ? "var(--accent)" : "var(--text-muted)";
-  ob.style.fontWeight = isOrders ? "900" : "700";
-  wb.style.borderBottomColor = isOrders ? "transparent" : "#ea580c";
-  wb.style.color = isOrders ? "var(--text-muted)" : "#ea580c";
-  wb.style.fontWeight = isOrders ? "700" : "900";
-}
-
-// ── Orders Tab ────────────────────────────────────
+// ─── STATE ───────────────────────────────────────
 var activeTab = "all";
 var activeFilter = "{{filter_mode}}";
 var expandedCode = null;
 
-if (activeFilter === "dues") document.getElementById("dues-badge").style.display = "inline-block";
+// ─── ON LOAD ──────────────────────────────────────
+window.addEventListener("DOMContentLoaded", function() {
+  if (activeFilter === "dues") {
+    var badge = document.getElementById("dues-badge");
+    if (badge) badge.style.display = "inline-block";
+    filterOrders();
+  }
+});
 
+// ─── TAB SWITCHING (Orders / Work Progress) ───────
+function switchTab(tab) {
+  var ordersDiv = document.getElementById("tab-orders");
+  var wpDiv     = document.getElementById("tab-workprogress");
+  var filterBar = document.getElementById("orders-filter-bar");
+  var ordBtn    = document.getElementById("tab-orders-btn");
+  var wpBtn     = document.getElementById("tab-wp-btn");
+  var isOrders  = (tab === "orders");
+
+  if (ordersDiv) ordersDiv.style.display = isOrders ? "block" : "none";
+  if (wpDiv)     wpDiv.style.display     = isOrders ? "none"  : "block";
+  if (filterBar) filterBar.style.display = isOrders ? "flex"  : "none";
+
+  ordBtn.style.borderBottomColor = isOrders ? "var(--accent)" : "transparent";
+  ordBtn.style.color = isOrders ? "var(--accent)" : "var(--text-muted)";
+  ordBtn.style.fontWeight = "800";
+
+  wpBtn.style.borderBottomColor = isOrders ? "transparent" : "#ea580c";
+  wpBtn.style.color = isOrders ? "var(--text-muted)" : "#ea580c";
+  wpBtn.style.fontWeight = "800";
+}
+
+// ─── STATUS FILTER TABS ───────────────────────────
 function setTab(k, btn) {
   activeTab = k;
   document.querySelectorAll(".ftab").forEach(function(b) {
-    b.style.background="#fff"; b.style.color="var(--text-muted)"; b.style.borderColor="var(--border)";
+    b.style.background = "#fff";
+    b.style.color = "var(--text-muted)";
+    b.style.borderColor = "var(--border)";
   });
-  btn.style.background="var(--accent)"; btn.style.color="#fff"; btn.style.borderColor="var(--accent)";
+  btn.style.background = "var(--accent)";
+  btn.style.color = "#fff";
+  btn.style.borderColor = "var(--accent)";
   filterOrders();
 }
 
+// ─── SEARCH + FILTER ──────────────────────────────
 function filterOrders() {
-  var q = document.getElementById("srch").value.toLowerCase().trim();
-  document.querySelectorAll("#tbody tr.orow").forEach(function(r) {
-    var hasDue = parseFloat(r.dataset.remaining||0) > 0;
-    var matchQ = !q || r.dataset.s.includes(q);
-    var matchF = activeTab==="all" || r.dataset.status===activeTab;
-    var matchDues = activeFilter!=="dues" || (hasDue && r.dataset.status!=="delivered" && r.dataset.status!=="cancelled");
+  var srch = document.getElementById("srch");
+  var q = srch ? srch.value.toLowerCase().trim() : "";
+  document.querySelectorAll("#tbody .orow").forEach(function(r) {
+    var hasDue   = parseFloat(r.dataset.remaining || 0) > 0;
+    var matchQ   = !q || (r.dataset.s || "").includes(q);
+    var matchF   = activeTab === "all" || r.dataset.status === activeTab;
+    var matchDues = activeFilter !== "dues" || (hasDue && r.dataset.status !== "delivered" && r.dataset.status !== "cancelled");
     var show = matchQ && matchF && matchDues;
     r.style.display = show ? "" : "none";
-    // hide detail row too
-    var code = r.querySelector("[id^='arrow-']");
-    if (code) {
-      var dr = document.getElementById("detail-" + code.id.replace("arrow-",""));
-      if (dr && !show) dr.style.display = "none";
+    // hide detail row if parent hidden
+    var arrow = r.querySelector("[id^='arrow-']");
+    if (arrow) {
+      var code = arrow.id.replace("arrow-", "");
+      var dr = document.getElementById("detail-" + code);
+      if (dr && !show) { dr.style.display = "none"; }
     }
   });
 }
 
-// ── Expandable rows ───────────────────────────────
+// ─── EXPANDABLE ROWS ──────────────────────────────
 function toggleDetail(code) {
-  var dr = document.getElementById("detail-" + code);
+  var dr    = document.getElementById("detail-" + code);
   var arrow = document.getElementById("arrow-" + code);
-  if (!dr) return;
-  // Close previous
+  if (!dr || !arrow) return;
+
   if (expandedCode && expandedCode !== code) {
-    var prev = document.getElementById("detail-" + expandedCode);
+    var prev      = document.getElementById("detail-" + expandedCode);
     var prevArrow = document.getElementById("arrow-" + expandedCode);
-    if (prev) prev.style.display = "none";
+    if (prev)      prev.style.display = "none";
     if (prevArrow) prevArrow.style.transform = "rotate(0deg)";
+    expandedCode = null;
   }
+
   if (dr.style.display === "none" || dr.style.display === "") {
     dr.style.display = "table-row";
     arrow.style.transform = "rotate(90deg)";
@@ -254,11 +272,13 @@ function toggleDetail(code) {
 
 function loadDetail(code) {
   var container = document.getElementById("detail-content-" + code);
-  if (container.dataset.loaded === "1") return;
+  if (!container || container.dataset.loaded === "1") return;
+  container.innerHTML = '<div style="color:var(--text-muted);font-size:13px;text-align:center;padding:16px;">Loading...</div>';
+
   fetch("/owner/api/order-detail/" + code)
-    .then(function(r){ return r.json(); })
+    .then(function(r) { return r.json(); })
     .then(function(d) {
-      if (d.error) { container.innerHTML='<div style="color:var(--danger);padding:12px;">Error loading details</div>'; return; }
+      if (d.error) { container.innerHTML = '<div style="color:red;padding:12px;">Error loading</div>'; return; }
       var o = d.order;
       var html = '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">';
 
@@ -267,25 +287,26 @@ function loadDetail(code) {
       html += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">👤 Customer & Payment</div>';
       html += '<div style="font-size:15px;font-weight:800;">' + o.cname + '</div>';
       html += '<div style="font-size:12px;color:var(--text-muted);">📱 ' + o.mobile + '</div>';
-      if (o.address && o.address!='—') html += '<div style="font-size:12px;color:var(--text-muted);">📍 ' + o.address + '</div>';
       html += '<div style="margin-top:10px;background:#f8fafc;border-radius:8px;padding:10px;">';
       html += '<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><span style="color:var(--text-muted);">Total Bill</span><span style="font-weight:700;">₹' + Math.round(o.payable) + '</span></div>';
       html += '<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><span style="color:var(--text-muted);">Advance</span><span style="font-weight:700;color:#16a34a;">₹' + Math.round(o.advance) + '</span></div>';
-      html += '<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-top:1px solid var(--border);margin-top:3px;"><span style="font-weight:800;color:' + (o.remaining>0?'#dc2626':'#16a34a') + ';">' + (o.remaining>0?'Due':'✓ Paid') + '</span><span style="font-weight:900;color:' + (o.remaining>0?'#dc2626':'#16a34a') + ';">₹' + Math.round(o.remaining) + '</span></div>';
+      html += '<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-top:1px solid var(--border);margin-top:3px;"><span style="font-weight:800;color:' + (o.remaining > 0 ? "#dc2626" : "#16a34a") + ';">' + (o.remaining > 0 ? "Due" : "✓ Paid") + '</span><span style="font-weight:900;color:' + (o.remaining > 0 ? "#dc2626" : "#16a34a") + ';">₹' + Math.round(o.remaining) + '</span></div>';
       html += '</div></div>';
 
-      // Col 2: Garments + Measurements
+      // Col 2: Garments
       html += '<div>';
       html += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">👕 Garments & Measurements</div>';
       d.garments.forEach(function(g) {
         html += '<div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;">';
-        html += '<div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="font-weight:800;">' + g.type + ' ×' + g.qty + '</span><span style="color:var(--accent);font-weight:700;">₹' + Math.round(g.amount) + '</span></div>';
-        if (g.measurements && Object.keys(g.measurements).length > 0) {
-          html += '<div style="display:flex;flex-wrap:wrap;gap:4px;">';
-          Object.entries(g.measurements).forEach(function(kv) { if (kv[1]) html += '<span style="background:#f1f5f9;border-radius:5px;padding:2px 8px;font-size:11px;"><span style="color:var(--text-muted);">' + kv[0] + ':</span> <strong>' + kv[1] + '</strong></span>'; });
-          html += '</div>';
+        html += '<div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="font-weight:800;">' + g.type + ' x' + g.qty + '</span><span style="color:var(--accent);font-weight:700;">₹' + Math.round(g.amount) + '</span></div>';
+        if (g.measurements) {
+          var mkeys = Object.keys(g.measurements);
+          if (mkeys.length > 0) {
+            html += '<div style="display:flex;flex-wrap:wrap;gap:4px;">';
+            mkeys.forEach(function(k) { if (g.measurements[k]) html += '<span style="background:#f1f5f9;border-radius:5px;padding:2px 8px;font-size:11px;"><span style="color:var(--text-muted);">' + k + ':</span> <b>' + g.measurements[k] + '</b></span>'; });
+            html += '</div>';
+          }
         }
-        if (g.notes) html += '<div style="font-size:11px;color:var(--text-muted);margin-top:4px;">' + g.notes + '</div>';
         html += '</div>';
       });
       html += '</div>';
@@ -294,9 +315,9 @@ function loadDetail(code) {
       html += '<div>';
       html += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">📊 Progress & Photos</div>';
       html += '<div style="display:flex;justify-content:space-between;margin-bottom:4px;">';
-      html += '<span style="font-size:10px;font-weight:800;color:' + (o.naap_pct>=100?'#4f46e5':'#9ca3af') + ';">नाप ' + (o.naap_pct>=100?'✓':o.naap_pct+'%') + '</span>';
-      html += '<span style="font-size:10px;font-weight:800;color:' + (o.cut_pct>=100?'#ea580c':'#9ca3af') + ';">कटाई ' + (o.cut_pct>=100?'✓':o.cut_pct+'%') + '</span>';
-      html += '<span style="font-size:10px;font-weight:800;color:' + (o.stitch_pct>=100?'#16a34a':'#9ca3af') + ';">सिलाई ' + (o.stitch_pct>=100?'✓':o.stitch_pct+'%') + '</span>';
+      html += '<span style="font-size:10px;font-weight:800;color:' + (o.naap_pct>=100?"#4f46e5":"#9ca3af") + ';">नाप ' + (o.naap_pct>=100?"✓":o.naap_pct+"%") + '</span>';
+      html += '<span style="font-size:10px;font-weight:800;color:' + (o.cut_pct>=100?"#ea580c":"#9ca3af") + ';">कटाई ' + (o.cut_pct>=100?"✓":o.cut_pct+"%") + '</span>';
+      html += '<span style="font-size:10px;font-weight:800;color:' + (o.stitch_pct>=100?"#16a34a":"#9ca3af") + ';">सिलाई ' + (o.stitch_pct>=100?"✓":o.stitch_pct+"%") + '</span>';
       html += '</div>';
       html += '<div style="display:flex;gap:2px;height:10px;margin-bottom:12px;">';
       html += '<div style="flex:1;background:#e5e7eb;border-radius:4px;overflow:hidden;"><div style="height:100%;background:#4f46e5;width:' + o.naap_pct + '%;"></div></div>';
@@ -306,47 +327,52 @@ function loadDetail(code) {
       if (d.images && d.images.length > 0) {
         html += '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
         d.images.forEach(function(src) {
-          html += '<img src="' + src + '" onclick="openImgOverlay(\'' + src.replace(/'/g,"\\'")+  '\')" style="width:70px;height:70px;object-fit:cover;border-radius:8px;border:2px solid var(--border);cursor:zoom-in;">';
+          html += '<img src="' + src + '" onclick="openImgOverlay(this.src)" style="width:70px;height:70px;object-fit:cover;border-radius:8px;border:2px solid var(--border);cursor:zoom-in;">';
         });
         html += '</div>';
       } else {
-        html += '<div style="font-size:12px;color:var(--text-muted);">No photos uploaded</div>';
+        html += '<div style="font-size:12px;color:var(--text-muted);">No photos</div>';
       }
-      html += '</div>';
-      html += '</div>';
+      html += '</div></div>';
+
       container.innerHTML = html;
       container.dataset.loaded = "1";
     })
-    .catch(function(){ container.innerHTML = '<div style="color:var(--danger);padding:12px;">Could not load details.</div>'; });
+    .catch(function() { container.innerHTML = '<div style="color:red;padding:12px;">Could not load details.</div>'; });
 }
 
 function openImgOverlay(src) {
-  document.getElementById("ov-img-orders").src = src;
-  document.getElementById("img-overlay-orders").style.display = "flex";
+  var ov = document.getElementById("img-overlay-orders");
+  if (ov) { document.getElementById("ov-img-orders").src = src; ov.style.display = "flex"; }
 }
 
-// ── Work Progress Tab ─────────────────────────────
-var wpFilter = "all";
+// ─── WORK PROGRESS FILTER ─────────────────────────
 function setWpFilter(f, btn) {
-  wpFilter = f;
   document.querySelectorAll(".wpf").forEach(function(b) {
-    b.style.background="#fff"; b.style.color="var(--text-muted)"; b.style.borderColor="var(--border)";
+    b.style.background = "#fff"; b.style.color = "var(--text-muted)"; b.style.borderColor = "var(--border)";
   });
   btn.style.background = "var(--accent)"; btn.style.color = "#fff"; btn.style.borderColor = "var(--accent)";
   document.querySelectorAll(".wrow").forEach(function(r) {
-    var show = f==="all" || (f==="naap"&&r.dataset.naap==="pending") || (f==="cut"&&r.dataset.cut==="pending") || (f==="stitch"&&r.dataset.stitch==="pending") || (f==="done"&&r.dataset.alldone==="yes");
+    var show = f === "all"
+      || (f === "naap"   && r.dataset.naap   === "pending")
+      || (f === "cut"    && r.dataset.cut    === "pending")
+      || (f === "stitch" && r.dataset.stitch === "pending")
+      || (f === "done"   && r.dataset.alldone === "yes");
     r.style.display = show ? "" : "none";
   });
 }
 
-// ── Auto switch if filter=dues ────────────────────
-if (activeFilter === "dues") { filterOrders(); }
-
-// ── Session timeout ───────────────────────────────
-const SECS=5*60; let last=Date.now();
-["click","keydown","mousemove","touchstart"].forEach(ev=>document.addEventListener(ev,()=>{last=Date.now();},{passive:true}));
-setInterval(()=>{if(Math.floor((Date.now()-last)/1000)>=SECS)window.location.href="/owner/login?expired=1";},5000);
-window.addEventListener("pageshow",function(e){if(e.persisted){fetch("/owner/logout",{method:"POST",keepalive:true}).finally(()=>{window.location.href="/owner/login";})}});
+// ─── SESSION TIMEOUT ──────────────────────────────
+const SECS = 5 * 60; let last = Date.now();
+["click","keydown","mousemove","touchstart"].forEach(function(ev) {
+  document.addEventListener(ev, function() { last = Date.now(); }, {passive:true});
+});
+setInterval(function() {
+  if (Math.floor((Date.now() - last) / 1000) >= SECS) window.location.href = "/owner/login?expired=1";
+}, 5000);
+window.addEventListener("pageshow", function(e) {
+  if (e.persisted) { fetch("/owner/logout", {method:"POST",keepalive:true}).finally(function() { window.location.href = "/owner/login"; }); }
+});
 </script>{% endblock %}
 """
 
