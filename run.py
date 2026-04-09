@@ -1,14 +1,21 @@
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from flask import Flask, jsonify, session, redirect, url_for
+from flask import Flask, jsonify, session, redirect, url_for, request
 from config import Config
 from database import init_db, get_setting
 from app.routes.employee import bp as employee_bp
 from app.routes.owner import bp as owner_bp
 
-app = Flask(__name__, template_folder="templates", static_folder="static")
+app = Flask(__name__, template_folder="templates", static_folder="static", static_url_path="/static")
 app.secret_key = Config.SECRET_KEY
+
+# Ensure static files are served with proper headers
+@app.after_request
+def add_header(response):
+    if request.path.startswith("/static/"):
+        response.headers["Cache-Control"] = "public, max-age=86400"
+    return response
 
 
 app.register_blueprint(employee_bp)
