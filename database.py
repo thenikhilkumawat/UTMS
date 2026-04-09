@@ -102,9 +102,20 @@ if USE_PG:
         url = os.environ["DATABASE_URL"]
         if url.startswith("postgres://"):
             url = url.replace("postgres://", "postgresql://", 1)
-        conn = psycopg2.connect(url, connect_timeout=10)
-        conn.autocommit = False
-        return _Conn(conn)
+        for attempt in range(3):
+            try:
+                conn = psycopg2.connect(url, connect_timeout=10)
+                conn.autocommit = False
+                # Test the connection is alive
+                cur = conn.cursor()
+                cur.execute("SELECT 1")
+                cur.close()
+                return _Conn(conn)
+            except Exception:
+                if attempt == 2:
+                    raise
+                import time
+                time.sleep(1)
 
 else:
     import sqlite3
