@@ -1524,22 +1524,31 @@ def cleanup_images():
 @bp.route("/backup/download")
 @owner_required
 def backup_download():
-    """Download the database file for backup."""
-    import shutil
+    """Download database backup - exports PostgreSQL data as JSON"""
+    import json as _json, os as _os, tempfile
     from flask import send_file
-    from config import Config
-    import tempfile, os
-    db_path = Config.DATABASE
-    if not os.path.exists(db_path):
-        flash("Database file not found.", "error")
+    try:
+        conn = get_db()
+        backup_data = {}
+        tables = ["customers","orders","order_items","order_images","work_logs",
+                  "finance","employees","settings","salary_advances","gallery_types",
+                  "gallery_images","measurement_fields","notify_log"]
+        for table in tables:
+            try:
+                rows = conn.execute(f"SELECT * FROM {table}").fetchall()
+                backup_data[table] = [dict(zip(r.keys(), r.values())) for r in rows]
+            except Exception:
+                backup_data[table] = []
+        conn.close()
+        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".json", mode="w")
+        _json.dump(backup_data, tmp, default=str, ensure_ascii=False)
+        tmp.close()
+        from datetime import datetime
+        fname = f"uttam_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        return send_file(tmp.name, as_attachment=True, download_name=fname, mimetype="application/json")
+    except Exception as e:
+        flash(f"Backup failed: {str(e)}", "error")
         return redirect(url_for("owner.settings"))
-    # Copy to temp to avoid locking issues
-    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".db")
-    shutil.copy2(db_path, tmp.name)
-    tmp.close()
-    from datetime import datetime
-    fname = f"uttam_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
-    return send_file(tmp.name, as_attachment=True, download_name=fname, mimetype="application/octet-stream")
 
 @bp.route("/backup/restore", methods=["POST"])
 @owner_required
