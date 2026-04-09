@@ -1553,37 +1553,47 @@ def backup_download():
 @bp.route("/backup/restore", methods=["POST"])
 @owner_required
 def backup_restore():
-    """Restore database from uploaded backup file."""
-    import shutil, os, sqlite3, tempfile
-    from config import Config
+    """Restore database from uploaded JSON backup file."""
+    import json as _json, os as _os
     try:
         file = request.files.get("db_file")
         if not file or not file.filename:
             flash("Please select a backup file.", "error")
             return redirect(url_for("owner.settings"))
-        if not (file.filename.endswith(".db") or file.filename.endswith(".sqlite")):
-            flash("Invalid file. Must be a .db file.", "error")
+        if not file.filename.endswith(".json"):
+            flash("Invalid file. Must be a .json backup file.", "error")
             return redirect(url_for("owner.settings"))
 
-        # Save uploaded file to a temp location first
-        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".db")
-        file.save(tmp.name)
-        tmp.close()
-
-        # Validate it's a real SQLite database
-        try:
-            test_conn = sqlite3.connect(tmp.name)
-            test_conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
-            test_conn.close()
-        except Exception as ve:
-            os.unlink(tmp.name)
-            flash(f"Invalid database file: {ve}", "error")
+        backup_data = _json.load(file)
+        if not isinstance(backup_data, dict):
+            flash("Invalid backup format.", "error")
             return redirect(url_for("owner.settings"))
 
-        db_path = Config.DATABASE
-        # Replace the live database with the uploaded one
-        shutil.copy2(tmp.name, db_path)
-        os.unlink(tmp.name)
+        conn = get_db()
+        tables = ["customers","orders","order_items","order_images","work_logs",
+                  "finance","employees","settings","salary_advances","gallery_types",
+                  "gallery_images","measurement_fields","notify_log"]
+        for table in tables:
+            rows = backup_data.get(table, [])
+            if not rows:
+                continue
+            # Clear existing data
+            try:
+                conn.execute(f"DELETE FROM {table}")
+            except Exception:
+                continue
+            # Insert rows
+            for row in rows:
+                cols = list(row.keys())
+                placeholders = ", ".join(["?"] * len(cols))
+                col_names = ", ".join(cols)
+                vals = [row[c] for c in cols]
+                try:
+                    conn.execute(f"INSERT INTO {table} ({col_names}) VALUES ({placeholders})", vals)
+                except Exception:
+                    continue
+        conn.commit()
+        conn.close()
         flash("✅ Database restored successfully! All your orders and data are back.", "success")
     except Exception as e:
         flash(f"Restore failed: {str(e)}", "error")
