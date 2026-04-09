@@ -10,6 +10,7 @@ from app.routes.owner import bp as owner_bp
 app = Flask(__name__, template_folder="templates", static_folder="static")
 app.secret_key = Config.SECRET_KEY
 
+
 app.register_blueprint(employee_bp)
 app.register_blueprint(owner_bp)
 
