@@ -507,6 +507,25 @@
 
 
 
+
+  <!-- ── System Cleanup ─────────────────── -->
+  <div class="card" style="border:2px solid #bfdbfe;margin-top:0;margin-bottom:24px;">
+    <div class="card-header" style="background:linear-gradient(135deg,#eff6ff,#dbeafe);">
+      <span class="card-title" style="color:#1e40af;">🧹 System Cleanup (Fix Slowness)</span>
+    </div>
+    <div class="card-body">
+      <p style="font-size:13px;color:#6b7280;margin-bottom:12px;">
+        If the system feels slow, click this to remove old test image data from the database.
+        Run this <strong>once</strong> after deploying.
+      </p>
+      <form action="/owner/cleanup-images" method="POST">
+        <button type="submit" style="background:#2563eb;color:#fff;border:none;border-radius:10px;padding:10px 20px;font-size:14px;font-weight:700;cursor:pointer;">
+          🧹 Clean Up Old Data
+        </button>
+      </form>
+    </div>
+  </div>
+
   <!-- ── Database Backup & Restore ─────────────────── -->
   <div class="card" style="border:2px solid #bfdbfe;margin-top:24px;margin-bottom:0;">
     <div class="card-header" style="background:linear-gradient(135deg,#eff6ff,#dbeafe);">
@@ -515,7 +534,7 @@
     </div>
     <div class="card-body">
       <div style="background:#fefce8;border:1.5px solid #fde047;border-radius:10px;padding:12px 16px;margin-bottom:16px;">
-        <div style="font-size:13px;font-weight:800;color:#854d0e;margin-bottom:4px;">⚠️ Render Free Tier Warning</div>
+        <div style="font-size:13px;font-weight:800;color:#854d0e;margin-bottom:4px;">✅ PostgreSQL — Data is Safe</div>
         <div style="font-size:12px;color:#713f12;line-height:1.6;">
           Render's free plan does not support persistent storage. <strong>Every time you deploy new code, your database gets wiped.</strong><br>
           <strong>Solution:</strong> Download your database before deploying → restore it after deploying.
