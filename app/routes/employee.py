@@ -79,7 +79,8 @@ def dashboard():
     total_customers  = conn.execute("SELECT COUNT(*) as c FROM customers").fetchone()["c"]
     urgent_orders = conn.execute("""
         SELECT o.id,o.order_code,o.delivery_date,o.status,o.is_urgent,
-               o.remaining,c.name as customer_name,c.mobile
+               o.remaining, COALESCE(o.repeat_of,'') as repeat_of,
+               c.name as customer_name,c.mobile
         FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
         WHERE o.is_urgent=1 AND o.status!='delivered'
         ORDER BY o.delivery_date ASC LIMIT 10
@@ -107,12 +108,14 @@ def dashboard():
         return f"{p[2]}-{p[1]}-{p[0]}" if len(p)==3 else d
 
     urgent_list = [{
-        "order_code":    o["order_code"],
-        "customer_name": o["customer_name"] or "—",
-        "mobile":        o["mobile"] or "",
+        "order_code":        o["order_code"],
+        "display_code":      o["repeat_of"] if o["repeat_of"] else o["order_code"],
+        "entry_code":        o["order_code"] if o["repeat_of"] else "",
+        "customer_name":     o["customer_name"] or "—",
+        "mobile":            o["mobile"] or "",
         "delivery_date_fmt": fmtd(o["delivery_date"]),
-        "remaining":     o["remaining"] or 0,
-        "status":        o["status"]
+        "remaining":         o["remaining"] or 0,
+        "status":            o["status"]
     } for o in urgent_orders]
 
     return render_template("employee/dashboard.html", active_page="dashboard",
@@ -1021,6 +1024,8 @@ def order_status():
 
         orders.append({
             "order_code":       o["order_code"],
+            "display_code":     o["repeat_of"] if o["repeat_of"] else o["order_code"],
+            "entry_code":       o["order_code"] if o["repeat_of"] else "",
             "cname":            o["cname"] or "—",
             "mobile":           o["mobile"] or "",
             "status":           o["status"],
@@ -1613,6 +1618,8 @@ def api_pickup_order():
     conn.close()
     return jsonify({
         "order_code":       o["order_code"],
+        "display_code":     o["repeat_of"] if o["repeat_of"] else o["order_code"],
+        "entry_code":       o["order_code"] if o["repeat_of"] else "",
         "customer_name":    o["customer_name"] or "—",
         "mobile":           o["mobile"] or "",
         "status":           o["status"],
@@ -1865,6 +1872,8 @@ def customers():
         """, (c["id"],)).fetchall()
         order_list = [{
             "order_code":       o["order_code"],
+            "display_code":     (o["repeat_of"] if "repeat_of" in o.keys() else "") or o["order_code"],
+            "entry_code":       o["order_code"] if (o["repeat_of"] if "repeat_of" in o.keys() else "") else "",
             "status":           o["status"],
             "repeat_of":        (o["repeat_of"] if "repeat_of" in o.keys() else "") or "",
             "order_date_fmt":   fmtd(o["order_date"]),
@@ -1902,6 +1911,8 @@ def customers():
         """, (cu["id"],)).fetchall()
         cu["orders"] = [{
             "order_code":       o["order_code"],
+            "display_code":     (o["repeat_of"] if "repeat_of" in o.keys() else "") or o["order_code"],
+            "entry_code":       o["order_code"] if (o["repeat_of"] if "repeat_of" in o.keys() else "") else "",
             "status":           o["status"],
             "repeat_of":        (o["repeat_of"] if "repeat_of" in o.keys() else "") or "",
             "order_date_fmt":   fmtd(o["order_date"]),
@@ -2047,6 +2058,9 @@ def measurements_page():
             })
         order_list.append({
             "order_code":        o["order_code"],
+            "display_code":      o["repeat_of"] if o["repeat_of"] else o["order_code"],
+            "entry_code":        o["order_code"] if o["repeat_of"] else "",
+            "repeat_of":         o["repeat_of"] or "",
             "customer_name":     o["customer_name"] or "—",
             "mobile":            o["mobile"] or "",
             "status":            o["status"],
