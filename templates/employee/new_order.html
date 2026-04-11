@@ -255,9 +255,13 @@
         <div style="flex:1;">
           <div style="font-size:22px;font-weight:900;color:#fff;letter-spacing:-0.5px;" id="ec-name-display">—</div>
           <div style="font-size:13px;color:rgba(255,255,255,0.75);margin-top:3px;" id="ec-meta-display">—</div>
+          <span id="ec-loyalty-badge" style="display:none;margin-top:6px;background:rgba(255,255,255,0.2);border:1.5px solid rgba(255,255,255,0.5);color:#fff;font-size:12px;font-weight:800;padding:3px 12px;border-radius:20px;letter-spacing:0.5px;"></span>
         </div>
         <button onclick="resetExistingSearch()" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.35);color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">↩ Change</button>
       </div>
+
+      <!-- Entry code info banner -->
+      <div id="ec-entry-code-info" style="display:none;background:#fffbeb;border-bottom:1px solid #fde68a;padding:10px 20px;font-size:13px;color:#92400e;font-weight:600;"></div>
 
       <!-- Previous Orders -->
       <div id="ec-orders-card" style="display:none;">
@@ -456,9 +460,23 @@
         <div style="font-size:11px;font-weight:800;letter-spacing:3px;opacity:0.65;text-transform:uppercase;margin-bottom:4px;">
           <span class="lang-en">ORDER CONFIRMED</span><span class="lang-hi" style="display:none;">ऑर्डर पक्का हो गया</span>
         </div>
-        <div style="font-size:52px;font-weight:900;letter-spacing:2px;line-height:1;">#<span id="sc_code"></span></div>
-        <div id="sc_repeat_badge" style="display:none;margin-top:8px;">
-          <span style="background:rgba(255,255,255,0.15);border-radius:20px;padding:4px 14px;font-size:12px;font-weight:700;">↩ #<span id="sc_repeat_code"></span></span>
+
+        <!-- For repeat customers: show permanent code big, entry code smaller -->
+        <div id="sc_repeat_customer_block" style="display:none;">
+          <div style="font-size:13px;opacity:0.75;margin-bottom:4px;">Customer Code (permanent)</div>
+          <div style="font-size:44px;font-weight:900;letter-spacing:3px;line-height:1;">#<span id="sc_permanent_code"></span></div>
+          <div style="margin-top:10px;background:rgba(255,255,255,0.15);display:inline-block;border-radius:10px;padding:6px 20px;">
+            <span style="font-size:11px;opacity:0.8;">This Entry: </span>
+            <span style="font-size:18px;font-weight:900;letter-spacing:2px;">#<span id="sc_entry_code"></span></span>
+          </div>
+        </div>
+
+        <!-- For new customers: show order code big -->
+        <div id="sc_new_customer_block">
+          <div style="font-size:52px;font-weight:900;letter-spacing:2px;line-height:1;">#<span id="sc_code"></span></div>
+          <div id="sc_repeat_badge" style="display:none;margin-top:8px;">
+            <span style="background:rgba(255,255,255,0.15);border-radius:20px;padding:4px 14px;font-size:12px;font-weight:700;">↩ #<span id="sc_repeat_code"></span></span>
+          </div>
         </div>
       </div>
 
@@ -556,11 +574,13 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 const ORDER_CODE  = "{{ order_code }}";
+const REPEAT_CODE = "{{ repeat_code }}";
 const MEAS_FIELDS = {{ meas_fields_json | safe }};
 const GARMENT_TYPES = {{ garment_types_json | safe }};
 const RATE_MAP    = {{ garment_rates_json | safe }};
 const WA_NUMBER   = "{{ wa_number }}";
 let currentCode   = ORDER_CODE;
+let ecPermanentCode = "";  // customer's original first order code e.g. "2363"
 let savedPayload  = {};
 let payMode       = "cash";
 let imgTimer      = null;
@@ -714,6 +734,7 @@ function searchCustomers() {
             <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
               <span style="font-weight:800;font-size:16px;color:var(--text-primary);">${c.name}</span>
               ${c.order_count>0?`<span style="background:#fef3c7;color:#b45309;font-size:10px;font-weight:800;padding:2px 8px;border-radius:20px;border:1px solid #fde68a;letter-spacing:0.3px;">⭐ OLD CUSTOMER · ${c.order_count} order${c.order_count>1?'s':''}</span>`:''}
+              ${c.loyalty_code?`<span style="background:#eef2ff;color:#4f46e5;font-size:10px;font-weight:800;padding:2px 8px;border-radius:20px;border:1px solid #c7d2fe;letter-spacing:0.5px;">🏷️ C-${c.loyalty_code}</span>`:''}
             </div>
             <div style="font-size:12px;color:var(--text-muted);margin-top:3px;">
               ${c.mobile?'📱 '+c.mobile:''}${c.address?' · 📍 '+c.address:''}
@@ -739,6 +760,35 @@ function loadCustomerProfile(customerId) {
       document.getElementById("ec-name-display").textContent = data.name;
       document.getElementById("ec-meta-display").textContent =
         [data.mobile, data.address, data.orders.length+" order"+(data.orders.length!==1?"s":"")].filter(Boolean).join(" · ");
+
+      // Store permanent code + update sticky bar
+      ecPermanentCode = data.permanent_code || data.loyalty_code || "";
+      if (ecPermanentCode) {
+        document.getElementById("sticky-code").textContent = "#" + ecPermanentCode;
+      }
+
+      // Show loyalty badge in profile header
+      var loyaltyBadge = document.getElementById("ec-loyalty-badge");
+      if (loyaltyBadge) {
+        if (ecPermanentCode) {
+          loyaltyBadge.textContent = "⭐ Customer Code: #" + ecPermanentCode;
+          loyaltyBadge.style.display = "inline-block";
+        } else {
+          loyaltyBadge.style.display = "none";
+        }
+      }
+
+      // Show what the new entry code will be
+      fetch("/api/peek-repeat-code")
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          var entryInfo = document.getElementById("ec-entry-code-info");
+          if (entryInfo && d.code) {
+            entryInfo.innerHTML = "New entry will be saved as <strong>#" + d.code + "</strong> linked to customer <strong>#" + ecPermanentCode + "</strong>";
+            entryInfo.style.display = "block";
+          }
+        });
+
       setExistingWizard(1);
       showStep("step-e1b");
       renderOrderHistory(data.orders);
@@ -749,7 +799,11 @@ function loadCustomerProfile(customerId) {
 
 function resetExistingSearch() {
   ecCustomerData = null;
+  ecPermanentCode = "";
   existingGarments = [];
+  document.getElementById("sticky-code").textContent = "#" + ORDER_CODE;
+  var entryInfo = document.getElementById("ec-entry-code-info");
+  if (entryInfo) entryInfo.style.display = "none";
   ["e_id","e_name","e_mobile","e_address","e_search","ec-repeat-of"].forEach(id=>{
     const el=document.getElementById(id); if(el) el.value="";
   });
@@ -1243,7 +1297,8 @@ function confirmOrder(flow) {
 
   const p={
     order_code:ORDER_CODE, customer_type:flow,
-    repeat_of:repeatOf||null,
+    use_repeat_code: !isNew,        // existing customer → use 0001, 0002...
+    repeat_of: !isNew ? ecPermanentCode : (repeatOf||null),
     customer_name:name, mobile, address,
     existing_customer_id:custId,
     order_date:odate, delivery_date:ddate, note, is_urgent:urgent,
@@ -1263,21 +1318,35 @@ function showSuccess() {
   stopImgPoll();
   hideAll();
   document.getElementById("step-success").style.display="block";
-  // Mark all wizard steps done
   ["wn","we"].forEach(p=>[1,2,3,4,5].forEach(i=>{const w=document.getElementById(p+i);if(w)w.classList.add("done");}));
 
-  document.getElementById("sc_code").textContent=currentCode;
-  document.getElementById("sticky-code").textContent="#"+currentCode;
   const p=savedPayload;
-  document.getElementById("sc_name_pill").textContent=p.customer_name;
-  document.getElementById("sc_delivery_pill").textContent=fmtDate(p.delivery_date);
-  document.getElementById("sc_paid_pill").textContent="₹"+p.advance_paid;
-  document.getElementById("sc_due_pill").textContent="₹"+p.remaining;
+  const isRepeat = !!ecPermanentCode && (savedPayload.customer_type === "existing");
+
+  if (isRepeat) {
+    // Show permanent code big + entry code small
+    document.getElementById("sc_repeat_customer_block").style.display = "block";
+    document.getElementById("sc_new_customer_block").style.display    = "none";
+    document.getElementById("sc_permanent_code").textContent = ecPermanentCode;
+    document.getElementById("sc_entry_code").textContent     = currentCode;
+    document.getElementById("sticky-code").textContent = "#" + ecPermanentCode;
+  } else {
+    // New customer — show order code big
+    document.getElementById("sc_repeat_customer_block").style.display = "none";
+    document.getElementById("sc_new_customer_block").style.display    = "block";
+    document.getElementById("sc_code").textContent = currentCode;
+    document.getElementById("sticky-code").textContent = "#" + currentCode;
+  }
+
+  document.getElementById("sc_name_pill").textContent     = p.customer_name;
+  document.getElementById("sc_delivery_pill").textContent = fmtDate(p.delivery_date);
+  document.getElementById("sc_paid_pill").textContent     = "₹"+p.advance_paid;
+  document.getElementById("sc_due_pill").textContent      = "₹"+p.remaining;
 
   const repeatOf = p.repeat_of||"";
-  if (repeatOf) {
-    document.getElementById("sc_repeat_code").textContent=repeatOf;
-    document.getElementById("sc_repeat_badge").style.display="block";
+  if (repeatOf && !isRepeat) {
+    document.getElementById("sc_repeat_code").textContent = repeatOf;
+    document.getElementById("sc_repeat_badge").style.display = "block";
   }
 
   fetch("/images/"+currentCode+"?ts="+Date.now()).then(r=>r.text()).then(html=>{
