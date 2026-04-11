@@ -529,43 +529,80 @@
   <!-- ── Database Backup & Restore ─────────────────── -->
   <div class="card" style="border:2px solid #bfdbfe;margin-top:24px;margin-bottom:0;">
     <div class="card-header" style="background:linear-gradient(135deg,#eff6ff,#dbeafe);">
-      <span class="card-title" style="color:#1e40af;">💾 Database Backup & Restore</span>
-      <span style="font-size:12px;color:#3b82f6;font-weight:600;">Important for Render free tier</span>
+      <div>
+        <span class="card-title" style="color:#1e40af;">💾 Backup & Restore Data</span>
+        {% if last_backup %}
+        <div style="font-size:11px;color:#3b82f6;margin-top:3px;font-weight:600;">Last backup: {{ last_backup }}</div>
+        {% else %}
+        <div style="font-size:11px;color:#dc2626;margin-top:3px;font-weight:600;">⚠️ No backup taken yet</div>
+        {% endif %}
+      </div>
     </div>
     <div class="card-body">
-      <div style="background:#fefce8;border:1.5px solid #fde047;border-radius:10px;padding:12px 16px;margin-bottom:16px;">
-        <div style="font-size:13px;font-weight:800;color:#854d0e;margin-bottom:4px;">✅ PostgreSQL — Data is Safe</div>
-        <div style="font-size:12px;color:#713f12;line-height:1.6;">
-          Render's free plan does not support persistent storage. <strong>Every time you deploy new code, your database gets wiped.</strong><br>
-          <strong>Solution:</strong> Download your database before deploying → restore it after deploying.
+
+      <!-- How it works explanation -->
+      <div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:12px;padding:14px 18px;margin-bottom:20px;">
+        <div style="font-size:13px;font-weight:800;color:#166534;margin-bottom:8px;">ℹ️ How Backup & Restore Works</div>
+        <div style="font-size:12px;color:#15803d;line-height:1.9;">
+          <div>✅ <strong>Your PostgreSQL data is safe</strong> — code updates do NOT delete your orders or customers</div>
+          <div>⚠️ <strong>90-day risk:</strong> Render's free database expires after 90 days — download backup regularly</div>
+          <div>📥 <strong>Download JSON</strong> → saves everything (orders, customers, finance, employees) — use this to restore</div>
+          <div>📊 <strong>Download Excel</strong> → easy to read on phone/PC, but cannot restore from Excel</div>
+          <div>📤 <strong>Restore:</strong> Upload the <code style="background:#dcfce7;padding:1px 5px;border-radius:4px;">.json</code> file only — restores all data exactly as it was</div>
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-        <!-- Download -->
+      <!-- Download options -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;">
+
         <div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:12px;padding:16px;">
-          <div style="font-size:13px;font-weight:800;color:#15803d;margin-bottom:6px;">📥 Step 1: Before Deploying</div>
-          <div style="font-size:12px;color:#166534;margin-bottom:12px;">Download your database first to save all orders and customer data.</div>
+          <div style="font-size:13px;font-weight:800;color:#15803d;margin-bottom:4px;">📥 Download JSON Backup</div>
+          <div style="font-size:11px;color:#166534;margin-bottom:12px;line-height:1.5;">
+            Full backup of all data. Use this file to <strong>restore</strong> your system. Save it to your phone or Google Drive.
+          </div>
           <a href="/owner/backup/download"
-            style="display:block;text-align:center;background:#16a34a;color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;font-weight:800;text-decoration:none;">
-            ⬇️ Download Backup
+            style="display:block;text-align:center;background:#16a34a;color:#fff;padding:10px;border-radius:10px;font-size:13px;font-weight:800;text-decoration:none;">
+            ⬇️ Download JSON (Restorable)
           </a>
         </div>
 
-        <!-- Restore -->
         <div style="background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:12px;padding:16px;">
-          <div style="font-size:13px;font-weight:800;color:#1d4ed8;margin-bottom:6px;">📤 Step 2: After Deploying</div>
-          <div style="font-size:12px;color:#1e40af;margin-bottom:12px;">Upload your backup file to restore all data after a deploy.</div>
-          <form action="/owner/backup/restore" method="POST" enctype="multipart/form-data">
-            <input type="file" name="db_file" accept=".json" required
-              style="width:100%;font-size:12px;padding:6px;border:1.5px solid #93c5fd;border-radius:8px;margin-bottom:8px;background:#fff;box-sizing:border-box;">
-            <button type="submit"
-              style="width:100%;background:#2563eb;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:14px;font-weight:800;cursor:pointer;">
-              ⬆️ Restore Backup
-            </button>
-          </form>
+          <div style="font-size:13px;font-weight:800;color:#1d4ed8;margin-bottom:4px;">📊 Download Excel Backup</div>
+          <div style="font-size:11px;color:#1e40af;margin-bottom:12px;line-height:1.5;">
+            All data in readable Excel sheets — Orders, Customers, Finance, Employees. Open on any phone or PC.
+          </div>
+          <a href="/owner/backup/excel"
+            style="display:block;text-align:center;background:#2563eb;color:#fff;padding:10px;border-radius:10px;font-size:13px;font-weight:800;text-decoration:none;">
+            📊 Download Excel (View Only)
+          </a>
         </div>
       </div>
+
+      <!-- Restore section -->
+      <div style="background:#fff7ed;border:1.5px solid #fed7aa;border-radius:12px;padding:16px;">
+        <div style="font-size:13px;font-weight:800;color:#c2410c;margin-bottom:4px;">📤 Restore From Backup</div>
+        <div style="font-size:11px;color:#92400e;margin-bottom:12px;line-height:1.6;">
+          Upload the <strong>.json file</strong> you downloaded earlier. This will <strong>replace all current data</strong> with the backup data. Only upload if your data is lost or incorrect.
+        </div>
+        <form action="/owner/backup/restore" method="POST" enctype="multipart/form-data"
+          onsubmit="return confirm('⚠️ This will REPLACE all current data with the backup. Are you sure?')">
+          <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+            <div style="flex:1;min-width:200px;">
+              <label style="font-size:11px;font-weight:700;color:#92400e;text-transform:uppercase;display:block;margin-bottom:5px;">Select .json backup file</label>
+              <input type="file" name="db_file" accept=".json" required
+                style="width:100%;font-size:12px;padding:8px 10px;border:1.5px solid #fb923c;border-radius:8px;background:#fff;">
+            </div>
+            <button type="submit"
+              style="background:#ea580c;color:#fff;border:none;border-radius:10px;padding:11px 20px;font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap;">
+              ⬆️ Restore Now
+            </button>
+          </div>
+        </form>
+        <div style="margin-top:10px;padding:8px 12px;background:#fef3c7;border-radius:8px;font-size:11px;color:#92400e;">
+          💡 <strong>Tip:</strong> After restoring, the page will refresh and show a ✅ success message. All your orders will be back.
+        </div>
+      </div>
+
     </div>
   </div>
 
