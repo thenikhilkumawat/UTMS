@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, jsonify, send_from_directory
 from datetime import date, datetime, timedelta
-from database import get_db, get_setting, next_order_code, peek_order_code
+from database import get_db, get_setting, next_order_code, peek_order_code, next_repeat_code, peek_repeat_code
 import json, os, time
 from config import Config
 
@@ -127,7 +127,8 @@ def dashboard():
 
 @bp.route("/new-order")
 def new_order():
-    order_code = peek_order_code()  # Show code without incrementing - only committed on save
+    order_code  = peek_order_code()   # for new customers
+    repeat_code = peek_repeat_code()  # for returning customers
     conn = get_db()
     today = date.today().isoformat()
     urgent_count = conn.execute("SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status!='delivered' AND delivery_date>=?",(today,)).fetchone()["c"]
@@ -209,6 +210,7 @@ def new_order():
         active_page="new_order", show_voice=True,
         urgent_count=urgent_count,
         order_code=order_code,
+        repeat_code=repeat_code,
         garment_rates=garment_rates,
         garment_rates_json=json.dumps({k: float(v) for k, v in garment_rates.items()}),
         wa_number=get_setting("whatsapp_number",""),
@@ -470,9 +472,24 @@ def save_order():
     try:
         conn = get_db()
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        # Always get a fresh order code at save time - this is when we actually commit it
-        # The peeked code from the page is discarded; we use the real next code
-        order_code = next_order_code()
+
+        # Order code logic:
+        # - Existing customer (returning) → use next_repeat_code() → 0001, 0002...
+        # - New customer → use next_order_code() → 3801, 3802...
+        # - Custom override → use provided code (owner privilege)
+        custom_code = (data.get("custom_order_code") or "").strip()
+        use_repeat  = data.get("use_repeat_code", False)
+
+        if custom_code:
+            clash = conn.execute("SELECT id FROM orders WHERE order_code=?", (custom_code,)).fetchone()
+            if clash:
+                conn.close()
+                return jsonify({"status":"error","message":f"Order code #{custom_code} already exists. Use a different number."}), 400
+            order_code = custom_code
+        elif use_repeat:
+            order_code = next_repeat_code()
+        else:
+            order_code = next_order_code()
         customer_name   = (data.get("customer_name") or "").strip()
         mobile          = (data.get("mobile") or "").strip()
         address         = (data.get("address") or "").strip()
@@ -512,6 +529,15 @@ def save_order():
             customer_id = row["id"] if row else None
 
         repeat_of = (data.get("repeat_of") or "").strip() or None
+
+        # For repeat orders — auto-link to customer's first ever order code
+        if use_repeat and existing_id and not repeat_of:
+            first_row = conn.execute(
+                "SELECT order_code FROM orders WHERE customer_id=? ORDER BY id ASC LIMIT 1",
+                (int(existing_id),)
+            ).fetchone()
+            if first_row:
+                repeat_of = first_row["order_code"]
 
         # Order
         cur = conn.execute("""
@@ -560,8 +586,15 @@ def save_order():
                              (order_id, real_url, img["id"]))
 
         conn.commit()
+        # Get loyalty code = customer's first ever order code
+        loyalty_row = conn.execute(
+            "SELECT order_code FROM orders WHERE customer_id=? ORDER BY id ASC LIMIT 1",
+            (customer_id,)
+        ).fetchone()
+        loyalty_code = loyalty_row["order_code"] if loyalty_row else order_code
         conn.close()
-        return jsonify({"status":"ok","order_id":order_id,"order_code":order_code,"repeat_of":repeat_of})
+        return jsonify({"status":"ok","order_id":order_id,"order_code":order_code,
+                        "repeat_of":repeat_of,"loyalty_code":loyalty_code})
 
     except Exception as e:
         try: conn.rollback(); conn.close()
@@ -573,9 +606,17 @@ def save_order():
 def print_slip(order_code):
     conn = get_db()
     o = conn.execute("""SELECT o.*,c.name as cname,c.mobile,c.address,
-        COALESCE(o.repeat_of,'') as repeat_of
+        COALESCE(o.repeat_of,'') as repeat_of, c.id as customer_id
         FROM orders o LEFT JOIN customers c ON c.id=o.customer_id WHERE o.order_code=?""",(order_code,)).fetchone()
     items = conn.execute("SELECT * FROM order_items WHERE order_id=?",(o["id"],)).fetchall() if o else []
+    # Get loyalty code = customer's first ever order code
+    loyalty_code = None
+    if o and o["customer_id"]:
+        first = conn.execute(
+            "SELECT order_code FROM orders WHERE customer_id=? ORDER BY id ASC LIMIT 1",
+            (o["customer_id"],)
+        ).fetchone()
+        loyalty_code = first["order_code"] if first else order_code
     conn.close()
     if not o:
         return "Order not found", 404
@@ -600,10 +641,13 @@ def print_slip(order_code):
 <style>
   *{{box-sizing:border-box;margin:0;padding:0;}}
   body{{font-family:'Segoe UI',Arial,sans-serif;background:#fff;color:#1a1d2e;max-width:420px;margin:0 auto;padding:0;}}
-  .header{{background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;padding:28px 24px;text-align:center;}}
+  .header{{background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;padding:24px 24px 20px;text-align:center;}}
   .shop-name{{font-size:22px;font-weight:800;letter-spacing:-0.5px;}}
-  .order-num{{font-size:32px;font-weight:900;letter-spacing:3px;margin:10px 0 4px;}}
-  .header-sub{{font-size:13px;opacity:0.85;}}
+  .loyalty-box{{display:inline-block;background:rgba(255,255,255,0.18);border:2px solid rgba(255,255,255,0.5);border-radius:12px;padding:8px 24px;margin:12px 0 6px;}}
+  .loyalty-label{{font-size:10px;font-weight:700;letter-spacing:2px;opacity:0.8;text-transform:uppercase;margin-bottom:2px;}}
+  .loyalty-code{{font-size:28px;font-weight:900;letter-spacing:4px;}}
+  .order-num{{font-size:18px;font-weight:700;letter-spacing:2px;opacity:0.85;margin:4px 0;}}
+  .header-sub{{font-size:12px;opacity:0.75;}}
   .section{{padding:16px 20px;border-bottom:1px solid #f0f0f0;}}
   .section-title{{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#9ca3af;margin-bottom:10px;}}
   .info-row{{display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px;}}
@@ -627,9 +671,15 @@ def print_slip(order_code):
 </head><body>
 <div class="header">
   <div class="shop-name">{shop_name_hi}</div>
-  <div style="font-size:13px;opacity:0.75;margin-top:2px;letter-spacing:0.5px;">{shop_name}</div>
-  <div class="order-num"># {order_code}</div>
-  <div class="header-sub">Order Receipt &nbsp;·&nbsp; {fmt_date(o["order_date"])}</div>
+  <div style="font-size:12px;opacity:0.7;margin-top:2px;letter-spacing:0.5px;">{shop_name}</div>
+  {"<!-- repeat order -->" if (loyalty_code and loyalty_code != order_code) else ""}
+  <div class="loyalty-box">
+    <div class="loyalty-label">{"⭐ Customer Code" if (loyalty_code and loyalty_code != order_code) else "⭐ Customer Code"}</div>
+    <div class="loyalty-code">{"#" + loyalty_code if loyalty_code else "#" + order_code}</div>
+  </div>
+  {"<div style='background:rgba(255,255,255,0.15);display:inline-block;border-radius:8px;padding:5px 16px;margin-top:4px;'><span style='font-size:11px;opacity:0.8;'>This Entry: </span><span style='font-size:16px;font-weight:800;letter-spacing:2px;'>#" + order_code + "</span></div>" if (loyalty_code and loyalty_code != order_code) else ""}
+  <div class="order-num">{"Order # " + order_code if not (loyalty_code and loyalty_code != order_code) else ""}</div>
+  <div class="header-sub">{fmt_date(o["order_date"])}</div>
 </div>
 
 <div class="section">
@@ -666,6 +716,12 @@ def print_slip(order_code):
 </body></html>"""
 
 
+@bp.route("/api/peek-repeat-code")
+def api_peek_repeat_code():
+    """Return next repeat code without incrementing — for display in UI."""
+    return jsonify({"code": peek_repeat_code()})
+
+
 @bp.route("/api/customers/search")
 def api_customer_search():
     q = request.args.get("q","").strip()
@@ -673,23 +729,31 @@ def api_customer_search():
         return jsonify([])
     conn = get_db()
     like = f"%{q}%"
-    # Search by order code first (if query looks like a number)
     results = []
-    if q.isdigit() or q.startswith("#"):
-        code = q.lstrip("#")
+    search_code = q.lstrip("#").lstrip("C-").lstrip("c-") if (
+        q.isdigit() or q.startswith("#") or q.upper().startswith("C-")
+    ) else None
+
+    if search_code and search_code.isdigit():
+        code = search_code
+        # Search by exact order code (original OR repeat order)
         order_rows = conn.execute("""
             SELECT c.id, c.name, c.mobile, c.address, o.order_code as matched_code
             FROM orders o JOIN customers c ON c.id = o.customer_id
-            WHERE o.order_code = ?
+            WHERE o.order_code = ? OR o.repeat_of = ?
             LIMIT 5
-        """, (code,)).fetchall()
+        """, (code, code)).fetchall()
+        seen_codes = set()
         for r in order_rows:
-            results.append({
-                "id": r["id"], "name": r["name"],
-                "mobile": r["mobile"] or "", "address": r["address"] or "",
-                "matched_code": r["matched_code"]
-            })
-    # Also search by name, mobile, address — include order_count for "old customer" badge
+            if r["id"] not in seen_codes:
+                results.append({
+                    "id": r["id"], "name": r["name"],
+                    "mobile": r["mobile"] or "", "address": r["address"] or "",
+                    "matched_code": code
+                })
+                seen_codes.add(r["id"])
+
+    # Also search by name, mobile, address
     rows = conn.execute("""
         SELECT c.id, c.name, c.mobile, c.address, COUNT(o.id) as order_count
         FROM customers c
@@ -705,11 +769,17 @@ def api_customer_search():
                 "mobile": r["mobile"] or "", "address": r["address"] or "",
                 "matched_code": None, "order_count": r["order_count"] or 0})
             seen_ids.add(r["id"])
-    # Also add order_count to the code-matched results
+
+    # Add order_count + permanent code (first order) to all results
     for res in results:
         if "order_count" not in res:
             cnt = conn.execute("SELECT COUNT(*) as c FROM orders WHERE customer_id=?", (res["id"],)).fetchone()
             res["order_count"] = cnt["c"] if cnt else 0
+        first = conn.execute(
+            "SELECT order_code FROM orders WHERE customer_id=? ORDER BY id ASC LIMIT 1",
+            (res["id"],)
+        ).fetchone()
+        res["loyalty_code"] = first["order_code"] if first else None
     conn.close()
     return jsonify(results[:15])
 
@@ -733,6 +803,13 @@ def api_customer_detail(customer_id):
         FROM orders o WHERE o.customer_id=?
         ORDER BY o.id DESC
     """, (customer_id,)).fetchall()
+
+    # Get customer's permanent code = first order ever
+    first_order = conn.execute(
+        "SELECT order_code FROM orders WHERE customer_id=? ORDER BY id ASC LIMIT 1",
+        (customer_id,)
+    ).fetchone()
+    permanent_code = first_order["order_code"] if first_order else None
 
     order_list = []
     for o in orders:
@@ -770,11 +847,13 @@ def api_customer_detail(customer_id):
 
     conn.close()
     return jsonify({
-        "id":       cust["id"],
-        "name":     cust["name"],
-        "mobile":   cust["mobile"] or "",
-        "address":  cust["address"] or "",
-        "orders":   order_list
+        "id":             cust["id"],
+        "name":           cust["name"],
+        "mobile":         cust["mobile"] or "",
+        "address":        cust["address"] or "",
+        "loyalty_code":   permanent_code,
+        "permanent_code": permanent_code,
+        "orders":         order_list
     })
 
 
