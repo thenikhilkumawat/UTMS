@@ -1,0 +1,447 @@
+{% extends "base.html" %}
+{% block title %}Edit Order #{{ order.order_code }} — Uttam Tailors{% endblock %}
+{% block content %}
+
+<div class="order-code-sticky">
+  Editing &nbsp;<span class="oc-num">#{{ order.order_code }}</span>
+</div>
+
+<div class="page-header">
+  <div>
+    <h1>✏️ Edit Order #{{ order.order_code }}</h1>
+    <div class="header-sub">Edit all details — customer, garments, images, payment</div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <a href="/owner/orders/detail/{{ order.order_code }}" class="btn btn-ghost btn-sm">← Back to Order</a>
+    <button class="menu-toggle" onclick="openSidebar()">☰</button>
+  </div>
+</div>
+
+<div class="page-body" style="padding:20px 28px;">
+
+  <!-- Tabs -->
+  <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:20px;">
+    {% for tab_id, tab_label in [('tab-customer','👤 Customer'),('tab-garments','✂️ Garments'),('tab-images','📷 Images'),('tab-payment','💰 Payment')] %}
+    <button id="tab-btn-{{tab_id}}" onclick="switchEditTab('{{tab_id}}')"
+      style="padding:10px 20px;font-size:13px;font-weight:800;border:none;background:none;
+             border-bottom:3px solid {% if loop.first %}var(--accent){% else %}transparent{% endif %};
+             color:{% if loop.first %}var(--accent){% else %}var(--text-muted){% endif %};
+             cursor:pointer;margin-bottom:-2px;">{{ tab_label }}</button>
+    {% endfor %}
+  </div>
+
+  <!-- TAB: Customer -->
+  <div id="tab-customer">
+    <div class="card mb-16">
+      <div class="card-header"><span class="card-title">👤 Customer Details</span></div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="field-wrap">
+            <label>Customer Name <span style="color:var(--danger);">*</span></label>
+            <input type="text" id="e-name" value="{{ order.cname or '' }}">
+          </div>
+          <div class="field-wrap">
+            <label>Mobile Number</label>
+            <input type="tel" id="e-mobile" value="{{ order.cmobile or '' }}" inputmode="numeric" maxlength="10"
+              oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)">
+          </div>
+          <div class="field-wrap full">
+            <label>Address</label>
+            <input type="text" id="e-address" value="{{ order.caddress or '' }}">
+          </div>
+          <div class="field-wrap">
+            <label>Order Date</label>
+            <input type="date" id="e-odate" value="{{ order.order_date[:10] if order.order_date else '' }}">
+          </div>
+          <div class="field-wrap">
+            <label>Delivery Date</label>
+            <input type="date" id="e-ddate" value="{{ order.delivery_date[:10] if order.delivery_date else '' }}">
+          </div>
+          <div class="field-wrap full">
+            <label>Special Note</label>
+            <input type="text" id="e-note" value="{{ order.note or '' }}">
+          </div>
+          <div class="field-wrap">
+            <label>Status</label>
+            <select id="e-status" style="padding:10px 14px;font-size:14px;font-weight:700;border:2px solid var(--border);border-radius:10px;background:#fff;">
+              {% for s in ['pending','ready','delivered','cancelled'] %}
+              <option value="{{ s }}" {% if order.status == s %}selected{% endif %}>{{ s|upper }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="field-wrap" style="flex-direction:row;align-items:center;gap:12px;padding:10px 0;">
+            <input type="checkbox" id="e-urgent" style="width:20px;height:20px;accent-color:var(--danger);cursor:pointer;"
+              {% if order.is_urgent %}checked{% endif %}>
+            <label for="e-urgent" style="text-transform:none;font-size:15px;font-weight:700;cursor:pointer;color:var(--danger);">🔥 Mark as Urgent</label>
+          </div>
+        </div>
+      </div>
+    </div>
+    <button onclick="saveEdit()" class="btn btn-success" style="width:100%;padding:14px;font-size:15px;font-weight:900;">💾 Save All Changes</button>
+  </div>
+
+  <!-- TAB: Garments -->
+  <div id="tab-garments" style="display:none;">
+    <div class="card mb-16">
+      <div class="card-header">
+        <span class="card-title">✂️ Garments & Measurements</span>
+        <span id="e-garment-count" style="font-size:12px;color:var(--accent);font-weight:700;"></span>
+      </div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:1fr 110px auto;gap:10px;align-items:end;background:#f9fafb;padding:16px;border-radius:10px;margin-bottom:12px;">
+          <div class="field-wrap">
+            <label>Garment Type</label>
+            <select id="e-g-type">
+              <option value="">-- Select --</option>
+              {% for name in garment_rates.keys() %}
+              <option value="{{ name }}">{{ name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="field-wrap">
+            <label>Qty</label>
+            <input type="number" id="e-g-qty" value="1" min="1" style="text-align:center;">
+          </div>
+          <button class="btn btn-primary" onclick="addEditGarment()" style="height:46px;margin-top:2px;padding:0 22px;">+ Add</button>
+        </div>
+        <div id="edit-garments-list"></div>
+        <div id="edit-garment-count-row" style="display:none;margin-top:10px;padding:10px 14px;background:#f0f9ff;border-radius:8px;font-size:13px;font-weight:600;color:var(--accent);">
+          <span id="e-g-count-text"></span>
+        </div>
+      </div>
+    </div>
+    <button onclick="saveEdit()" class="btn btn-success" style="width:100%;padding:14px;font-size:15px;font-weight:900;">💾 Save All Changes</button>
+  </div>
+
+  <!-- TAB: Images -->
+  <div id="tab-images" style="display:none;">
+    <div class="card mb-16">
+      <div class="card-header">
+        <span class="card-title">📷 Cloth Images</span>
+        <span style="font-size:12px;color:var(--text-muted);">Max 5 per order</span>
+      </div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:220px 1fr;gap:28px;align-items:start;">
+          <div style="text-align:center;">
+            <div style="border:1.5px solid var(--border);border-radius:12px;padding:14px;background:#fff;display:inline-block;">
+              <div id="edit-qr-box"></div>
+            </div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:8px;font-weight:600;">Scan to upload from phone</div>
+            <a href="/upload/{{ order.order_code }}" target="_blank"
+              class="btn btn-ghost btn-sm" style="margin-top:8px;display:block;">📷 Open Upload Page</a>
+          </div>
+          <div>
+            <div style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;">Photos auto-refresh every 4 seconds.</div>
+            <div id="edit-img-preview" style="display:flex;flex-wrap:wrap;gap:10px;min-height:80px;align-items:flex-start;">
+              {% if images %}
+                {% for img in images %}
+                <img src="{{ img }}" onclick="openEditOverlay('{{ img }}')"
+                  style="width:90px;height:90px;object-fit:cover;border-radius:10px;border:2px solid var(--border);cursor:zoom-in;transition:transform 0.15s;"
+                  onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                {% endfor %}
+              {% else %}
+              <div style="color:var(--text-muted);font-size:13px;padding:24px 0;">No images yet — scan QR or open upload page</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: Payment -->
+  <div id="tab-payment" style="display:none;">
+    <div class="card mb-16">
+      <div class="card-header"><span class="card-title">💰 Payment Details</span></div>
+      <div class="card-body">
+        <div style="background:#f9fafb;border-radius:12px;overflow:hidden;max-width:480px;">
+          <div style="display:flex;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--border);">
+            <span style="color:var(--text-secondary);font-size:14px;">Total Amount</span>
+            <input type="number" id="e-total" value="{{ order.total_amount|int }}" min="0"
+              oninput="recalcEditPayment()"
+              style="width:110px;text-align:right;padding:5px 8px;border:1.5px solid var(--border);border-radius:6px;font-size:14px;font-weight:700;">
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 18px;border-bottom:1px solid var(--border);">
+            <span style="color:var(--text-secondary);font-size:14px;">Extra Charges</span>
+            <input type="number" id="e-extra" value="{{ order.extra_charges|int }}" min="0"
+              oninput="recalcEditPayment()"
+              style="width:110px;text-align:right;padding:5px 8px;border:1.5px solid var(--border);border-radius:6px;font-size:14px;font-weight:600;">
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--border);background:var(--accent-light);">
+            <span style="font-weight:700;font-size:14px;">Net Payable</span>
+            <strong style="color:var(--accent);font-size:16px;">₹<span id="e-payable-display">{{ order.payable_amount|int }}</span></strong>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 18px;border-bottom:1px solid var(--border);">
+            <span style="color:var(--success);font-weight:700;font-size:14px;">Amount Received</span>
+            <input type="number" id="e-advance" value="{{ order.advance_paid|int }}" min="0"
+              oninput="recalcEditPayment()"
+              style="width:110px;text-align:right;padding:5px 8px;border:1.5px solid var(--success);border-radius:6px;font-size:14px;font-weight:700;color:var(--success);">
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:13px 18px;">
+            <span style="color:var(--danger);font-weight:700;font-size:14px;">Remaining Due</span>
+            <strong style="color:var(--danger);font-size:16px;">₹<span id="e-remaining-display">{{ order.remaining|int }}</span></strong>
+          </div>
+        </div>
+        <div style="margin-top:16px;max-width:480px;">
+          <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:8px;">Payment Mode</label>
+          <div style="display:flex;gap:8px;">
+            <button id="e-mode-cash" onclick="setEditMode('cash')"
+              style="flex:1;padding:12px;border-radius:10px;border:2px solid var(--success);background:var(--success-light);color:var(--success);font-size:13px;font-weight:800;cursor:pointer;">💵 Cash</button>
+            <button id="e-mode-upi" onclick="setEditMode('upi')"
+              style="flex:1;padding:12px;border-radius:10px;border:2px solid var(--border);background:#fff;color:var(--text-muted);font-size:13px;font-weight:800;cursor:pointer;">📱 UPI</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <button onclick="saveEdit()" class="btn btn-success" style="width:100%;padding:14px;font-size:15px;font-weight:900;">💾 Save All Changes</button>
+  </div>
+
+  <!-- Save result message -->
+  <div id="edit-save-msg" style="display:none;margin-top:16px;padding:14px 18px;border-radius:12px;font-size:14px;font-weight:700;text-align:center;"></div>
+
+</div>
+
+<!-- Image overlay -->
+<div id="edit-img-overlay" onclick="this.style.display='none'"
+  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.94);z-index:9999;align-items:center;justify-content:center;">
+  <img id="edit-overlay-img" style="max-width:90%;max-height:90%;border-radius:12px;object-fit:contain;">
+  <button onclick="document.getElementById('edit-img-overlay').style.display='none'"
+    style="position:absolute;top:20px;right:20px;background:rgba(255,255,255,0.15);border:none;color:#fff;width:40px;height:40px;border-radius:50%;font-size:20px;cursor:pointer;">✕</button>
+</div>
+
+{% endblock %}
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+const MEAS_FIELDS   = {{ meas_fields_json | safe }};
+const GARMENT_TYPES = {{ garment_types_json | safe }};
+const RATE_MAP      = {{ garment_rates_json | safe }};
+const ORDER_CODE    = "{{ order.order_code }}";
+
+var editGarments = {{ garments_json | safe }};
+var editPayMode  = "{{ order.payment_mode or 'cash' }}";
+var editImgTimer = null;
+
+// ── TABS ──────────────────────────────────────────────────────────
+var TABS = ["tab-customer","tab-garments","tab-images","tab-payment"];
+function switchEditTab(id) {
+  TABS.forEach(function(t){
+    document.getElementById(t).style.display = "none";
+    document.getElementById("tab-btn-"+t).style.borderBottomColor = "transparent";
+    document.getElementById("tab-btn-"+t).style.color = "var(--text-muted)";
+  });
+  document.getElementById(id).style.display = "block";
+  document.getElementById("tab-btn-"+id).style.borderBottomColor = "var(--accent)";
+  document.getElementById("tab-btn-"+id).style.color = "var(--accent)";
+  if (id==="tab-images") { buildEditQR(); startEditImgPoll(); }
+  else stopEditImgPoll();
+  if (id==="tab-garments") renderEditGarments();
+}
+
+// ── IMAGES ────────────────────────────────────────────────────────
+function buildEditQR() {
+  var box = document.getElementById("edit-qr-box");
+  if (!box || box.childNodes.length > 0) return;
+  var url = window.location.origin + "/upload/" + ORDER_CODE;
+  try { new QRCode(box,{text:url,width:160,height:160,colorDark:"#111827",colorLight:"#ffffff"}); }
+  catch(e) { box.innerHTML = '<a href="'+url+'" style="color:#6366f1;font-size:12px;">Open Link</a>'; }
+}
+
+function loadEditImages() {
+  fetch("/images/"+ORDER_CODE+"?ts="+Date.now())
+    .then(function(r){return r.text();})
+    .then(function(html){
+      var box = document.getElementById("edit-img-preview");
+      if (!box) return;
+      if (!html||!html.trim()){
+        if (!box.querySelector("img"))
+          box.innerHTML='<div style="color:var(--text-muted);font-size:13px;padding:24px 0;">No images yet</div>';
+        return;
+      }
+      var tmp=document.createElement("div"); tmp.innerHTML=html;
+      var imgs=tmp.querySelectorAll("img");
+      if(imgs.length > box.querySelectorAll("img").length) {
+        box.innerHTML="";
+        imgs.forEach(function(img){
+          var el=document.createElement("img");
+          el.src=img.src||img.getAttribute("src");
+          el.style.cssText="width:90px;height:90px;object-fit:cover;border-radius:10px;border:2px solid var(--border);cursor:zoom-in;transition:transform 0.15s;";
+          el.onmouseover=function(){this.style.transform="scale(1.05)";};
+          el.onmouseout=function(){this.style.transform="scale(1)";};
+          el.onclick=function(){openEditOverlay(this.src);};
+          box.appendChild(el);
+        });
+      }
+    });
+}
+function startEditImgPoll(){ loadEditImages(); editImgTimer=setInterval(loadEditImages,4000); }
+function stopEditImgPoll() { clearInterval(editImgTimer); editImgTimer=null; }
+function openEditOverlay(src){
+  document.getElementById("edit-overlay-img").src=src;
+  document.getElementById("edit-img-overlay").style.display="flex";
+}
+
+// ── GARMENTS ─────────────────────────────────────────────────────
+function addEditGarment() {
+  var type=document.getElementById("e-g-type").value.trim();
+  var qty=parseInt(document.getElementById("e-g-qty").value)||1;
+  if(!type){showToast("Select garment type","warning");return;}
+  editGarments.push({type:type,qty:qty,rate:parseFloat(RATE_MAP[type]||0),meas:{},notes:"",extraFields:[],selectedTypes:[]});
+  renderEditGarments();
+  document.getElementById("e-g-type").value="";
+  document.getElementById("e-g-qty").value="1";
+}
+
+function buildEGCard(g,idx){
+  var fields=MEAS_FIELDS[g.type]||[];
+  var std=fields.map(function(f){
+    return '<div class="meas-cell">'+
+      '<label style="font-size:12px;font-weight:800;color:#1e1b4b;">'+f+'</label>'+
+      '<input type="text" value="'+(g.meas[f]||'')+'" onchange="editGarments['+idx+'].meas[\''+f+'\']=this.value" placeholder="—">'+
+      '</div>';
+  }).join("");
+  var extra=(g.extraFields||[]).map(function(ef,ei){
+    return '<div class="meas-cell" style="position:relative;">'+
+      '<input type="text" value="'+ef.label+'" onchange="editGarments['+idx+'].extraFields['+ei+'].label=this.value" placeholder="Field" style="font-size:10px;padding:4px 6px;margin-bottom:4px;border:1px dashed var(--border);border-radius:4px;">'+
+      '<input type="text" value="'+ef.value+'" onchange="editGarments['+idx+'].extraFields['+ei+'].value=this.value" placeholder="—">'+
+      '<button onclick="editGarments['+idx+'].extraFields.splice('+ei+',1);renderEditGarments()" style="position:absolute;top:0;right:0;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:12px;">✕</button>'+
+      '</div>';
+  }).join("");
+  var addBtn='<div class="meas-cell"><label style="visibility:hidden;">+</label>'+
+    '<button onclick="editGarments['+idx+'].extraFields.push({label:\'\',value:\'\'});renderEditGarments()" '+
+    'style="width:100%;padding:8px 6px;border:2px dashed var(--accent);border-radius:8px;background:var(--accent-light);color:var(--accent);font-size:18px;cursor:pointer;">+</button></div>';
+  var chips=GARMENT_TYPES[g.type]||[];
+  var sel=g.selectedTypes||[];
+  var chipsHtml="";
+  if(chips.length>0){
+    var cb=chips.map(function(c){
+      var on=sel.indexOf(c.k)>=0;
+      return '<button type="button" onclick="toggleEGType('+idx+',\''+c.k+'\')" style="padding:7px 14px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;'+
+        (on?'background:#4f46e5;color:#fff;border:2px solid #4f46e5;':'background:#f1f5f9;color:#475569;border:2px solid #e2e8f0;')+'">'+c.v+'</button>';
+    }).join("");
+    chipsHtml='<div style="margin-top:10px;padding:10px 12px;background:#f8fafc;border-radius:10px;border:1.5px solid var(--border);"><div style="font-size:11px;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Style / Type</div><div style="display:flex;flex-wrap:wrap;gap:8px;">'+cb+'</div></div>';
+  }
+  return '<div class="garment-card" style="margin-bottom:12px;">'+
+    '<div class="garment-card-header">'+
+      '<div><div class="garment-card-title">'+g.type+'</div>'+
+        '<div style="display:flex;align-items:center;gap:8px;margin-top:4px;">'+
+          '<span style="font-size:12px;color:var(--text-muted);">Qty:</span>'+
+          '<input type="number" value="'+g.qty+'" min="1" onchange="editGarments['+idx+'].qty=parseInt(this.value)||1" style="width:56px;padding:3px 6px;font-size:13px;font-weight:700;text-align:center;border:1.5px solid var(--border);border-radius:6px;">'+
+          '<span style="font-size:12px;color:var(--text-muted);">Rate ₹</span>'+
+          '<input type="number" value="'+g.rate+'" min="0" onchange="editGarments['+idx+'].rate=parseFloat(this.value)||0" style="width:80px;padding:3px 8px;font-size:13px;font-weight:800;border:1.5px solid var(--success);border-radius:6px;color:var(--success);">'+
+        '</div></div>'+
+      '<button onclick="editGarments=editGarments.filter(function(x){return x!==editGarments['+idx+']});renderEditGarments()" style="background:var(--danger-light);color:var(--danger);border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:700;cursor:pointer;">✕ Remove</button>'+
+    '</div>'+
+    '<div class="meas-grid">'+std+extra+addBtn+'</div>'+
+    chipsHtml+
+    '<div style="margin-top:10px;"><input type="text" value="'+g.notes+'" onchange="editGarments['+idx+'].notes=this.value" placeholder="Special notes..." style="width:100%;font-size:13px;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;"></div>'+
+  '</div>';
+}
+
+function toggleEGType(idx,typeKey){
+  if(!editGarments[idx].selectedTypes) editGarments[idx].selectedTypes=[];
+  var pos=editGarments[idx].selectedTypes.indexOf(typeKey);
+  if(pos>=0) editGarments[idx].selectedTypes.splice(pos,1);
+  else editGarments[idx].selectedTypes.push(typeKey);
+  renderEditGarments();
+}
+
+function renderEditGarments(){
+  var box=document.getElementById("edit-garments-list");
+  var cr=document.getElementById("edit-garment-count-row");
+  if(!box) return;
+  // Ensure all garments have required arrays
+  editGarments.forEach(function(g){ if(!g.extraFields) g.extraFields=[]; if(!g.selectedTypes) g.selectedTypes=[]; });
+  box.innerHTML=editGarments.map(buildEGCard).join("");
+  cr.style.display=editGarments.length?"block":"none";
+  document.getElementById("e-g-count-text").textContent=editGarments.length+" garment"+(editGarments.length!==1?"s":"")+" in this order";
+  document.getElementById("e-garment-count").textContent=editGarments.length?editGarments.length+" items":"";
+}
+
+// ── PAYMENT ───────────────────────────────────────────────────────
+function recalcEditPayment(){
+  var total=parseFloat(document.getElementById("e-total").value)||0;
+  var extra=parseFloat(document.getElementById("e-extra").value)||0;
+  var payable=total+extra;
+  var advance=parseFloat(document.getElementById("e-advance").value)||0;
+  document.getElementById("e-payable-display").textContent=payable;
+  document.getElementById("e-remaining-display").textContent=Math.max(0,payable-advance);
+}
+
+function setEditMode(mode){
+  editPayMode=mode; var isCash=mode==="cash";
+  document.getElementById("e-mode-cash").style.cssText=isCash?"flex:1;padding:12px;border-radius:10px;border:2px solid var(--success);background:var(--success-light);color:var(--success);font-size:13px;font-weight:800;cursor:pointer;":"flex:1;padding:12px;border-radius:10px;border:2px solid var(--border);background:#fff;color:var(--text-muted);font-size:13px;font-weight:800;cursor:pointer;";
+  document.getElementById("e-mode-upi").style.cssText=!isCash?"flex:1;padding:12px;border-radius:10px;border:2px solid var(--accent);background:var(--accent-light);color:var(--accent);font-size:13px;font-weight:800;cursor:pointer;":"flex:1;padding:12px;border-radius:10px;border:2px solid var(--border);background:#fff;color:var(--text-muted);font-size:13px;font-weight:800;cursor:pointer;";
+}
+
+// ── SAVE ──────────────────────────────────────────────────────────
+function saveEdit(){
+  var btns=document.querySelectorAll(".btn-success");
+  btns.forEach(function(b){b.disabled=true;b.textContent="Saving...";});
+
+  var total=parseFloat(document.getElementById("e-total").value)||0;
+  var extra=parseFloat(document.getElementById("e-extra").value)||0;
+  var payable=total+extra;
+  var advance=parseFloat(document.getElementById("e-advance").value)||0;
+  var remaining=Math.max(0,payable-advance);
+
+  var items=editGarments.map(function(g){
+    var meas=Object.assign({},g.meas);
+    (g.extraFields||[]).forEach(function(ef){if(ef.label)meas[ef.label]=ef.value;});
+    return {type:g.type,qty:g.qty,rate:g.rate,measurements:meas,notes:g.notes,selectedTypes:g.selectedTypes||[]};
+  });
+
+  var payload={
+    customer_name: document.getElementById("e-name").value.trim(),
+    mobile:        document.getElementById("e-mobile").value.trim(),
+    address:       document.getElementById("e-address").value.trim(),
+    order_date:    document.getElementById("e-odate").value,
+    delivery_date: document.getElementById("e-ddate").value,
+    note:          document.getElementById("e-note").value.trim(),
+    is_urgent:     document.getElementById("e-urgent").checked,
+    status:        document.getElementById("e-status").value,
+    total_amount:  total,
+    extra_charges: extra,
+    payable_amount:payable,
+    advance_paid:  advance,
+    remaining:     remaining,
+    payment_mode:  editPayMode,
+    garments:      items
+  };
+
+  fetch("/owner/orders/edit/"+ORDER_CODE+"/save",{
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body:JSON.stringify(payload)
+  })
+  .then(function(r){return r.json();})
+  .then(function(d){
+    btns.forEach(function(b){b.disabled=false;b.textContent="💾 Save All Changes";});
+    var msg=document.getElementById("edit-save-msg");
+    if(d.ok){
+      msg.style.background="#d1fae5"; msg.style.color="#065f46";
+      msg.textContent="✅ Order saved successfully!";
+      msg.style.display="block";
+      setTimeout(function(){
+        window.location.href="/owner/orders/detail/"+ORDER_CODE;
+      },1000);
+    } else {
+      msg.style.background="#fee2e2"; msg.style.color="#dc2626";
+      msg.textContent="❌ "+(d.error||"Save failed");
+      msg.style.display="block";
+    }
+    window.scrollTo({top:document.body.scrollHeight,behavior:"smooth"});
+  })
+  .catch(function(){
+    btns.forEach(function(b){b.disabled=false;b.textContent="💾 Save All Changes";});
+    showToast("Network error. Try again.","error");
+  });
+}
+
+// ── INIT ──────────────────────────────────────────────────────────
+document.addEventListener("DOMContentLoaded", function(){
+  renderEditGarments();
+  setEditMode(editPayMode);
+  recalcEditPayment();
+});
+</script>
+{% endblock %}
