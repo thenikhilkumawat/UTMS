@@ -45,7 +45,7 @@
             onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
             <div style="flex:1;">
               <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                <span style="font-size:15px;font-weight:900;color:var(--accent);">#{{ o.order_code }}</span>
+                <span style="font-size:15px;font-weight:900;color:var(--accent);">#{{ o.display_code }}</span>{% if o.entry_code %}<span style="background:#f1f5f9;color:#64748b;font-size:10px;font-weight:700;padding:1px 6px;border-radius:5px;margin-left:4px;">Entry #{{ o.entry_code }}</span>{% endif %}
                 <span style="font-size:11px;padding:2px 8px;border-radius:8px;font-weight:700;
                   background:{% if o.status=='delivered' %}#d1fae5;color:#065f46{% elif o.status=='ready' %}#ede9fe;color:#6d28d9{% else %}#dbeafe;color:#1e40af{% endif %};">{{ o.status|title }}</span>
                 {% if o.repeat_of %}<span style="font-size:10px;color:#4338ca;background:#eef2ff;padding:1px 6px;border-radius:5px;">↩#{{ o.repeat_of }}</span>{% endif %}
