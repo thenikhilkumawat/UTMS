@@ -239,9 +239,17 @@ def upload_images(order_code):
                 conn = get_db()
                 order = conn.execute("SELECT id FROM orders WHERE order_code=?", (order_code,)).fetchone()
                 order_id = order["id"] if order else 0
-                existing_count = conn.execute(
-                    "SELECT COUNT(*) as c FROM order_images WHERE order_id=?", (order_id,)
-                ).fetchone()["c"] or 0
+                if order_id:
+                    # Order exists — count its images directly
+                    existing_count = conn.execute(
+                        "SELECT COUNT(*) as c FROM order_images WHERE order_id=?", (order_id,)
+                    ).fetchone()["c"] or 0
+                else:
+                    # Order not saved yet — count only THIS order's temp images
+                    existing_count = conn.execute(
+                        "SELECT COUNT(*) as c FROM order_images WHERE order_id=0 AND file_path LIKE ?",
+                        (f"temp:{order_code}:%",)
+                    ).fetchone()["c"] or 0
                 slots = max(0, 5 - existing_count)
                 for f in files:
                     if saved >= slots: break
@@ -574,14 +582,15 @@ def save_order():
                 (order_date, advance_paid, payment_mode, order_id,
                  f"Advance for order #{order_code}", now))
 
-        # Link temp images (Cloudinary URLs stored before order existed)
+        # Link temp images — use upload_code (where images were actually uploaded)
+        upload_code = (data.get("upload_code") or order_code).strip()
         if order_id:
             temp_imgs = conn.execute(
                 "SELECT id, file_path FROM order_images WHERE order_id=0 AND file_path LIKE ?",
-                (f"temp:{order_code}:%",)
+                (f"temp:{upload_code}:%",)
             ).fetchall()
             for img in temp_imgs:
-                real_url = img["file_path"][len(f"temp:{order_code}:"):]
+                real_url = img["file_path"][len(f"temp:{upload_code}:"):]
                 conn.execute("UPDATE order_images SET order_id=?, file_path=? WHERE id=?",
                              (order_id, real_url, img["id"]))
 
