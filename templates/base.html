@@ -199,5 +199,35 @@ fetch("/api/settings/logo").then(r=>r.json()).then(d=>{
 }).catch(()=>{});
 </script>
 {% block extra_js %}{% endblock %}
+
+<!-- Screen size auto-detector -->
+<div id="screen-indicator"></div>
+<script>
+(function(){
+  var ind = document.getElementById("screen-indicator");
+  var timer;
+
+  function getMode(w) {
+    if (w <= 480)  return { label:"📱 Phone",        cls:"xs" };
+    if (w <= 768)  return { label:"📱 Tablet Portrait", cls:"sm" };
+    if (w <= 1024) return { label:"💻 Tablet / Small Laptop", cls:"md" };
+    if (w <= 1280) return { label:"💻 Laptop",        cls:"lg" };
+    return               { label:"🖥️ Desktop",        cls:"xl" };
+  }
+
+  function update() {
+    var m = getMode(window.innerWidth);
+    document.body.className = document.body.className.replace(/\bscreen-\S+/g,"").trim();
+    document.body.classList.add("screen-" + m.cls);
+    ind.textContent = m.label + " — " + window.innerWidth + "px";
+    ind.classList.remove("hidden");
+    clearTimeout(timer);
+    timer = setTimeout(function(){ ind.classList.add("hidden"); }, 2500);
+  }
+
+  update();
+  window.addEventListener("resize", update);
+})();
+</script>
 </body>
 </html>
