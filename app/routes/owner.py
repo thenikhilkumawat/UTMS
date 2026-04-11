@@ -1857,6 +1857,7 @@ def owner_orders():
                    COALESCE(o.remaining,0) as remaining,
                    COALESCE(o.is_urgent,0) as is_urgent,
                    COALESCE(o.note,'') as note,
+                   COALESCE(o.repeat_of,'') as repeat_of,
                    COALESCE(c.name,'—') as cname, COALESCE(c.mobile,'') as mobile,
                    STRING_AGG(CAST(oi.garment_type||' x'||oi.quantity AS TEXT), ', ') as garments_str
             FROM orders o
@@ -1879,6 +1880,9 @@ def owner_orders():
 
     orders = [{
         "order_code":    r["order_code"],
+        "display_code":  r["repeat_of"] if r["repeat_of"] else r["order_code"],
+        "entry_code":    r["order_code"] if r["repeat_of"] else "",
+        "repeat_of":     r["repeat_of"] or "",
         "status":        r["status"],
         "order_date":    fmtd(r["order_date"]),
         "delivery_date": fmtd(r["delivery_date"]),
