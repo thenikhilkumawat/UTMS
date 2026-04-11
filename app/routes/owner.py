@@ -545,6 +545,7 @@ def dashboard():
     today_str = datetime.today().strftime("%A, %d %B %Y")
     d = date.today()
     today_date = f"{d.day:02d}-{d.month:02d}-{d.year}"
+    last_backup = get_setting("last_backup_at", "")
 
     garment_names = [
         "Shirt","Shirt Linen","Pant","Pant Double","Jeans","Suit 2pc","Suit 3pc",
@@ -579,6 +580,7 @@ def dashboard():
         garment_rates=garment_rates,
         stitch_rates=stitch_rates,
         today_transactions=today_transactions,
+        last_backup=last_backup,
         stats={
             "today_income":  fin_today.get("income",0),
             "today_expense": fin_today.get("expense",0),
@@ -2190,3 +2192,261 @@ def api_employee_skill():
     conn.execute("UPDATE employees SET skills=? WHERE id=?", (skills, emp_id))
     conn.commit(); conn.close()
     return jsonify({"ok":True})
+
+
+# ══════════════════════════════════════════════
+#  PAST ORDERS (OLD DATA ENTRY)
+# ══════════════════════════════════════════════
+
+@bp.route("/past-orders")
+@owner_required
+def past_orders():
+    """Page to enter old/historical delivered orders — mirrors new_order flow."""
+    import json as _json
+    conn = get_db()
+
+    # Garment rates
+    garment_names = [
+        "Shirt","Shirt Linen","Pant","Pant Double","Jeans","Suit 2pc","Suit 3pc",
+        "Blazer","Kurta","Kurta Pajama","Pajama","Pathani","Sherwani","Safari","Waistcoat",
+        "Alteration","Cutting Only"
+    ]
+    garment_rates = {}
+    for n in garment_names:
+        r = get_setting("customer_rate_"+n,"") or get_setting("rate_"+n,"0")
+        garment_rates[n] = r
+    custom_rates = conn.execute("SELECT key,value FROM settings WHERE key LIKE 'customer_rate_%'").fetchall()
+    for row in custom_rates:
+        name = row["key"][14:]
+        if name not in garment_rates:
+            garment_rates[name] = row["value"]
+
+    # Measurement fields
+    meas_rows = conn.execute("SELECT garment_type, field_name FROM measurement_fields ORDER BY garment_type, sort_order").fetchall()
+    meas_fields = {}
+    for r in meas_rows:
+        meas_fields.setdefault(r["garment_type"], []).append(r["field_name"])
+
+    # Garment type chips
+    garment_types = {}
+    for row in conn.execute("SELECT key, value FROM settings WHERE key LIKE 'types_%'").fetchall():
+        gname = row["key"][6:]
+        pairs = []
+        for t in (row["value"] or "").split("|"):
+            if ":" in t:
+                k, v = t.split(":", 1)
+                pairs.append({"k": k.strip(), "v": v.strip()})
+        if pairs:
+            garment_types[gname] = pairs
+
+    # Peek next order code for display
+    from database import peek_order_code
+    next_code = peek_order_code()
+
+    conn.close()
+    return render_template("owner/past_orders.html",
+        active_page="past_orders",
+        garment_rates=garment_rates,
+        garment_rates_json=_json.dumps({k: float(v) for k, v in garment_rates.items()}),
+        meas_fields_json=_json.dumps(meas_fields),
+        garment_types_json=_json.dumps(garment_types),
+        next_code=next_code,
+    )
+
+@bp.route("/past-orders/save", methods=["POST"])
+@owner_required
+def past_orders_save():
+    """Save a past/historical delivered order."""
+    from database import next_order_code
+    data = request.get_json(silent=True) or {}
+
+    customer_name  = (data.get("customer_name") or "").strip()
+    customer_mobile= (data.get("mobile") or "").strip()
+    order_date     = (data.get("order_date") or "").strip()
+    delivery_date  = (data.get("delivery_date") or "").strip()
+    total_amount   = float(data.get("total_amount") or 0)
+    advance_paid   = float(data.get("advance_paid") or 0)
+    payment_mode   = (data.get("payment_mode") or "cash").strip()
+    note           = (data.get("note") or "").strip()
+    garments       = data.get("garments") or []   # [{type, qty, rate}]
+    order_code_override = (data.get("order_code") or "").strip()
+
+    if not customer_name:
+        return jsonify({"ok": False, "error": "Customer name required"})
+
+    payable    = total_amount
+    remaining  = max(0, payable - advance_paid)
+    now_str    = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    conn = get_db()
+    try:
+        # Find or create customer
+        row = conn.execute("SELECT id FROM customers WHERE name=? AND (mobile=? OR mobile IS NULL OR mobile='')",
+                           (customer_name, customer_mobile)).fetchone()
+        if row:
+            customer_id = row["id"]
+        else:
+            conn.execute("INSERT INTO customers(name,mobile,created_at) VALUES(?,?,?)",
+                         (customer_name, customer_mobile, now_str))
+            conn.commit()
+            cur = conn.execute("SELECT id FROM customers WHERE name=? ORDER BY id DESC LIMIT 1", (customer_name,))
+            customer_id = cur.fetchone()["id"]
+
+        # Determine order code
+        if order_code_override:
+            # Check it doesn't clash
+            clash = conn.execute("SELECT id FROM orders WHERE order_code=?", (order_code_override,)).fetchone()
+            if clash:
+                return jsonify({"ok": False, "error": f"Order code {order_code_override} already exists"})
+            order_code = order_code_override
+        else:
+            order_code = next_order_code()
+
+        conn.execute("""
+            INSERT INTO orders(order_code,customer_id,order_date,delivery_date,
+                total_amount,extra_charges,payable_amount,advance_paid,remaining,
+                payment_mode,status,is_urgent,note,delivered_at,created_at)
+            VALUES(?,?,?,?,?,0,?,?,?,?,'delivered',0,?,?,?)
+        """, (order_code, customer_id, order_date, delivery_date,
+              total_amount, payable, advance_paid, remaining,
+              payment_mode, note, delivery_date or now_str[:10], now_str))
+        conn.commit()
+
+        # Get the newly inserted order id
+        ord_row = conn.execute("SELECT id FROM orders WHERE order_code=?", (order_code,)).fetchone()
+        order_id = ord_row["id"]
+
+        # Insert garment items
+        for g in garments:
+            gtype = (g.get("type") or "").strip()
+            qty   = int(g.get("qty") or 1)
+            rate  = float(g.get("rate") or 0)
+            amt   = qty * rate
+            meas  = g.get("measurements") or {}
+            notes = (g.get("notes") or "").strip()
+            if gtype:
+                import json as _gj
+                conn.execute("""
+                    INSERT INTO order_items(order_id,garment_type,quantity,rate,amount,measurements,notes)
+                    VALUES(?,?,?,?,?,?,?)
+                """, (order_id, gtype, qty, rate, amt, _gj.dumps(meas), notes))
+
+        # Finance entry for payment received
+        if advance_paid > 0:
+            conn.execute("""
+                INSERT INTO finance(tx_date,tx_type,category,amount,mode,order_id,note,created_by,created_at)
+                VALUES(?,?,?,?,?,?,?,?,?)
+            """, (delivery_date or now_str[:10], "income", "payment",
+                  advance_paid, payment_mode, order_id,
+                  f"Past order #{order_code} - {customer_name}", "owner", now_str))
+
+        conn.commit()
+        conn.close()
+        return jsonify({"ok": True, "order_code": order_code})
+    except Exception as e:
+        try: conn.close()
+        except: pass
+        return jsonify({"ok": False, "error": str(e)})
+
+
+# ══════════════════════════════════════════════
+#  AUTO-BACKUP: FULL EXCEL EXPORT (ALL TABLES)
+# ══════════════════════════════════════════════
+
+@bp.route("/backup/excel")
+@owner_required
+def backup_excel():
+    """Full Excel backup with all tables as separate sheets."""
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment
+    from io import BytesIO
+    import json as _json
+
+    conn = get_db()
+    wb   = openpyxl.Workbook()
+
+    hdr_fill = PatternFill("solid", fgColor="6366F1")
+    hdr_font = Font(bold=True, color="FFFFFF", size=11)
+
+    def write_sheet(ws, rows):
+        if not rows:
+            ws.append(["No data"])
+            return
+        keys = list(rows[0].keys())
+        # Header row
+        for col, k in enumerate(keys, 1):
+            cell = ws.cell(row=1, column=col, value=k.upper())
+            cell.font = hdr_font
+            cell.fill = hdr_fill
+            cell.alignment = Alignment(horizontal="center")
+        ws.freeze_panes = "A2"
+        for r_idx, row in enumerate(rows, 2):
+            for col, k in enumerate(keys, 1):
+                ws.cell(row=r_idx, column=col, value=str(row[k] or "") if row[k] is not None else "")
+        for col in ws.columns:
+            max_len = max((len(str(c.value or "")) for c in col), default=8)
+            ws.column_dimensions[col[0].column_letter].width = min(max_len + 3, 45)
+
+    # Sheet 1: Orders (with customer name & garments)
+    ws1 = wb.active
+    ws1.title = "Orders"
+    orders = conn.execute("""
+        SELECT o.order_code, c.name as customer, c.mobile, o.order_date, o.delivery_date,
+               o.status, o.total_amount, o.advance_paid, o.remaining, o.payment_mode,
+               o.note, o.delivered_at, o.created_at
+        FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
+        ORDER BY o.id DESC
+    """).fetchall()
+    write_sheet(ws1, orders)
+
+    # Sheet 2: Order Items
+    ws2 = wb.create_sheet("Order Items")
+    items = conn.execute("""
+        SELECT oi.id, o.order_code, c.name as customer, oi.garment_type,
+               oi.quantity, oi.rate, oi.amount, oi.measurements, oi.notes
+        FROM order_items oi
+        JOIN orders o ON o.id=oi.order_id
+        LEFT JOIN customers c ON c.id=o.customer_id
+        ORDER BY oi.id DESC
+    """).fetchall()
+    write_sheet(ws2, items)
+
+    # Sheet 3: Customers
+    ws3 = wb.create_sheet("Customers")
+    customers = conn.execute("SELECT * FROM customers ORDER BY id DESC").fetchall()
+    write_sheet(ws3, customers)
+
+    # Sheet 4: Finance
+    ws4 = wb.create_sheet("Finance")
+    finance = conn.execute("""
+        SELECT f.id, f.tx_date, f.tx_type, f.category, f.amount, f.mode,
+               o.order_code, f.note, f.created_by, f.created_at
+        FROM finance f LEFT JOIN orders o ON o.id=f.order_id
+        ORDER BY f.id DESC
+    """).fetchall()
+    write_sheet(ws4, finance)
+
+    # Sheet 5: Work Logs
+    ws5 = wb.create_sheet("Work Logs")
+    wlogs = conn.execute("SELECT * FROM work_logs ORDER BY id DESC").fetchall()
+    write_sheet(ws5, wlogs)
+
+    # Sheet 6: Employees
+    ws6 = wb.create_sheet("Employees")
+    emps = conn.execute("SELECT * FROM employees ORDER BY id").fetchall()
+    write_sheet(ws6, emps)
+
+    conn.close()
+
+    # Update last_backup_at setting
+    set_setting("last_backup_at", datetime.now().strftime("%Y-%m-%d %H:%M"))
+
+    buf = BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+
+    from flask import send_file
+    fname = f"uttam_tailors_backup_{datetime.now().strftime('%d-%m-%Y_%H%M')}.xlsx"
+    return send_file(buf,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        as_attachment=True, download_name=fname)
