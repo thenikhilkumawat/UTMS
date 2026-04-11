@@ -989,7 +989,7 @@ var _uploadPollTimer = null;
 var _uploadPollCount = 0;
 
 function openUploadPopup(flowType) {
-  var code = ORDER_CODE;
+  var code = getActiveUploadCode();
   if (!code || code === "None" || code === "" || code === "0") {
     showToast("Order code not ready. Enter garments first and proceed to Images step.", "warning");
     return;
@@ -1169,16 +1169,24 @@ function renderExistingGarments() {
 }
 
 // ── IMAGES ────────────────────────────────
+function getActiveUploadCode() {
+  // Existing customer flow uses REPEAT_CODE; new customer uses ORDER_CODE
+  return (activeFlow === "existing" && REPEAT_CODE) ? REPEAT_CODE : ORDER_CODE;
+}
+
 function buildQR(boxId, linkId) {
   const box=document.getElementById(boxId); if(!box) return;
   box.innerHTML="";
-  const url=window.location.origin+"/upload/"+ORDER_CODE;
+  const code = getActiveUploadCode();
+  const url=window.location.origin+"/upload/"+code;
   const link=document.getElementById(linkId); if(link) link.href=url;
   try{new QRCode(box,{text:url,width:170,height:170,colorDark:"#111827",colorLight:"#ffffff"});}
   catch(e){box.innerHTML=`<a href="${url}">${url}</a>`;}
 }
+
 function loadImages(previewId) {
-  fetch("/images/"+ORDER_CODE+"?ts="+Date.now()).then(r=>r.text()).then(html=>{
+  const code = getActiveUploadCode();
+  fetch("/images/"+code+"?ts="+Date.now()).then(r=>r.text()).then(html=>{
     const box=document.getElementById(previewId);
     if(!box) return;
     if(!html||!html.trim()){
@@ -1297,8 +1305,9 @@ function confirmOrder(flow) {
 
   const p={
     order_code:ORDER_CODE, customer_type:flow,
-    use_repeat_code: !isNew,        // existing customer → use 0001, 0002...
+    use_repeat_code: !isNew,
     repeat_of: !isNew ? ecPermanentCode : (repeatOf||null),
+    upload_code: getActiveUploadCode(),  // where images were actually uploaded
     customer_name:name, mobile, address,
     existing_customer_id:custId,
     order_date:odate, delivery_date:ddate, note, is_urgent:urgent,
@@ -1349,7 +1358,9 @@ function showSuccess() {
     document.getElementById("sc_repeat_badge").style.display = "block";
   }
 
-  fetch("/images/"+currentCode+"?ts="+Date.now()).then(r=>r.text()).then(html=>{
+  // Images were uploaded to the upload code (REPEAT_CODE for existing, ORDER_CODE for new)
+  const imgCode = savedPayload.upload_code || currentCode;
+  fetch("/images/"+imgCode+"?ts="+Date.now()).then(r=>r.text()).then(html=>{
     if(html&&html.trim()){
       const box=document.getElementById("success-img-list");
       box.innerHTML=html;
