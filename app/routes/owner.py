@@ -1657,7 +1657,6 @@ def api_order_detail(order_code):
 
     items = conn.execute("SELECT * FROM order_items WHERE order_id=?", (o["id"],)).fetchall()
     wl_rows = conn.execute("SELECT qty_done, notes FROM work_logs WHERE order_code=?", (order_code,)).fetchall()
-    conn.close()
 
     # Progress
     naap=kataai=silai=0
@@ -1678,6 +1677,8 @@ def api_order_detail(order_code):
     images=[]
     img_rows=conn.execute("SELECT file_path FROM order_images WHERE order_id=? ORDER BY id",(o["id"],)).fetchall()
     images=[r["file_path"] for r in img_rows if r["file_path"] and not r["file_path"].startswith("temp:")]
+    conn.close()
+
     if not images:
         folder=_os.path.join(Config.UPLOAD_FOLDER, order_code)
         if _os.path.isdir(folder):
@@ -2450,3 +2451,148 @@ def backup_excel():
     return send_file(buf,
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         as_attachment=True, download_name=fname)
+
+
+# ══════════════════════════════════════════════
+#  EDIT ORDER (full edit — all fields + images)
+# ══════════════════════════════════════════════
+
+@bp.route("/orders/edit/<order_code>")
+@owner_required
+def order_edit(order_code):
+    import json as _json, os as _os
+    from config import Config
+    conn = get_db()
+
+    o = conn.execute("""
+        SELECT o.*, c.name as cname, c.mobile as cmobile, c.address as caddress, c.id as cid
+        FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
+        WHERE o.order_code=?
+    """, (order_code,)).fetchone()
+    if not o:
+        conn.close()
+        return "<h2>Order not found</h2>", 404
+
+    items = conn.execute("SELECT * FROM order_items WHERE order_id=?", (o["id"],)).fetchall()
+    garments = []
+    for it in items:
+        try: meas = _json.loads(it["measurements"] or "{}")
+        except: meas = {}
+        garments.append({"type":it["garment_type"],"qty":it["quantity"],
+                         "rate":it["rate"],"meas":meas,"notes":it["notes"] or ""})
+
+    # Images
+    images = []
+    rows = conn.execute("SELECT file_path FROM order_images WHERE order_id=? ORDER BY id", (o["id"],)).fetchall()
+    images = [r["file_path"] for r in rows if r["file_path"] and not r["file_path"].startswith("temp:")]
+    if not images:
+        folder = _os.path.join(Config.UPLOAD_FOLDER, order_code)
+        if _os.path.isdir(folder):
+            images = [f"/static/order_images/{order_code}/{f}"
+                      for f in sorted(_os.listdir(folder))
+                      if f.lower().endswith((".jpg",".jpeg",".png",".gif",".webp"))]
+
+    # Garment rates + measurement fields
+    garment_names = ["Shirt","Shirt Linen","Pant","Pant Double","Jeans","Suit 2pc","Suit 3pc",
+        "Blazer","Kurta","Kurta Pajama","Pajama","Pathani","Sherwani","Safari","Waistcoat",
+        "Alteration","Cutting Only"]
+    garment_rates = {n: get_setting("customer_rate_"+n,"") or get_setting("rate_"+n,"0") for n in garment_names}
+    custom = conn.execute("SELECT key,value FROM settings WHERE key LIKE 'customer_rate_%'").fetchall()
+    for row in custom:
+        name = row["key"][14:]
+        if name not in garment_rates: garment_rates[name] = row["value"]
+
+    meas_fields = {}
+    for r in conn.execute("SELECT garment_type, field_name FROM measurement_fields ORDER BY garment_type, sort_order").fetchall():
+        meas_fields.setdefault(r["garment_type"], []).append(r["field_name"])
+
+    garment_types = {}
+    for row in conn.execute("SELECT key, value FROM settings WHERE key LIKE 'types_%'").fetchall():
+        gname = row["key"][6:]
+        pairs = []
+        for t in (row["value"] or "").split("|"):
+            if ":" in t:
+                k, v = t.split(":", 1)
+                pairs.append({"k": k.strip(), "v": v.strip()})
+        if pairs: garment_types[gname] = pairs
+
+    urgent_count = conn.execute("SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status!='delivered'").fetchone()["c"]
+    conn.close()
+
+    return render_template("owner/order_edit.html",
+        active_page="owner_orders", show_voice=False,
+        urgent_count=urgent_count,
+        order=dict(o),
+        garments_json=_json.dumps(garments),
+        images=images,
+        garment_rates=garment_rates,
+        garment_rates_json=_json.dumps({k: float(v) for k, v in garment_rates.items()}),
+        meas_fields_json=_json.dumps(meas_fields),
+        garment_types_json=_json.dumps(garment_types),
+    )
+
+
+@bp.route("/orders/edit/<order_code>/save", methods=["POST"])
+@owner_required
+def order_edit_save(order_code):
+    import json as _json
+    data = request.get_json(silent=True) or {}
+    conn = get_db()
+    try:
+        o = conn.execute("SELECT id, customer_id FROM orders WHERE order_code=?", (order_code,)).fetchone()
+        if not o:
+            return jsonify({"ok": False, "error": "Order not found"})
+        order_id    = o["id"]
+        customer_id = o["customer_id"]
+
+        # Update customer
+        name    = (data.get("customer_name") or "").strip()
+        mobile  = (data.get("mobile") or "").strip()
+        address = (data.get("address") or "").strip()
+        if name:
+            conn.execute("UPDATE customers SET name=?, mobile=?, address=? WHERE id=?",
+                         (name, mobile, address, customer_id))
+
+        # Update order
+        conn.execute("""
+            UPDATE orders SET
+                order_date=?, delivery_date=?, note=?, is_urgent=?,
+                total_amount=?, extra_charges=?, payable_amount=?,
+                advance_paid=?, remaining=?, payment_mode=?, status=?
+            WHERE id=?
+        """, (
+            data.get("order_date",""),
+            data.get("delivery_date",""),
+            data.get("note",""),
+            1 if data.get("is_urgent") else 0,
+            float(data.get("total_amount",0)),
+            float(data.get("extra_charges",0)),
+            float(data.get("payable_amount",0)),
+            float(data.get("advance_paid",0)),
+            float(data.get("remaining",0)),
+            data.get("payment_mode","cash"),
+            data.get("status","pending"),
+            order_id
+        ))
+
+        # Replace garment items
+        conn.execute("DELETE FROM order_items WHERE order_id=?", (order_id,))
+        for g in (data.get("garments") or []):
+            gtype = (g.get("type") or "").strip()
+            qty   = int(g.get("qty") or 1)
+            rate  = float(g.get("rate") or 0)
+            meas  = g.get("measurements") or {}
+            notes = (g.get("notes") or "").strip()
+            if gtype:
+                conn.execute("""
+                    INSERT INTO order_items(order_id,garment_type,quantity,rate,amount,measurements,notes)
+                    VALUES(?,?,?,?,?,?,?)
+                """, (order_id, gtype, qty, rate, qty*rate, _json.dumps(meas), notes))
+
+        conn.commit()
+        conn.close()
+        return jsonify({"ok": True})
+    except Exception as e:
+        try: conn.close()
+        except: pass
+        return jsonify({"ok": False, "error": str(e)})
