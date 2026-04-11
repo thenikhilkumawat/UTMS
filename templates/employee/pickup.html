@@ -236,7 +236,7 @@ function doSearch() {
       res.innerHTML = data.map(function(o) {
         return '<button onclick="doPickup(\''+o.order_code+'\')"'
           +' style="display:flex;align-items:center;justify-content:space-between;width:100%;padding:10px 14px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:#fff;cursor:pointer;margin-bottom:5px;font-size:13px;font-weight:700;">'
-          +'<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+(sc[o.status]||"#9ca3af")+';margin-right:8px;"></span>#'+o.order_code+' — '+o.customer_name+'</span>'
+          +'<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+(sc[o.status]||"#9ca3af")+';margin-right:8px;"></span>#'+(o.display_code||o.order_code)+' — '+o.customer_name+'</span>'
           +'<span style="opacity:0.55;font-size:11px;">'+o.mobile+'</span></button>';
       }).join("");
     });
@@ -249,7 +249,10 @@ function loadOrder(code) {
     .then(function(r){ return r.json(); }).then(function(o) {
       if (o.error) { showToast("Order not found","error"); return; }
       currentOrder = o;
-      document.getElementById("dc-code").textContent     = "#" + o.order_code;
+      document.getElementById("dc-code").textContent     = "#" + (o.display_code||o.order_code);
+      if (o.entry_code) {
+        document.getElementById("dc-code").textContent += "  (Entry #" + o.entry_code + ")";
+      }
       document.getElementById("dc-customer").textContent = o.customer_name;
       document.getElementById("dc-meta").textContent     = "📱 " + (o.mobile||"—") + "  ·  Order: " + (o.order_date_fmt||"") + " → " + (o.delivery_date_fmt||"");
       document.getElementById("dc-total").textContent    = "₹" + (o.payable_amount||o.total||0);
@@ -350,8 +353,8 @@ function sendDeliveryWA(lang) {
   var rhi = (rn||rm)?"\n\n👤 लेने वाले: *"+(rn||"—")+"*\n📱 *"+(rm||"—")+"*":"";
   var ren = (rn||rm)?"\n\n👤 Collected by: *"+(rn||"—")+"*\n📱 *"+(rm||"—")+"*":"";
   var msg = lang==="hi"
-    ? "*उत्तम टेलर्स*\n\nनमस्ते "+o.customer_name+" जी!\nआपके कपड़े डिलीवर हो गए।\n\nऑर्डर: *#"+o.order_code+"*\nकपड़े: "+items+rhi+"\n\n✅ धन्यवाद!"
-    : "*Uttam Tailors*\n\nDear "+o.customer_name+",\nOrder *#"+o.order_code+"* delivered.\n\nItems: "+items+ren+"\n\n✅ Thank you!";
+    ? "*उत्तम टेलर्स*\n\nनमस्ते "+o.customer_name+" जी!\nआपके कपड़े डिलीवर हो गए।\n\nऑर्डर: *#"+(o.display_code||o.order_code)+"*\nकपड़े: "+items+rhi+"\n\n✅ धन्यवाद!"
+    : "*Uttam Tailors*\n\nDear "+o.customer_name+",\nOrder *#"+(o.display_code||o.order_code)+"* delivered.\n\nItems: "+items+ren+"\n\n✅ Thank you!";
   if (o.mobile) window.open("https://wa.me/"+o.mobile.replace(/\D/g,"")+"?text="+encodeURIComponent(msg),"_blank");
 }
 
