@@ -25,7 +25,8 @@
     <div class="wizard-step active" id="pw1"><span class="step-num">1</span><span>Order Code</span></div>
     <div class="wizard-step" id="pw2"><span class="step-num">2</span><span>Customer</span></div>
     <div class="wizard-step" id="pw3"><span class="step-num">3</span><span>Garments</span></div>
-    <div class="wizard-step" id="pw4"><span class="step-num">4</span><span>Payment</span></div>
+    <div class="wizard-step" id="pw4"><span class="step-num">4</span><span>Images</span></div>
+    <div class="wizard-step" id="pw5"><span class="step-num">5</span><span>Payment</span></div>
   </div>
 
   <!-- STEP 1: Order Code + Dates -->
@@ -149,11 +150,42 @@
     </div>
   </div>
 
-  <!-- STEP 4: Payment -->
+  <!-- STEP 4: Images -->
   <div id="step-p4" style="display:none;">
+    <div class="card mb-16">
+      <div class="card-header">
+        <span class="card-title">📷 Cloth Images</span>
+        <span style="font-size:12px;color:var(--text-muted);">Optional — upload old photos</span>
+      </div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:220px 1fr;gap:28px;align-items:start;">
+          <div style="text-align:center;">
+            <div style="border:1.5px solid var(--border);border-radius:12px;padding:14px;background:#fff;display:inline-block;">
+              <div id="past-qr-box"></div>
+            </div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:8px;font-weight:600;">Scan to upload from phone</div>
+            <button onclick="openPastUploadPopup()" class="btn btn-ghost btn-sm" style="margin-top:8px;width:100%;">📷 Open Upload Page</button>
+          </div>
+          <div>
+            <div style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;">Photos appear automatically. Up to 5 images per order.</div>
+            <div id="past-img-preview" style="display:flex;flex-wrap:wrap;gap:10px;min-height:80px;align-items:flex-start;">
+              <div style="color:var(--text-muted);font-size:13px;padding:24px 0;">No images yet</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;">
+      <button class="btn btn-ghost" onclick="goStep(3)">← Garments</button>
+      <button class="btn btn-primary" onclick="goStep(5);injectPastPayment();pastRecalcPayment();">Next: Payment →</button>
+    </div>
+  </div>
+
+  <!-- STEP 5: Payment -->
+  <div id="step-p5" style="display:none;">
     <div id="past-payment-inner"></div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;">
-      <button class="btn btn-ghost" onclick="goStep(3)">← Garments</button>
+      <button class="btn btn-ghost" onclick="goStep(4)">← Images</button>
       <button class="btn btn-success btn-lg" id="p-confirm-btn" onclick="confirmPastOrder()">✅ Save Past Order</button>
     </div>
   </div>
@@ -168,7 +200,11 @@
         <div style="font-size:52px;font-weight:900;letter-spacing:2px;line-height:1;">#<span id="p-sc-code"></span></div>
       </div>
       <div style="display:flex;justify-content:space-around;color:#fff;padding:14px 0;border-top:1px solid rgba(255,255,255,0.15);border-bottom:1px solid rgba(255,255,255,0.15);">
-        <div style="text-align:center;"><div style="font-size:9px;font-weight:800;letter-spacing:1.5px;opacity:0.6;text-transform:uppercase;margin-bottom:4px;">Customer</div><div id="p-sc-name" style="font-size:14px;font-weight:900;"></div></div>
+        <div style="text-align:center;"><div style="font-size:9px;font-weight:800;letter-spacing:1.5px;opacity:0.6;text-transform:uppercase;margin-bottom:4px;">Customer</div><div id="p-sc-name" style="font-size:14px;font-weight:900;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div></div>
+        <div style="width:1px;background:rgba(255,255,255,0.2);"></div>
+        <div style="text-align:center;"><div style="font-size:9px;font-weight:800;letter-spacing:1.5px;opacity:0.6;text-transform:uppercase;margin-bottom:4px;">Mobile</div><div id="p-sc-mobile" style="font-size:13px;font-weight:800;color:#e0e7ff;"></div></div>
+        <div style="width:1px;background:rgba(255,255,255,0.2);"></div>
+        <div style="text-align:center;"><div style="font-size:9px;font-weight:800;letter-spacing:1.5px;opacity:0.6;text-transform:uppercase;margin-bottom:4px;">Address</div><div id="p-sc-address" style="font-size:12px;font-weight:700;color:#c7d2fe;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div></div>
         <div style="width:1px;background:rgba(255,255,255,0.2);"></div>
         <div style="text-align:center;"><div style="font-size:9px;font-weight:800;letter-spacing:1.5px;opacity:0.6;text-transform:uppercase;margin-bottom:4px;">Delivery</div><div id="p-sc-delivery" style="font-size:14px;font-weight:900;color:#bbf7d0;"></div></div>
         <div style="width:1px;background:rgba(255,255,255,0.2);"></div>
@@ -233,6 +269,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 const MEAS_FIELDS   = {{ meas_fields_json | safe }};
 const GARMENT_TYPES = {{ garment_types_json | safe }};
@@ -244,7 +281,7 @@ var pastOrderCode = "";
 
 // ── WIZARD ──────────────────────────────────────────────────────
 function setWizard(active) {
-  for (var i=1;i<=4;i++){
+  for (var i=1;i<=5;i++){
     var w=document.getElementById("pw"+i);
     w.classList.remove("active","done");
     if(i<active) w.classList.add("done");
@@ -252,11 +289,13 @@ function setWizard(active) {
   }
 }
 function goStep(n) {
-  for(var i=1;i<=4;i++) document.getElementById("step-p"+i).style.display="none";
+  for(var i=1;i<=5;i++) document.getElementById("step-p"+i).style.display="none";
   document.getElementById("step-p-success").style.display="none";
   document.getElementById("step-p"+n).style.display="block";
   setWizard(n);
   window.scrollTo({top:0,behavior:"smooth"});
+  if(n===4){ buildPastQR(); startPastImgPoll(); }
+  if(n!==4){ stopPastImgPoll(); }
 }
 
 // ── STEP 1 ───────────────────────────────────────────────────────
@@ -387,8 +426,6 @@ function renderPastGarments() {
 function validateStep3() {
   if(!pastGarments.length){showToast("Add at least one garment","warning");return;}
   goStep(4);
-  injectPastPayment();
-  pastRecalcPayment();
 }
 
 // ── STEP 4: PAYMENT ──────────────────────────────────────────────
@@ -464,12 +501,15 @@ function confirmPastOrder() {
     if(d.ok){
       document.getElementById("p-sc-code").textContent=d.order_code;
       document.getElementById("p-sc-name").textContent=payload.customer_name;
+      document.getElementById("p-sc-mobile").textContent=payload.mobile||"—";
+      document.getElementById("p-sc-address").textContent=payload.address||"—";
       var ddate=payload.delivery_date;
       if(ddate){var p=ddate.split("-");ddate=p[2]+"-"+p[1]+"-"+p[0];}
       document.getElementById("p-sc-delivery").textContent=ddate||"—";
       document.getElementById("p-sc-total").textContent="₹"+Math.round(payable);
-      for(var i=1;i<=4;i++) document.getElementById("step-p"+i).style.display="none";
+      for(var i=1;i<=5;i++) document.getElementById("step-p"+i).style.display="none";
       document.getElementById("step-p-success").style.display="block";
+      stopPastImgPoll();
       window.scrollTo({top:0,behavior:"smooth"});
     } else {
       showToast("❌ "+(d.error||"Error saving"),"error");
@@ -481,6 +521,56 @@ function confirmPastOrder() {
   });
 }
 
+// ── IMAGES ───────────────────────────────────────────────────────
+var pastImgTimer = null;
+var pastImgOrderCode = "";
+
+function buildPastQR() {
+  var box = document.getElementById("past-qr-box");
+  if (!box) return;
+  // Need the confirmed code — use pastOrderCode if set, else next_code placeholder
+  var code = pastOrderCode || "{{ next_code }}";
+  pastImgOrderCode = code;
+  box.innerHTML = "";
+  var url = window.location.origin + "/upload/" + code;
+  if (typeof QRCode !== "undefined") {
+    try { new QRCode(box, {text:url, width:160, height:160, colorDark:"#111827", colorLight:"#ffffff"}); }
+    catch(e) { box.innerHTML = '<a href="'+url+'" style="color:#6366f1;font-weight:700;font-size:12px;">'+url+'</a>'; }
+  } else {
+    box.innerHTML = '<a href="'+url+'" style="color:#6366f1;font-weight:700;font-size:12px;">Open: /upload/'+code+'</a>';
+  }
+}
+
+function loadPastImages() {
+  var code = pastImgOrderCode || pastOrderCode || "{{ next_code }}";
+  fetch("/images/"+code+"?ts="+Date.now())
+    .then(function(r){return r.text();})
+    .then(function(html){
+      var box = document.getElementById("past-img-preview");
+      if (!box) return;
+      if (!html || !html.trim()) {
+        box.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:24px 0;">No images yet</div>';
+        return;
+      }
+      box.innerHTML = html;
+      box.querySelectorAll("img").forEach(function(img){
+        img.style.cursor="zoom-in"; img.style.width="90px"; img.style.height="90px";
+        img.style.objectFit="cover"; img.style.borderRadius="10px";
+        img.style.border="2px solid var(--border)";
+      });
+    });
+}
+
+function startPastImgPoll() { loadPastImages(); pastImgTimer = setInterval(loadPastImages, 4000); }
+function stopPastImgPoll()  { clearInterval(pastImgTimer); pastImgTimer = null; }
+
+function openPastUploadPopup() {
+  var code = pastOrderCode || "{{ next_code }}";
+  var url  = window.location.origin + "/upload/" + code;
+  window.open(url, "_blank");
+}
+
+// ── RESET ────────────────────────────────────────────────────────
 function resetPastOrderForm(){
   pastGarments=[]; pastPayMode="cash"; pastOrderCode="";
   ["p-code-input","p-name","p-mobile","p-address","p-note","p-odate","p-ddate"].forEach(function(id){
@@ -490,7 +580,9 @@ function resetPastOrderForm(){
   document.getElementById("sticky-num").textContent="{{ next_code }}";
   document.getElementById("past-garments-list").innerHTML="";
   document.getElementById("past-payment-inner").innerHTML="";
+  document.getElementById("past-img-preview").innerHTML='<div style="color:var(--text-muted);font-size:13px;padding:24px 0;">No images yet</div>';
   document.getElementById("code-clash-msg").style.display="none";
+  stopPastImgPoll();
   goStep(1);
 }
 </script>
