@@ -196,6 +196,31 @@ function loadCats() {
     });
 }
 
+// Hindi translations for finance categories
+var FINANCE_CAT_HI = {
+  "advance":           "अग्रिम",
+  "payment":           "भुगतान",
+  "alteration":        "फेरबदल",
+  "other income":      "अन्य आय",
+  "thread":            "धागा",
+  "buttons":           "बटन",
+  "fabric":            "कपड़ा",
+  "electricity":       "बिजली",
+  "rent":              "किराया",
+  "salary":            "तनख्वाह",
+  "transport":         "यातायात",
+  "maintenance":       "रखरखाव",
+  "other expense":     "अन्य खर्च"
+};
+
+function catLabel(c) {
+  var lang = (typeof currentLang !== "undefined") ? currentLang : (localStorage.getItem("utms_lang") || "en");
+  if (lang === "hi") {
+    return FINANCE_CAT_HI[c.toLowerCase()] || c;
+  }
+  return c;
+}
+
 function populateCats() {
   var sel  = document.getElementById("f-category");
   var cats = (txType === "income") ? (window._INCOME_CATS||[]) : (window._EXPENSE_CATS||[]);
@@ -203,7 +228,7 @@ function populateCats() {
   cats.forEach(function(c) {
     var opt = document.createElement("option");
     opt.value = c;
-    opt.textContent = c;
+    opt.textContent = catLabel(c);
     sel.appendChild(opt);
   });
 }
@@ -286,6 +311,12 @@ function addEntry() {
 document.addEventListener("DOMContentLoaded", function(){
   loadCats();
   filterTx();
+  // Re-render category labels when language is toggled
+  document.querySelectorAll(".lang-btn").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      setTimeout(populateCats, 50);
+    });
+  });
 });
 </script>
 {% endblock %}
