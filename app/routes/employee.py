@@ -785,7 +785,7 @@ def api_customer_measurements(customer_id):
     import json as _json
     # Get latest order items for each garment type
     rows = conn.execute("""
-        SELECT oi.garment_type, oi.measurements, o.order_date, o.order_code
+        SELECT oi.garment_type, oi.measurements, oi.notes, o.order_date, o.order_code
         FROM order_items oi
         JOIN orders o ON o.id = oi.order_id
         WHERE o.customer_id = ?
@@ -793,7 +793,6 @@ def api_customer_measurements(customer_id):
     """, (customer_id,)).fetchall()
     conn.close()
 
-    # Keep only the most recent measurement per garment type
     seen = {}
     for r in rows:
         gt = r["garment_type"]
@@ -802,11 +801,21 @@ def api_customer_measurements(customer_id):
                 meas = _json.loads(r["measurements"] or "{}")
             except:
                 meas = {}
+            # Parse selectedTypes from notes [CODE1,CODE2]
+            raw_notes = r["notes"] or ""
+            sel_types = []
+            import re as _re
+            bracket = _re.search(r'\[([^\]]+)\]\s*$', raw_notes)
+            if bracket:
+                sel_types = [s.strip() for s in bracket.group(1).split(",") if s.strip()]
+                raw_notes = _re.sub(r'\s*\[[^\]]+\]\s*$', '', raw_notes).strip()
             seen[gt] = {
-                "garment_type": gt,
-                "measurements": meas,
-                "order_code":   r["order_code"],
-                "order_date":   r["order_date"]
+                "garment_type":  gt,
+                "measurements":  meas,
+                "notes":         raw_notes,
+                "selectedTypes": sel_types,
+                "order_code":    r["order_code"],
+                "order_date":    r["order_date"]
             }
     return jsonify(list(seen.values()))
 
