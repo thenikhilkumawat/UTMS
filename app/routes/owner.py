@@ -673,7 +673,8 @@ def settings():
         settings=current_settings, garment_rates=garment_rates,
         stitch_rates=stitch_rates, work_rates_map=work_rates_map,
         all_employees=all_employees,
-        garment_type_chips=garment_type_chips
+        garment_type_chips=garment_type_chips,
+        last_backup=get_setting("last_backup_at","")
     )
 
 @bp.route("/settings/save", methods=["POST"])
@@ -1547,6 +1548,7 @@ def backup_download():
         tmp.close()
         from datetime import datetime
         fname = f"uttam_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        set_setting("last_backup_at", datetime.now().strftime("%Y-%m-%d %H:%M"))
         return send_file(tmp.name, as_attachment=True, download_name=fname, mimetype="application/json")
     except Exception as e:
         flash(f"Backup failed: {str(e)}", "error")
