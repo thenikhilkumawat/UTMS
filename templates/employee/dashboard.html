@@ -129,7 +129,8 @@
         <a href="/order-status" style="text-decoration:none;display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);transition:background 0.1s;"
           onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background=''">
           <div>
-            <div style="font-size:16px;font-weight:900;color:var(--accent);">#{{ o.order_code }}</div>
+            <div style="font-size:16px;font-weight:900;color:var(--accent);">#{{ o.display_code }}</div>
+            {% if o.entry_code %}<div style="font-size:10px;color:#64748b;margin-top:1px;">Entry #{{ o.entry_code }}</div>{% endif %}
             <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">{{ o.customer_name }} &nbsp;·&nbsp; 📅 {{ o.delivery_date_fmt if o.delivery_date_fmt is defined else '—' }}</div>
           </div>
           <div style="text-align:right;">
