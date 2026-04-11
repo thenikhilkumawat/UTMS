@@ -47,11 +47,16 @@
       <tbody id="tbody">
         {% for o in orders %}
         <tr class="orow" data-status="{{ o.status }}"
-          data-s="{{ o.order_code }} {{ o.cname|lower }} {{ o.mobile }} {{ o.garments|lower }}"
+          data-s="{{ o.display_code }} {{ o.order_code }} {{ o.cname|lower }} {{ o.mobile }} {{ o.garments|lower }}"
           style="border-bottom:1px solid var(--border);transition:background 0.1s;"
           onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
           <td style="padding:12px 14px;">
-            <div style="font-size:15px;font-weight:900;color:var(--accent);">#{{ o.order_code }}</div>
+            <div style="font-size:15px;font-weight:900;color:var(--accent);">#{{ o.display_code }}</div>
+            {% if o.entry_code %}
+            <div style="margin-top:3px;">
+              <span style="background:#f1f5f9;color:#64748b;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;letter-spacing:0.3px;">Entry #{{ o.entry_code }}</span>
+            </div>
+            {% endif %}
             {% if o.is_urgent %}<span style="background:#fee2e2;color:#dc2626;font-size:9px;font-weight:800;padding:1px 6px;border-radius:4px;">🔥 URGENT</span>{% endif %}
             {% if o.note %}<div style="font-size:11px;color:var(--text-muted);font-style:italic;margin-top:2px;">📝 {{ o.note[:30] }}</div>{% endif %}
           </td>
