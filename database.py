@@ -399,3 +399,37 @@ def next_order_code():
     conn.commit()
     conn.close()
     return str(new_code)
+
+
+# ── repeat order codes (0001, 0002...) ───────────────────────────────────────
+
+def peek_repeat_code():
+    """Return next repeat code without incrementing — format 0001, 0002..."""
+    conn = get_db()
+    row = conn.execute("SELECT value FROM settings WHERE key='last_repeat_code'").fetchone()
+    last = int(row["value"]) if row else 0
+    # Also check max existing repeat code in orders (4-digit zero-padded codes)
+    max_row = conn.execute(
+        "SELECT MAX(CAST(order_code AS INTEGER)) as m FROM orders "
+        "WHERE LENGTH(order_code)=4 AND order_code GLOB '0[0-9][0-9][0-9]'"
+    ).fetchone()
+    db_last = max_row["m"] if max_row and max_row["m"] else 0
+    conn.close()
+    return f"{max(last, db_last) + 1:04d}"
+
+
+def next_repeat_code():
+    """Increment and return the next repeat code — format 0001, 0002..."""
+    conn = get_db()
+    row = conn.execute("SELECT value FROM settings WHERE key='last_repeat_code'").fetchone()
+    last = int(row["value"]) if row else 0
+    max_row = conn.execute(
+        "SELECT MAX(CAST(order_code AS INTEGER)) as m FROM orders "
+        "WHERE LENGTH(order_code)=4 AND order_code GLOB '0[0-9][0-9][0-9]'"
+    ).fetchone()
+    db_last = max_row["m"] if max_row and max_row["m"] else 0
+    new_code = max(last, db_last) + 1
+    conn.execute("INSERT OR REPLACE INTO settings(key,value) VALUES('last_repeat_code',?)", (str(new_code),))
+    conn.commit()
+    conn.close()
+    return f"{new_code:04d}"
