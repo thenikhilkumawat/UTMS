@@ -823,9 +823,7 @@ function renderOrderHistory(orders) {
 
 // ── RENDER SAVED MEASUREMENTS ─────────────
 function repeatOrderFrom(o) {
-  // Load all items from this order WITH their measurements into existingGarments
   existingGarments = [];
-  var usedTypes = [];
 
   if (!o.items || !o.items.length) {
     showToast("No garments found in order #" + o.order_code, "warning");
@@ -835,30 +833,38 @@ function repeatOrderFrom(o) {
   o.items.forEach(function(item) {
     var meas = item.measurements || {};
     var rate = parseFloat(RATE_MAP[item.garment_type] || item.rate || 0);
+    var rawNotes = item.notes || "";
+
+    // Parse selectedTypes back out of notes — stored as "Some note [CODE1,CODE2]"
+    var selectedTypes = [];
+    var cleanNotes = rawNotes;
+    var bracketMatch = rawNotes.match(/\[([^\]]+)\]\s*$/);
+    if (bracketMatch) {
+      selectedTypes = bracketMatch[1].split(",").map(function(s){ return s.trim(); }).filter(Boolean);
+      cleanNotes = rawNotes.replace(/\s*\[[^\]]+\]\s*$/, "").trim();
+    }
+
     existingGarments.push({
-      id:    Date.now() + Math.random(),
-      type:  item.garment_type,
-      qty:   item.quantity,
-      rate:  rate,
-      meas:  meas,
-      notes: item.notes || "",
-      extraFields: []
+      id:            Date.now() + Math.random(),
+      type:          item.garment_type,
+      qty:           item.quantity,
+      rate:          rate,
+      meas:          meas,
+      notes:         cleanNotes,
+      extraFields:   [],
+      selectedTypes: selectedTypes
     });
-    usedTypes.push(item.garment_type);
   });
 
-  // Set repeat_of reference
   document.getElementById("ec-repeat-of").value = o.order_code;
-
   renderExistingGarments();
-  showToast("✅ Loaded " + o.items.length + " garment(s) from #" + o.order_code + " with measurements. Edit below.", "success");
-
-  // Jump to garments step so user can review and edit
+  showToast("✅ Loaded " + o.items.length + " garment(s) from #" + o.order_code + " with measurements & styles.", "success");
   goExistingStep(2);
 }
 
 function renderSavedMeasurements(measList) {
   if (!measList||!measList.length) return;
+  window._lastMeasList = measList; // store for useTheseMeasurements
   document.getElementById("ec-meas-card").style.display = "block";
   document.getElementById("ec-meas-body").innerHTML = measList.map((m,mi)=>{
     const fields = Object.entries(m.measurements||{});
@@ -892,13 +898,29 @@ function useTheseMeasurements(mi, garmentType, keys) {
     const el=document.getElementById("ecm_"+mi+"_"+k.replace(/\s/g,"_"));
     if(el) meas[k]=el.value;
   });
-  // Link to the most recent order
   if (ecCustomerData&&ecCustomerData.orders.length>0)
     document.getElementById("ec-repeat-of").value = ecCustomerData.orders[0].order_code;
   const rate = parseFloat(RATE_MAP[garmentType]||0);
+
+  // Get selectedTypes and notes from the measList data
+  var selTypes = [];
+  var notesVal = "";
+  if (window._lastMeasList && window._lastMeasList[mi]) {
+    selTypes  = window._lastMeasList[mi].selectedTypes || [];
+    notesVal  = window._lastMeasList[mi].notes || "";
+  }
+
   const ex = existingGarments.find(g=>g.type===garmentType);
-  if (ex) { ex.meas={...meas}; showToast("Updated: "+tGarment(garmentType),"success"); }
-  else { existingGarments.push({id:Date.now(),type:garmentType,qty:1,rate,meas:{...meas},notes:"",extraFields:[]}); showToast("Added: "+tGarment(garmentType),"success"); }
+  if (ex) {
+    ex.meas={...meas};
+    ex.selectedTypes = selTypes;
+    ex.notes = notesVal;
+    showToast("Updated: "+tGarment(garmentType),"success");
+  } else {
+    existingGarments.push({id:Date.now(),type:garmentType,qty:1,rate,meas:{...meas},
+      notes:notesVal,extraFields:[],selectedTypes:selTypes});
+    showToast("Added: "+tGarment(garmentType),"success");
+  }
   renderExistingGarments();
   goExistingStep(2);
 }
