@@ -12,6 +12,7 @@
   </div>
   <div style="display:flex;gap:8px;">
     <a href="/owner/orders" class="btn btn-ghost btn-sm">← Orders</a>
+    <a href="/owner/orders/edit/{{ order.order_code }}" class="btn btn-sm" style="background:#6366f1;color:#fff;font-weight:800;">✏️ Edit Order</a>
     <button onclick="window.open('/print-slip/{{ order.order_code }}','_blank')" class="btn btn-ghost btn-sm">🖨️ Print Slip</button>
     <button class="menu-toggle" onclick="openSidebar()">☰</button>
   </div>
