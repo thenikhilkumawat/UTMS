@@ -163,11 +163,6 @@
         </div>
       </div>
     </div>
-    <div id="fullscreen-ov" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.93);z-index:9999;align-items:center;justify-content:center;flex-direction:column;">
-      <button onclick="document.getElementById('fullscreen-ov').style.display='none'"
-        style="position:absolute;top:20px;right:24px;background:rgba(255,255,255,0.15);border:none;color:#fff;width:44px;height:44px;border-radius:50%;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
-      <img id="fullscreen-img" style="max-width:90%;max-height:88%;border-radius:8px;">
-    </div>
     <div style="display:flex;justify-content:space-between;">
       <button class="btn btn-ghost" onclick="goNewStep(2)">← Garments</button>
       <button class="btn btn-primary" onclick="goNewStep(4)">Next: Customer →</button>
@@ -548,6 +543,13 @@
 <div id="img-overlay-new" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;align-items:center;justify-content:center;" onclick="this.style.display='none'">
   <img style="max-width:92%;max-height:88%;border-radius:10px;object-fit:contain;">
   <button onclick="document.getElementById('img-overlay-new').style.display='none'" style="position:absolute;top:20px;right:22px;background:rgba(255,255,255,0.15);border:none;color:#fff;width:44px;height:44px;border-radius:50%;font-size:22px;cursor:pointer;">✕</button>
+</div>
+
+<!-- Global fullscreen overlay for uploaded images — works in ALL flows -->
+<div id="fullscreen-ov" onclick="this.style.display='none'" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.93);z-index:10000;align-items:center;justify-content:center;flex-direction:column;">
+  <button onclick="document.getElementById('fullscreen-ov').style.display='none';event.stopPropagation();"
+    style="position:absolute;top:20px;right:24px;background:rgba(255,255,255,0.15);border:none;color:#fff;width:44px;height:44px;border-radius:50%;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+  <img id="fullscreen-img" style="max-width:90%;max-height:88%;border-radius:8px;object-fit:contain;">
 </div>
 {% endblock %}
 {% block extra_js %}
@@ -1102,21 +1104,32 @@ function buildQR(boxId, linkId) {
 function loadImages(previewId) {
   fetch("/images/"+ORDER_CODE+"?ts="+Date.now()).then(r=>r.text()).then(html=>{
     const box=document.getElementById(previewId);
-    if(!html||!html.trim()){box.innerHTML='<div style="color:var(--text-muted);font-size:13px;padding:24px 0;">No images yet</div>';return;}
-    box.innerHTML=html;
-    box.querySelectorAll("img").forEach(img=>{
-      img.style.cursor="zoom-in"; img.style.transition="transform 0.2s";
-      img.onmouseover=()=>img.style.transform="scale(1.05)";
-      img.onmouseout=()=>img.style.transform="scale(1)";
-      img.onclick=()=>{
-        document.getElementById("fullscreen-img").src=img.dataset.src||img.src;
+    if(!box) return;
+    if(!html||!html.trim()){
+      if(!box.querySelector("img")) box.innerHTML='<div style="color:var(--text-muted);font-size:13px;padding:24px 0;">No images yet</div>';
+      return;
+    }
+    // Only update if image count changed (avoids flicker)
+    const tmp=document.createElement("div"); tmp.innerHTML=html;
+    const newImgs=tmp.querySelectorAll("img");
+    if(newImgs.length <= box.querySelectorAll("img").length) return;
+    box.innerHTML="";
+    newImgs.forEach(img=>{
+      const el=document.createElement("img");
+      el.src=img.src||img.getAttribute("src");
+      el.style.cssText="width:100px;height:100px;object-fit:cover;border-radius:10px;border:2px solid var(--border);cursor:zoom-in;transition:transform 0.2s;";
+      el.onmouseover=()=>el.style.transform="scale(1.05)";
+      el.onmouseout=()=>el.style.transform="scale(1)";
+      el.onclick=()=>{
+        document.getElementById("fullscreen-img").src=el.src;
         document.getElementById("fullscreen-ov").style.display="flex";
       };
+      box.appendChild(el);
     });
   });
 }
 let imgPreviewId = "img-preview";
-function startImgPoll(previewId) { imgPreviewId=previewId||"img-preview"; loadImages(imgPreviewId); imgTimer=setInterval(()=>loadImages(imgPreviewId),8000); }
+function startImgPoll(previewId) { imgPreviewId=previewId||"img-preview"; loadImages(imgPreviewId); imgTimer=setInterval(()=>loadImages(imgPreviewId),3000); }
 function stopImgPoll() { clearInterval(imgTimer); imgTimer=null; }
 
 // ── PAYMENT ───────────────────────────────
