@@ -823,12 +823,14 @@ function renderOrderHistory(orders) {
   const sc = {pending:"background:#fef3c7;color:#92400e",partial:"background:#dbeafe;color:#1e40af",ready:"background:#d1fae5;color:#065f46",delivered:"background:#f3f4f6;color:#374151"};
   document.getElementById("ec-orders-body").innerHTML = orders.map(o=>{
     const items = o.items.map(i=>`<span style="background:#f1f5f9;padding:2px 9px;border-radius:8px;font-size:12px;font-weight:600;">${tGarment(i.garment_type)} ×${i.quantity}</span>`).join(" ");
+    const displayCode = o.repeat_of || o.order_code;
+    const entryCode   = o.repeat_of ? o.order_code : "";
     return `<div style="padding:14px 20px;border-bottom:1px solid var(--border);">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-          <span style="font-size:17px;font-weight:900;color:var(--accent);">#${o.order_code}</span>
+          <span style="font-size:17px;font-weight:900;color:var(--accent);">#${displayCode}</span>
+          ${entryCode?`<span style="background:#f1f5f9;color:#64748b;font-size:10px;font-weight:700;padding:1px 6px;border-radius:5px;">Entry #${entryCode}</span>`:""}
           <span style="font-size:11px;padding:2px 9px;border-radius:10px;font-weight:700;${sc[o.status]||sc.pending};">${o.status}</span>
-          ${o.repeat_of?`<span style="font-size:11px;color:var(--text-muted);">Repeat of #${o.repeat_of}</span>`:""}
         </div>
         <div style="display:flex;align-items:center;gap:8px;">
           <div style="text-align:right;">
