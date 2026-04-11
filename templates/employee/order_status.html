@@ -72,7 +72,7 @@
         data-urgent="{{ o.is_urgent }}"
         data-overdue="{{ 'true' if o.overdue else 'false' }}"
         data-upcoming="{{ 'true' if o.due_soon and not o.overdue else 'false' }}"
-        data-s="{{ o.order_code }} {{ o.cname|lower }} {{ o.mobile }}"
+        data-s="{{ o.order_code }} {{ o.repeat_of }} {{ o.cname|lower }} {{ o.mobile }}"
         style="border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.1s;"
         onmouseover="this.style.background='#fafbff'" onmouseout="this.style.background=''"
         onclick="toggleExpand(this,'exp-{{ o.order_code }}')">
@@ -106,13 +106,13 @@
 
         <!-- Col 2: Order Info -->
         <td style="padding:14px 16px;vertical-align:top;">
-          <div style="font-size:15px;font-weight:900;color:var(--accent);">#{{ o.order_code }}</div>
-          <div style="font-size:11px;color:var(--text-muted);margin-top:2px;"><span class="lang-en">Ord:</span><span class="lang-hi" style="display:none;">दिनांक:</span> {{ o.order_date_fmt }}</div>
           {% if o.repeat_of %}
-          <div style="font-size:10px;background:linear-gradient(135deg,#eef2ff,#e0e7ff);color:#4338ca;padding:2px 8px;border-radius:6px;display:inline-flex;align-items:center;gap:3px;margin-top:4px;font-weight:800;border:1px solid #c7d2fe;">
-            ↩ <span class="lang-en">Returning</span><span class="lang-hi" style="display:none;">पुराना ग्राहक</span> · #{{ o.repeat_of }}
-          </div>
+          <div style="font-size:15px;font-weight:900;color:var(--accent);">#{{ o.repeat_of }}</div>
+          <div style="margin-top:3px;"><span style="background:#f1f5f9;color:#64748b;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;">Entry #{{ o.order_code }}</span></div>
+          {% else %}
+          <div style="font-size:15px;font-weight:900;color:var(--accent);">#{{ o.order_code }}</div>
           {% endif %}
+          <div style="font-size:11px;color:var(--text-muted);margin-top:2px;"><span class="lang-en">Ord:</span><span class="lang-hi" style="display:none;">दिनांक:</span> {{ o.order_date_fmt }}</div>
         </td>
 
         <!-- Col 3: Customer -->
