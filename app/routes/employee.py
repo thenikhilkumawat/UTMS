@@ -1547,37 +1547,59 @@ def api_pickup_search():
 
     like = f"%{q}%"
     rows = []
+    seen_codes = set()
 
-    # Search by order code first
+    # Search by order code first (exact match + repeat_of match)
     if q.lstrip("#").isdigit():
         code = q.lstrip("#")
+        # Exact order_code match
         r = conn.execute("""
-            SELECT o.order_code, o.status, o.delivery_date, o.remaining, o.is_urgent,
-                   c.name as customer_name, c.mobile
+            SELECT o.order_code, o.status, o.delivery_date, o.order_date, o.remaining, o.is_urgent,
+                   o.repeat_of, c.name as customer_name, c.mobile
             FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
-            WHERE o.order_code=? LIMIT 5
+            WHERE o.order_code=?
         """, (code,)).fetchall()
-        rows += list(r)
+        for row in r:
+            if row["order_code"] not in seen_codes:
+                rows.append(row)
+                seen_codes.add(row["order_code"])
+
+        # All orders with repeat_of matching this code (repeat customer's entries)
+        r2 = conn.execute("""
+            SELECT o.order_code, o.status, o.delivery_date, o.order_date, o.remaining, o.is_urgent,
+                   o.repeat_of, c.name as customer_name, c.mobile
+            FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
+            WHERE o.repeat_of=?
+            ORDER BY o.id DESC
+        """, (code,)).fetchall()
+        for row in r2:
+            if row["order_code"] not in seen_codes:
+                rows.append(row)
+                seen_codes.add(row["order_code"])
 
     # Search by name or mobile
-    r2 = conn.execute("""
-        SELECT o.order_code, o.status, o.delivery_date, o.remaining, o.is_urgent,
-               c.name as customer_name, c.mobile
+    r3 = conn.execute("""
+        SELECT o.order_code, o.status, o.delivery_date, o.order_date, o.remaining, o.is_urgent,
+               o.repeat_of, c.name as customer_name, c.mobile
         FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
         WHERE (c.name LIKE ? OR c.mobile LIKE ?)
-        AND o.order_code NOT IN ({})
-        ORDER BY o.id DESC LIMIT 10
-    """.format(",".join("?" * len(rows)) if rows else "'__none__'"),
-        [like, like] + [r["order_code"] for r in rows]
-    ).fetchall()
-    rows += list(r2)
+        ORDER BY o.id DESC LIMIT 20
+    """, (like, like)).fetchall()
+    for row in r3:
+        if row["order_code"] not in seen_codes:
+            rows.append(row)
+            seen_codes.add(row["order_code"])
     conn.close()
 
     return jsonify([{
         "order_code":       r["order_code"],
+        "entry_code":       r["order_code"] if r["repeat_of"] else "",
+        "display_code":     r["repeat_of"] if r["repeat_of"] else r["order_code"],
+        "repeat_of":        r["repeat_of"] or "",
         "status":           r["status"],
         "customer_name":    r["customer_name"] or "—",
         "mobile":           r["mobile"] or "",
+        "order_date_fmt":   fmtd(r["order_date"]),
         "delivery_date_fmt":fmtd(r["delivery_date"]),
         "remaining":        r["remaining"] or 0,
         "is_urgent":        r["is_urgent"]
@@ -1823,8 +1845,25 @@ def api_finance_add():
     conn = get_db()
     order_id = None
     if order_code:
-        o = conn.execute("SELECT id FROM orders WHERE order_code=?", (order_code,)).fetchone()
-        if o: order_id = o["id"]
+        o = conn.execute("SELECT id, advance_paid, remaining, payable_amount, order_code FROM orders WHERE order_code=?", (order_code,)).fetchone()
+        if o:
+            order_id = o["id"]
+        else:
+            conn.close()
+            return jsonify({"ok": False, "error": f"Order #{order_code} not found"})
+
+    # If category is Advance, update order's advance_paid and remaining
+    is_advance = category.lower() == "advance"
+    if is_advance and order_id:
+        old_advance  = float(o["advance_paid"] or 0)
+        old_remaining= float(o["remaining"] or 0)
+        new_advance  = old_advance + amount
+        new_remaining= max(0, old_remaining - amount)
+        conn.execute("""
+            UPDATE orders SET advance_paid=?, remaining=? WHERE id=?
+        """, (new_advance, new_remaining, order_id))
+        if not note:
+            note = f"Advance for order #{order_code}"
 
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     conn.execute("""
