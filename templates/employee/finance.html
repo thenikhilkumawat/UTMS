@@ -89,10 +89,19 @@
       <!-- Category dropdown -->
       <div style="margin-bottom:10px;">
         <label style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:4px;"><span class="lang-en">Category</span><span class="lang-hi" style="display:none;">श्रेणी</span></label>
-        <select id="f-category"
+        <select id="f-category" onchange="onCategoryChange()"
           style="width:100%;padding:10px 12px;font-size:14px;font-weight:700;border:2px solid var(--border);border-radius:12px;background:#fff;">
           <option value="">-- चुनें --</option>
         </select>
+      </div>
+
+      <!-- Order Code (shown when Advance is selected) -->
+      <div id="f-order-code-row" style="display:none;margin-bottom:10px;">
+        <label style="font-size:10px;font-weight:700;text-transform:uppercase;color:#6366f1;display:block;margin-bottom:4px;">
+          <span class="lang-en">Order Code (for Advance)</span><span class="lang-hi" style="display:none;">ऑर्डर कोड (अग्रिम के लिए)</span>
+        </label>
+        <input type="text" id="f-order-code" placeholder="#3605"
+          style="width:100%;padding:10px 12px;font-size:15px;font-weight:800;border:2px solid #6366f1;border-radius:12px;background:#eef2ff;color:#4338ca;">
       </div>
 
       <!-- Mode -->
@@ -284,15 +293,17 @@ function addEntry() {
   var amt = parseFloat(document.getElementById("f-amount").value)||0;
   var cat = document.getElementById("f-category").value;
   var note= document.getElementById("f-note").value.trim();
+  var orderCode = (document.getElementById("f-order-code").value || "").trim().replace(/^#/,"");
   if (amt <= 0) { showToast("रकम दर्ज करें","warning"); return; }
   if (!cat)     { showToast("श्रेणी चुनें","warning"); return; }
+  if (cat.toLowerCase() === "advance" && !orderCode) { showToast("अग्रिम के लिए ऑर्डर कोड दर्ज करें","warning"); return; }
 
   var btn = document.getElementById("f-submit");
   btn.disabled = true; btn.textContent = "सेव हो रहा है...";
 
   fetch("/api/finance/add", {
     method:"POST", headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({tx_type:txType, amount:amt, category:cat, payment_mode:payMode, note:note})
+    body: JSON.stringify({tx_type:txType, amount:amt, category:cat, mode:payMode, note:note, order_code:orderCode})
   }).then(function(r){ return r.json(); }).then(function(d){
     btn.disabled = false;
     btn.innerHTML = '✅ <span class="lang-en">Add Entry</span><span class="lang-hi" style="display:none;">जोड़ें</span>';
@@ -301,11 +312,20 @@ function addEntry() {
       showToast((txType==="income"?"✅ आमदनी ₹":"✅ खर्च ₹")+amt+" दर्ज", "success");
       document.getElementById("f-amount").value = "";
       document.getElementById("f-note").value   = "";
+      document.getElementById("f-order-code").value = "";
+      onCategoryChange();
       setTimeout(function(){ location.reload(); }, 700);
     } else {
       showToast("Error: "+d.error, "error");
     }
   });
+}
+
+function onCategoryChange() {
+  var cat = (document.getElementById("f-category").value || "").toLowerCase();
+  var row = document.getElementById("f-order-code-row");
+  row.style.display = (cat === "advance") ? "block" : "none";
+  if (cat !== "advance") document.getElementById("f-order-code").value = "";
 }
 
 document.addEventListener("DOMContentLoaded", function(){
