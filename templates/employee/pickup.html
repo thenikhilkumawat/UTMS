@@ -234,10 +234,22 @@ function doSearch() {
       if (data.length === 1) { res.innerHTML = ""; loadOrder(data[0].order_code); return; }
       var sc = {pending:"#fbbf24",ready:"#34d399",delivered:"#9ca3af",cancelled:"#f87171"};
       res.innerHTML = data.map(function(o) {
+        var codeLine = '#' + (o.display_code||o.order_code);
+        if (o.entry_code) codeLine += ' <span style="background:rgba(99,102,241,0.3);padding:1px 7px;border-radius:6px;font-size:10px;font-weight:800;">Entry: ' + o.entry_code + '</span>';
+        var statusBg = sc[o.status]||"#9ca3af";
         return '<button onclick="doPickup(\''+o.order_code+'\')"'
-          +' style="display:flex;align-items:center;justify-content:space-between;width:100%;padding:10px 14px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:#fff;cursor:pointer;margin-bottom:5px;font-size:13px;font-weight:700;">'
-          +'<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+(sc[o.status]||"#9ca3af")+';margin-right:8px;"></span>#'+(o.display_code||o.order_code)+' — '+o.customer_name+'</span>'
-          +'<span style="opacity:0.55;font-size:11px;">'+o.mobile+'</span></button>';
+          +' style="display:flex;align-items:center;justify-content:space-between;width:100%;padding:12px 14px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:12px;color:#fff;cursor:pointer;margin-bottom:6px;font-size:13px;font-weight:700;text-align:left;">'
+          +'<div style="flex:1;min-width:0;">'
+          +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">'
+          +'<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+statusBg+';flex-shrink:0;"></span>'
+          +codeLine+' — '+o.customer_name
+          +'</div>'
+          +'<div style="font-size:11px;opacity:0.55;margin-top:3px;">📅 '+o.order_date_fmt+' → '+(o.delivery_date_fmt||"—")
+          +' · <span style="color:'+statusBg+';font-weight:800;text-transform:uppercase;">'+o.status+'</span>'
+          +(o.remaining>0?' · ₹'+o.remaining+' due':'')
+          +'</div>'
+          +'</div>'
+          +'<span style="opacity:0.45;font-size:11px;flex-shrink:0;margin-left:8px;">'+o.mobile+'</span></button>';
       }).join("");
     });
 }
