@@ -2338,6 +2338,35 @@ def past_orders_save():
                     VALUES(?,?,?,?,?,?,?)
                 """, (order_id, gtype, qty, rate, amt, _gj.dumps(meas), notes))
 
+        # Auto-create work logs for all stages (naap, cutting, silayi) — past order is fully done
+        log_date = delivery_date or order_date or now_str[:10]
+        for g in garments:
+            gtype = (g.get("type") or "").strip()
+            qty   = int(g.get("qty") or 1)
+            if not gtype:
+                continue
+            # Naap (Measurement)
+            conn.execute("""
+                INSERT INTO work_logs(order_id, order_code, garment_type, qty_done,
+                    employee_name, log_date, making_rate, notes, is_non_stitch, created_at)
+                VALUES(?,?,?,?,?,?,?,?,1,?)
+            """, (order_id, order_code, gtype, qty, "Kamal", log_date, 0,
+                  f"Naap — {gtype}", now_str))
+            # Kataai (Cutting)
+            conn.execute("""
+                INSERT INTO work_logs(order_id, order_code, garment_type, qty_done,
+                    employee_name, log_date, making_rate, notes, is_non_stitch, created_at)
+                VALUES(?,?,?,?,?,?,?,?,1,?)
+            """, (order_id, order_code, gtype, qty, "Kamal", log_date, 0,
+                  f"Kataai — {gtype}", now_str))
+            # Silayi (Stitching)
+            conn.execute("""
+                INSERT INTO work_logs(order_id, order_code, garment_type, qty_done,
+                    employee_name, log_date, making_rate, notes, created_at)
+                VALUES(?,?,?,?,?,?,?,?,?)
+            """, (order_id, order_code, gtype, qty, "Past Order", log_date, 0,
+                  "", now_str))
+
         # Finance entry for payment received
         if advance_paid > 0:
             conn.execute("""
