@@ -1291,11 +1291,48 @@ def api_employee_stats():
 def api_worklog_order_info():
     code = request.args.get("code","").strip().lstrip("#")
     conn = get_db()
+
+    # First try exact order_code match
     order = conn.execute("""
         SELECT o.*, c.name as cname, c.mobile
         FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
         WHERE o.order_code=?
     """, (code,)).fetchone()
+
+    # If found but already delivered, OR if not found, check for newer orders
+    # linked via repeat_of (i.e., new orders created under this permanent code)
+    if order and order["status"] == "delivered":
+        # Look for undelivered orders with repeat_of = this code
+        newer = conn.execute("""
+            SELECT o.*, c.name as cname, c.mobile
+            FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
+            WHERE o.repeat_of=? AND o.status!='delivered'
+            ORDER BY o.id DESC LIMIT 1
+        """, (code,)).fetchone()
+        if newer:
+            order = newer
+            code = newer["order_code"]
+    elif not order:
+        # Maybe user typed the permanent code — find latest undelivered order with repeat_of
+        order = conn.execute("""
+            SELECT o.*, c.name as cname, c.mobile
+            FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
+            WHERE o.repeat_of=? AND o.status!='delivered'
+            ORDER BY o.id DESC LIMIT 1
+        """, (code,)).fetchone()
+        if order:
+            code = order["order_code"]
+        else:
+            # Also try: find any order (even delivered) with repeat_of
+            order = conn.execute("""
+                SELECT o.*, c.name as cname, c.mobile
+                FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
+                WHERE o.repeat_of=?
+                ORDER BY o.id DESC LIMIT 1
+            """, (code,)).fetchone()
+            if order:
+                code = order["order_code"]
+
     if not order:
         conn.close()
         return jsonify({"error":"not found"})
@@ -2087,13 +2124,22 @@ def measurements_page():
                 (o["order_code"], it["garment_type"])
             ).fetchone()
             cut_done = cut_row["employee_name"] if cut_row else None
+            # Parse selectedTypes from notes [CODE1,CODE2]
+            import re as _re
+            raw_notes = it["notes"] or ""
+            sel_types = []
+            bracket = _re.search(r'\[([^\]]+)\]\s*$', raw_notes)
+            if bracket:
+                sel_types = [s.strip() for s in bracket.group(1).split(",") if s.strip()]
+                raw_notes = _re.sub(r'\s*\[[^\]]+\]\s*$', '', raw_notes).strip()
             garments.append({
                 "item_id":      it["id"],
                 "garment_type": it["garment_type"],
                 "quantity":     it["quantity"],
                 "measurements": meas,
-                "notes":        it["notes"] or "",
+                "notes":        raw_notes,
                 "cut_done":     cut_done,
+                "selectedTypes": sel_types,
             })
         order_list.append({
             "order_code":        o["order_code"],
