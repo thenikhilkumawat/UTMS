@@ -133,6 +133,30 @@ def new_order():
     order_code  = peek_order_code()   # for new customers
     repeat_code = peek_repeat_code()  # for returning customers
     conn = get_db()
+
+    # Clean up orphaned temp images for codes about to be used
+    # This handles the case where system was reset but old temp images remain
+    for cleanup_code in [order_code, repeat_code]:
+        if cleanup_code:
+            conn.execute(
+                "DELETE FROM order_images WHERE order_id=0 AND file_path LIKE ?",
+                (f"temp:{cleanup_code}:%",)
+            )
+            # Also clean local filesystem if this code has no order in DB
+            existing_order = conn.execute("SELECT id FROM orders WHERE order_code=?", (cleanup_code,)).fetchone()
+            if not existing_order:
+                import shutil
+                local_folder = os.path.join(Config.UPLOAD_FOLDER, cleanup_code)
+                if os.path.isdir(local_folder):
+                    shutil.rmtree(local_folder, ignore_errors=True)
+    # Also clean up any order_images whose order_id no longer exists (global orphan cleanup)
+    conn.execute("""
+        DELETE FROM order_images
+        WHERE order_id > 0
+        AND order_id NOT IN (SELECT id FROM orders)
+    """)
+    conn.commit()
+
     today = date.today().isoformat()
     urgent_count = conn.execute("SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status!='delivered' AND delivery_date>=?",(today,)).fetchone()["c"]
     garment_rates = {
@@ -448,21 +472,27 @@ function submitPhotos() {{
 def list_images(order_code):
     import os as _os
     srcs = []
+    current_only = request.args.get("current_only", "0") == "1"
 
-    # Try DB first (Cloudinary URLs stored here)
     conn = get_db()
     order = conn.execute("SELECT id FROM orders WHERE order_code=?", (order_code,)).fetchone()
+
     if order:
+        # Order exists — only show images linked to THIS order_id
         rows = conn.execute("SELECT file_path FROM order_images WHERE order_id=? ORDER BY id", (order["id"],)).fetchall()
         srcs = [r["file_path"] for r in rows if r["file_path"] and not r["file_path"].startswith("temp:")]
-    # Also check temp images
-    temp_rows = conn.execute("SELECT file_path FROM order_images WHERE order_id=0 AND file_path LIKE ?", (f"temp:{order_code}:%",)).fetchall()
-    for r in temp_rows:
-        srcs.append(r["file_path"][len(f"temp:{order_code}:"):])
+
+    if not current_only:
+        # Also check temp images (only during upload/preview, not on confirmation)
+        temp_rows = conn.execute("SELECT file_path FROM order_images WHERE order_id=0 AND file_path LIKE ?", (f"temp:{order_code}:%",)).fetchall()
+        for r in temp_rows:
+            srcs.append(r["file_path"][len(f"temp:{order_code}:"):])
+
     conn.close()
 
-    # Fallback: local folder
-    if not srcs:
+    # Fallback: local folder — but only if order exists and has no DB images,
+    # or if order doesn't exist yet (preview during creation)
+    if not srcs and not current_only:
         folder = os.path.join(Config.UPLOAD_FOLDER, order_code)
         if os.path.isdir(folder):
             files = sorted(f for f in os.listdir(folder) if f.lower().endswith((".jpg",".jpeg",".png",".gif",".webp")))
