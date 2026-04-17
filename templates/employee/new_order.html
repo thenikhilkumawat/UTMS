@@ -155,7 +155,7 @@
             <button onclick="openUploadPopup('n')" class="btn btn-ghost btn-sm" style="margin-top:8px;width:100%;">📷 Open Upload Page</button>
           </div>
           <div>
-            <div style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;">Photos appear automatically every 4 seconds.</div>
+            <div style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;">Photos appear automatically every second.</div>
             <div id="img-preview" style="display:flex;flex-wrap:wrap;gap:10px;min-height:80px;align-items:flex-start;">
               <div style="color:var(--text-muted);font-size:13px;padding:24px 0;">No images yet</div>
             </div>
@@ -932,6 +932,29 @@ function renderSavedMeasurements(measList) {
           style="width:64px;text-align:center;font-size:17px;font-weight:800;padding:8px 4px;border:1.5px solid var(--border);border-radius:8px;background:#fff;color:var(--text-primary);">
       </div>`).join("");
     const keys = fields.map(([k])=>k);
+
+    // Build chips display from saved selectedTypes
+    const allChips = GARMENT_TYPES[m.garment_type]||[];
+    const selTypes = m.selectedTypes||[];
+    let chipsHtml = "";
+    if (allChips.length > 0 && selTypes.length > 0) {
+      const chipBtns = allChips.filter(c => selTypes.indexOf(c.k) >= 0).map(c =>
+        `<span style="display:inline-block;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:700;background:#4f46e5;color:#fff;border:2px solid #4f46e5;">${c.v}</span>`
+      ).join("");
+      if (chipBtns) {
+        chipsHtml = `<div style="margin-top:12px;padding:10px 12px;background:#f8fafc;border-radius:10px;border:1.5px solid #e2e8f0;">
+          <div style="font-size:11px;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">पिछली स्टाइल / Previous Style</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;">${chipBtns}</div>
+        </div>`;
+      }
+    }
+
+    // Build notes display
+    let notesHtml = "";
+    if (m.notes) {
+      notesHtml = `<div style="margin-top:8px;font-size:13px;color:#7c3aed;font-weight:600;">📝 ${m.notes}</div>`;
+    }
+
     return `<div style="padding:16px 20px;border-bottom:1px solid var(--border);">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
         <div>
@@ -944,6 +967,8 @@ function renderSavedMeasurements(measList) {
         </button>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:10px;">${inputs}</div>
+      ${chipsHtml}
+      ${notesHtml}
     </div>`;
   }).join("");
 }
@@ -1215,7 +1240,7 @@ function loadImages(previewId) {
   });
 }
 let imgPreviewId = "img-preview";
-function startImgPoll(previewId) { imgPreviewId=previewId||"img-preview"; loadImages(imgPreviewId); imgTimer=setInterval(()=>loadImages(imgPreviewId),3000); }
+function startImgPoll(previewId) { imgPreviewId=previewId||"img-preview"; loadImages(imgPreviewId); imgTimer=setInterval(()=>loadImages(imgPreviewId),1000); }
 function stopImgPoll() { clearInterval(imgTimer); imgTimer=null; }
 
 // ── PAYMENT ───────────────────────────────
@@ -1360,19 +1385,33 @@ function showSuccess() {
     document.getElementById("sc_repeat_badge").style.display = "block";
   }
 
-  // Images were uploaded to the upload code (REPEAT_CODE for existing, ORDER_CODE for new)
-  const imgCode = savedPayload.upload_code || currentCode;
-  fetch("/images/"+imgCode+"?ts="+Date.now()).then(r=>r.text()).then(html=>{
-    if(html&&html.trim()){
-      const box=document.getElementById("success-img-list");
-      box.innerHTML=html;
-      box.querySelectorAll("img").forEach(img=>{
-        img.style.cssText="width:90px;height:90px;object-fit:cover;border-radius:10px;border:2px solid var(--border);cursor:zoom-in;";
-        img.onclick=()=>{document.getElementById("fullscreen-img").src=img.dataset.src||img.src;document.getElementById("fullscreen-ov").style.display="flex";};
-      });
-      document.getElementById("success-images").style.display="block";
-    }
-  });
+  // Images — try upload code first, then current order code, then repeat_of code
+  function showSuccessImages(codes, idx) {
+    if (idx >= codes.length) return;
+    var code = codes[idx];
+    if (!code || code === "None" || code === "0") { showSuccessImages(codes, idx+1); return; }
+    fetch("/images/"+code+"?ts="+Date.now()).then(r=>r.text()).then(html=>{
+      if(html&&html.trim()){
+        const box=document.getElementById("success-img-list");
+        // Append instead of replace if already has images
+        var tmp = document.createElement("div"); tmp.innerHTML = html;
+        var existingSrcs = new Set();
+        box.querySelectorAll("img").forEach(img => existingSrcs.add(img.src));
+        tmp.querySelectorAll("img").forEach(img=>{
+          if (existingSrcs.has(img.src || img.getAttribute("src"))) return;
+          img.style.cssText="width:90px;height:90px;object-fit:cover;border-radius:10px;border:2px solid var(--border);cursor:zoom-in;";
+          img.onclick=()=>{document.getElementById("fullscreen-img").src=img.dataset.src||img.src;document.getElementById("fullscreen-ov").style.display="flex";};
+          box.appendChild(img);
+        });
+        document.getElementById("success-images").style.display="block";
+      }
+      showSuccessImages(codes, idx+1);
+    }).catch(()=>showSuccessImages(codes, idx+1));
+  }
+  var imgCodes = [savedPayload.upload_code, currentCode, savedPayload.repeat_of, ecPermanentCode].filter(Boolean);
+  // Deduplicate
+  imgCodes = [...new Set(imgCodes)];
+  showSuccessImages(imgCodes, 0);
   window.scrollTo({top:0,behavior:"smooth"});
 }
 
