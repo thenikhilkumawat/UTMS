@@ -1,5 +1,43 @@
 {% extends "base.html" %}
 {% block title %}नाप — Uttam Tailors{% endblock %}
+{% block extra_css %}
+<style>
+.m-card {
+  background:#fff;border-radius:18px;margin-bottom:20px;overflow:hidden;
+  box-shadow:0 2px 16px rgba(0,0,0,0.06);
+  transition: all 0.2s;
+}
+.m-card:hover { box-shadow:0 4px 24px rgba(0,0,0,0.1); }
+.m-card.urgent-card { border-left:5px solid #ef4444; }
+.m-card.delivered-card { border-left:5px solid #ef4444; opacity:0.7; }
+.m-header { padding:18px 20px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
+.m-header-urgent { background:linear-gradient(135deg,#fef2f2,#fee2e2); }
+.m-header-normal { background:linear-gradient(135deg,#f8fafc,#eef2ff); }
+.m-customer-name { font-size:20px; font-weight:900; color:#111827; }
+.m-customer-phone { font-size:16px; font-weight:700; color:#4f46e5; }
+.m-order-code { font-size:22px; font-weight:900; color:#6366f1; }
+.m-garment-section { padding:16px 20px; }
+.m-garment-section:not(:last-child) { border-bottom:1.5px solid #f1f5f9; }
+.m-garment-title { font-size:18px; font-weight:900; color:#1e1b4b; }
+.m-garment-qty { font-size:15px; font-weight:700; color:#6366f1; margin-left:8px; }
+.m-meas-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:8px; margin-top:12px; }
+.m-meas-item { background:#f0f4ff; border:1.5px solid #c7d2fe; border-radius:12px; padding:10px 14px; text-align:center; }
+.m-meas-label { font-size:12px; font-weight:800; color:#6366f1; text-transform:uppercase; letter-spacing:0.3px; margin-bottom:4px; }
+.m-meas-value { font-size:22px; font-weight:900; color:#111827; line-height:1.2; }
+.m-chip { display:inline-block; padding:6px 14px; border-radius:20px; font-size:13px; font-weight:700; background:#4f46e5; color:#fff; }
+.m-chip-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+.m-cut-btn { font-size:13px; background:#fef3c7; color:#92400e; padding:8px 18px; border-radius:10px; font-weight:800; border:2px solid #fde68a; cursor:pointer; transition:all 0.15s; }
+.m-cut-btn:hover { background:#fde68a; transform:translateY(-1px); }
+.m-cut-done { font-size:13px; background:#d1fae5; color:#065f46; padding:6px 14px; border-radius:10px; font-weight:800; }
+.m-notes { font-size:14px; color:#7c3aed; font-weight:700; margin-top:8px; }
+
+/* Cut popup modal */
+.cut-modal-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:9999; align-items:center; justify-content:center; }
+.cut-modal { background:#fff; border-radius:20px; padding:28px; max-width:420px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.3); }
+.cut-emp-btn { display:block; width:100%; padding:14px; margin-bottom:8px; border:2px solid var(--border); border-radius:12px; background:#fff; font-size:16px; font-weight:800; cursor:pointer; transition:all 0.15s; text-align:left; }
+.cut-emp-btn:hover { border-color:#4f46e5; background:#eef2ff; transform:translateY(-1px); }
+</style>
+{% endblock %}
 {% block content %}
 
 <div style="background:#fff;border-bottom:1px solid var(--border);padding:14px 22px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:40;">
@@ -29,38 +67,64 @@
   <img id="img-ov-src" style="max-width:92%;max-height:88%;border-radius:12px;">
 </div>
 
+<!-- Cut modal — who is doing the cutting? -->
+<div class="cut-modal-bg" id="cut-modal-bg">
+  <div class="cut-modal">
+    <div style="text-align:center;margin-bottom:18px;">
+      <div style="font-size:28px;margin-bottom:6px;">✂️</div>
+      <div style="font-size:18px;font-weight:900;color:#111;">कटाई किसने की?</div>
+      <div style="font-size:13px;color:var(--text-muted);margin-top:4px;" id="cut-modal-info"></div>
+    </div>
+    <div id="cut-modal-employees"></div>
+    <button onclick="closeCutModal()" style="width:100%;padding:10px;background:none;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;color:var(--text-muted);margin-top:4px;">
+      ✕ रद्द करें / Cancel
+    </button>
+  </div>
+</div>
+
 <!-- Order cards -->
 <div style="padding:16px 22px;" id="cards-container">
 {% for o in orders %}
-<div class="m-card" data-search="{{ o.order_code }} {{ o.display_code }} {{ o.customer_name|lower }} {{ o.mobile }}"
-  style="background:#fff;border-radius:16px;border:1.5px solid var(--border);margin-bottom:16px;overflow:hidden;
-         {% if o.is_urgent %}border-left:4px solid #ef4444;{% endif %}">
+<div class="m-card {% if o.is_urgent %}urgent-card{% endif %} {% if o.status == 'delivered' %}delivered-card{% endif %}"
+  data-search="{{ o.order_code }} {{ o.display_code }} {{ o.customer_name|lower }} {{ o.mobile }}">
 
   <!-- Header -->
-  <div style="padding:14px 16px;background:linear-gradient(135deg,#f8fafc,#eef2ff);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+  <div class="m-header {% if o.is_urgent %}m-header-urgent{% else %}m-header-normal{% endif %}">
     <div>
-      <span style="font-size:20px;font-weight:900;color:#6366f1;">#{{ o.display_code }}</span>
-      {% if o.entry_code %}
-        <span style="font-size:12px;background:#eef2ff;color:#6366f1;padding:2px 8px;border-radius:8px;font-weight:700;margin-left:6px;">Entry: {{ o.entry_code }}</span>
-      {% endif %}
-      {% if o.is_urgent %}
-        <span style="font-size:10px;background:#ef4444;color:#fff;padding:2px 8px;border-radius:8px;font-weight:800;margin-left:4px;">URGENT</span>
-      {% endif %}
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <span class="m-order-code">#{{ o.display_code }}</span>
+        {% if o.entry_code %}
+          <span style="font-size:12px;background:#eef2ff;color:#6366f1;padding:3px 10px;border-radius:8px;font-weight:700;">Entry: {{ o.entry_code }}</span>
+        {% endif %}
+        {% if o.is_urgent %}
+          <span style="font-size:11px;background:#ef4444;color:#fff;padding:3px 10px;border-radius:8px;font-weight:800;letter-spacing:0.5px;">🔥 URGENT</span>
+        {% endif %}
+        {% if o.status == 'delivered' %}
+          <span style="font-size:11px;background:#ef4444;color:#fff;padding:3px 10px;border-radius:8px;font-weight:800;">डिलीवर हो गया</span>
+        {% elif o.status == 'ready' %}
+          <span style="font-size:11px;background:#16a34a;color:#fff;padding:3px 10px;border-radius:8px;font-weight:800;">तैयार</span>
+        {% endif %}
+      </div>
+      <div style="margin-top:8px;">
+        <span class="m-customer-name">{{ o.customer_name }}</span>
+        {% if o.mobile %}
+          <span class="m-customer-phone" style="margin-left:12px;">📱 {{ o.mobile }}</span>
+        {% endif %}
+      </div>
     </div>
     <div style="text-align:right;">
-      <div style="font-size:14px;font-weight:800;">{{ o.customer_name }}</div>
-      <div style="font-size:11px;color:var(--text-muted);">📅 {{ o.delivery_date_fmt }}{% if o.mobile %} · 📱 {{ o.mobile }}{% endif %}</div>
+      <div style="font-size:14px;font-weight:700;color:var(--text-secondary);">📅 {{ o.delivery_date_fmt }}</div>
     </div>
   </div>
 
   <!-- Cloth images -->
   {% if o.images %}
-  <div style="padding:10px 16px;background:#fffbeb;border-bottom:1px solid #fde68a;">
-    <div style="font-size:10px;font-weight:800;color:#92400e;text-transform:uppercase;margin-bottom:6px;">📷 <span class="lang-en">Cloth Photos</span><span class="lang-hi" style="display:none;">कपड़े की फोटो</span></div>
-    <div style="display:flex;gap:8px;overflow-x:auto;">
+  <div style="padding:12px 20px;background:#fffbeb;border-bottom:1px solid #fde68a;">
+    <div style="font-size:11px;font-weight:800;color:#92400e;text-transform:uppercase;margin-bottom:8px;">📷 <span class="lang-en">Cloth Photos</span><span class="lang-hi" style="display:none;">कपड़े की फोटो</span></div>
+    <div style="display:flex;gap:10px;overflow-x:auto;">
       {% for img in o.images %}
       <img src="{{ img }}" onclick="document.getElementById('img-ov-src').src=this.src;document.getElementById('img-ov').style.display='flex';"
-        style="width:64px;height:64px;object-fit:cover;border-radius:10px;border:2px solid #fde68a;cursor:pointer;flex-shrink:0;">
+        style="width:72px;height:72px;object-fit:cover;border-radius:12px;border:2px solid #fde68a;cursor:pointer;flex-shrink:0;">
       {% endfor %}
     </div>
   </div>
@@ -68,48 +132,65 @@
 
   <!-- Garments -->
   {% for g in o.garments %}
-  <div style="padding:14px 16px;{% if not loop.last %}border-bottom:1px solid #f1f5f9;{% endif %}">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-      <div>
-        <span style="font-size:15px;font-weight:800;">{{ g.garment_type }}</span>
-        <span style="font-size:12px;color:var(--text-muted);margin-left:6px;">× {{ g.quantity }}</span>
+  <div class="m-garment-section">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span class="m-garment-title">{{ g.garment_type }}</span>
+        <span class="m-garment-qty">× {{ g.quantity }}</span>
       </div>
       {% if g.cut_done %}
-        <span style="font-size:11px;background:#d1fae5;color:#065f46;padding:2px 10px;border-radius:8px;font-weight:700;">✂️ {{ g.cut_done }}</span>
+        <span class="m-cut-done">✂️ {{ g.cut_done }} ने काटा</span>
       {% else %}
-        <button onclick="markCut('{{ o.order_code }}','{{ g.garment_type }}',{{ g.quantity }})"
-          style="font-size:11px;background:#fef3c7;color:#92400e;padding:4px 12px;border-radius:8px;font-weight:700;border:1.5px solid #fde68a;cursor:pointer;">
+        <button class="m-cut-btn" onclick="openCutModal('{{ o.order_code }}','{{ g.garment_type }}',{{ g.quantity }})">
           ✂️ <span class="lang-en">Mark Cut</span><span class="lang-hi" style="display:none;">कटाई करें</span>
         </button>
       {% endif %}
     </div>
 
+    <!-- Style chips — show full Hindi text instead of codes -->
+    {% if g.selectedTypes and garment_types_cfg.get(g.garment_type) %}
+    <div class="m-chip-row">
+      {% for code in g.selectedTypes %}
+        {% set matched = [] %}
+        {% for chip in garment_types_cfg.get(g.garment_type, []) %}
+          {% if chip.k == code %}
+            {% if matched.append(1) %}{% endif %}
+            <span class="m-chip">{{ chip.v }}</span>
+          {% endif %}
+        {% endfor %}
+        {% if not matched %}
+          <span class="m-chip" style="background:#64748b;">{{ code }}</span>
+        {% endif %}
+      {% endfor %}
+    </div>
+    {% endif %}
+
     {% if g.notes %}
-    <div style="font-size:12px;color:#7c3aed;font-weight:600;margin-bottom:6px;">📝 {{ g.notes }}</div>
+    <div class="m-notes">📝 {{ g.notes }}</div>
     {% endif %}
 
     <!-- Measurements grid -->
     {% if g.measurements %}
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:6px;">
+    <div class="m-meas-grid">
       {% for field, val in g.measurements.items() %}
       {% if val %}
-      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:6px 10px;">
-        <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;">
+      <div class="m-meas-item">
+        <div class="m-meas-label">
           {% if hindi_map.get(field) %}{{ hindi_map[field] }}{% else %}{{ field }}{% endif %}
         </div>
-        <div style="font-size:16px;font-weight:900;color:#111827;">{{ val }}</div>
+        <div class="m-meas-value">{{ val }}</div>
       </div>
       {% endif %}
       {% endfor %}
     </div>
     {% else %}
-    <div style="font-size:12px;color:var(--text-muted);font-style:italic;"><span class="lang-en">No measurements entered</span><span class="lang-hi" style="display:none;">कोई नाप नहीं</span></div>
+    <div style="font-size:13px;color:var(--text-muted);font-style:italic;margin-top:8px;"><span class="lang-en">No measurements entered</span><span class="lang-hi" style="display:none;">कोई नाप नहीं</span></div>
     {% endif %}
   </div>
   {% endfor %}
 
   {% if o.note %}
-  <div style="padding:10px 16px;background:#faf5ff;border-top:1px solid #e9d5ff;font-size:12px;color:#7c3aed;font-weight:600;">
+  <div style="padding:12px 20px;background:#faf5ff;border-top:1px solid #e9d5ff;font-size:14px;color:#7c3aed;font-weight:700;">
     📌 {{ o.note }}
   </div>
   {% endif %}
@@ -129,6 +210,11 @@
 
 {% block extra_js %}
 <script>
+var EMPLOYEES = {{ employees|tojson }};
+var _cutOrderCode = "";
+var _cutGarmentType = "";
+var _cutQty = 0;
+
 function filterCards() {
   var q = (document.getElementById("m-search").value || "").toLowerCase();
   document.querySelectorAll(".m-card").forEach(function(c){
@@ -137,22 +223,45 @@ function filterCards() {
   });
 }
 
-function markCut(orderCode, garmentType, qty) {
-  if (!confirm("Mark cutting done for " + garmentType + " in order #" + orderCode + "?")) return;
+function openCutModal(orderCode, garmentType, qty) {
+  _cutOrderCode = orderCode;
+  _cutGarmentType = garmentType;
+  _cutQty = qty;
+  document.getElementById("cut-modal-info").textContent = garmentType + " — Order #" + orderCode + " (×" + qty + ")";
+  var box = document.getElementById("cut-modal-employees");
+  box.innerHTML = EMPLOYEES.map(function(emp){
+    return '<button class="cut-emp-btn" onclick="confirmCut('+emp.id+',\''+emp.name.replace(/'/g,"\\'")+'\')">'
+      + '<div style="display:flex;align-items:center;gap:12px;">'
+      + '<div style="width:42px;height:42px;border-radius:12px;background:#eef2ff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#4f46e5;">' + emp.name[0] + '</div>'
+      + '<div>'
+      + '<div style="font-size:16px;font-weight:800;">' + (emp.hindi_name || emp.name) + '</div>'
+      + '<div style="font-size:12px;color:var(--text-muted);font-weight:600;">' + emp.name + '</div>'
+      + '</div></div></button>';
+  }).join("");
+  document.getElementById("cut-modal-bg").style.display = "flex";
+}
+
+function closeCutModal() {
+  document.getElementById("cut-modal-bg").style.display = "none";
+}
+
+function confirmCut(empId, empName) {
+  closeCutModal();
   fetch("/api/work-log/add", {
     method: "POST",
     headers: {"Content-Type": "application/json"},
     body: JSON.stringify({
-      order_code: orderCode,
-      garment_type: garmentType,
-      qty_done: qty,
-      employee_name: "Kamal",
-      notes: "Kataai — " + garmentType,
+      order_code: _cutOrderCode,
+      garment_type: _cutGarmentType,
+      qty_done: _cutQty,
+      employee_id: empId,
+      employee_name: empName,
+      notes: "Kataai — " + _cutGarmentType,
       is_non_stitch: true
     })
   }).then(function(r){ return r.json(); }).then(function(d){
     if (d.ok) {
-      showToast("✂️ Cutting logged!", "success");
+      showToast("✂️ " + empName + " ने कटाई की!", "success");
       setTimeout(function(){ location.reload(); }, 600);
     } else {
       showToast(d.error || "Error", "error");
