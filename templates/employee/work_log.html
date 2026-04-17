@@ -298,8 +298,14 @@ function lookupCode() {
         hideQtyAndSubmit(); return;
       }
       orderData = data;
+      // Use the resolved order_code from API (may differ from what user typed for repeat orders)
+      var resolvedCode = data.order_code || code;
+      if (resolvedCode !== code) {
+        document.getElementById("wl-code").value = resolvedCode;
+      }
       res.innerHTML = '<div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:8px;padding:8px 12px;">'
-        + '<span style="font-size:13px;font-weight:900;color:#16a34a;">✓ #'+code+' — '+data.customer_name+'</span>'
+        + '<span style="font-size:13px;font-weight:900;color:#16a34a;">✓ #'+resolvedCode+' — '+data.customer_name+'</span>'
+        + (resolvedCode !== code ? '<span style="font-size:11px;color:#4f46e5;margin-left:8px;font-weight:700;">(customer #'+code+')</span>' : '')
         + '<span style="font-size:11px;color:var(--text-muted);margin-left:8px;">'+data.delivery_date_fmt+(data.is_urgent?' 🔥':'')+'</span></div>';
 
       var sel = document.getElementById("wl-garment");
