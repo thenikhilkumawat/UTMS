@@ -15,6 +15,7 @@
 <div style="background:#fff;border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:40;">
   <h1 style="font-size:17px;font-weight:900;margin:0;">✂️ <span class="lang-en">Work Log</span><span class="lang-hi" style="display:none;">काम की जानकारी</span></h1>
   <div style="display:flex;gap:8px;">
+    <button onclick="cleanupPastOrderLogs()" class="btn btn-ghost btn-sm" style="color:#dc2626;font-size:11px;" title="Delete all work logs created by past orders">🗑️ Past Order Cleanup</button>
     <a href="/" class="btn btn-ghost btn-sm">← <span class="lang-en">Back</span><span class="lang-hi" style="display:none;">वापस</span></a>
     <button class="menu-toggle" onclick="openSidebar()">☰</button>
   </div>
@@ -460,12 +461,35 @@ function renderStats(data) {
           +'<span style="font-size:13px;font-weight:900;color:#4f46e5;">#'+e.order_code+'</span>'
           +getWorkBadge(e.garment_type, e.notes||'')
           +'</div>'
+          +'<div style="display:flex;align-items:center;gap:8px;">'
           +'<div style="text-align:right;">'
           +'<div style="font-size:20px;font-weight:900;">'+e.qty_done+'</div>'
           +(e.earnings>0?'<div style="font-size:11px;color:#16a34a;font-weight:800;">₹'+e.earnings+'</div>':'')
+          +'</div>'
+          +'<button onclick="deleteWorkLog('+e.id+')" title="Delete" style="background:#fee2e2;color:#dc2626;border:none;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:800;cursor:pointer;">✕</button>'
           +'</div></div>';
       }).join("")+'</div>';
   }).join("");
+}
+
+function deleteWorkLog(logId) {
+  if (!confirm("Delete this work log entry?")) return;
+  fetch("/api/work-log/delete/"+logId, {method:"POST"})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if (d.ok) { showToast("🗑️ Entry deleted","success"); setTimeout(loadStats,300); }
+      else showToast(d.error||"Error","error");
+    });
+}
+
+function cleanupPastOrderLogs() {
+  if (!confirm("⚠️ This will delete ALL work log entries created by past orders (employee: Past Order, Kamal naap/kataai at ₹0 rate).\n\nContinue?")) return;
+  fetch("/api/work-log/cleanup-past-orders", {method:"POST"})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if (d.ok) { showToast("✅ Past order work logs cleaned up!","success"); setTimeout(loadStats,300); }
+      else showToast(d.error||"Error","error");
+    });
 }
 </script>
 {% endblock %}
