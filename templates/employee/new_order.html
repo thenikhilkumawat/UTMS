@@ -691,6 +691,7 @@ function goExistingStep(n) {
   if (n===1) { showStep("step-e1b"); return; }
   const map = {2:"step-e2",3:"step-e3",4:"step-e4",5:"step-e5"};
   showStep(map[n]);
+  if (n===2) { renderExistingGarments(); }  // Re-render to ensure chips/tiles show
   if (n===3) { buildQR("qr-box-e","qr-link-e"); startImgPoll("img-preview-e"); }
   if (n===4) { const t=new Date().toISOString().split("T")[0]; if(!document.getElementById("e_odate").value) document.getElementById("e_odate").value=t; document.getElementById("e_ddate").min=t; }
   if (n===5) { injectPayment("payment-inner-existing"); recalcPayment(); }
@@ -1083,8 +1084,14 @@ function addExistingGarment() {
   if(ecCustomerData) {
     fetch("/api/customers/"+ecCustomerData.id+"/measurements").then(r=>r.json()).then(list=>{
       const found=list.find(m=>m.garment_type===type);
-      if(found) meas={...found.measurements};
-      existingGarments.push({id:Date.now(),type,qty,rate:parseFloat(RATE_MAP[type]||0),meas,notes:"",extraFields:[]});
+      if(found) {
+        meas={...found.measurements};
+        var selTypes = found.selectedTypes || [];
+        var notesVal = found.notes || "";
+        existingGarments.push({id:Date.now(),type,qty,rate:parseFloat(RATE_MAP[type]||0),meas,notes:notesVal,extraFields:[],selectedTypes:selTypes});
+      } else {
+        existingGarments.push({id:Date.now(),type,qty,rate:parseFloat(RATE_MAP[type]||0),meas,notes:"",extraFields:[],selectedTypes:[]});
+      }
       renderExistingGarments();
     });
   } else {
