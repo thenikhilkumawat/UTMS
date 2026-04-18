@@ -184,6 +184,19 @@
   <!-- STEP 5: Payment -->
   <div id="step-p5" style="display:none;">
     <div id="past-payment-inner"></div>
+    <!-- Delivered checkbox -->
+    <div style="margin-top:16px;padding:14px 18px;background:#f0fdf4;border:2px solid #bbf7d0;border-radius:14px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <input type="checkbox" id="p-is-delivered" checked
+          style="width:22px;height:22px;accent-color:#16a34a;cursor:pointer;">
+        <label for="p-is-delivered" style="font-size:15px;font-weight:800;cursor:pointer;color:#065f46;">
+          ✅ यह ऑर्डर डिलीवर हो चुका है / This order is already delivered
+        </label>
+      </div>
+      <div style="font-size:12px;color:#047857;margin-top:6px;padding-left:34px;">
+        Uncheck if this order is still pending — it will appear in pickup & delivery page
+      </div>
+    </div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;">
       <button class="btn btn-ghost" onclick="goStep(4)">← Images</button>
       <button class="btn btn-success btn-lg" id="p-confirm-btn" onclick="confirmPastOrder()">✅ Save Past Order</button>
@@ -488,7 +501,8 @@ function confirmPastOrder() {
     total_amount:  payable,
     advance_paid:  advance,
     payment_mode:  pastPayMode,
-    garments:      items
+    garments:      items,
+    is_delivered:  document.getElementById("p-is-delivered").checked
   };
 
   fetch("/owner/past-orders/save",{
