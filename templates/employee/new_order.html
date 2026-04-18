@@ -1415,31 +1415,46 @@ function openWAModal(){document.getElementById("wa-modal-bg").style.display="fle
 function sendWA(lang){
   document.getElementById("wa-modal-bg").style.display="none";
   const p = savedPayload;
-  const items = p.items.map(i => tGarment(i.type) + " x" + (i.qty || i.quantity || 1)).join(", ");
+  const items = p.items.map(i => tGarment(i.type) + " ×" + (i.qty || i.quantity || 1)).join(", ");
   const dFmt  = fmtDate(p.delivery_date);
   const oFmt  = fmtDate(p.order_date || "");
-  const prev  = p.repeat_of ? ("Previous Order: #" + p.repeat_of + "\n") : "";
-  const note  = p.note || "";
+  const mode  = p.payment_mode === "cash" ? (lang==="hi"?"नकद":"Cash") : "UPI";
   let msg = "";
-  // Build message from saved template (fetched fresh each time)
-  function applyTpl(tpl) {
-    return tpl
-      .replace(/{name}/g, p.customer_name)
-      .replace(/{shop}/g, "Uttam Tailors")
-      .replace(/{code}/g, currentCode)
-      .replace(/{mobile}/g, p.mobile || "—")
-      .replace(/{items}/g, items)
-      .replace(/{total}/g, p.payable_amount)
-      .replace(/{advance}/g, p.advance_paid)
-      .replace(/{remaining}/g, p.remaining)
-      .replace(/{order_date}/g, oFmt)
-      .replace(/{delivery_date}/g, dFmt)
-      .replace(/{mode}/g, p.payment_mode === "cash" ? (lang==="hi"?"नकद":"Cash") : "UPI");
+
+  if (lang === "hi") {
+    msg = "*उत्तम टेलर्स*\n"
+      + "नमस्ते *" + p.customer_name + "* जी,\n"
+      + "आपका ऑर्डर सफलतापूर्वक दर्ज हो गया है।\n"
+      + "------------------------------------------\n\n"
+      + "• ऑर्डर नंबर: *#" + currentCode + "*\n\n"
+      + "• ऑर्डर तारीख: " + oFmt + "\n\n"
+      + "• डिलीवरी तारीख: *" + dFmt + "*\n\n"
+      + "• कपड़े: " + items + "\n\n"
+      + "• कुल राशि: *₹" + p.payable_amount + "*\n\n"
+      + "• अग्रिम भुगतान: ₹" + p.advance_paid + "\n\n"
+      + "• बकाया राशि: *₹" + p.remaining + "*\n\n"
+      + "• भुगतान माध्यम: " + mode + "\n"
+      + "-----------------------------------------------\n"
+      + "आपके विश्वास के लिए धन्यवाद। 🙏🏻\n"
+      + "उत्तम टेलर्स";
+  } else {
+    msg = "*Uttam Tailors*\n"
+      + "Hello *" + p.customer_name + "*,\n"
+      + "Your order has been confirmed successfully.\n"
+      + "------------------------------------------\n\n"
+      + "• Order No: *#" + currentCode + "*\n\n"
+      + "• Order Date: " + oFmt + "\n\n"
+      + "• Delivery Date: *" + dFmt + "*\n\n"
+      + "• Garments: " + items + "\n\n"
+      + "• Total Amount: *₹" + p.payable_amount + "*\n\n"
+      + "• Advance Paid: ₹" + p.advance_paid + "\n\n"
+      + "• Balance Due: *₹" + p.remaining + "*\n\n"
+      + "• Payment Mode: " + mode + "\n"
+      + "-----------------------------------------------\n"
+      + "Thank you for your trust. 🙏🏻\n"
+      + "Uttam Tailors";
   }
-  var defaultTpl_en = "*Uttam Tailors* - Order Confirmed\n\nHello {name}!\n\n---\nOrder No: *#{code}*\nCustomer: {name}\nMobile: {mobile}\nOrder Date: {order_date}\nDelivery Date: *{delivery_date}*\n\nGarments: {items}\n---\nTotal: Rs. {total}\nAdvance Paid: Rs. {advance}\nRemaining Due: Rs. {remaining}\nMode: {mode}\n\nThank you for choosing Uttam Tailors!";
-  var defaultTpl_hi = "*Uttam Tailors* - ऑर्डर पक्का हो गया\n\nनमस्ते {name} जी!\n\n---\nऑर्डर नंबर: *#{code}*\nग्राहक: {name}\nमोबाइल: {mobile}\nऑर्डर दिनांक: {order_date}\nडिलीवरी दिनांक: *{delivery_date}*\n\nकपड़े: {items}\n---\nकुल राशि: Rs. {total}\nअग्रिम: Rs. {advance}\nबकाया: Rs. {remaining}\nभुगतान: {mode}\n\nUttam Tailors में आने का धन्यवाद!";
-  msg = applyTpl(lang === "hi" ? defaultTpl_hi : defaultTpl_en);
-  if (prev) msg = msg.replace("Order No:", "Previous: #" + p.repeat_of + "\nOrder No:");
+
   const phone = (p.mobile || p.alt_mobile || WA_NUMBER).replace(/\D/g, "");
   window.open("https://wa.me/" + phone + "?text=" + encodeURIComponent(msg), "_blank");
 }
