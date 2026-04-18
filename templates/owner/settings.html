@@ -75,7 +75,7 @@
       <div style="margin-top:16px;padding:14px 16px;background:#f0fdf4;border-radius:12px;border:1.5px solid #6ee7b7;">
         <div style="font-size:13px;font-weight:800;color:#166534;margin-bottom:10px;">➕ नया कपड़ा जोड़ें</div>
         <div style="display:flex;gap:8px;align-items:center;">
-          <input type="text" id="new-garment-name" placeholder="कपड़े का नाम (जैसे: Bandhgala)"
+          <input type="text" id="new-garment-chips-name" placeholder="कपड़े का नाम (जैसे: Bandhgala)"
             style="flex:1;padding:9px 12px;font-size:13px;border:1.5px solid #6ee7b7;border-radius:8px;background:#fff;">
           <button onclick="addNewGarmentSection()"
             style="padding:9px 20px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;white-space:nowrap;">
@@ -265,41 +265,6 @@
   </div>
 
 
-
-  <!-- Excel Export & Import -->
-  <div class="card mb-24">
-    <div class="card-header">
-      <span class="card-title">📊 Excel Export & Import</span>
-    </div>
-    <div class="card-body" style="display:flex;flex-direction:column;gap:20px;">
-
-      <!-- Export -->
-      <div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:12px;padding:16px 18px;">
-        <div style="font-size:14px;font-weight:800;color:#065f46;margin-bottom:6px;">📥 Export All Orders to Excel</div>
-        <div style="font-size:13px;color:#047857;margin-bottom:12px;">
-          Downloads every order with customer details, measurements, payments — all data.
-        </div>
-        <a href="/owner/export/orders" class="btn btn-success" style="display:inline-flex;">
-          Download Excel Sheet
-        </a>
-      </div>
-
-      <!-- Import -->
-      <div style="background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:12px;padding:16px 18px;">
-        <div style="font-size:14px;font-weight:800;color:#1e40af;margin-bottom:6px;">📤 Import Customers from Excel</div>
-        <div style="font-size:13px;color:#2563eb;margin-bottom:12px;">
-          Upload an Excel file (.xlsx) with columns: Name, Mobile, Address. Duplicates are skipped automatically.
-        </div>
-        <form action="/owner/import/customers" method="POST" enctype="multipart/form-data">
-          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-            <input type="file" name="customer_file" accept=".xlsx,.xls"
-              style="padding:8px;border:1.5px solid var(--border);border-radius:8px;flex:1;min-width:180px;">
-            <button type="submit" class="btn btn-primary" style="white-space:nowrap;">Upload & Import</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
 
   <!-- ═══ EMPLOYEE MANAGEMENT ═══ -->
   <div class="card mb-24">
@@ -547,13 +512,12 @@
           <div>✅ <strong>Your PostgreSQL data is safe</strong> — code updates do NOT delete your orders or customers</div>
           <div>⚠️ <strong>90-day risk:</strong> Render's free database expires after 90 days — download backup regularly</div>
           <div>📥 <strong>Download JSON</strong> → saves everything (orders, customers, finance, employees) — use this to restore</div>
-          <div>📊 <strong>Download Excel</strong> → easy to read on phone/PC, but cannot restore from Excel</div>
           <div>📤 <strong>Restore:</strong> Upload the <code style="background:#dcfce7;padding:1px 5px;border-radius:4px;">.json</code> file only — restores all data exactly as it was</div>
         </div>
       </div>
 
       <!-- Download options -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;">
+      <div style="display:grid;grid-template-columns:1fr;gap:14px;margin-bottom:20px;">
 
         <div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:12px;padding:16px;">
           <div style="font-size:13px;font-weight:800;color:#15803d;margin-bottom:4px;">📥 Download JSON Backup</div>
@@ -566,16 +530,6 @@
           </a>
         </div>
 
-        <div style="background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:12px;padding:16px;">
-          <div style="font-size:13px;font-weight:800;color:#1d4ed8;margin-bottom:4px;">📊 Download Excel Backup</div>
-          <div style="font-size:11px;color:#1e40af;margin-bottom:12px;line-height:1.5;">
-            All data in readable Excel sheets — Orders, Customers, Finance, Employees. Open on any phone or PC.
-          </div>
-          <a href="/owner/backup/excel"
-            style="display:block;text-align:center;background:#2563eb;color:#fff;padding:10px;border-radius:10px;font-size:13px;font-weight:800;text-decoration:none;">
-            📊 Download Excel (View Only)
-          </a>
-        </div>
       </div>
 
       <!-- Restore section -->
@@ -817,8 +771,8 @@ function removeChip(safeKey, garmentName, label) {
 }
 
 function addNewGarmentSection() {
-  var garment = document.getElementById("new-garment-name").value.trim();
-  if (!garment) { document.getElementById("new-garment-name").focus(); return; }
+  var garment = document.getElementById("new-garment-chips-name").value.trim();
+  if (!garment) { document.getElementById("new-garment-chips-name").focus(); return; }
   fetch("/owner/api/save-setting", {
     method:"POST", headers:{"Content-Type":"application/json"},
     body: JSON.stringify({key:"types_"+garment, value:""})
