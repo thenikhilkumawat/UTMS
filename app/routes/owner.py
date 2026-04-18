@@ -553,15 +553,19 @@ def dashboard():
         "Alteration","Cutting Only"
     ]
     # Customer rates (what customers pay)
+    deleted_csv = get_setting("deleted_customer_rates", "")
+    deleted_set = set(x.strip() for x in deleted_csv.split(",") if x.strip())
     garment_rates = {}
     for n in garment_names:
+        if n in deleted_set:
+            continue
         r = get_setting("customer_rate_"+n,"") or get_setting("rate_"+n,"0")
         garment_rates[n] = r
     # Add custom customer rates
     for row in custom_rates:
         if row["key"].startswith("customer_rate_"):
             name = row["key"][14:]
-            if name not in garment_rates:
+            if name not in garment_rates and name not in deleted_set:
                 garment_rates[name] = row["value"]
 
     # Stitching rates (what employees get paid)
@@ -617,7 +621,11 @@ def settings():
     ]
     # Customer rates
     garment_rates = {}
+    deleted_csv = get_setting("deleted_customer_rates", "")
+    deleted_set = set(x.strip() for x in deleted_csv.split(",") if x.strip())
     for n in garment_names_std:
+        if n in deleted_set:
+            continue  # user deleted this garment type
         r = get_setting("customer_rate_"+n,"") or get_setting("rate_"+n,"0")
         garment_rates[n] = r
     # Add any custom customer garments
@@ -716,13 +724,32 @@ def settings_save():
             set_setting("owner_pin", new_pin)
             flash("PIN changed successfully!", "success")
     elif section == "customer_rates":
+        # Load currently deleted garments list
+        deleted_csv = get_setting("deleted_customer_rates", "")
+        deleted_names = set(x.strip() for x in deleted_csv.split(",") if x.strip())
+        # Process new deletes
         for name in request.form.getlist("delete_rate"):
+            deleted_names.add(name)
             conn2 = get_db()
             conn2.execute("DELETE FROM settings WHERE key=?",("customer_rate_"+name,))
+            conn2.execute("DELETE FROM settings WHERE key=?",("rate_"+name,))
             conn2.commit(); conn2.close()
+        # Save deleted list
+        set_setting("deleted_customer_rates", ",".join(sorted(deleted_names)))
+        from database import invalidate_settings_cache; invalidate_settings_cache()
+        # Then: save remaining rates (skip deleted ones)
         for key, val in request.form.items():
-            if key.startswith("customer_rate_") and val.strip():
-                set_setting(key, val)
+            if key.startswith("customer_rate_"):
+                name = key[14:]
+                if name in deleted_names:
+                    continue  # skip re-saving deleted items
+                if val.strip():
+                    set_setting(key, val)
+                    # Also sync to rate_X so new_order picks it up
+                    set_setting("rate_"+name, val)
+                    # If user re-adds a previously deleted garment, remove from deleted list
+                    deleted_names.discard(name)
+        set_setting("deleted_customer_rates", ",".join(sorted(deleted_names)))
         from database import invalidate_settings_cache; invalidate_settings_cache()
         flash("Customer rates saved!", "success")
     elif section == "stitch_rates":
@@ -2212,20 +2239,29 @@ def past_orders():
     import json as _json
     conn = get_db()
 
-    # Garment rates
-    garment_names = [
-        "Shirt","Shirt Linen","Pant","Pant Double","Jeans","Suit 2pc","Suit 3pc",
-        "Blazer","Kurta","Kurta Pajama","Pajama","Pathani","Sherwani","Safari","Waistcoat",
-        "Alteration","Cutting Only"
-    ]
+    # Garment rates — same logic as new_order
+    RATE_DEFAULTS = {
+        "Shirt":"350","Shirt Linen":"450","Pant":"450","Pant Double":"550",
+        "Jeans":"550","Suit 2pc":"2800","Suit 3pc":"3500","Blazer":"2300",
+        "Kurta":"800","Kurta Pajama":"1000","Pajama":"300","Pathani":"800",
+        "Sherwani":"3500","Safari":"1500","Waistcoat":"800",
+        "Alteration":"100","Cutting Only":"100"
+    }
+    deleted_csv = get_setting("deleted_customer_rates", "")
+    deleted_set = set(x.strip() for x in deleted_csv.split(",") if x.strip())
     garment_rates = {}
-    for n in garment_names:
-        r = get_setting("customer_rate_"+n,"") or get_setting("rate_"+n,"0")
-        garment_rates[n] = r
+    for n, default_rate in RATE_DEFAULTS.items():
+        if n in deleted_set:
+            continue
+        cr = get_setting("customer_rate_"+n, "")
+        if cr and cr.strip():
+            garment_rates[n] = cr
+        else:
+            garment_rates[n] = get_setting("rate_"+n, default_rate)
     custom_rates = conn.execute("SELECT key,value FROM settings WHERE key LIKE 'customer_rate_%'").fetchall()
     for row in custom_rates:
         name = row["key"][14:]
-        if name not in garment_rates:
+        if name not in garment_rates and name not in deleted_set and row["value"] and row["value"].strip() and row["value"] != "0":
             garment_rates[name] = row["value"]
 
     # Measurement fields
@@ -2284,6 +2320,8 @@ def past_orders_save():
     payable    = total_amount
     remaining  = max(0, payable - advance_paid)
     now_str    = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    is_delivered = data.get("is_delivered", True)  # default True for backward compat
+    status = "delivered" if is_delivered else "pending"
 
     conn = get_db()
     try:
@@ -2309,14 +2347,16 @@ def past_orders_save():
         else:
             order_code = next_order_code()
 
+        delivered_at = delivery_date if is_delivered else None
+
         conn.execute("""
             INSERT INTO orders(order_code,customer_id,order_date,delivery_date,
                 total_amount,extra_charges,payable_amount,advance_paid,remaining,
                 payment_mode,status,is_urgent,note,delivered_at,created_at)
-            VALUES(?,?,?,?,?,0,?,?,?,?,'delivered',0,?,?,?)
+            VALUES(?,?,?,?,?,0,?,?,?,?,?,0,?,?,?)
         """, (order_code, customer_id, order_date, delivery_date,
               total_amount, payable, advance_paid, remaining,
-              payment_mode, note, delivery_date or now_str[:10], now_str))
+              payment_mode, status, note, delivered_at, now_str))
         conn.commit()
 
         # Get the newly inserted order id
@@ -2338,41 +2378,43 @@ def past_orders_save():
                     VALUES(?,?,?,?,?,?,?)
                 """, (order_id, gtype, qty, rate, amt, _gj.dumps(meas), notes))
 
-        # Auto-create work logs for all stages (naap, cutting, silayi) — past order is fully done
-        log_date = delivery_date or order_date or now_str[:10]
-        for g in garments:
-            gtype = (g.get("type") or "").strip()
-            qty   = int(g.get("qty") or 1)
-            if not gtype:
-                continue
-            # Naap (Measurement)
-            conn.execute("""
-                INSERT INTO work_logs(order_id, order_code, garment_type, qty_done,
-                    employee_name, log_date, making_rate, notes, is_non_stitch, created_at)
-                VALUES(?,?,?,?,?,?,?,?,1,?)
-            """, (order_id, order_code, gtype, qty, "Kamal", log_date, 0,
-                  f"Naap — {gtype}", now_str))
-            # Kataai (Cutting)
-            conn.execute("""
-                INSERT INTO work_logs(order_id, order_code, garment_type, qty_done,
-                    employee_name, log_date, making_rate, notes, is_non_stitch, created_at)
-                VALUES(?,?,?,?,?,?,?,?,1,?)
-            """, (order_id, order_code, gtype, qty, "Kamal", log_date, 0,
-                  f"Kataai — {gtype}", now_str))
-            # Silayi (Stitching)
-            conn.execute("""
-                INSERT INTO work_logs(order_id, order_code, garment_type, qty_done,
-                    employee_name, log_date, making_rate, notes, created_at)
-                VALUES(?,?,?,?,?,?,?,?,?)
-            """, (order_id, order_code, gtype, qty, "Past Order", log_date, 0,
-                  "", now_str))
+        # Auto-create work logs only if order is delivered (all stages done)
+        if is_delivered:
+            log_date = delivery_date or order_date or now_str[:10]
+            for g in garments:
+                gtype = (g.get("type") or "").strip()
+                qty   = int(g.get("qty") or 1)
+                if not gtype:
+                    continue
+                # Naap (Measurement)
+                conn.execute("""
+                    INSERT INTO work_logs(order_id, order_code, garment_type, qty_done,
+                        employee_name, log_date, making_rate, notes, is_non_stitch, created_at)
+                    VALUES(?,?,?,?,?,?,?,?,1,?)
+                """, (order_id, order_code, gtype, qty, "Kamal", log_date, 0,
+                      f"Naap — {gtype}", now_str))
+                # Kataai (Cutting)
+                conn.execute("""
+                    INSERT INTO work_logs(order_id, order_code, garment_type, qty_done,
+                        employee_name, log_date, making_rate, notes, is_non_stitch, created_at)
+                    VALUES(?,?,?,?,?,?,?,?,1,?)
+                """, (order_id, order_code, gtype, qty, "Kamal", log_date, 0,
+                      f"Kataai — {gtype}", now_str))
+                # Silayi (Stitching)
+                conn.execute("""
+                    INSERT INTO work_logs(order_id, order_code, garment_type, qty_done,
+                        employee_name, log_date, making_rate, notes, created_at)
+                    VALUES(?,?,?,?,?,?,?,?,?)
+                """, (order_id, order_code, gtype, qty, "Past Order", log_date, 0,
+                      "", now_str))
 
-        # Finance entry for payment received
+        # Finance entry for payment received — use order_date so it appears in correct month
+        finance_date = order_date or delivery_date or now_str[:10]
         if advance_paid > 0:
             conn.execute("""
                 INSERT INTO finance(tx_date,tx_type,category,amount,mode,order_id,note,created_by,created_at)
                 VALUES(?,?,?,?,?,?,?,?,?)
-            """, (delivery_date or now_str[:10], "income", "payment",
+            """, (finance_date, "income", "payment",
                   advance_paid, payment_mode, order_id,
                   f"Past order #{order_code} - {customer_name}", "owner", now_str))
 
