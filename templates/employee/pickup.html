@@ -360,14 +360,51 @@ function collectAndDeliver(isDiscount) {
 function sendDeliveryWA(lang) {
   var o = currentOrder;
   var items = (o.garments||o.items||[]).map(function(i){return i.garment_type+" ×"+i.quantity;}).join(", ");
-  var rn = (document.getElementById("receiver-name").value||"").trim();
-  var rm = (document.getElementById("receiver-mobile").value||"").trim();
-  var rhi = (rn||rm)?"\n\n👤 लेने वाले: *"+(rn||"—")+"*\n📱 *"+(rm||"—")+"*":"";
-  var ren = (rn||rm)?"\n\n👤 Collected by: *"+(rn||"—")+"*\n📱 *"+(rm||"—")+"*":"";
-  var msg = lang==="hi"
-    ? "*उत्तम टेलर्स*\n\nनमस्ते "+o.customer_name+" जी!\nआपके कपड़े डिलीवर हो गए।\n\nऑर्डर: *#"+(o.display_code||o.order_code)+"*\nकपड़े: "+items+rhi+"\n\n✅ धन्यवाद!"
-    : "*Uttam Tailors*\n\nDear "+o.customer_name+",\nOrder *#"+(o.display_code||o.order_code)+"* delivered.\n\nItems: "+items+ren+"\n\n✅ Thank you!";
-  if (o.mobile) window.open("https://wa.me/"+o.mobile.replace(/\D/g,"")+"?text="+encodeURIComponent(msg),"_blank");
+  var mode = o.payment_mode === "cash" ? (lang==="hi"?"नकद":"Cash") : "UPI";
+  var odate = o.order_date_fmt || "";
+  var ddate = o.delivery_date_fmt || "";
+  var total = Math.round(o.payable_amount || 0);
+  var msg = "";
+
+  if (lang === "hi") {
+    msg = "*उत्तम टेलर्स*\n"
+      + "नमस्ते *" + o.customer_name + "* जी,\n"
+      + "आपके कपड़े सफलतापूर्वक डिलीवर कर दिए गए हैं।\n"
+      + "------------------------------------------\n\n"
+      + "• ऑर्डर नंबर: *#" + (o.display_code||o.order_code) + "*\n\n"
+      + (odate ? "• ऑर्डर तारीख: " + odate + "\n\n" : "")
+      + (ddate ? "• डिलीवरी तारीख: " + ddate + "\n\n" : "")
+      + "• कपड़े: " + items + "\n\n"
+      + "• कुल भुगतान: *₹" + total + "*\n\n"
+      + "• भुगतान माध्यम: " + mode + "\n"
+      + "-----------------------------------------------\n"
+      + "आपके विश्वास के लिए धन्यवाद। 🙏🏻\n"
+      + "आगे भी सेवा का अवसर दें, यही हमारी शुभकामना है।\n"
+      + "धन्यवाद!\n"
+      + "उत्तम टेलर्स";
+  } else {
+    msg = "*Uttam Tailors*\n"
+      + "Hello *" + o.customer_name + "*,\n"
+      + "Your garments have been delivered successfully.\n"
+      + "------------------------------------------\n\n"
+      + "• Order No: *#" + (o.display_code||o.order_code) + "*\n\n"
+      + (odate ? "• Order Date: " + odate + "\n\n" : "")
+      + (ddate ? "• Delivery Date: " + ddate + "\n\n" : "")
+      + "• Garments: " + items + "\n\n"
+      + "• Total Paid: *₹" + total + "*\n\n"
+      + "• Payment Mode: " + mode + "\n"
+      + "-----------------------------------------------\n"
+      + "Thank you for your trust. 🙏🏻\n"
+      + "We look forward to serving you again.\n"
+      + "Thank you!\n"
+      + "Uttam Tailors";
+  }
+
+  if (o.mobile) {
+    var phone = o.mobile.replace(/\D/g, "");
+    if (phone.length === 10) phone = "91" + phone;
+    window.open("https://wa.me/" + phone + "?text=" + encodeURIComponent(msg), "_blank");
+  }
 }
 
 function searchAnother() {
