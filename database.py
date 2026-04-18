@@ -379,48 +379,52 @@ def invalidate_settings_cache():
 
 # ── order codes ───────────────────────────────────────────────────────────────
 
+def _get_existing_codes(conn):
+    """Get set of all existing order codes as integers."""
+    rows = conn.execute("SELECT order_code FROM orders").fetchall()
+    codes = set()
+    for r in rows:
+        code = r["order_code"] if hasattr(r, "__getitem__") else str(r[0])
+        if code.isdigit():
+            codes.add(int(code))
+    return codes
+
 def peek_order_code():
+    """Return next available order code without incrementing.
+    Uses setting value directly (allows backward), skips existing codes."""
     conn = get_db()
     try:
         row = conn.execute("SELECT value FROM settings WHERE key='last_order_code'").fetchone()
         setting_last = int(row["value"]) if row else 3599
-        # Only consider codes that are NOT 4-digit repeat codes (0001-0999)
-        max_row = conn.execute(
-            "SELECT order_code FROM orders WHERE order_code NOT LIKE '0___'"
-        ).fetchall()
-        nums = []
-        for r in max_row:
-            code = r["order_code"] if hasattr(r, "__getitem__") else str(r[0])
-            if code.isdigit():
-                nums.append(int(code))
-        db_last = max(nums) if nums else 0
-        return str(max(setting_last, db_last) + 1)
+        existing = _get_existing_codes(conn)
+        candidate = setting_last + 1
+        # Skip any codes that already exist
+        while candidate in existing:
+            candidate += 1
+        return str(candidate)
     except Exception:
-        return str(setting_last + 1) if 'setting_last' in dir() else "3800"
+        return "3800"
     finally:
         conn.close()
 
 
 def next_order_code():
+    """Increment and return next available order code.
+    Uses setting value directly (allows backward), skips existing codes."""
     conn = get_db()
     try:
         row = conn.execute("SELECT value FROM settings WHERE key='last_order_code'").fetchone()
         setting_last = int(row["value"]) if row else 3599
-        max_row = conn.execute(
-            "SELECT order_code FROM orders WHERE order_code NOT LIKE '0___'"
-        ).fetchall()
-        nums = []
-        for r in max_row:
-            code = r["order_code"] if hasattr(r, "__getitem__") else str(r[0])
-            if code.isdigit():
-                nums.append(int(code))
-        db_last = max(nums) if nums else 0
-        new_code = max(setting_last, db_last) + 1
-        conn.execute("INSERT OR REPLACE INTO settings(key,value) VALUES('last_order_code',?)", (str(new_code),))
+        existing = _get_existing_codes(conn)
+        candidate = setting_last + 1
+        # Skip any codes that already exist
+        while candidate in existing:
+            candidate += 1
+        conn.execute("INSERT OR REPLACE INTO settings(key,value) VALUES('last_order_code',?)", (str(candidate),))
         conn.commit()
-        return str(new_code)
+        return str(candidate)
     except Exception:
-        return str(setting_last + 1) if 'setting_last' in dir() else "3800"
+        return "3800"
     finally:
         conn.close()
 
