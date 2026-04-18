@@ -1982,15 +1982,47 @@ def delete_order(order_code):
     order = conn.execute("SELECT id FROM orders WHERE order_code=?", (order_code,)).fetchone()
     if order:
         conn.execute("DELETE FROM work_logs WHERE order_id=?", (order["id"],))
+        conn.execute("DELETE FROM work_logs WHERE order_code=?", (order_code,))
         conn.execute("DELETE FROM order_items WHERE order_id=?", (order["id"],))
+        conn.execute("DELETE FROM order_images WHERE order_id=?", (order["id"],))
         conn.execute("DELETE FROM finance WHERE order_id=?", (order["id"],))
+        conn.execute("DELETE FROM notify_log WHERE order_code=?", (order_code,))
         conn.execute("DELETE FROM orders WHERE id=?", (order["id"],))
         conn.commit()
-        flash(f"Order #{order_code} deleted permanently.", "success")
+        flash(f"Order #{order_code} and all related data deleted.", "success")
     else:
         flash(f"Order #{order_code} not found.", "error")
     conn.close()
     return redirect(request.referrer or url_for("owner.owner_dashboard"))
+
+
+@bp.route("/customers/<int:customer_id>/delete", methods=["POST"])
+@owner_required
+def delete_customer(customer_id):
+    """Delete a customer and ALL their orders, work logs, images, finance entries."""
+    conn = get_db()
+    cust = conn.execute("SELECT name FROM customers WHERE id=?", (customer_id,)).fetchone()
+    if not cust:
+        conn.close()
+        flash("Customer not found.", "error")
+        return redirect(url_for("owner.owner_dashboard"))
+
+    cust_name = cust["name"]
+    # Get all orders for this customer
+    orders = conn.execute("SELECT id, order_code FROM orders WHERE customer_id=?", (customer_id,)).fetchall()
+    for o in orders:
+        conn.execute("DELETE FROM work_logs WHERE order_id=?", (o["id"],))
+        conn.execute("DELETE FROM work_logs WHERE order_code=?", (o["order_code"],))
+        conn.execute("DELETE FROM order_items WHERE order_id=?", (o["id"],))
+        conn.execute("DELETE FROM order_images WHERE order_id=?", (o["id"],))
+        conn.execute("DELETE FROM finance WHERE order_id=?", (o["id"],))
+        conn.execute("DELETE FROM notify_log WHERE order_code=?", (o["order_code"],))
+    conn.execute("DELETE FROM orders WHERE customer_id=?", (customer_id,))
+    conn.execute("DELETE FROM customers WHERE id=?", (customer_id,))
+    conn.commit()
+    conn.close()
+    flash(f"Customer '{cust_name}' and {len(orders)} order(s) deleted permanently.", "success")
+    return redirect(url_for("owner.owner_customers"))
 
 
 # ══════════════════════════════════════════════
@@ -2378,35 +2410,9 @@ def past_orders_save():
                     VALUES(?,?,?,?,?,?,?)
                 """, (order_id, gtype, qty, rate, amt, _gj.dumps(meas), notes))
 
-        # Auto-create work logs only if order is delivered (all stages done)
-        if is_delivered:
-            log_date = delivery_date or order_date or now_str[:10]
-            for g in garments:
-                gtype = (g.get("type") or "").strip()
-                qty   = int(g.get("qty") or 1)
-                if not gtype:
-                    continue
-                # Naap (Measurement)
-                conn.execute("""
-                    INSERT INTO work_logs(order_id, order_code, garment_type, qty_done,
-                        employee_name, log_date, making_rate, notes, is_non_stitch, created_at)
-                    VALUES(?,?,?,?,?,?,?,?,1,?)
-                """, (order_id, order_code, gtype, qty, "Kamal", log_date, 0,
-                      f"Naap — {gtype}", now_str))
-                # Kataai (Cutting)
-                conn.execute("""
-                    INSERT INTO work_logs(order_id, order_code, garment_type, qty_done,
-                        employee_name, log_date, making_rate, notes, is_non_stitch, created_at)
-                    VALUES(?,?,?,?,?,?,?,?,1,?)
-                """, (order_id, order_code, gtype, qty, "Kamal", log_date, 0,
-                      f"Kataai — {gtype}", now_str))
-                # Silayi (Stitching)
-                conn.execute("""
-                    INSERT INTO work_logs(order_id, order_code, garment_type, qty_done,
-                        employee_name, log_date, making_rate, notes, created_at)
-                    VALUES(?,?,?,?,?,?,?,?,?)
-                """, (order_id, order_code, gtype, qty, "Past Order", log_date, 0,
-                      "", now_str))
+        # NOTE: Past orders do NOT create work logs.
+        # Work logs are only for tracking live employee work on active orders.
+        # Past/delivered orders are already done — no need to inflate work stats.
 
         # Finance entry for payment received — use order_date so it appears in correct month
         finance_date = order_date or delivery_date or now_str[:10]
