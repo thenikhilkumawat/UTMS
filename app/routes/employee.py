@@ -130,6 +130,8 @@ def dashboard():
 
 @bp.route("/new-order")
 def new_order():
+    from database import invalidate_settings_cache
+    invalidate_settings_cache()  # Always get fresh rates
     order_code  = peek_order_code()   # for new customers
     repeat_code = peek_repeat_code()  # for returning customers
     conn = get_db()
@@ -159,25 +161,32 @@ def new_order():
 
     today = date.today().isoformat()
     urgent_count = conn.execute("SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status!='delivered' AND delivery_date>=?",(today,)).fetchone()["c"]
-    garment_rates = {
-        "Shirt":        get_setting("rate_Shirt","350"),
-        "Shirt Linen":  get_setting("rate_Shirt Linen","450"),
-        "Pant":         get_setting("rate_Pant","450"),
-        "Pant Double":  get_setting("rate_Pant Double","550"),
-        "Jeans":        get_setting("rate_Jeans","550"),
-        "Suit 2pc":     get_setting("rate_Suit 2pc","2800"),
-        "Suit 3pc":     get_setting("rate_Suit 3pc","3500"),
-        "Blazer":       get_setting("rate_Blazer","2300"),
-        "Kurta":        get_setting("rate_Kurta","800"),
-        "Kurta Pajama": get_setting("rate_Kurta Pajama","1000"),
-        "Pajama":       get_setting("rate_Pajama","300"),
-        "Pathani":      get_setting("rate_Pathani","800"),
-        "Sherwani":     get_setting("rate_Sherwani","3500"),
-        "Safari":       get_setting("rate_Safari","1500"),
-        "Waistcoat":    get_setting("rate_Waistcoat","800"),
-        "Alteration":   get_setting("rate_Alteration","100"),
-        "Cutting Only": get_setting("rate_Cutting Only","100"),
+
+    # Load customer rates — prioritize customer_rate_X, fallback to rate_X, then hardcoded defaults
+    RATE_DEFAULTS = {
+        "Shirt":"350","Shirt Linen":"450","Pant":"450","Pant Double":"550",
+        "Jeans":"550","Suit 2pc":"2800","Suit 3pc":"3500","Blazer":"2300",
+        "Kurta":"800","Kurta Pajama":"1000","Pajama":"300","Pathani":"800",
+        "Sherwani":"3500","Safari":"1500","Waistcoat":"800",
+        "Alteration":"100","Cutting Only":"100"
     }
+    deleted_csv = get_setting("deleted_customer_rates", "")
+    deleted_set = set(x.strip() for x in deleted_csv.split(",") if x.strip())
+    garment_rates = {}
+    for n, default_rate in RATE_DEFAULTS.items():
+        if n in deleted_set:
+            continue
+        cr = get_setting("customer_rate_"+n, "")
+        if cr and cr.strip():
+            garment_rates[n] = cr
+        else:
+            garment_rates[n] = get_setting("rate_"+n, default_rate)
+    # Include any custom garment types added via settings
+    custom_rows = conn.execute("SELECT key, value FROM settings WHERE key LIKE 'customer_rate_%'").fetchall()
+    for row in custom_rows:
+        name = row["key"][14:]
+        if name not in garment_rates and name not in deleted_set and row["value"] and row["value"].strip() and row["value"] != "0":
+            garment_rates[name] = row["value"]
     # Get measurement fields per garment from DB
     meas_fields = {}
     mf_rows = conn.execute("SELECT garment_type, field_name FROM measurement_fields ORDER BY sort_order ASC").fetchall()
