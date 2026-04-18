@@ -209,7 +209,7 @@
     <div style="background:linear-gradient(160deg,#1e1b4b,#312e81);border-radius:24px;padding:28px 24px 0;box-shadow:0 12px 40px rgba(21,128,61,0.4);overflow:hidden;">
       <div style="text-align:center;color:#fff;padding-bottom:20px;">
         <div style="font-size:44px;margin-bottom:6px;">✅</div>
-        <div style="font-size:11px;font-weight:800;letter-spacing:3px;opacity:0.65;text-transform:uppercase;margin-bottom:4px;">PAST ORDER SAVED</div>
+        <div style="font-size:11px;font-weight:800;letter-spacing:3px;opacity:0.65;text-transform:uppercase;margin-bottom:4px;">ORDER SAVED</div>
         <div style="font-size:52px;font-weight:900;letter-spacing:2px;line-height:1;">#<span id="p-sc-code"></span></div>
       </div>
       <div style="display:flex;justify-content:space-around;color:#fff;padding:14px 0;border-top:1px solid rgba(255,255,255,0.15);border-bottom:1px solid rgba(255,255,255,0.15);">
@@ -217,22 +217,57 @@
         <div style="width:1px;background:rgba(255,255,255,0.2);"></div>
         <div style="text-align:center;"><div style="font-size:9px;font-weight:800;letter-spacing:1.5px;opacity:0.6;text-transform:uppercase;margin-bottom:4px;">Mobile</div><div id="p-sc-mobile" style="font-size:13px;font-weight:800;color:#e0e7ff;"></div></div>
         <div style="width:1px;background:rgba(255,255,255,0.2);"></div>
-        <div style="text-align:center;"><div style="font-size:9px;font-weight:800;letter-spacing:1.5px;opacity:0.6;text-transform:uppercase;margin-bottom:4px;">Address</div><div id="p-sc-address" style="font-size:12px;font-weight:700;color:#c7d2fe;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div></div>
-        <div style="width:1px;background:rgba(255,255,255,0.2);"></div>
         <div style="text-align:center;"><div style="font-size:9px;font-weight:800;letter-spacing:1.5px;opacity:0.6;text-transform:uppercase;margin-bottom:4px;">Delivery</div><div id="p-sc-delivery" style="font-size:14px;font-weight:900;color:#bbf7d0;"></div></div>
         <div style="width:1px;background:rgba(255,255,255,0.2);"></div>
         <div style="text-align:center;"><div style="font-size:9px;font-weight:800;letter-spacing:1.5px;opacity:0.6;text-transform:uppercase;margin-bottom:4px;">Total</div><div id="p-sc-total" style="font-size:14px;font-weight:900;color:#bbf7d0;"></div></div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;">
+
+      <!-- Status badge -->
+      <div style="text-align:center;padding:10px 0;" id="p-sc-status"></div>
+
+      <!-- Action buttons — always show WhatsApp -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;">
+        <button onclick="openPastWAModal('confirm')"
+          style="padding:16px 4px;background:transparent;color:#fff;border:none;border-right:1px solid rgba(255,255,255,0.12);font-size:11px;font-weight:800;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;">
+          <span style="font-size:22px;">💬</span>ऑर्डर पक्का
+        </button>
+        <button onclick="openPastWAModal('delivered')"
+          style="padding:16px 4px;background:transparent;color:#fff;border:none;border-right:1px solid rgba(255,255,255,0.12);font-size:11px;font-weight:800;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;">
+          <span style="font-size:22px;">✅</span>डिलीवर मैसेज
+        </button>
         <button onclick="resetPastOrderForm()"
-          style="padding:18px 4px;background:transparent;color:#fff;border:none;border-right:1px solid rgba(255,255,255,0.12);font-size:12px;font-weight:800;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;">
-          <span style="font-size:24px;">➕</span>Add Another
+          style="padding:16px 4px;background:transparent;color:#fff;border:none;border-right:1px solid rgba(255,255,255,0.12);font-size:11px;font-weight:800;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;">
+          <span style="font-size:22px;">➕</span>New Order
         </button>
         <a href="/owner/orders"
-          style="padding:18px 4px;background:transparent;color:#fff;text-decoration:none;font-size:12px;font-weight:800;display:flex;flex-direction:column;align-items:center;gap:5px;">
-          <span style="font-size:24px;">📋</span>View All Orders
+          style="padding:16px 4px;background:transparent;color:#fff;text-decoration:none;font-size:11px;font-weight:800;display:flex;flex-direction:column;align-items:center;gap:5px;">
+          <span style="font-size:22px;">📋</span>All Orders
         </a>
       </div>
+    </div>
+  </div>
+
+  <!-- WhatsApp Modal for past orders -->
+  <div id="past-wa-modal-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:20px;padding:24px;max-width:360px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+      <div style="text-align:center;margin-bottom:16px;">
+        <div style="font-size:32px;margin-bottom:6px;">💬</div>
+        <div style="font-size:16px;font-weight:900;" id="past-wa-modal-title">WhatsApp भेजें</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <button onclick="sendPastWA('hi')"
+          style="padding:14px;border:2px solid #4f46e5;border-radius:12px;background:#eef2ff;color:#4f46e5;font-size:15px;font-weight:800;cursor:pointer;">
+          🇮🇳 हिंदी में भेजें
+        </button>
+        <button onclick="sendPastWA('en')"
+          style="padding:14px;border:2px solid var(--border);border-radius:12px;background:#fff;color:#374151;font-size:15px;font-weight:800;cursor:pointer;">
+          🇬🇧 Send in English
+        </button>
+      </div>
+      <button onclick="document.getElementById('past-wa-modal-bg').style.display='none'"
+        style="width:100%;margin-top:10px;padding:10px;background:none;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;color:var(--text-muted);">
+        ✕ Cancel
+      </button>
     </div>
   </div>
 
@@ -513,6 +548,7 @@ function confirmPastOrder() {
   .then(function(d){
     btn.disabled=false; btn.textContent="✅ Save Past Order";
     if(d.ok){
+      var isDelivered = payload.is_delivered;
       document.getElementById("p-sc-code").textContent=d.order_code;
       document.getElementById("p-sc-name").textContent=payload.customer_name;
       document.getElementById("p-sc-mobile").textContent=payload.mobile||"—";
@@ -521,6 +557,26 @@ function confirmPastOrder() {
       if(ddate){var p=ddate.split("-");ddate=p[2]+"-"+p[1]+"-"+p[0];}
       document.getElementById("p-sc-delivery").textContent=ddate||"—";
       document.getElementById("p-sc-total").textContent="₹"+Math.round(payable);
+
+      // Show status badge
+      var statusEl = document.getElementById("p-sc-status");
+      if (statusEl) {
+        if (isDelivered) {
+          statusEl.innerHTML = '<span style="background:#16a34a;color:#fff;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:800;">✅ Delivered</span>';
+        } else {
+          statusEl.innerHTML = '<span style="background:#f59e0b;color:#fff;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:800;">⏳ Pending — will show in pickup</span>';
+        }
+      }
+
+      // Show/hide WhatsApp buttons based on mobile number
+      // WhatsApp buttons are always visible in the success screen grid
+
+      // Store for WhatsApp
+      window._pastSavedPayload = payload;
+      window._pastSavedCode = d.order_code;
+      window._pastPayable = payable;
+      window._pastRemaining = remaining;
+
       for(var i=1;i<=5;i++) document.getElementById("step-p"+i).style.display="none";
       document.getElementById("step-p-success").style.display="block";
       stopPastImgPoll();
@@ -590,6 +646,7 @@ function resetPastOrderForm(){
   ["p-code-input","p-name","p-mobile","p-address","p-note","p-odate","p-ddate"].forEach(function(id){
     var el=document.getElementById(id); if(el) el.value="";
   });
+  document.getElementById("p-is-delivered").checked = true;
   document.getElementById("code-display").textContent="{{ next_code }}";
   document.getElementById("sticky-num").textContent="{{ next_code }}";
   document.getElementById("past-garments-list").innerHTML="";
@@ -598,6 +655,96 @@ function resetPastOrderForm(){
   document.getElementById("code-clash-msg").style.display="none";
   stopPastImgPoll();
   goStep(1);
+}
+
+// ── WHATSAPP FOR ALL PAST ORDERS ─────────────────────────────────
+var _pastWAType = "confirm"; // "confirm" or "delivered"
+
+function openPastWAModal(type) {
+  _pastWAType = type;
+  var title = type === "delivered" ? "डिलीवर मैसेज भेजें" : "ऑर्डर पक्का मैसेज भेजें";
+  document.getElementById("past-wa-modal-title").textContent = title;
+  document.getElementById("past-wa-modal-bg").style.display = "flex";
+}
+
+function sendPastWA(lang) {
+  document.getElementById("past-wa-modal-bg").style.display = "none";
+  var p = window._pastSavedPayload;
+  if (!p || !p.mobile) { showToast("No mobile number","warning"); return; }
+
+  var code = window._pastSavedCode || "";
+  var items = (p.garments||[]).map(function(g){ return g.type + " ×" + g.qty; }).join(", ");
+  var ddate = p.delivery_date || "";
+  if (ddate) { var dp=ddate.split("-"); if(dp.length===3) ddate=dp[2]+"-"+dp[1]+"-"+dp[0]; }
+  var odate = p.order_date || "";
+  if (odate) { var op=odate.split("-"); if(op.length===3) odate=op[2]+"-"+op[1]+"-"+op[0]; }
+
+  var payable = Math.round(window._pastPayable || 0);
+  var advance = Math.round(p.advance_paid || 0);
+  var remaining = Math.round(window._pastRemaining || 0);
+  var msg = "";
+
+  if (_pastWAType === "delivered") {
+    // DELIVERED message
+    if (lang === "hi") {
+      msg = "*उत्तम टेलर्स* — ऑर्डर तैयार है ✅\n\n"
+        + "नमस्ते " + p.customer_name + " जी!\n\n"
+        + "आपका ऑर्डर *#" + code + "* तैयार हो गया है।\n"
+        + "कपड़े: " + items + "\n\n"
+        + "कुल राशि: ₹" + payable + "\n"
+        + "जमा: ₹" + advance + "\n"
+        + (remaining > 0 ? "बकाया: *₹" + remaining + "*\n" : "पूरा भुगतान हो गया ✅\n")
+        + "\nकृपया अपने कपड़े ले जाएं।\n"
+        + "धन्यवाद! 🙏\n"
+        + "— उत्तम टेलर्स";
+    } else {
+      msg = "*Uttam Tailors* — Order Ready ✅\n\n"
+        + "Hello " + p.customer_name + "!\n\n"
+        + "Your order *#" + code + "* is ready for pickup.\n"
+        + "Items: " + items + "\n\n"
+        + "Total: ₹" + payable + "\n"
+        + "Paid: ₹" + advance + "\n"
+        + (remaining > 0 ? "Balance Due: *₹" + remaining + "*\n" : "Fully Paid ✅\n")
+        + "\nPlease collect your garments.\n"
+        + "Thank you! 🙏\n"
+        + "— Uttam Tailors";
+    }
+  } else {
+    // ORDER CONFIRMED message
+    if (lang === "hi") {
+      msg = "*उत्तम टेलर्स* — ऑर्डर पक्का हो गया\n\n"
+        + "नमस्ते " + p.customer_name + " जी!\n\n"
+        + "ऑर्डर नंबर: *#" + code + "*\n"
+        + "ग्राहक: " + p.customer_name + "\n"
+        + "मोबाइल: " + p.mobile + "\n"
+        + (odate ? "ऑर्डर दिनांक: " + odate + "\n" : "")
+        + (ddate ? "डिलीवरी दिनांक: *" + ddate + "*\n" : "")
+        + "\nकपड़े: " + items + "\n"
+        + "---\n"
+        + "कुल राशि: ₹" + payable + "\n"
+        + "अग्रिम: ₹" + advance + "\n"
+        + "बकाया: ₹" + remaining + "\n"
+        + "\nउत्तम टेलर्स में आने का धन्यवाद!";
+    } else {
+      msg = "*Uttam Tailors* — Order Confirmed\n\n"
+        + "Hello " + p.customer_name + "!\n\n"
+        + "Order No: *#" + code + "*\n"
+        + "Customer: " + p.customer_name + "\n"
+        + "Mobile: " + p.mobile + "\n"
+        + (odate ? "Order Date: " + odate + "\n" : "")
+        + (ddate ? "Delivery Date: *" + ddate + "*\n" : "")
+        + "\nGarments: " + items + "\n"
+        + "---\n"
+        + "Total: ₹" + payable + "\n"
+        + "Advance: ₹" + advance + "\n"
+        + "Remaining: ₹" + remaining + "\n"
+        + "\nThank you for choosing Uttam Tailors!";
+    }
+  }
+
+  var phone = p.mobile.replace(/\D/g, "");
+  if (phone.length === 10) phone = "91" + phone;
+  window.open("https://wa.me/" + phone + "?text=" + encodeURIComponent(msg), "_blank");
 }
 </script>
 {% endblock %}
