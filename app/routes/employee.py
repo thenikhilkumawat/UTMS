@@ -567,16 +567,24 @@ def save_order():
             conn.execute("UPDATE customers SET name=?,mobile=?,address=? WHERE id=?",
                          (customer_name, mobile, address, customer_id))
         else:
-            # For new customers: block duplicate mobile numbers
+            # Check if mobile already exists — auto-link instead of blocking
             if mobile:
                 dup = conn.execute("SELECT id, name FROM customers WHERE mobile=?", (mobile,)).fetchone()
                 if dup:
-                    conn.close()
-                    return jsonify({"status":"error","message":f"Mobile {mobile} already registered under '{dup['name']}'. Use Existing Customer flow to add a new order for them."}), 400
-            cur = conn.execute("INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?)",
-                               (customer_name, mobile, address, now))
-            row = conn.execute("SELECT id FROM customers WHERE name=? AND (mobile=? OR mobile IS NULL) ORDER BY id DESC LIMIT 1", (customer_name, mobile)).fetchone()
-            customer_id = row["id"] if row else None
+                    # Link to existing customer and update their details
+                    customer_id = dup["id"]
+                    conn.execute("UPDATE customers SET name=?,mobile=?,address=? WHERE id=?",
+                                 (customer_name, mobile, address, customer_id))
+                else:
+                    conn.execute("INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?)",
+                                 (customer_name, mobile, address, now))
+                    row = conn.execute("SELECT id FROM customers WHERE name=? AND mobile=? ORDER BY id DESC LIMIT 1", (customer_name, mobile)).fetchone()
+                    customer_id = row["id"] if row else None
+            else:
+                conn.execute("INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?)",
+                             (customer_name, mobile, address, now))
+                row = conn.execute("SELECT id FROM customers WHERE name=? AND (mobile=? OR mobile IS NULL) ORDER BY id DESC LIMIT 1", (customer_name, mobile)).fetchone()
+                customer_id = row["id"] if row else None
 
         repeat_of = (data.get("repeat_of") or "").strip() or None
 
@@ -1308,6 +1316,7 @@ def api_employee_stats():
             "total_qty":    day_qty,
             "day_earnings": int(day_earnings),
             "entries": [{
+                "id":          e["id"],
                 "order_code":  e["order_code"] or "—",
                 "garment_type":e["garment_type"],
                 "qty_done":    e["qty_done"],
@@ -1590,6 +1599,57 @@ def api_worklog_add():
 
     progress = f"{gt}: {total_logged}/{item['quantity']} done"
     return jsonify({"ok": True, "auto_ready": auto_ready, "progress": progress})
+
+
+@bp.route("/api/work-log/delete/<int:log_id>", methods=["POST"])
+def api_worklog_delete(log_id):
+    """Delete a single work log entry."""
+    conn = get_db()
+    row = conn.execute("SELECT id FROM work_logs WHERE id=?", (log_id,)).fetchone()
+    if not row:
+        conn.close()
+        return jsonify({"ok": False, "error": "Work log entry not found"})
+    conn.execute("DELETE FROM work_logs WHERE id=?", (log_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True})
+
+
+@bp.route("/api/work-log/delete-by-order", methods=["POST"])
+def api_worklog_delete_by_order():
+    """Delete all work log entries for a specific order code."""
+    data = request.get_json(silent=True) or {}
+    code = (data.get("order_code") or "").strip().lstrip("#")
+    if not code:
+        return jsonify({"ok": False, "error": "Order code required"})
+    conn = get_db()
+    result = conn.execute("DELETE FROM work_logs WHERE order_code=?", (code,))
+    deleted = result.rowcount if hasattr(result, 'rowcount') else 0
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True, "deleted": deleted})
+
+
+@bp.route("/api/work-log/cleanup-past-orders", methods=["POST"])
+def api_worklog_cleanup_past():
+    """Delete all work logs that were auto-created by past orders."""
+    conn = get_db()
+    # Delete entries with employee_name "Past Order" (stitching)
+    conn.execute("DELETE FROM work_logs WHERE employee_name='Past Order'")
+    # Delete naap/kataai entries linked to delivered orders that were logged at rate 0
+    conn.execute("""
+        DELETE FROM work_logs WHERE id IN (
+            SELECT wl.id FROM work_logs wl
+            JOIN orders o ON o.order_code = wl.order_code
+            WHERE o.status = 'delivered'
+            AND wl.making_rate = 0
+            AND (wl.notes LIKE 'Naap %' OR wl.notes LIKE 'Kataai %')
+            AND wl.employee_name = 'Kamal'
+        )
+    """)
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True})
 
 
 # ══════════════════════════════════════════════
