@@ -1029,16 +1029,19 @@ def order_status():
         for it in items_raw:
             qty = it["quantity"] or 1
             gt  = it["garment_type"]
-            share = qty / total_order_qty
-            naap_done   = min(qty, int(naap_total   * share + 0.999))
-            cut_done    = min(qty, int(kataai_total  * share + 0.999))
-            stitch_done = min(qty, int(silai_total   * share + 0.999))
-            pct = min(100, int((stitch_done / qty) * 100)) if qty else 0
-            if not is_delivered:
+            if is_delivered:
+                # Delivered = everything is done, no need to check work logs
+                naap_done = cut_done = stitch_done = qty
+                pct = 100
+                meas = {}
+            else:
+                share = qty / total_order_qty
+                naap_done   = min(qty, int(naap_total   * share + 0.999))
+                cut_done    = min(qty, int(kataai_total  * share + 0.999))
+                stitch_done = min(qty, int(silai_total   * share + 0.999))
+                pct = min(100, int((stitch_done / qty) * 100)) if qty else 0
                 try: meas = json.loads(it["measurements"] or "{}")
                 except: meas = {}
-            else:
-                meas = {}  # Skip JSON parse for delivered orders
             items.append({
                 "garment_type":  gt,
                 "quantity":      qty,
