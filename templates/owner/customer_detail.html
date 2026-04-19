@@ -62,6 +62,16 @@
           <button type="submit" class="btn btn-primary" style="padding:10px 20px;height:46px;">Save</button>
         </div>
       </form>
+      <!-- Delete Customer -->
+      <div style="padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;">
+        <form action="/owner/customers/{{ cust.id }}/delete" method="POST" style="margin:0;"
+          onsubmit="return confirm('⚠️ DELETE customer {{ cust.name }} and ALL their orders permanently?\n\nThis will remove:\n• Customer record\n• All orders\n• All work logs\n• All images\n• All payments\n\nThis CANNOT be undone!')">
+          <button type="submit"
+            style="background:#dc2626;color:#fff;border:none;border-radius:10px;padding:8px 20px;font-size:13px;font-weight:800;cursor:pointer;">
+            🗑️ Delete Customer & All Orders
+          </button>
+        </form>
+      </div>
     </div>
   </div>
   <!-- Orders -->
