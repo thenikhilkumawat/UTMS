@@ -1392,10 +1392,11 @@ function showSuccess() {
     document.getElementById("sc_repeat_badge").style.display = "block";
   }
 
-  // Images — only show images for THIS order (upload_code or currentCode)
+  // Images — show images for THIS order
   const imgCode = savedPayload.upload_code || currentCode;
-  if (imgCode && imgCode !== "None" && imgCode !== "0") {
-    fetch("/images/"+imgCode+"?current_only=1&ts="+Date.now()).then(r=>r.text()).then(html=>{
+  function tryLoadSuccessImages(code) {
+    if (!code || code === "None" || code === "0") return;
+    fetch("/images/"+code+"?ts="+Date.now()).then(r=>r.text()).then(html=>{
       if(html&&html.trim()){
         const box=document.getElementById("success-img-list");
         box.innerHTML=html;
@@ -1404,9 +1405,13 @@ function showSuccess() {
           img.onclick=()=>{document.getElementById("fullscreen-img").src=img.dataset.src||img.src;document.getElementById("fullscreen-ov").style.display="flex";};
         });
         document.getElementById("success-images").style.display="block";
+      } else if (code !== currentCode) {
+        // If upload_code returned nothing, try currentCode
+        tryLoadSuccessImages(currentCode);
       }
     });
   }
+  tryLoadSuccessImages(imgCode);
   window.scrollTo({top:0,behavior:"smooth"});
 }
 
@@ -1436,6 +1441,8 @@ function sendWA(lang){
       + "• भुगतान माध्यम: " + mode + "\n"
       + "-----------------------------------------------\n"
       + "आपके विश्वास के लिए धन्यवाद। 🙏🏻\n"
+      "आपका विश्वास ही हमारी सबसे बड़ी पूंजी है।\n"
+      
       + "उत्तम टेलर्स";
   } else {
     msg = "*Uttam Tailors*\n"
