@@ -1096,6 +1096,20 @@ def order_status():
 
     # Images not loaded on order status page (for speed)
 
+    # Load images for all orders (batch query)
+    all_images = conn.execute("""
+        SELECT oi.order_id, oi.file_path FROM order_images oi
+        WHERE oi.file_path NOT LIKE 'temp:%'
+    """).fetchall()
+    images_by_order = {}
+    for img in all_images:
+        images_by_order.setdefault(img["order_id"], []).append(img["file_path"])
+    # Map order_code -> images using order id
+    order_id_map = {o["order_code"]: o["id"] for o in raw}
+    for o_data in orders:
+        oid = order_id_map.get(o_data["order_code"])
+        o_data["images"] = images_by_order.get(oid, []) if oid else []
+
     counts = {
         "total":     len(orders),
         "late":      sum(1 for o in orders if o["overdue"] and o["status"]!="delivered"),
