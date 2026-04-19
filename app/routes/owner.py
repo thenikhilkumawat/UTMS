@@ -2331,7 +2331,7 @@ def past_orders():
 @bp.route("/past-orders/save", methods=["POST"])
 @owner_required
 def past_orders_save():
-    """Save a past/historical delivered order."""
+    """Save a past/historical order."""
     from database import next_order_code
     data = request.get_json(silent=True) or {}
 
@@ -2343,7 +2343,7 @@ def past_orders_save():
     advance_paid   = float(data.get("advance_paid") or 0)
     payment_mode   = (data.get("payment_mode") or "cash").strip()
     note           = (data.get("note") or "").strip()
-    garments       = data.get("garments") or []   # [{type, qty, rate}]
+    garments       = data.get("garments") or []
     order_code_override = (data.get("order_code") or "").strip()
 
     if not customer_name:
@@ -2352,16 +2352,21 @@ def past_orders_save():
     payable    = total_amount
     remaining  = max(0, payable - advance_paid)
     now_str    = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    is_delivered = data.get("is_delivered", True)  # default True for backward compat
+    is_delivered = data.get("is_delivered", True)
     status = "delivered" if is_delivered else "pending"
 
     conn = get_db()
     try:
-        # Find or create customer
-        row = conn.execute("SELECT id FROM customers WHERE name=? AND (mobile=? OR mobile IS NULL OR mobile='')",
-                           (customer_name, customer_mobile)).fetchone()
+        # Find or create customer — auto-link if mobile exists
+        if customer_mobile:
+            row = conn.execute("SELECT id FROM customers WHERE mobile=?", (customer_mobile,)).fetchone()
+        else:
+            row = conn.execute("SELECT id FROM customers WHERE name=? AND (mobile IS NULL OR mobile='')",
+                               (customer_name,)).fetchone()
         if row:
             customer_id = row["id"]
+            conn.execute("UPDATE customers SET name=?,mobile=? WHERE id=?",
+                         (customer_name, customer_mobile, customer_id))
         else:
             conn.execute("INSERT INTO customers(name,mobile,created_at) VALUES(?,?,?)",
                          (customer_name, customer_mobile, now_str))
@@ -2371,10 +2376,10 @@ def past_orders_save():
 
         # Determine order code
         if order_code_override:
-            # Check it doesn't clash
             clash = conn.execute("SELECT id FROM orders WHERE order_code=?", (order_code_override,)).fetchone()
             if clash:
-                return jsonify({"ok": False, "error": f"Order code {order_code_override} already exists"})
+                conn.close()
+                return jsonify({"ok": False, "error": f"Order code {order_code_override} already exists. Delete the existing order first or use a different code."})
             order_code = order_code_override
         else:
             order_code = next_order_code()
@@ -2391,11 +2396,9 @@ def past_orders_save():
               payment_mode, status, note, delivered_at, now_str))
         conn.commit()
 
-        # Get the newly inserted order id
         ord_row = conn.execute("SELECT id FROM orders WHERE order_code=?", (order_code,)).fetchone()
         order_id = ord_row["id"]
 
-        # Insert garment items
         for g in garments:
             gtype = (g.get("type") or "").strip()
             qty   = int(g.get("qty") or 1)
@@ -2410,11 +2413,9 @@ def past_orders_save():
                     VALUES(?,?,?,?,?,?,?)
                 """, (order_id, gtype, qty, rate, amt, _gj.dumps(meas), notes))
 
-        # NOTE: Past orders do NOT create work logs.
-        # Work logs are only for tracking live employee work on active orders.
-        # Past/delivered orders are already done — no need to inflate work stats.
+        # Past orders do NOT create work logs
 
-        # Finance entry for payment received — use order_date so it appears in correct month
+        # Finance entry — use order_date so it appears in correct month
         finance_date = order_date or delivery_date or now_str[:10]
         if advance_paid > 0:
             conn.execute("""
