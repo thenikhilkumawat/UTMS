@@ -2332,7 +2332,6 @@ def past_orders():
 @owner_required
 def past_orders_save():
     """Save a past/historical order."""
-    from database import next_order_code
     data = request.get_json(silent=True) or {}
 
     customer_name  = (data.get("customer_name") or "").strip()
@@ -2374,15 +2373,33 @@ def past_orders_save():
             cur = conn.execute("SELECT id FROM customers WHERE name=? ORDER BY id DESC LIMIT 1", (customer_name,))
             customer_id = cur.fetchone()["id"]
 
-        # Determine order code
+        # Determine order code — INLINE, no separate DB connection
         if order_code_override:
             clash = conn.execute("SELECT id FROM orders WHERE order_code=?", (order_code_override,)).fetchone()
-            if clash:
-                conn.close()
-                return jsonify({"ok": False, "error": f"Order code {order_code_override} already exists. Delete the existing order first or use a different code."})
-            order_code = order_code_override
+            if not clash:
+                order_code = order_code_override
+            else:
+                # Code exists — generate next available using SAME connection
+                order_code = None
         else:
-            order_code = next_order_code()
+            order_code = None
+
+        if order_code is None:
+            # Generate next available code using THIS connection (no deadlock)
+            row = conn.execute("SELECT value FROM settings WHERE key='last_order_code'").fetchone()
+            setting_last = int(row["value"]) if row else 3599
+            # Get all existing codes
+            all_codes = conn.execute("SELECT order_code FROM orders").fetchall()
+            existing = set()
+            for r in all_codes:
+                c = r["order_code"] if hasattr(r, "__getitem__") else str(r[0])
+                if c.isdigit():
+                    existing.add(int(c))
+            candidate = setting_last + 1
+            while candidate in existing:
+                candidate += 1
+            order_code = str(candidate)
+            conn.execute("INSERT OR REPLACE INTO settings(key,value) VALUES('last_order_code',?)", (str(candidate),))
 
         delivered_at = delivery_date if is_delivered else None
 
