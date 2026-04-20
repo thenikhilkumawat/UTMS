@@ -8,10 +8,10 @@
   transition: all 0.2s;
 }
 .m-card:hover { box-shadow:0 4px 24px rgba(0,0,0,0.1); }
-.m-card.urgent-card { border-left:5px solid #ef4444; }
-.m-card.delivered-card { border-left:5px solid #ef4444; opacity:0.7; }
+.m-card.urgent-card { border-left:5px solid #ef4444; box-shadow:0 2px 16px rgba(239,68,68,0.15); }
+.m-card.delivered-card { border-left:5px solid #10b981; opacity:0.85; }
 .m-header { padding:18px 20px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
-.m-header-urgent { background:linear-gradient(135deg,#fef2f2,#fee2e2); }
+.m-header-urgent { background:linear-gradient(135deg,#fee2e2,#fecaca); }
 .m-header-normal { background:linear-gradient(135deg,#f8fafc,#eef2ff); }
 .m-customer-name { font-size:20px; font-weight:900; color:#111827; }
 .m-customer-phone { font-size:16px; font-weight:700; color:#4f46e5; }
@@ -21,8 +21,8 @@
 .m-garment-title { font-size:18px; font-weight:900; color:#1e1b4b; }
 .m-garment-qty { font-size:15px; font-weight:700; color:#6366f1; margin-left:8px; }
 .m-meas-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:8px; margin-top:12px; }
-.m-meas-item { background:#f0f4ff; border:1.5px solid #c7d2fe; border-radius:12px; padding:10px 14px; text-align:center; }
-.m-meas-label { font-size:12px; font-weight:800; color:#6366f1; text-transform:uppercase; letter-spacing:0.3px; margin-bottom:4px; }
+.m-meas-item { background:#dbe4ff; border:1.5px solid #93a8f4; border-radius:12px; padding:10px 14px; text-align:center; }
+.m-meas-label { font-size:12px; font-weight:800; color:#3b4fba; text-transform:uppercase; letter-spacing:0.3px; margin-bottom:4px; }
 .m-meas-value { font-size:22px; font-weight:900; color:#111827; line-height:1.2; }
 .m-chip { display:inline-block; padding:6px 14px; border-radius:20px; font-size:13px; font-weight:700; background:#4f46e5; color:#fff; }
 .m-chip-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
