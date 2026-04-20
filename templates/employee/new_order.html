@@ -434,7 +434,7 @@
           </div>
           <div class="pay-upi-panel" style="display:none;text-align:center;background:#f9fafb;border-radius:12px;padding:24px;border:1.5px solid var(--border);flex-direction:column;align-items:center;justify-content:center;">
             <div style="font-weight:700;margin-bottom:14px;font-size:14px;">Scan to Pay</div>
-            <img src="/static/upi_qr.jpg" style="max-width:200px;border-radius:8px;border:1px solid var(--border);" alt="QR Code">
+            <img src="https://cdn.shopify.com/s/files/1/0587/4778/1225/files/upi_qr.jpg?v=1776686052" style="max-width:200px;border-radius:8px;border:1px solid var(--border);" alt="QR Code">
             <div style="font-size:22px;font-weight:800;color:var(--accent);margin-top:12px;">₹<span class="pay-upi-amt">0</span></div>
           </div>
           <div class="pay-cash-panel" style="display:flex;align-items:center;justify-content:center;background:#f9fafb;border-radius:12px;border:1.5px solid var(--border);">
@@ -1476,6 +1476,7 @@ function sendWA(lang){
   const dFmt  = fmtDate(p.delivery_date);
   const oFmt  = fmtDate(p.order_date || "");
   const mode  = p.payment_mode === "cash" ? (lang==="hi"?"नकद":"Cash") : "UPI";
+  const displayCode = ecPermanentCode || currentCode; // Show customer code, not entry code
   let msg = "";
 
   if (lang === "hi") {
@@ -1483,7 +1484,7 @@ function sendWA(lang){
       + "नमस्ते *" + p.customer_name + "* जी,\n"
       + "आपका ऑर्डर सफलतापूर्वक दर्ज हो गया है।\n"
       + "------------------------------------------\n\n"
-      + "• ऑर्डर नंबर: *#" + currentCode + "*\n\n"
+      + "• ऑर्डर नंबर: *#" + displayCode + "*\n\n"
       + "• ऑर्डर तारीख: " + oFmt + "\n\n"
       + "• डिलीवरी तारीख: *" + dFmt + "*\n\n"
       + "• कपड़े: " + items + "\n\n"
@@ -1492,14 +1493,14 @@ function sendWA(lang){
       + "• बकाया राशि: *₹" + p.remaining + "*\n\n"
       + "• भुगतान माध्यम: " + mode + "\n"
       + "-----------------------------------------------\n"
-      + "आपके विश्वास के लिए धन्यवाद। 🙏🏻\n"
+      + "आपका विश्वास ही हमारी सबसे बड़ी पूंजी है। 🙏\n"
       + "उत्तम टेलर्स";
   } else {
     msg = "*Uttam Tailors*\n"
       + "Hello *" + p.customer_name + "*,\n"
       + "Your order has been confirmed successfully.\n"
       + "------------------------------------------\n\n"
-      + "• Order No: *#" + currentCode + "*\n\n"
+      + "• Order No: *#" + displayCode + "*\n\n"
       + "• Order Date: " + oFmt + "\n\n"
       + "• Delivery Date: *" + dFmt + "*\n\n"
       + "• Garments: " + items + "\n\n"
