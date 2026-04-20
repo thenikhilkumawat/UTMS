@@ -266,7 +266,7 @@ function loadOrder(code) {
         document.getElementById("dc-code").textContent += "  (Entry #" + o.entry_code + ")";
       }
       document.getElementById("dc-customer").textContent = o.customer_name;
-      document.getElementById("dc-meta").textContent     = "📱 " + (o.mobile||"—") + "  ·  Order: " + (o.order_date_fmt||"") + " → " + (o.delivery_date_fmt||"");
+      document.getElementById("dc-meta").textContent     = "📱 " + (o.mobile||"—") + (o.address ? "  ·  📍 " + o.address : "") + "  ·  Order: " + (o.order_date_fmt||"") + " → " + (o.delivery_date_fmt||"");
       document.getElementById("dc-total").textContent    = "₹" + (o.payable_amount||o.total||0);
       document.getElementById("dc-advance").textContent  = "₹" + (o.advance_paid||0);
       document.getElementById("dc-remaining").textContent= "₹" + (o.remaining||0);
