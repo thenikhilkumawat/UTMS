@@ -434,7 +434,7 @@
           </div>
           <div class="pay-upi-panel" style="display:none;text-align:center;background:#f9fafb;border-radius:12px;padding:24px;border:1.5px solid var(--border);flex-direction:column;align-items:center;justify-content:center;">
             <div style="font-weight:700;margin-bottom:14px;font-size:14px;">Scan to Pay</div>
-            <img src="https://cdn.shopify.com/s/files/1/0587/4778/1225/files/WhatsApp_Image_2026-02-05_at_2.01.51_PM.jpg?v=1774547615" style="max-width:200px;border-radius:8px;border:1px solid var(--border);" alt="QR Code">
+            <img src="/static/upi_qr.jpg" style="max-width:200px;border-radius:8px;border:1px solid var(--border);" alt="QR Code">
             <div style="font-size:22px;font-weight:800;color:var(--accent);margin-top:12px;">₹<span class="pay-upi-amt">0</span></div>
           </div>
           <div class="pay-cash-panel" style="display:flex;align-items:center;justify-content:center;background:#f9fafb;border-radius:12px;border:1.5px solid var(--border);">
@@ -1131,23 +1131,45 @@ function buildGarmentCard(g, idx, listType) {
   // Style chips (GARMENT_TYPES from DB settings)
   const chips = GARMENT_TYPES[g.type]||[];
   const selected = g.selectedTypes||[];
+  const customChips = g.customChips||[];
   let chipsHtml = "";
-  if (chips.length > 0) {
-    const chipBtns = chips.map(c=>{
-      const isOn = selected.indexOf(c.k) >= 0;
-      return `<button type="button"
-        onclick="toggleGarmentType(${idx},'${c.k}','${listType}')"
-        style="padding:7px 14px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.15s;
-          ${isOn
-            ? 'background:#4f46e5;color:#fff;border:2px solid #4f46e5;'
-            : 'background:#f1f5f9;color:#475569;border:2px solid #e2e8f0;'}">${c.v}</button>`;
-    }).join("");
-    chipsHtml = `
-    <div style="margin-top:10px;padding:10px 12px;background:#f8fafc;border-radius:10px;border:1.5px solid var(--border);">
-      <div style="font-size:11px;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Style / Type</div>
-      <div style="display:flex;flex-wrap:wrap;gap:8px;">${chipBtns}</div>
-    </div>`;
-  }
+
+  // Build predefined chip buttons
+  const chipBtns = chips.map(c=>{
+    const isOn = selected.indexOf(c.k) >= 0;
+    return `<button type="button"
+      onclick="toggleGarmentType(${idx},'${c.k}','${listType}')"
+      style="padding:7px 14px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.15s;
+        ${isOn
+          ? 'background:#4f46e5;color:#fff;border:2px solid #4f46e5;'
+          : 'background:#f1f5f9;color:#475569;border:2px solid #e2e8f0;'}">${c.v}</button>`;
+  }).join("");
+
+  // Build custom chip buttons (user-added)
+  const customBtns = customChips.map((cc,ci)=>{
+    const isOn = selected.indexOf(cc) >= 0;
+    return `<button type="button"
+      onclick="toggleGarmentType(${idx},'${cc.replace(/'/g,"\\'")}','${listType}')"
+      style="padding:7px 14px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.15s;
+        ${isOn
+          ? 'background:#7c3aed;color:#fff;border:2px solid #7c3aed;'
+          : 'background:#faf5ff;color:#7c3aed;border:2px solid #ddd6fe;'}">${cc}
+      <span onclick="event.stopPropagation();removeCustomChip(${idx},${ci},'${listType}')" style="margin-left:4px;font-size:10px;">✕</span></button>`;
+  }).join("");
+
+  // Always show chips section (even if no predefined chips — user can add custom)
+  chipsHtml = `
+  <div style="margin-top:10px;padding:10px 12px;background:#f8fafc;border-radius:10px;border:1.5px solid var(--border);">
+    <div style="font-size:11px;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Style / Type</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;">${chipBtns}${customBtns}</div>
+    <div style="display:flex;gap:6px;align-items:center;">
+      <input type="text" id="custom-chip-${listType}-${idx}" placeholder="नई स्टाइल लिखें..."
+        onkeydown="if(event.key==='Enter'){event.preventDefault();addCustomChip(${idx},'${listType}');}"
+        style="flex:1;padding:6px 10px;font-size:13px;border:1.5px dashed #a78bfa;border-radius:8px;background:#faf5ff;outline:none;">
+      <button type="button" onclick="addCustomChip(${idx},'${listType}')"
+        style="padding:6px 14px;background:#7c3aed;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;">+ जोड़ें</button>
+    </div>
+  </div>`;
 
   const removeFn = listType==='garments'
     ? `garments=garments.filter(g=>g.id!==${g.id});renderGarments()`
@@ -1180,6 +1202,36 @@ function toggleGarmentType(idx, typeKey, listType) {
   var pos = arr[idx].selectedTypes.indexOf(typeKey);
   if (pos >= 0) arr[idx].selectedTypes.splice(pos, 1);
   else arr[idx].selectedTypes.push(typeKey);
+  if (listType === 'garments') renderGarments();
+  else renderExistingGarments();
+}
+
+function addCustomChip(idx, listType) {
+  var arr = (listType === 'garments') ? garments : existingGarments;
+  var inp = document.getElementById('custom-chip-'+listType+'-'+idx);
+  if (!inp) return;
+  var val = inp.value.trim();
+  if (!val) return;
+  if (!arr[idx].customChips) arr[idx].customChips = [];
+  // Don't add duplicate
+  if (arr[idx].customChips.indexOf(val) >= 0) { inp.value=''; return; }
+  arr[idx].customChips.push(val);
+  // Auto-select it
+  if (!arr[idx].selectedTypes) arr[idx].selectedTypes = [];
+  arr[idx].selectedTypes.push(val);
+  if (listType === 'garments') renderGarments();
+  else renderExistingGarments();
+}
+
+function removeCustomChip(idx, chipIdx, listType) {
+  var arr = (listType === 'garments') ? garments : existingGarments;
+  if (!arr[idx].customChips) return;
+  var removed = arr[idx].customChips.splice(chipIdx, 1)[0];
+  // Also deselect it
+  if (arr[idx].selectedTypes) {
+    var pos = arr[idx].selectedTypes.indexOf(removed);
+    if (pos >= 0) arr[idx].selectedTypes.splice(pos, 1);
+  }
   if (listType === 'garments') renderGarments();
   else renderExistingGarments();
 }
@@ -1441,8 +1493,6 @@ function sendWA(lang){
       + "• भुगतान माध्यम: " + mode + "\n"
       + "-----------------------------------------------\n"
       + "आपके विश्वास के लिए धन्यवाद। 🙏🏻\n"
-      "आपका विश्वास ही हमारी सबसे बड़ी पूंजी है।\n"
-      
       + "उत्तम टेलर्स";
   } else {
     msg = "*Uttam Tailors*\n"
