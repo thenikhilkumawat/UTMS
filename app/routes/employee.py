@@ -1299,7 +1299,7 @@ def api_employee_stats():
         period_label = f"{today.strftime('%B %Y')}"
 
     logs = conn.execute("""
-        SELECT wl.*, o.order_code
+        SELECT wl.*, o.order_code, COALESCE(o.repeat_of, o.order_code) as display_code
         FROM work_logs wl
         LEFT JOIN orders o ON o.id = wl.order_id
         WHERE wl.employee_name = ? AND wl.log_date >= ?
@@ -1334,7 +1334,7 @@ def api_employee_stats():
             "day_earnings": int(day_earnings),
             "entries": [{
                 "id":          e["id"],
-                "order_code":  e["order_code"] or "—",
+                "order_code":  e["display_code"] or e["order_code"] or "—",
                 "garment_type":e["garment_type"],
                 "qty_done":    e["qty_done"],
                 "notes":       e["notes"] or "",
@@ -1680,7 +1680,7 @@ def pickup():
         "SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status!='delivered'"
     ).fetchone()["c"]
     conn.close()
-    upi_qr = get_setting("upi_qr_image", "") or "https://cdn.shopify.com/s/files/1/0587/4778/1225/files/WhatsApp_Image_2026-02-05_at_2.01.51_PM.jpg?v=1774547615"
+    upi_qr = get_setting("upi_qr_image", "") or "/static/upi_qr.jpg"
     return render_template("employee/pickup.html",
         active_page="pickup", show_voice=True, urgent_count=urgent_count,
         upi_qr=upi_qr)
@@ -1765,7 +1765,7 @@ def api_pickup_order():
     conn = get_db()
 
     o = conn.execute("""
-        SELECT o.*, c.name as customer_name, c.mobile,
+        SELECT o.*, c.name as customer_name, c.mobile, c.address,
                COALESCE(o.repeat_of,'') as repeat_of
         FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
         WHERE o.order_code=?
@@ -1797,6 +1797,7 @@ def api_pickup_order():
         "entry_code":       o["order_code"] if o["repeat_of"] else "",
         "customer_name":    o["customer_name"] or "—",
         "mobile":           o["mobile"] or "",
+        "address":          o["address"] or "",
         "status":           o["status"],
         "is_urgent":        o["is_urgent"],
         "repeat_of":        o["repeat_of"],
