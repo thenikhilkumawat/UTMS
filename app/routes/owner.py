@@ -2331,7 +2331,8 @@ def past_orders():
 @bp.route("/past-orders/save", methods=["POST"])
 @owner_required
 def past_orders_save():
-    """Save a past/historical order."""
+    """Save a past/historical order — bulletproof version."""
+    import json as _json
     data = request.get_json(silent=True) or {}
 
     customer_name  = (data.get("customer_name") or "").strip()
@@ -2344,65 +2345,61 @@ def past_orders_save():
     note           = (data.get("note") or "").strip()
     garments       = data.get("garments") or []
     order_code_override = (data.get("order_code") or "").strip()
+    is_delivered   = data.get("is_delivered", True)
 
     if not customer_name:
         return jsonify({"ok": False, "error": "Customer name required"})
 
-    payable    = total_amount
-    remaining  = max(0, payable - advance_paid)
-    now_str    = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    is_delivered = data.get("is_delivered", True)
-    status = "delivered" if is_delivered else "pending"
+    payable   = total_amount
+    remaining = max(0, payable - advance_paid)
+    now_str   = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    status    = "delivered" if is_delivered else "pending"
 
-    conn = get_db()
     try:
-        # Find or create customer — auto-link if mobile exists
+        conn = get_db()
+
+        # 1. Customer — find or create
+        customer_id = None
         if customer_mobile:
-            row = conn.execute("SELECT id FROM customers WHERE mobile=?", (customer_mobile,)).fetchone()
-        else:
-            row = conn.execute("SELECT id FROM customers WHERE name=? AND (mobile IS NULL OR mobile='')",
-                               (customer_name,)).fetchone()
-        if row:
-            customer_id = row["id"]
-            conn.execute("UPDATE customers SET name=?,mobile=? WHERE id=?",
-                         (customer_name, customer_mobile, customer_id))
-        else:
+            r = conn.execute("SELECT id FROM customers WHERE mobile=?", (customer_mobile,)).fetchone()
+            if r:
+                customer_id = r["id"]
+                conn.execute("UPDATE customers SET name=? WHERE id=?", (customer_name, customer_id))
+        if not customer_id:
+            r = conn.execute("SELECT id FROM customers WHERE name=? ORDER BY id DESC LIMIT 1", (customer_name,)).fetchone()
+            if r:
+                customer_id = r["id"]
+        if not customer_id:
             conn.execute("INSERT INTO customers(name,mobile,created_at) VALUES(?,?,?)",
-                         (customer_name, customer_mobile, now_str))
+                         (customer_name, customer_mobile or "", now_str))
             conn.commit()
-            cur = conn.execute("SELECT id FROM customers WHERE name=? ORDER BY id DESC LIMIT 1", (customer_name,))
-            customer_id = cur.fetchone()["id"]
+            r = conn.execute("SELECT id FROM customers ORDER BY id DESC LIMIT 1").fetchone()
+            customer_id = r["id"] if r else 1
 
-        # Determine order code — INLINE, no separate DB connection
-        if order_code_override:
-            clash = conn.execute("SELECT id FROM orders WHERE order_code=?", (order_code_override,)).fetchone()
-            if not clash:
-                order_code = order_code_override
-            else:
-                # Code exists — generate next available using SAME connection
-                order_code = None
-        else:
-            order_code = None
+        # 2. Order code — use override or auto-generate
+        order_code = order_code_override or ""
+        if order_code:
+            clash = conn.execute("SELECT id FROM orders WHERE order_code=?", (order_code,)).fetchone()
+            if clash:
+                order_code = ""
 
-        if order_code is None:
-            # Generate next available code using THIS connection (no deadlock)
-            row = conn.execute("SELECT value FROM settings WHERE key='last_order_code'").fetchone()
-            setting_last = int(row["value"]) if row else 3599
-            # Get all existing codes
-            all_codes = conn.execute("SELECT order_code FROM orders").fetchall()
+        if not order_code:
+            r = conn.execute("SELECT value FROM settings WHERE key='last_order_code'").fetchone()
+            last = int(r["value"]) if r else 3599
             existing = set()
-            for r in all_codes:
-                c = r["order_code"] if hasattr(r, "__getitem__") else str(r[0])
-                if c.isdigit():
+            for row in conn.execute("SELECT order_code FROM orders").fetchall():
+                c = row["order_code"]
+                if c and c.isdigit():
                     existing.add(int(c))
-            candidate = setting_last + 1
+            candidate = last + 1
             while candidate in existing:
                 candidate += 1
             order_code = str(candidate)
-            conn.execute("INSERT OR REPLACE INTO settings(key,value) VALUES('last_order_code',?)", (str(candidate),))
+            conn.execute("DELETE FROM settings WHERE key='last_order_code'")
+            conn.execute("INSERT INTO settings(key,value) VALUES('last_order_code',?)", (str(candidate),))
 
+        # 3. Insert order
         delivered_at = delivery_date if is_delivered else None
-
         conn.execute("""
             INSERT INTO orders(order_code,customer_id,order_date,delivery_date,
                 total_amount,extra_charges,payable_amount,advance_paid,remaining,
@@ -2413,41 +2410,48 @@ def past_orders_save():
               payment_mode, status, note, delivered_at, now_str))
         conn.commit()
 
-        ord_row = conn.execute("SELECT id FROM orders WHERE order_code=?", (order_code,)).fetchone()
-        order_id = ord_row["id"]
+        r = conn.execute("SELECT id FROM orders WHERE order_code=?", (order_code,)).fetchone()
+        order_id = r["id"] if r else None
+        if not order_id:
+            conn.close()
+            return jsonify({"ok": False, "error": "Order insert failed"})
 
+        # 4. Items
         for g in garments:
             gtype = (g.get("type") or "").strip()
             qty   = int(g.get("qty") or 1)
             rate  = float(g.get("rate") or 0)
-            amt   = qty * rate
-            meas  = g.get("measurements") or {}
-            notes = (g.get("notes") or "").strip()
             if gtype:
-                import json as _gj
+                meas  = g.get("measurements") or {}
+                notes = (g.get("notes") or "").strip()
+                sel   = g.get("selectedTypes") or []
+                if sel:
+                    notes = (notes.split("[")[0].strip() + " [" + ",".join(sel) + "]").strip()
                 conn.execute("""
                     INSERT INTO order_items(order_id,garment_type,quantity,rate,amount,measurements,notes)
                     VALUES(?,?,?,?,?,?,?)
-                """, (order_id, gtype, qty, rate, amt, _gj.dumps(meas), notes))
+                """, (order_id, gtype, qty, rate, qty*rate, _json.dumps(meas), notes))
 
-        # Past orders do NOT create work logs
-
-        # Finance entry — use order_date so it appears in correct month
+        # 5. Finance (single entry only)
         finance_date = order_date or delivery_date or now_str[:10]
         if advance_paid > 0:
             conn.execute("""
                 INSERT INTO finance(tx_date,tx_type,category,amount,mode,order_id,note,created_by,created_at)
-                VALUES(?,?,?,?,?,?,?,?,?)
-            """, (finance_date, "income", "payment",
-                  advance_paid, payment_mode, order_id,
-                  f"Past order #{order_code} - {customer_name}", "owner", now_str))
+                VALUES(?,'income','payment',?,?,?,?,'owner',?)
+            """, (finance_date, advance_paid, payment_mode, order_id,
+                  "Past order #" + order_code, now_str))
 
         conn.commit()
         conn.close()
+        from database import invalidate_settings_cache
+        invalidate_settings_cache()
         return jsonify({"ok": True, "order_code": order_code})
+
     except Exception as e:
         try: conn.close()
         except: pass
+        import traceback
+        traceback.print_exc()
         return jsonify({"ok": False, "error": str(e)})
 
 
