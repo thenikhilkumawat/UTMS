@@ -99,6 +99,54 @@ _cur = int(_get_setting("last_order_code", "0"))
 if _cur < 3599:
     _set_setting("last_order_code", "3599")
 
+# ── Auto-backup at 9:00 PM daily ─────────────────────────────────────────────
+import threading, time as _time
+def _auto_backup_worker():
+    """Background thread: checks every 30 min, runs backup at 9PM IST."""
+    last_backup_date = ""
+    while True:
+        try:
+            _time.sleep(1800)  # Check every 30 minutes
+            from datetime import datetime, timedelta, timezone
+            ist = timezone(timedelta(hours=5, minutes=30))
+            now = datetime.now(ist)
+            today_str = now.strftime("%Y-%m-%d")
+            if now.hour == 21 and last_backup_date != today_str:
+                # Run backup
+                last_backup_date = today_str
+                from database import get_db as _bdb
+                conn = _bdb()
+                import json as _bj
+                tables = ["customers","orders","order_items","order_images","work_logs",
+                          "finance","employees","settings","measurement_fields","inventory",
+                          "salary_advances","notify_log"]
+                backup = {}
+                for t in tables:
+                    try:
+                        rows = conn.execute(f"SELECT * FROM {t}").fetchall()
+                        backup[t] = [dict(r) for r in rows]
+                    except: pass
+                conn.close()
+                backup_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "backups")
+                os.makedirs(backup_dir, exist_ok=True)
+                fname = os.path.join(backup_dir, f"auto_backup_{today_str}.json")
+                with open(fname, "w") as f:
+                    _bj.dump(backup, f, default=str)
+                # Keep only last 7 backups
+                import glob
+                files = sorted(glob.glob(os.path.join(backup_dir, "auto_backup_*.json")))
+                for old in files[:-7]:
+                    try: os.remove(old)
+                    except: pass
+                from database import set_setting
+                set_setting("last_backup_at", now.strftime("%d-%m-%Y %I:%M %p"))
+                logger.info(f"Auto-backup saved: {fname}")
+        except Exception as e:
+            logger.error(f"Auto-backup error: {e}")
+
+_backup_thread = threading.Thread(target=_auto_backup_worker, daemon=True)
+_backup_thread.start()
+
 # ── API routes ───────────────────────────────────────────────────────────────
 @app.route("/api/settings/logo")
 def api_logo():
