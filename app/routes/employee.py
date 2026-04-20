@@ -1680,7 +1680,7 @@ def pickup():
         "SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status!='delivered'"
     ).fetchone()["c"]
     conn.close()
-    upi_qr = get_setting("upi_qr_image", "") or "/static/upi_qr.jpg"
+    upi_qr = get_setting("upi_qr_image", "") or "https://cdn.shopify.com/s/files/1/0587/4778/1225/files/upi_qr.jpg?v=1776686052"
     return render_template("employee/pickup.html",
         active_page="pickup", show_voice=True, urgent_count=urgent_count,
         upi_qr=upi_qr)
