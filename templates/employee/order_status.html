@@ -95,6 +95,7 @@
               <div style="font-size:10px;font-weight:700;margin-top:2px;
                 color:{% if o.is_urgent %}#ef4444{% elif o.overdue %}#ef4444{% elif o.status=='delivered' %}#6b7280{% elif o.due_soon %}#d97706{% else %}#6b7280{% endif %};">
                 {% if o.is_urgent %}🔥 URGENT
+                {% elif o.overdue and o.status == 'ready' %}<span class="lang-en">PICKUP PENDING</span><span class="lang-hi" style="display:none;">ग्राहक से बाकी</span>
                 {% elif o.overdue %}<span class="lang-en">LATE</span><span class="lang-hi" style="display:none;">देरी</span>
                 {% elif o.status=='delivered' %}<span class="lang-en">HISTORY</span><span class="lang-hi" style="display:none;">डिलीवर</span>
                 {% elif o.due_soon %}<span class="lang-en">UPCOMING</span><span class="lang-hi" style="display:none;">आने वाला</span>
