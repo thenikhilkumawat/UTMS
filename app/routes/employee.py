@@ -812,12 +812,12 @@ def api_customer_search():
                 })
                 seen_codes.add(r["id"])
 
-    # Also search by name, mobile, address
+    # Also search by name, mobile, address (case-insensitive)
     rows = conn.execute("""
         SELECT c.id, c.name, c.mobile, c.address, COUNT(o.id) as order_count
         FROM customers c
         LEFT JOIN orders o ON o.customer_id = c.id
-        WHERE c.name LIKE ? OR c.mobile LIKE ? OR c.address LIKE ?
+        WHERE LOWER(c.name) LIKE LOWER(?) OR c.mobile LIKE ? OR LOWER(c.address) LIKE LOWER(?)
         GROUP BY c.id
         ORDER BY c.name ASC LIMIT 15
     """, (like, like, like)).fetchall()
@@ -979,7 +979,7 @@ def order_status():
         SELECT o.id, o.order_code, o.status, o.is_urgent, o.note,
                o.order_date, o.delivery_date, o.delivered_at, o.repeat_of,
                o.payable_amount, o.advance_paid, o.remaining, o.customer_id,
-               c.name as cname, c.mobile
+               c.name as cname, c.mobile, c.address as caddress
         FROM orders o
         LEFT JOIN customers c ON c.id = o.customer_id
         ORDER BY
@@ -1078,6 +1078,7 @@ def order_status():
             "entry_code":       o["order_code"] if o["repeat_of"] else "",
             "cname":            o["cname"] or "—",
             "mobile":           o["mobile"] or "",
+            "address":          o["caddress"] or "",
             "status":           o["status"],
             "is_urgent":        o["is_urgent"],
             "repeat_of":        o["repeat_of"],
@@ -1094,7 +1095,8 @@ def order_status():
             "delivered_at":     (o["delivered_at"] if "delivered_at" in o.keys() else "") or "",
             "delivered_at_fmt": fmtd(((o["delivered_at"] if "delivered_at" in o.keys() else "") or "")[:10]),
             "garments":         items,
-            "customer_order_count": cust_counts.get(o["customer_id"], 1)
+            "customer_order_count": cust_counts.get(o["customer_id"], 1),
+            "pickup_pending":   o["status"] == "ready" and overdue,
         })
 
     # Images not loaded on order status page (for speed)
@@ -1121,6 +1123,7 @@ def order_status():
         "delivered": sum(1 for o in orders if o["status"]=="delivered"),
         "cancelled": sum(1 for o in orders if o["status"]=="cancelled"),
         "urgent":    sum(1 for o in orders if o["is_urgent"] and o["status"]!="delivered"),
+        "pickup_pending": sum(1 for o in orders if o.get("pickup_pending")),
     }
     conn.close()
     HINDI_MAP = {
@@ -1138,6 +1141,7 @@ def order_status():
         upcoming_count=counts["upcoming"],
         ready_count=counts["ready"], delivered_count=counts["delivered"],
         cancelled_count=counts["cancelled"],
+        pickup_pending_count=counts["pickup_pending"],
         hindi_map=HINDI_MAP)
 
 
@@ -1730,12 +1734,12 @@ def api_pickup_search():
                 rows.append(row)
                 seen_codes.add(row["order_code"])
 
-    # Search by name or mobile
+    # Search by name or mobile (case-insensitive)
     r3 = conn.execute("""
         SELECT o.order_code, o.status, o.delivery_date, o.order_date, o.remaining, o.is_urgent,
                o.repeat_of, c.name as customer_name, c.mobile
         FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
-        WHERE (c.name LIKE ? OR c.mobile LIKE ?)
+        WHERE (LOWER(c.name) LIKE LOWER(?) OR c.mobile LIKE ?)
         ORDER BY o.id DESC LIMIT 20
     """, (like, like)).fetchall()
     for row in r3:
@@ -1825,7 +1829,7 @@ def api_pickup_collect_and_deliver():
     amount = float(data.get("amount", 0))
     mode   = data.get("mode","cash")
 
-    if not code or amount <= 0:
+    if not code or amount < 0:
         return jsonify({"ok":False, "error":"Invalid request"})
 
     conn = get_db()
@@ -1839,7 +1843,37 @@ def api_pickup_collect_and_deliver():
     today = date.today().isoformat()
     now   = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    new_rem = max(0, round(order["remaining"] - amount, 2))
+    current_remaining = float(order["remaining"] or 0)
+
+    # If remaining is already 0 and amount is 0, just mark as delivered (no finance entry)
+    if amount <= 0 and current_remaining <= 0:
+        order_status_check = conn.execute("SELECT status FROM orders WHERE order_code=?", (code,)).fetchone()
+        if order_status_check and order_status_check["status"] == "pending":
+            conn.close()
+            return jsonify({"ok":False, "error":"Cannot deliver a pending order. Clothes must be stitched and marked Ready first."})
+        conn.execute(
+            "UPDATE orders SET status='delivered', delivered_at=? WHERE order_code=?",
+            (now, code)
+        )
+        conn.commit()
+        conn.close()
+        return jsonify({"ok":True})
+
+    # If amount is 0 but there IS remaining, just mark delivered without payment
+    if amount <= 0:
+        order_status_check = conn.execute("SELECT status FROM orders WHERE order_code=?", (code,)).fetchone()
+        if order_status_check and order_status_check["status"] == "pending":
+            conn.close()
+            return jsonify({"ok":False, "error":"Cannot deliver a pending order. Clothes must be stitched and marked Ready first."})
+        conn.execute(
+            "UPDATE orders SET status='delivered', delivered_at=? WHERE order_code=?",
+            (now, code)
+        )
+        conn.commit()
+        conn.close()
+        return jsonify({"ok":True})
+
+    new_rem = max(0, round(current_remaining - amount, 2))
     new_adv = round(order["advance_paid"] + amount, 2)
 
     # Check status before delivering
