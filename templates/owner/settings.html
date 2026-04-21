@@ -856,5 +856,34 @@ setInterval(()=>{ if(Math.floor((Date.now()-last)/1000)>=SECS) window.location.h
 window.addEventListener("pageshow",function(e){
   if(e.persisted){fetch("/owner/logout",{method:"POST",keepalive:true}).finally(()=>{window.location.href="/owner/login";})}
 });
+
+// ═══ Fix #16: Collapse all settings sections by default ═══
+(function(){
+  var cards = document.querySelectorAll('.page-body > .card');
+  cards.forEach(function(card){
+    var header = card.querySelector('.card-header');
+    var body = card.querySelector('.card-body');
+    if(!header || !body) return;
+    // Collapse body by default
+    body.style.display = 'none';
+    // Add chevron indicator
+    var chevron = document.createElement('span');
+    chevron.textContent = '▶';
+    chevron.style.cssText = 'font-size:12px;color:var(--text-muted);margin-left:auto;transition:transform 0.2s;flex-shrink:0;';
+    chevron.className = 'settings-chevron';
+    header.style.cursor = 'pointer';
+    header.style.display = 'flex';
+    header.style.alignItems = 'center';
+    header.style.gap = '10px';
+    header.appendChild(chevron);
+    // Toggle on click
+    header.addEventListener('click', function(e){
+      if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT'||e.target.tagName==='BUTTON') return;
+      var isOpen = body.style.display !== 'none';
+      body.style.display = isOpen ? 'none' : '';
+      chevron.textContent = isOpen ? '▶' : '▼';
+    });
+  });
+})();
 </script>
 {% endblock %}
