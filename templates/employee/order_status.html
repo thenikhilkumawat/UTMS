@@ -25,7 +25,7 @@
 
 <!-- Filter tabs -->
 <div style="background:#fff;border-bottom:1px solid var(--border);padding:0 28px;display:flex;gap:0;">
-  {% set tabs = [('all','All Orders',total),('late','Late',late_count),('upcoming','Upcoming',upcoming_count),('ready','Ready',ready_count),('delivered','Delivered',delivered_count),('cancelled','Cancelled',cancelled_count)] %}
+  {% set tabs = [('all','All Orders',total),('late','Late',late_count),('upcoming','Upcoming',upcoming_count),('ready','Ready',ready_count),('pickup_pending','Pickup Pending',pickup_pending_count),('delivered','Delivered',delivered_count),('cancelled','Cancelled',cancelled_count)] %}
   {% for key,label,count in tabs %}
   <button class="sched-tab {% if loop.first %}active{% endif %}" data-f="{{ key }}" onclick="setTab('{{ key }}',this)"
     style="padding:12px 18px;font-size:13px;font-weight:700;border:none;border-bottom:3px solid {% if loop.first %}var(--accent){% else %}transparent{% endif %};background:transparent;cursor:pointer;color:{% if loop.first %}var(--accent){% else %}var(--text-muted){% endif %};">
@@ -72,6 +72,7 @@
         data-urgent="{{ o.is_urgent }}"
         data-overdue="{{ 'true' if o.overdue else 'false' }}"
         data-upcoming="{{ 'true' if o.due_soon and not o.overdue else 'false' }}"
+        data-pickup-pending="{{ 'true' if o.pickup_pending else 'false' }}"
         data-s="{{ o.order_code }} {{ o.repeat_of }} {{ o.cname|lower }} {{ o.mobile }}"
         style="border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.1s;"
         onmouseover="this.style.background='#fafbff'" onmouseout="this.style.background=''"
@@ -270,6 +271,12 @@
                 <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px;">
                   <span class="lang-en">Order Details</span><span class="lang-hi" style="display:none;">ऑर्डर विवरण</span>
                 </div>
+                {% if o.address %}
+                <div style="background:#fff7ed;border:1.5px solid #fed7aa;border-radius:10px;padding:10px 14px;margin-bottom:10px;">
+                  <div style="font-size:10px;font-weight:800;color:#9a3412;text-transform:uppercase;margin-bottom:4px;">📍 <span class="lang-en">Address</span><span class="lang-hi" style="display:none;">पता</span></div>
+                  <div style="font-size:13px;font-weight:700;color:#1e1b4b;">{{ o.address }}</div>
+                </div>
+                {% endif %}
                 <div style="background:#fff;border:1px solid #e0e7ff;border-radius:10px;overflow:hidden;">
                   <div style="display:flex;justify-content:space-between;padding:8px 14px;border-bottom:1px solid var(--border);">
                     <span style="font-size:12px;color:var(--text-muted);"><span class="lang-en">Total Bill</span><span class="lang-hi" style="display:none;">कुल बिल</span></span>
@@ -395,14 +402,16 @@ function filterRows() {
     const status   = row.dataset.status;
     const overdue  = row.dataset.overdue === "true";
     const upcoming = row.dataset.upcoming === "true";
+    const pickupPending = row.dataset.pickupPending === "true";
     const srch     = row.dataset.s;
     const matchQ   = !q || srch.includes(q);
     let matchF = true;
-    if      (activeTab === "late")      matchF = overdue && status !== "delivered" && status !== "cancelled";
-    else if (activeTab === "upcoming")  matchF = upcoming && status !== "cancelled";
-    else if (activeTab === "ready")     matchF = status === "ready";
-    else if (activeTab === "delivered") matchF = status === "delivered";
-    else if (activeTab === "cancelled") matchF = status === "cancelled";
+    if      (activeTab === "late")           matchF = overdue && status !== "delivered" && status !== "cancelled";
+    else if (activeTab === "upcoming")       matchF = upcoming && status !== "cancelled";
+    else if (activeTab === "ready")          matchF = status === "ready";
+    else if (activeTab === "pickup_pending") matchF = pickupPending;
+    else if (activeTab === "delivered")      matchF = status === "delivered";
+    else if (activeTab === "cancelled")      matchF = status === "cancelled";
     // All tab shows everything including cancelled
 
     const expRow = document.getElementById("exp-" + row.dataset.s.split(" ")[0]);
