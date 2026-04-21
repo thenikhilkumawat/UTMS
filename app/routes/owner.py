@@ -2337,6 +2337,7 @@ def past_orders_save():
 
     customer_name  = (data.get("customer_name") or "").strip()
     customer_mobile= (data.get("mobile") or "").strip()
+    customer_address = (data.get("address") or "").strip()
     order_date     = (data.get("order_date") or "").strip()
     delivery_date  = (data.get("delivery_date") or "").strip()
     total_amount   = float(data.get("total_amount") or 0)
@@ -2364,14 +2365,16 @@ def past_orders_save():
             r = conn.execute("SELECT id FROM customers WHERE mobile=?", (customer_mobile,)).fetchone()
             if r:
                 customer_id = r["id"]
-                conn.execute("UPDATE customers SET name=? WHERE id=?", (customer_name, customer_id))
+                conn.execute("UPDATE customers SET name=?, address=? WHERE id=?", (customer_name, customer_address, customer_id))
         if not customer_id:
             r = conn.execute("SELECT id FROM customers WHERE name=? ORDER BY id DESC LIMIT 1", (customer_name,)).fetchone()
             if r:
                 customer_id = r["id"]
+                if customer_address:
+                    conn.execute("UPDATE customers SET address=? WHERE id=?", (customer_address, customer_id))
         if not customer_id:
-            conn.execute("INSERT INTO customers(name,mobile,created_at) VALUES(?,?,?)",
-                         (customer_name, customer_mobile or "", now_str))
+            conn.execute("INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?)",
+                         (customer_name, customer_mobile or "", customer_address, now_str))
             conn.commit()
             r = conn.execute("SELECT id FROM customers ORDER BY id DESC LIMIT 1").fetchone()
             customer_id = r["id"] if r else 1
