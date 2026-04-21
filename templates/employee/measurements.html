@@ -8,14 +8,14 @@
   transition: all 0.2s;
 }
 .m-card:hover { box-shadow:0 4px 24px rgba(0,0,0,0.1); }
-.m-card.urgent-card { border-left:5px solid #ef4444; box-shadow:0 2px 16px rgba(239,68,68,0.15); }
-.m-card.delivered-card { border-left:5px solid #10b981; opacity:0.85; }
+.m-card.urgent-card { border-left:5px solid #950606; box-shadow:0 2px 16px rgba(149,6,6,0.15); }
+.m-card.delivered-card { border-left:5px solid #06402b; opacity:0.85; }
 .m-header { padding:18px 20px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
-.m-header-urgent { background:linear-gradient(135deg,#fee2e2,#fecaca); }
-.m-header-normal { background:linear-gradient(135deg,#f8fafc,#eef2ff); }
-.m-customer-name { font-size:20px; font-weight:900; color:#111827; }
-.m-customer-phone { font-size:16px; font-weight:700; color:#4f46e5; }
-.m-order-code { font-size:22px; font-weight:900; color:#6366f1; }
+.m-header-urgent { background:linear-gradient(135deg,#3d0101,#950606); }
+.m-header-normal { background:linear-gradient(135deg,#0d0d3b,#191970); }
+.m-customer-name { font-size:20px; font-weight:900; color:#fff; }
+.m-customer-phone { font-size:16px; font-weight:700; color:#a5b4fc; }
+.m-order-code { font-size:22px; font-weight:900; color:#c7d2fe; }
 .m-garment-section { padding:16px 20px; }
 .m-garment-section:not(:last-child) { border-bottom:1.5px solid #f1f5f9; }
 .m-garment-title { font-size:18px; font-weight:900; color:#1e1b4b; }
@@ -26,9 +26,9 @@
 .m-meas-value { font-size:22px; font-weight:900; color:#111827; line-height:1.2; }
 .m-chip { display:inline-block; padding:6px 14px; border-radius:20px; font-size:13px; font-weight:700; background:#4f46e5; color:#fff; }
 .m-chip-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
-.m-cut-btn { font-size:13px; background:#fef3c7; color:#92400e; padding:8px 18px; border-radius:10px; font-weight:800; border:2px solid #fde68a; cursor:pointer; transition:all 0.15s; }
-.m-cut-btn:hover { background:#fde68a; transform:translateY(-1px); }
-.m-cut-done { font-size:13px; background:#d1fae5; color:#065f46; padding:6px 14px; border-radius:10px; font-weight:800; }
+.m-cut-btn { font-size:13px; background:#02E6F4; color:#fff; padding:8px 18px; border-radius:10px; font-weight:800; border:2px solid #02c9d6; cursor:pointer; transition:all 0.15s; }
+.m-cut-btn:hover { background:#02c9d6; transform:translateY(-1px); }
+.m-cut-done { font-size:13px; background:#06402b; color:#fff; padding:6px 14px; border-radius:10px; font-weight:800; }
 .m-notes { font-size:14px; color:#7c3aed; font-weight:700; margin-top:8px; }
 
 /* Cut popup modal */
@@ -97,10 +97,10 @@
           <span style="font-size:12px;background:#eef2ff;color:#6366f1;padding:3px 10px;border-radius:8px;font-weight:700;">Entry: {{ o.entry_code }}</span>
         {% endif %}
         {% if o.is_urgent %}
-          <span style="font-size:11px;background:#ef4444;color:#fff;padding:3px 10px;border-radius:8px;font-weight:800;letter-spacing:0.5px;">🔥 URGENT</span>
+          <span style="font-size:11px;background:#fbbf24;color:#1f2937;padding:3px 10px;border-radius:8px;font-weight:800;letter-spacing:0.5px;">🔥 URGENT</span>
         {% endif %}
         {% if o.status == 'delivered' %}
-          <span style="font-size:11px;background:#ef4444;color:#fff;padding:3px 10px;border-radius:8px;font-weight:800;">डिलीवर हो गया</span>
+          <span style="font-size:11px;background:#06402b;color:#fff;padding:3px 10px;border-radius:8px;font-weight:800;">डिलीवर हो गया</span>
         {% elif o.status == 'ready' %}
           <span style="font-size:11px;background:#16a34a;color:#fff;padding:3px 10px;border-radius:8px;font-weight:800;">तैयार</span>
         {% endif %}
@@ -113,7 +113,7 @@
       </div>
     </div>
     <div style="text-align:right;">
-      <div style="font-size:14px;font-weight:700;color:var(--text-secondary);">📅 {{ o.delivery_date_fmt }}</div>
+      <div style="font-size:14px;font-weight:700;color:rgba(255,255,255,0.8);">📅 {{ o.delivery_date_fmt }}</div>
     </div>
   </div>
 
