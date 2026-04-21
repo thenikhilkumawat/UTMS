@@ -126,6 +126,10 @@
           <button id="wl-submit" onclick="submitLog()" style="display:none;width:100%;padding:14px;border:none;border-radius:12px;font-size:15px;font-weight:900;cursor:pointer;color:#fff;">
             ✅ <span class="lang-en">Log Work</span><span class="lang-hi" style="display:none;">काम दर्ज करें</span>
           </button>
+          <!-- Log All for naap/cutting -->
+          <button id="wl-log-all-btn" onclick="logAllRemaining()" style="display:none;width:100%;padding:12px;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;color:#fff;background:#7c3aed;">
+            ⚡ <span class="lang-en">Log All Remaining</span><span class="lang-hi" style="display:none;">सभी बाकी दर्ज करें</span>
+          </button>
           <button id="wl-reset-btn" onclick="resetForm()" style="display:none;width:100%;padding:8px;background:none;border:1.5px solid var(--border);border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;color:var(--text-muted);">
             ↺ <span class="lang-en">Reset</span><span class="lang-hi" style="display:none;">रीसेट</span>
           </button>
@@ -334,6 +338,19 @@ function lookupCode() {
         }
         sel.appendChild(opt);
       });
+      // Show "Log All" button for naap/cutting if there are remaining items
+      var logAllBtn = document.getElementById("wl-log-all-btn");
+      if (CURRENT_TAB !== "stitch") {
+        var hasRemaining = (data.items||[]).some(function(item){
+          if (CURRENT_TAB === "measure") return (item.naap_done||0) < item.required;
+          if (CURRENT_TAB === "cut") return (item.cut_done||0) < item.required;
+          return false;
+        });
+        logAllBtn.style.display = hasRemaining ? "block" : "none";
+        document.getElementById("wl-reset-btn").style.display = "block";
+      } else {
+        logAllBtn.style.display = "none";
+      }
     });
 }
 
@@ -380,6 +397,7 @@ function hideQtyAndSubmit() {
   document.getElementById("wl-submit").style.display    = "none";
   document.getElementById("wl-reset-btn").style.display = "none";
   document.getElementById("wl-progress").style.display  = "none";
+  document.getElementById("wl-log-all-btn").style.display = "none";
 }
 function changeQty(d) {
   var inp = document.getElementById("wl-qty");
@@ -411,9 +429,64 @@ function submitLog() {
     btn.disabled=false;
     btn.innerHTML='✅ <span class="lang-en">Log Work</span><span class="lang-hi" style="display:none;">काम दर्ज करें</span>';
     applyLang();
-    if(d.ok){ showToast("✅ "+qty+" कपड़े दर्ज हुए","success"); resetForm(); setTimeout(loadStats,400); }
+    if(d.ok){ showToast("✅ "+qty+" कपड़े दर्ज हुए","success");
+      if(CURRENT_TAB==="stitch"){ resetForm(); }
+      else {
+        // For naap/cutting: keep the code, just refresh garment list
+        document.getElementById("wl-garment").value="";
+        hideQtyAndSubmit();
+        lookupCode(); // re-lookup to refresh done/pending status
+      }
+      setTimeout(loadStats,400); }
     else showToast("Error: "+d.error,"error");
   });
+}
+
+function logAllRemaining() {
+  if (!SEL_EMP_ID || !orderData) { showToast("कर्मचारी और ऑर्डर चुनें","warning"); return; }
+  var code = document.getElementById("wl-code").value.trim().replace("#","");
+  var items = orderData.items || [];
+  var cfg = TAB_CONFIG[CURRENT_TAB];
+  var pending = [];
+  items.forEach(function(item){
+    var done = CURRENT_TAB === "measure" ? (item.naap_done||0) : (item.cut_done||0);
+    var rem = Math.max(0, item.required - done);
+    if (rem > 0) pending.push({garment_type: item.garment_type, qty: rem});
+  });
+  if (!pending.length) { showToast("सब पहले से हो गया!","success"); return; }
+  var names = pending.map(function(p){ return p.garment_type + " ×" + p.qty; }).join(", ");
+  if (!confirm("सभी बाकी कपड़ों का " + (CURRENT_TAB==="measure"?"नाप":"कटाई") + " दर्ज करें?\n\n" + names)) return;
+  var btn = document.getElementById("wl-log-all-btn");
+  btn.disabled = true; btn.textContent = "दर्ज हो रहा है...";
+  var done = 0;
+  function logNext() {
+    if (done >= pending.length) {
+      btn.disabled = false;
+      btn.innerHTML = '⚡ <span class="lang-en">Log All Remaining</span><span class="lang-hi" style="display:none;">सभी बाकी दर्ज करें</span>';
+      applyLang();
+      showToast("✅ सभी " + pending.length + " कपड़ों का " + (CURRENT_TAB==="measure"?"नाप":"कटाई") + " दर्ज हुआ!","success");
+      lookupCode(); // refresh
+      setTimeout(loadStats, 400);
+      return;
+    }
+    var p = pending[done];
+    fetch("/api/work-log/add",{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        order_code: code,
+        garment_type: p.garment_type,
+        qty_done: p.qty,
+        employee_id: SEL_EMP_ID, employee_name: SEL_EMP_NAME,
+        notes: (CURRENT_TAB==="measure"?"Naap":"Kataai") + " — " + p.garment_type,
+        rate_override: cfg.rate, is_non_stitch: true
+      })
+    }).then(function(r){return r.json();}).then(function(d){
+      done++;
+      if (d.ok) logNext();
+      else { showToast("Error: " + d.error,"error"); btn.disabled=false; btn.innerHTML='⚡ Log All'; }
+    });
+  }
+  logNext();
 }
 
 function resetForm() {
