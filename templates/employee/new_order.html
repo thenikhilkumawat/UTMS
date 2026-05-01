@@ -21,18 +21,18 @@
   <div class="wizard-steps" id="wizard-new" style="margin-bottom:24px;display:none;">
     <div class="wizard-step" id="wn1"><span class="step-num">1</span><span>Start</span></div>
     <div class="wizard-step" id="wn2"><span class="step-num">2</span><span data-t="step_garments">Garments</span></div>
-    <div class="wizard-step" id="wn3"><span class="step-num">3</span><span data-t="step_images">Images</span></div>
-    <div class="wizard-step" id="wn4"><span class="step-num">4</span><span data-t="step_customer">Customer</span></div>
-    <div class="wizard-step" id="wn5"><span class="step-num">5</span><span data-t="step_payment">Payment</span></div>
+    <div class="wizard-step" id="wn3"><span class="step-num">3</span><span data-t="step_customer">Customer</span></div>
+    <div class="wizard-step" id="wn4"><span class="step-num">4</span><span data-t="step_payment">Payment</span></div>
+    <div class="wizard-step" id="wn5"><span class="step-num">5</span><span data-t="step_images">Images</span></div>
   </div>
 
   <!-- EXISTING CUSTOMER: 5 steps (search is step 1) -->
   <div class="wizard-steps" id="wizard-existing" style="margin-bottom:24px;display:none;">
     <div class="wizard-step" id="we1"><span class="step-num">1</span><span>Search</span></div>
     <div class="wizard-step" id="we2"><span class="step-num">2</span><span data-t="step_garments">Garments</span></div>
-    <div class="wizard-step" id="we3"><span class="step-num">3</span><span data-t="step_images">Images</span></div>
-    <div class="wizard-step" id="we4"><span class="step-num">4</span><span data-t="step_customer">Confirm</span></div>
-    <div class="wizard-step" id="we5"><span class="step-num">5</span><span data-t="step_payment">Payment</span></div>
+    <div class="wizard-step" id="we3"><span class="step-num">3</span><span data-t="step_customer">Confirm</span></div>
+    <div class="wizard-step" id="we4"><span class="step-num">4</span><span data-t="step_payment">Payment</span></div>
+    <div class="wizard-step" id="we5"><span class="step-num">5</span><span data-t="step_images">Images</span></div>
   </div>
 
   <!-- ════ STEP 0: Choose customer type (Start) ════ -->
@@ -134,7 +134,7 @@
     </div>
     <div style="display:flex;justify-content:space-between;">
       <button class="btn btn-ghost" onclick="goStart()">← Back</button>
-      <button class="btn btn-primary" onclick="validateGarments('new')">Next: Images →</button>
+      <button class="btn btn-primary" onclick="validateGarments('new')">Next: Customer →</button>
     </div>
   </div>
 
@@ -164,8 +164,8 @@
       </div>
     </div>
     <div style="display:flex;justify-content:space-between;">
-      <button class="btn btn-ghost" onclick="goNewStep(2)">← Garments</button>
-      <button class="btn btn-primary" onclick="goNewStep(4)">Next: Customer →</button>
+      <button class="btn btn-ghost" onclick="goNewStep(4)">← Payment</button>
+      <button class="btn btn-success" onclick="showSuccess()">✅ Finish Order</button>
     </div>
   </div>
 
@@ -192,7 +192,7 @@
       </div>
     </div>
     <div style="display:flex;justify-content:space-between;">
-      <button class="btn btn-ghost" onclick="goNewStep(3)">← Images</button>
+      <button class="btn btn-ghost" onclick="goNewStep(2)">← Garments</button>
       <button class="btn btn-primary" onclick="validateNewCustomer()">Next: Payment →</button>
     </div>
   </div>
@@ -202,7 +202,7 @@
     {% include 'employee/_payment.html' ignore missing %}
     <div id="payment-inner-new"></div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;">
-      <button class="btn btn-ghost" onclick="goNewStep(4)">← Customer</button>
+      <button class="btn btn-ghost" onclick="goNewStep(3)">← Customer</button>
       <button class="btn btn-success btn-lg" onclick="confirmOrder('new')" id="confirm-btn-new">✅ Confirm Order</button>
     </div>
   </div>
@@ -325,7 +325,7 @@
     </div>
     <div style="display:flex;justify-content:space-between;">
       <button class="btn btn-ghost" onclick="goExistingStep(1)">← Back</button>
-      <button class="btn btn-primary" onclick="validateExistingGarments()">Next: Images →</button>
+      <button class="btn btn-primary" onclick="validateExistingGarments()">Next: Confirm →</button>
     </div>
   </div>
 
@@ -350,8 +350,8 @@
       </div>
     </div>
     <div style="display:flex;justify-content:space-between;">
-      <button class="btn btn-ghost" onclick="goExistingStep(2)">← Garments</button>
-      <button class="btn btn-primary" onclick="goExistingStep(4)">Next: Confirm →</button>
+      <button class="btn btn-ghost" onclick="goExistingStep(4)">← Payment</button>
+      <button class="btn btn-success" onclick="showSuccess()">✅ Finish Order</button>
     </div>
   </div>
 
@@ -378,7 +378,7 @@
       </div>
     </div>
     <div style="display:flex;justify-content:space-between;">
-      <button class="btn btn-ghost" onclick="goExistingStep(3)">← Images</button>
+      <button class="btn btn-ghost" onclick="goExistingStep(2)">← Garments</button>
       <button class="btn btn-primary" onclick="validateExistingCustomer()">Next: Payment →</button>
     </div>
   </div>
@@ -387,7 +387,7 @@
   <div id="step-e5" style="display:none;">
     <div id="payment-inner-existing"></div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;">
-      <button class="btn btn-ghost" onclick="goExistingStep(4)">← Confirm</button>
+      <button class="btn btn-ghost" onclick="goExistingStep(3)">← Confirm</button>
       <button class="btn btn-success btn-lg" onclick="confirmOrder('existing')" id="confirm-btn-existing">✅ Confirm Order</button>
     </div>
   </div>
@@ -666,12 +666,11 @@ function startExistingCustomer() {
 // ── NEW CUSTOMER NAVIGATION ───────────────
 function goNewStep(n) {
   setNewWizard(n);
-  const map = {2:"step-n2",3:"step-n3",4:"step-n4",5:"step-n5"};
+  const map = {2:"step-n2",3:"step-n4",4:"step-n5",5:"step-n3"};
   showStep(map[n]);
-  if (n===3) { buildQR("qr-box","qr-link"); startImgPoll("img-preview"); }
-  if (n===4) { stopImgPoll(); }
-  if (n===4) { const t=new Date().toISOString().split("T")[0]; if(!document.getElementById("n_odate").value) document.getElementById("n_odate").value=t; document.getElementById("n_ddate").min=t; }
-  if (n===5) { injectPayment("payment-inner-new"); recalcPayment(); }
+  if (n===3) { const t=new Date().toISOString().split("T")[0]; if(!document.getElementById("n_odate").value) document.getElementById("n_odate").value=t; document.getElementById("n_ddate").min=t; }
+  if (n===4) { injectPayment("payment-inner-new"); recalcPayment(); }
+  if (n===5) { buildQR("qr-box","qr-link"); startImgPoll("img-preview"); }
 }
 
 function validateGarments(flow) {
@@ -682,19 +681,19 @@ function validateGarments(flow) {
 function validateNewCustomer() {
   if (!document.getElementById("n_name").value.trim()) { showToast("Customer name required","warning"); return; }
   if (!document.getElementById("n_ddate").value) { showToast("Set delivery date","warning"); document.getElementById("n_ddate").focus(); return; }
-  goNewStep(5);
+  goNewStep(4);
 }
 
 // ── EXISTING CUSTOMER NAVIGATION ─────────
 function goExistingStep(n) {
   setExistingWizard(n);
   if (n===1) { showStep("step-e1b"); return; }
-  const map = {2:"step-e2",3:"step-e3",4:"step-e4",5:"step-e5"};
+  const map = {2:"step-e2",3:"step-e4",4:"step-e5",5:"step-e3"};
   showStep(map[n]);
   if (n===2) { renderExistingGarments(); }  // Re-render to ensure chips/tiles show
-  if (n===3) { buildQR("qr-box-e","qr-link-e"); startImgPoll("img-preview-e"); }
-  if (n===4) { const t=new Date().toISOString().split("T")[0]; if(!document.getElementById("e_odate").value) document.getElementById("e_odate").value=t; document.getElementById("e_ddate").min=t; }
-  if (n===5) { injectPayment("payment-inner-existing"); recalcPayment(); }
+  if (n===3) { const t=new Date().toISOString().split("T")[0]; if(!document.getElementById("e_odate").value) document.getElementById("e_odate").value=t; document.getElementById("e_ddate").min=t; }
+  if (n===4) { injectPayment("payment-inner-existing"); recalcPayment(); }
+  if (n===5) { buildQR("qr-box-e","qr-link-e"); startImgPoll("img-preview-e"); }
 }
 
 function validateExistingGarments() {
@@ -704,7 +703,7 @@ function validateExistingGarments() {
 
 function validateExistingCustomer() {
   if (!document.getElementById("e_ddate").value) { showToast("Set delivery date","warning"); document.getElementById("e_ddate").focus(); return; }
-  goExistingStep(5);
+  goExistingStep(4);
 }
 
 // ── SEARCH ────────────────────────────────
@@ -1404,7 +1403,10 @@ function confirmOrder(flow) {
 
   fetch("/save-order",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)})
     .then(r=>r.json()).then(d=>{
-      if(d.status==="ok"){currentCode=d.order_code;savedPayload={...p,confirmed_order_code:d.order_code,repeat_of:d.repeat_of||repeatOf};showSuccess();}
+      if(d.status==="ok"){currentCode=d.order_code;savedPayload={...p,confirmed_order_code:d.order_code,repeat_of:d.repeat_of||repeatOf};
+        // Go to Images step (step 5) — optional upload, user clicks Finish to complete
+        if(flow==="new") goNewStep(5); else goExistingStep(5);
+      }
       else{showToast("Error: "+d.message,"error");btn.disabled=false;btn.textContent="✅ Confirm Order";}
     }).catch(()=>{showToast("Network error","error");btn.disabled=false;btn.textContent="✅ Confirm Order";});
 }
