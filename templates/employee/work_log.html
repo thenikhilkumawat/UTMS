@@ -57,13 +57,9 @@
 
       <!-- Work type tabs — small and clean -->
       <div id="work-tabs" style="display:flex;gap:6px;margin-bottom:12px;background:#f1f5f9;border-radius:12px;padding:4px;">
-        <button id="tab-measure" onclick="setTab('measure')"
+        <button id="tab-mc" onclick="setTab('mc')"
           style="flex:1;padding:8px 6px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:800;color:var(--text-muted);background:transparent;display:flex;align-items:center;justify-content:center;gap:4px;transition:all 0.15s;">
-          📐 <span class="lang-en">Measure</span><span class="lang-hi" style="display:none;">नाप</span>
-        </button>
-        <button id="tab-cut" onclick="setTab('cut')"
-          style="flex:1;padding:8px 6px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:800;color:var(--text-muted);background:transparent;display:flex;align-items:center;justify-content:center;gap:4px;transition:all 0.15s;">
-          ✂️ <span class="lang-en">Cutting</span><span class="lang-hi" style="display:none;">कटाई</span>
+          📐✂️ <span class="lang-en">Measure & Cut</span><span class="lang-hi" style="display:none;">नाप+कटाई</span>
         </button>
         <button id="tab-stitch" onclick="setTab('stitch')"
           style="flex:1;padding:8px 6px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:800;color:var(--text-muted);background:transparent;display:flex;align-items:center;justify-content:center;gap:4px;transition:all 0.15s;">
@@ -121,6 +117,9 @@
               <button onclick="changeQty(1)" style="width:44px;height:44px;border-radius:10px;border:2px solid var(--border);background:#f1f5f9;font-size:22px;font-weight:700;cursor:pointer;">+</button>
             </div>
           </div>
+
+          <!-- Combined Measure & Cut garment table (mc tab only) -->
+          <div id="mc-garments-table" style="display:none;"></div>
 
           <!-- Submit -->
           <button id="wl-submit" onclick="submitLog()" style="display:none;width:100%;padding:14px;border:none;border-radius:12px;font-size:15px;font-weight:900;cursor:pointer;color:#fff;">
@@ -245,25 +244,24 @@ function selectEmployee(id, name, skills) {
   var sel = document.getElementById("emp-btn-" + id);
   if (sel) sel.classList.add("active");
 
-  // Show/hide measure+cut tabs
+  // Show/hide measure+cut combined tab
   var showAll = (skills === "all");
-  document.getElementById("tab-measure").style.display = showAll ? "" : "none";
-  document.getElementById("tab-cut").style.display     = showAll ? "" : "none";
+  document.getElementById("tab-mc").style.display = showAll ? "" : "none";
 
   document.getElementById("stats-emp-name").textContent = name;
   document.getElementById("wl-placeholder").style.display = "none";
   document.getElementById("work-area").style.display = "grid";
 
-  setTab(showAll ? "measure" : "stitch");
+  setTab(showAll ? "mc" : "stitch");
   loadStats();
 }
 
 function setTab(tab) {
   CURRENT_TAB = tab;
-  var cfg = TAB_CONFIG[tab];
+  var cfg = TAB_CONFIG[tab] || TAB_CONFIG["stitch"];
 
   // Active tab style
-  ["measure","cut","stitch"].forEach(function(t) {
+  ["mc","stitch"].forEach(function(t) {
     var btn = document.getElementById("tab-" + t);
     if (!btn) return;
     btn.style.background = (t===tab) ? "#fff" : "transparent";
@@ -273,15 +271,19 @@ function setTab(tab) {
 
   // Form header
   var fh = document.getElementById("form-header");
-  fh.style.background = "linear-gradient(135deg," + cfg.bg + "," + cfg.bg + "cc)";
+  fh.style.background = tab === "mc"
+    ? "linear-gradient(135deg,#4f46e5,#ea580c)"
+    : "linear-gradient(135deg," + cfg.bg + "," + cfg.bg + "cc)";
   document.getElementById("form-icon").textContent  = cfg.icon;
   document.getElementById("form-title").textContent = isHindi() ? cfg.hi : cfg.en;
   document.getElementById("form-sub").textContent   = isHindi() ? cfg.sub_hi : cfg.sub_en;
 
   var sb = document.getElementById("wl-submit");
-  if (sb) sb.style.background = cfg.bg;
+  if (sb) sb.style.background = tab === "mc" ? "#4f46e5" : (cfg.bg || "#16a34a");
 
-  document.getElementById("garment-row").style.display = "block";  // show for all tabs
+  // Show standard garment row only for stitching; hide for mc
+  document.getElementById("garment-row").style.display = (tab === "stitch") ? "block" : "none";
+  document.getElementById("mc-garments-table").style.display = "none";
   resetForm();
 }
 
@@ -313,43 +315,31 @@ function lookupCode() {
         + (resolvedCode !== code ? '<span style="font-size:11px;color:#4f46e5;margin-left:8px;font-weight:700;">(customer #'+code+')</span>' : '')
         + '<span style="font-size:11px;color:var(--text-muted);margin-left:8px;">'+data.delivery_date_fmt+(data.is_urgent?' 🔥':'')+'</span></div>';
 
-      var sel = document.getElementById("wl-garment");
-      sel.innerHTML = '<option value="">-- कपड़ा चुनें --</option>';
-      (data.items||[]).forEach(function(item) {
-        var opt = document.createElement("option");
-        opt.value = item.garment_type;
-        opt.dataset.req    = item.required;
-        opt.dataset.logged = item.logged;
-        opt.dataset.naap   = item.naap_done  || 0;
-        opt.dataset.cut    = item.cut_done   || 0;
-        opt.dataset.stitch = item.stitch_done|| 0;
-        if (CURRENT_TAB === "stitch") {
+      if (CURRENT_TAB === "mc") {
+        // Render combined Measure & Cut table
+        renderMCTable(data.items || []);
+        document.getElementById("wl-log-all-btn").style.display = "none";
+        document.getElementById("wl-submit").style.display = "none";
+        document.getElementById("wl-reset-btn").style.display = "block";
+      } else {
+        // Stitch tab — standard garment dropdown
+        var sel = document.getElementById("wl-garment");
+        sel.innerHTML = '<option value="">-- कपड़ा चुनें --</option>';
+        (data.items||[]).forEach(function(item) {
+          var opt = document.createElement("option");
+          opt.value = item.garment_type;
+          opt.dataset.req    = item.required;
+          opt.dataset.logged = item.logged;
+          opt.dataset.naap   = item.naap_done  || 0;
+          opt.dataset.cut    = item.cut_done   || 0;
+          opt.dataset.stitch = item.stitch_done|| 0;
           var rem = Math.max(0, item.required - (item.stitch_done||item.logged||0));
           opt.disabled    = (rem===0);
           opt.textContent = item.garment_type + " — " + (item.stitch_done||0) + "/" + item.required + (rem>0?" ("+rem+" बाकी)":" ✅ सिला");
-        } else if (CURRENT_TAB === "measure") {
-          var done = item.naap_done || 0;
-          opt.disabled    = (done >= item.required);
-          opt.textContent = item.garment_type + (done>=item.required ? " ✅ नाप हो गया" : " — नाप बाकी");
-        } else if (CURRENT_TAB === "cut") {
-          var done = item.cut_done || 0;
-          opt.disabled    = (done >= item.required);
-          opt.textContent = item.garment_type + (done>=item.required ? " ✅ कटाई हो गई" : " — कटाई बाकी");
-        }
-        sel.appendChild(opt);
-      });
-      // Show "Log All" button for naap/cutting if there are remaining items
-      var logAllBtn = document.getElementById("wl-log-all-btn");
-      if (CURRENT_TAB !== "stitch") {
-        var hasRemaining = (data.items||[]).some(function(item){
-          if (CURRENT_TAB === "measure") return (item.naap_done||0) < item.required;
-          if (CURRENT_TAB === "cut") return (item.cut_done||0) < item.required;
-          return false;
+          sel.appendChild(opt);
         });
-        logAllBtn.style.display = hasRemaining ? "block" : "none";
+        document.getElementById("wl-log-all-btn").style.display = "none";
         document.getElementById("wl-reset-btn").style.display = "block";
-      } else {
-        logAllBtn.style.display = "none";
       }
     });
 }
@@ -489,12 +479,92 @@ function logAllRemaining() {
   logNext();
 }
 
+function renderMCTable(items) {
+  var tbl = document.getElementById("mc-garments-table");
+  if (!items.length) { tbl.innerHTML="<div style='color:var(--text-muted);padding:12px;font-size:13px;'>कोई कपड़ा नहीं मिला</div>"; tbl.style.display="block"; return; }
+  var cfg = TAB_CONFIG["mc"];
+  var rows = items.map(function(item){
+    var naapDone = item.naap_done || 0;
+    var cutDone  = item.cut_done  || 0;
+    var req      = item.required  || 0;
+    var naapRem  = Math.max(0, req - naapDone);
+    var cutRem   = Math.max(0, req - cutDone);
+    var naapStatus = naapDone >= req
+      ? '<span style="color:#16a34a;font-weight:800;font-size:12px;">✅ हो गया</span>'
+      : '<input type="number" id="mc-naap-'+item.garment_type+'" value="'+naapRem+'" min="0" max="'+naapRem+'" style="width:60px;text-align:center;padding:4px 6px;border:1.5px solid #c7d2fe;border-radius:8px;font-size:14px;font-weight:700;">';
+    var cutStatus  = cutDone >= req
+      ? '<span style="color:#16a34a;font-weight:800;font-size:12px;">✅ हो गया</span>'
+      : '<input type="number" id="mc-cut-'+item.garment_type+'" value="'+cutRem+'" min="0" max="'+cutRem+'" style="width:60px;text-align:center;padding:4px 6px;border:1.5px solid #fed7aa;border-radius:8px;font-size:14px;font-weight:700;">';
+    return '<tr style="border-bottom:1px solid var(--border);">'
+      + '<td style="padding:10px 8px;font-size:13px;font-weight:700;">'+item.garment_type+'<br><span style="font-size:10px;color:var(--text-muted);">×'+req+'</span></td>'
+      + '<td style="padding:10px 8px;text-align:center;"><div style="font-size:10px;color:#4f46e5;font-weight:700;margin-bottom:4px;">📐 नाप<br>('+naapDone+'/'+req+')</div>'+naapStatus+'</td>'
+      + '<td style="padding:10px 8px;text-align:center;"><div style="font-size:10px;color:#ea580c;font-weight:700;margin-bottom:4px;">✂️ कटाई<br>('+cutDone+'/'+req+')</div>'+cutStatus+'</td>'
+      + '</tr>';
+  }).join('');
+  var hasAnyRemaining = items.some(function(i){ return (i.naap_done||0)<i.required || (i.cut_done||0)<i.required; });
+  tbl.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:13px;">'
+    + '<thead><tr style="background:#f1f5f9;">'
+    + '<th style="padding:8px;text-align:left;font-size:11px;color:var(--text-muted);font-weight:800;">कपड़ा</th>'
+    + '<th style="padding:8px;text-align:center;font-size:11px;color:#4f46e5;font-weight:800;">📐 नाप</th>'
+    + '<th style="padding:8px;text-align:center;font-size:11px;color:#ea580c;font-weight:800;">✂️ कटाई</th>'
+    + '</tr></thead><tbody>'+rows+'</tbody></table>';
+  if (hasAnyRemaining) {
+    tbl.innerHTML += '<button onclick="logAllMeasureCut()" style="width:100%;margin-top:10px;padding:12px;border:none;border-radius:12px;font-size:14px;font-weight:900;cursor:pointer;color:#fff;background:linear-gradient(135deg,#4f46e5,#ea580c);">⚡ Log All Naap + Cutting</button>';
+  }
+  tbl.style.display = "block";
+}
+
+function logAllMeasureCut() {
+  if (!SEL_EMP_ID || !orderData) { showToast("कर्मचारी और ऑर्डर चुनें","warning"); return; }
+  var code = document.getElementById("wl-code").value.trim().replace("#","");
+  var items = orderData.items || [];
+  var cfgM = { rate: TAB_CONFIG["mc"].rate_measure };
+  var cfgC = { rate: TAB_CONFIG["mc"].rate_cut };
+  var pending = [];
+  items.forEach(function(item){
+    var naapInput = document.getElementById("mc-naap-" + item.garment_type);
+    var cutInput  = document.getElementById("mc-cut-"  + item.garment_type);
+    var naapQty   = naapInput ? parseInt(naapInput.value) || 0 : 0;
+    var cutQty    = cutInput  ? parseInt(cutInput.value)  || 0 : 0;
+    if (naapQty > 0) pending.push({garment_type:item.garment_type, qty:naapQty, type:"naap", notes:"Naap — "+item.garment_type, rate:cfgM.rate});
+    if (cutQty  > 0) pending.push({garment_type:item.garment_type, qty:cutQty,  type:"cut",  notes:"Kataai — "+item.garment_type, rate:cfgC.rate});
+  });
+  if (!pending.length) { showToast("कोई बाकी काम नहीं!","success"); return; }
+  var summary = pending.map(function(p){ return (p.type==="naap"?"📐":"✂️")+" "+p.garment_type+" ×"+p.qty; }).join(", ");
+  if (!confirm("नाप + कटाई दर्ज करें?
+
+" + summary)) return;
+  var done = 0;
+  var logAllBtn = document.querySelector("#mc-garments-table button");
+  if (logAllBtn) { logAllBtn.disabled=true; logAllBtn.textContent="दर्ज हो रहा है..."; }
+  function logNext() {
+    if (done >= pending.length) {
+      showToast("✅ सभी "+pending.length+" entries दर्ज हुईं!", "success");
+      lookupCode();
+      setTimeout(loadStats, 400);
+      return;
+    }
+    var p = pending[done];
+    fetch("/api/work-log/add",{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({order_code:code, garment_type:p.garment_type, qty_done:p.qty,
+        employee_id:SEL_EMP_ID, employee_name:SEL_EMP_NAME, notes:p.notes, rate_override:p.rate, is_non_stitch:true})
+    }).then(function(r){return r.json();}).then(function(d){
+      done++;
+      if(d.ok) logNext();
+      else { showToast("Error: "+d.error,"error"); }
+    });
+  }
+  logNext();
+}
+
 function resetForm() {
   orderData=null;
   document.getElementById("wl-code").value="";
   document.getElementById("wl-qty").value="1";
   document.getElementById("wl-lookup-result").innerHTML="";
   var wg=document.getElementById("wl-garment"); if(wg) wg.innerHTML='<option value="">-- चुनें --</option>';
+  var mct=document.getElementById("mc-garments-table"); if(mct){mct.innerHTML="";mct.style.display="none";}
   hideQtyAndSubmit();
 }
 
