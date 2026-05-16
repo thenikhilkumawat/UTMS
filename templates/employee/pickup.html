@@ -116,7 +116,16 @@
         <div id="pending-section" style="display:none;background:#fffbeb;border:2px solid #fde68a;border-radius:16px;padding:18px;text-align:center;">
           <div style="font-size:40px;margin-bottom:6px;">⏳</div>
           <div style="font-size:15px;font-weight:900;color:#92400e;">Order Not Ready Yet</div>
-          <div style="font-size:12px;color:#b45309;margin-top:4px;">Status must be "Ready" to deliver.</div>
+          <div style="font-size:12px;color:#b45309;margin-top:4px;margin-bottom:14px;">Status must be "Ready" to deliver.</div>
+
+          <!-- 🔓 OWNER BYPASS BUTTON -->
+          <button onclick="forceMarkReady()" id="force-ready-btn"
+            style="width:100%;padding:13px;background:linear-gradient(135deg,#dc2626,#991b1b);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(220,38,38,0.35);">
+            ⚡ Force Mark Ready (Bypass Work Log)
+          </button>
+          <div style="font-size:10px;color:#7f1d1d;margin-top:8px;font-weight:600;">
+            ⚠️ Sirf owner use — work log auto-fill ho jayega
+          </div>
         </div>
       </div>
 
@@ -325,6 +334,37 @@ function setPayMode(m) {
   bu.style.background = m==="upi"  ? "#6366f1" : "#fff"; bu.style.color = m==="upi"  ? "#fff" : "var(--text-muted)"; bu.style.borderColor = m==="upi"  ? "#6366f1" : "var(--border)";
   document.getElementById("upi-panel").style.display = m==="upi" ? "block" : "none";
   if (m==="upi") document.getElementById("upi-amt").textContent = document.getElementById("dc-amount").value||0;
+}
+
+function forceMarkReady() {
+  if (!currentCode) { showToast("Pehle order select karo","error"); return; }
+  if (!confirm("⚠️ Yeh order ko bina kapde check kiye 'Ready' mark kar dega.\n\nWork log mein Naap+Kataai+Silai auto-fill ho jayegi.\n\nProceed?")) return;
+
+  var btn = document.getElementById("force-ready-btn");
+  btn.disabled = true;
+  btn.innerHTML = "Processing...";
+
+  fetch("/api/pickup/force-complete",{
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({order_code: currentCode})
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    if (d.ok) {
+      showToast("✅ Order marked Ready — ab deliver kar sakte ho","success");
+      // Reload order details to show updated status + payment panel
+      setTimeout(function(){ doPickup(currentCode); }, 400);
+    } else {
+      showToast("❌ " + (d.error||"Failed"),"error");
+      btn.disabled = false;
+      btn.innerHTML = "⚡ Force Mark Ready (Bypass Work Log)";
+    }
+  })
+  .catch(function(){
+    showToast("Network error","error");
+    btn.disabled = false;
+    btn.innerHTML = "⚡ Force Mark Ready (Bypass Work Log)";
+  });
 }
 
 function collectAndDeliver(isDiscount) {
