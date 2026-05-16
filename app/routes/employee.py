@@ -1927,6 +1927,110 @@ def api_pickup_deliver():
     return jsonify({"ok":True})
 
 
+@bp.route("/api/pickup/force-complete", methods=["POST"])
+def api_pickup_force_complete():
+    """🔓 BYPASS: Force-mark order as Ready by auto-filling work log gaps.
+    Adds work_logs entries for Naap + Kataai + Silai for every item,
+    only adding the *deficit* (idempotent — safe to click twice).
+    Sets status='ready' so delivery flow can proceed.
+    """
+    data = request.get_json(silent=True) or {}
+    code = data.get("order_code", "").strip().lstrip("#")
+    if not code:
+        return jsonify({"ok": False, "error": "No order code"})
+
+    conn = get_db()
+    order = conn.execute(
+        "SELECT id, status FROM orders WHERE order_code=?", (code,)
+    ).fetchone()
+    if not order:
+        conn.close()
+        return jsonify({"ok": False, "error": "Order not found"})
+    if order["status"] == "delivered":
+        conn.close()
+        return jsonify({"ok": False, "error": "Order already delivered"})
+    if order["status"] == "ready":
+        conn.close()
+        return jsonify({"ok": True, "msg": "Order is already Ready"})
+
+    items = conn.execute(
+        "SELECT garment_type, quantity FROM order_items WHERE order_id=?",
+        (order["id"],)
+    ).fetchall()
+    if not items:
+        conn.close()
+        return jsonify({"ok": False, "error": "Order has no items"})
+
+    today = date.today().isoformat()
+    now   = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    added_count = 0
+
+    for item in items:
+        gt  = item["garment_type"]
+        qty = int(item["quantity"] or 0)
+        if qty <= 0:
+            continue
+
+        # ── 1) NAAP (Measurement) ──
+        existing = conn.execute(
+            "SELECT COALESCE(SUM(qty_done),0) as t FROM work_logs "
+            "WHERE order_code=? AND garment_type=? "
+            "AND (notes LIKE 'Naap%' OR notes LIKE 'Measurement%')",
+            (code, gt)
+        ).fetchone()["t"] or 0
+        deficit = qty - existing
+        if deficit > 0:
+            conn.execute("""
+                INSERT INTO work_logs(order_id, order_code, garment_type, qty_done,
+                                      employee_name, log_date, making_rate, notes, created_at)
+                VALUES(?,?,?,?,?,?,?,?,?)
+            """, (order["id"], code, gt, deficit,
+                  "AUTO-BYPASS", today, 0, "Naap (Auto-Bypass)", now))
+            added_count += 1
+
+        # ── 2) KATAAI (Cutting) ──
+        existing = conn.execute(
+            "SELECT COALESCE(SUM(qty_done),0) as t FROM work_logs "
+            "WHERE order_code=? AND garment_type=? "
+            "AND (notes LIKE 'Kataai%' OR notes LIKE 'Cutting%')",
+            (code, gt)
+        ).fetchone()["t"] or 0
+        deficit = qty - existing
+        if deficit > 0:
+            conn.execute("""
+                INSERT INTO work_logs(order_id, order_code, garment_type, qty_done,
+                                      employee_name, log_date, making_rate, notes, created_at)
+                VALUES(?,?,?,?,?,?,?,?,?)
+            """, (order["id"], code, gt, deficit,
+                  "AUTO-BYPASS", today, 0, "Kataai (Auto-Bypass)", now))
+            added_count += 1
+
+        # ── 3) SILAI (Stitching) — anything NOT measurement/cutting ──
+        existing = conn.execute(
+            "SELECT COALESCE(SUM(qty_done),0) as t FROM work_logs "
+            "WHERE order_code=? AND garment_type=? "
+            "AND (notes IS NULL OR "
+            "     (notes NOT LIKE 'Measure%' AND notes NOT LIKE 'Cut%' "
+            "      AND notes NOT LIKE 'Naap%' AND notes NOT LIKE 'Kataai%'))",
+            (code, gt)
+        ).fetchone()["t"] or 0
+        deficit = qty - existing
+        if deficit > 0:
+            conn.execute("""
+                INSERT INTO work_logs(order_id, order_code, garment_type, qty_done,
+                                      employee_name, log_date, making_rate, notes, created_at)
+                VALUES(?,?,?,?,?,?,?,?,?)
+            """, (order["id"], code, gt, deficit,
+                  "AUTO-BYPASS", today, 0, "Silai (Auto-Bypass)", now))
+            added_count += 1
+
+    # Mark order as ready
+    conn.execute("UPDATE orders SET status='ready' WHERE order_code=?", (code,))
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True, "added": added_count, "msg": "Order force-marked as Ready"})
+
+
 # ══════════════════════════════════════════════
 #  FINANCE MODULE
 # ══════════════════════════════════════════════
