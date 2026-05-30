@@ -2145,6 +2145,8 @@ def salary():
     period = request.args.get("period","month")
     today  = date.today().isoformat()
 
+    fresh_start = get_setting("salary_fresh_start_date", "")
+
     if period == "week":
         from datetime import timedelta as td
         start = (date.today() - timedelta(days=date.today().weekday())).isoformat()
@@ -2152,6 +2154,13 @@ def salary():
     elif period == "all":
         start = "2000-01-01"
         period_label = "All time"
+    elif period == "fresh":
+        start = fresh_start if fresh_start else "2000-01-01"
+        if fresh_start:
+            p = fresh_start.split("-")
+            period_label = f"Fresh start from {p[2]}-{p[1]}-{p[0]}"
+        else:
+            period_label = "Fresh start (not set)"
     else:
         period = "month"
         start = today[:7] + "-01"
@@ -2211,7 +2220,8 @@ def salary():
         active_page="salary", show_voice=False,
         urgent_count=urgent_count,
         employees=employees, advances=advances,
-        period=period, period_label=period_label)
+        period=period, period_label=period_label,
+        fresh_start=fresh_start)
 
 
 @bp.route("/api/salary/advance", methods=["POST"])
@@ -2232,6 +2242,14 @@ def api_salary_advance():
     )
     conn.commit(); conn.close()
     return jsonify({"ok":True})
+
+
+@bp.route("/api/salary/fresh-start", methods=["POST"])
+@owner_required
+def api_salary_fresh_start():
+    today = date.today().isoformat()
+    set_setting("salary_fresh_start_date", today)
+    return jsonify({"ok": True, "date": today})
 
 
 @bp.route("/api/save-setting", methods=["POST"])
