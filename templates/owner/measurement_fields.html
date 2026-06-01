@@ -1,63 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Measurement Fields — Uttam Tailors{% endblock %}
 {% block content %}
-
-<style>
-.mf-chip {
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-  background:#f3f4f6;
-  border:1px solid #e5e7eb;
-  border-radius:20px;
-  padding:6px 12px;
-  user-select:none;
-  transition:box-shadow .15s, background .15s;
-}
-.mf-chip:hover { background:#e5e7eb; box-shadow:0 2px 6px rgba(0,0,0,.10); }
-.mf-chip-name { font-size:13px; font-weight:600; color:#111; }
-.mf-drag {
-  cursor:grab;
-  color:#bbb;
-  font-size:15px;
-  line-height:1;
-}
-.mf-drag:active { cursor:grabbing; }
-.mf-delete {
-  color:var(--danger,#ef4444);
-  font-size:12px;
-  font-weight:700;
-  text-decoration:none;
-  margin-left:2px;
-  line-height:1;
-}
-.mf-chips-wrap {
-  display:flex;
-  flex-wrap:wrap;
-  gap:8px;
-  padding:12px 16px;
-  min-height:48px;
-}
-.mf-ghost {
-  opacity:0.35;
-  background:#dbeafe !important;
-  border:2px dashed #3b82f6 !important;
-}
-.mf-hint {
-  display:flex;
-  align-items:center;
-  gap:8px;
-  background:#eff6ff;
-  border:1px solid #bfdbfe;
-  border-radius:10px;
-  padding:10px 16px;
-  margin-bottom:16px;
-  font-size:13px;
-  color:#1d4ed8;
-  font-weight:500;
-}
-</style>
-
 <div class="page-header">
   <div>
     <h1>📐 <span data-t="meas_fields">Measurement Fields</span></h1>
@@ -69,7 +12,6 @@
     <button class="menu-toggle" onclick="openSidebar()">☰</button>
   </div>
 </div>
-
 <div class="page-body">
 
   <!-- Add new field -->
@@ -97,13 +39,12 @@
     </div>
   </div>
 
-  <!-- Hint banner -->
-  <div class="mf-hint">
-    <span style="font-size:18px;">⠿</span>
-    <span>Drag the <b>⠿</b> handle to reorder fields within each garment type. Changes save automatically.</span>
+  <!-- Drag hint -->
+  <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 16px;margin-bottom:16px;font-size:13px;color:#1d4ed8;font-weight:500;">
+    &#9776; Drag the handle on each field to reorder. Changes save automatically.
   </div>
 
-  <!-- Fields by garment -->
+  <!-- Fields by garment — exact same structure as original, just adding data-id + drag handle -->
   {% for gt in garment_types %}
   {% set fields = fields_by_garment.get(gt, []) %}
   {% if fields %}
@@ -112,40 +53,39 @@
       <span class="card-title">{{ gt }}</span>
       <span style="font-size:12px;color:var(--text-muted);">{{ fields|length }} fields</span>
     </div>
-    <div class="mf-chips-wrap sortable-list" data-garment="{{ gt }}">
-      {% for f in fields %}
-      <div class="mf-chip" data-id="{{ f.id }}">
-        <span class="mf-drag" title="Drag to reorder">⠿</span>
-        <span class="mf-chip-name">{{ f.name }}</span>
-        <a class="mf-delete"
-           href="/owner/measurement-fields/delete/{{ f.id }}"
-           onclick="return confirm('Remove {{ f.name }} from {{ gt }}?')">✕</a>
+    <div class="card-body" style="padding:12px 16px;">
+      <div id="sf-{{ loop.index }}" style="display:flex;flex-wrap:wrap;gap:8px;">
+        {% for f in fields %}
+        <div data-id="{{ f.id }}" style="display:flex;align-items:center;gap:6px;background:#f3f4f6;border-radius:20px;padding:6px 12px;cursor:default;user-select:none;">
+          <span class="sf-handle" style="cursor:grab;color:#9ca3af;font-size:13px;line-height:1;">&#9776;</span>
+          <span style="font-size:13px;font-weight:600;">{{ f.name }}</span>
+          <a href="/owner/measurement-fields/delete/{{ f.id }}"
+            onclick="return confirm('Remove {{ f.name }} from {{ gt }}?')"
+            style="color:var(--danger);font-size:11px;font-weight:700;text-decoration:none;margin-left:2px;">&#x2715;</a>
+        </div>
+        {% endfor %}
       </div>
-      {% endfor %}
     </div>
   </div>
   {% endif %}
   {% endfor %}
-
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 <script>
-document.querySelectorAll('.sortable-list').forEach(function(el) {
+document.querySelectorAll('[id^="sf-"]').forEach(function(el) {
   Sortable.create(el, {
     animation: 150,
-    handle: '.mf-drag',
-    ghostClass: 'mf-ghost',
+    handle: '.sf-handle',
     onEnd: function() {
-      var ids = Array.from(el.querySelectorAll('.mf-chip')).map(function(c){ return c.dataset.id; });
+      var ids = Array.from(el.querySelectorAll('[data-id]')).map(function(d){ return d.dataset.id; });
       fetch('/owner/measurement-fields/reorder', {
         method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ids: ids})
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: ids })
       });
     }
   });
 });
 </script>
-
 {% endblock %}
