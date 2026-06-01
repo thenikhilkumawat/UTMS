@@ -39,6 +39,15 @@
     </div>
   </div>
 
+  <div class="card mb-16" style="background:var(--info-light,#eff6ff);border:1px solid var(--info,#3b82f6);">
+    <div class="card-body" style="padding:10px 16px;display:flex;align-items:center;gap:8px;">
+      <span style="font-size:18px;">☰</span>
+      <span style="font-size:13px;color:var(--info,#2563eb);font-weight:500;">
+        Drag the <b>☰</b> handle to reorder fields within each garment type. Changes save automatically.
+      </span>
+    </div>
+  </div>
+
   <!-- Fields by garment -->
   {% for gt in garment_types %}
   {% set fields = fields_by_garment.get(gt, []) %}
@@ -49,9 +58,13 @@
       <span style="font-size:12px;color:var(--text-muted);">{{ fields|length }} fields</span>
     </div>
     <div class="card-body" style="padding:12px 16px;">
-      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+      <div class="sortable-fields" data-garment="{{ gt }}" style="display:flex;flex-wrap:wrap;gap:8px;">
         {% for f in fields %}
-        <div style="display:flex;align-items:center;gap:6px;background:#f3f4f6;border-radius:20px;padding:6px 12px;">
+        <div class="field-chip" data-id="{{ f.id }}"
+             style="display:flex;align-items:center;gap:6px;background:#f3f4f6;border-radius:20px;padding:6px 12px;cursor:default;user-select:none;transition:box-shadow .15s,background .15s;">
+          <span class="drag-handle"
+                style="cursor:grab;color:#aaa;font-size:14px;line-height:1;padding-right:2px;"
+                title="Drag to reorder">☰</span>
           <span style="font-size:13px;font-weight:600;">{{ f.name }}</span>
           <a href="/owner/measurement-fields/delete/{{ f.id }}"
             onclick="return confirm('Remove {{ f.name }} from {{ gt }}?')"
@@ -64,4 +77,40 @@
   {% endif %}
   {% endfor %}
 </div>
+
+<!-- SortableJS CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+<script>
+document.querySelectorAll('.sortable-fields').forEach(function(container) {
+  Sortable.create(container, {
+    animation: 150,
+    handle: '.drag-handle',
+    ghostClass: 'drag-ghost',
+    onEnd: function(evt) {
+      var chips = container.querySelectorAll('.field-chip');
+      var ids = Array.from(chips).map(function(c){ return c.dataset.id; });
+      fetch('/owner/measurement-fields/reorder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: ids })
+      }).then(function(r){
+        if (!r.ok) { console.error('Reorder failed'); }
+      });
+    }
+  });
+});
+</script>
+
+<style>
+.drag-ghost {
+  opacity: 0.4;
+  background: #dbeafe !important;
+  border: 2px dashed #3b82f6 !important;
+}
+.field-chip:hover {
+  background: #e5e7eb !important;
+  box-shadow: 0 2px 6px rgba(0,0,0,.10);
+}
+.drag-handle:active { cursor: grabbing; }
+</style>
 {% endblock %}
