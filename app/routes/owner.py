@@ -864,6 +864,22 @@ def delete_measurement_field(fid):
     flash("Field removed.", "success")
     return redirect(url_for("owner.measurement_fields"))
 
+@bp.route("/measurement-fields/reorder", methods=["POST"])
+@owner_required
+def reorder_measurement_fields():
+    """Save drag-and-drop order. Expects JSON: { ids: [1, 4, 2, ...] }"""
+    import json as _json2
+    data = request.get_json(silent=True) or {}
+    ids  = data.get("ids", [])
+    if not ids:
+        return ("", 204)
+    conn = get_db()
+    for position, fid in enumerate(ids):
+        conn.execute("UPDATE measurement_fields SET sort_order=? WHERE id=?", (position, fid))
+    conn.commit()
+    conn.close()
+    return ("", 204)
+
 
 # ══════════════════════════════════════════════
 #  EXCEL EXPORT & IMPORT
