@@ -34,6 +34,38 @@
   {% endfor %}
 </div>
 
+<!-- Sort + Fresh Start bar -->
+<div style="background:#f8fafc;border-bottom:1px solid var(--border);padding:8px 28px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+  <span style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-right:4px;">Sort:</span>
+  <button class="sort-btn active" data-sort="date" data-dir="asc" onclick="applySort('date',this)"
+    style="padding:5px 12px;border-radius:8px;border:1.5px solid var(--accent);background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;">
+    📅 Date ↑
+  </button>
+  <button class="sort-btn" data-sort="date" data-dir="desc" onclick="applySort('date-desc',this)"
+    style="padding:5px 12px;border-radius:8px;border:1.5px solid var(--border);background:#fff;color:var(--text-muted);font-size:12px;font-weight:700;cursor:pointer;">
+    📅 Date ↓
+  </button>
+  <button class="sort-btn" data-sort="code" onclick="applySort('code',this)"
+    style="padding:5px 12px;border-radius:8px;border:1.5px solid var(--border);background:#fff;color:var(--text-muted);font-size:12px;font-weight:700;cursor:pointer;">
+    🔢 Order #
+  </button>
+  <button class="sort-btn" data-sort="name" onclick="applySort('name',this)"
+    style="padding:5px 12px;border-radius:8px;border:1.5px solid var(--border);background:#fff;color:var(--text-muted);font-size:12px;font-weight:700;cursor:pointer;">
+    👤 Name
+  </button>
+  <button class="sort-btn" data-sort="amount" onclick="applySort('amount',this)"
+    style="padding:5px 12px;border-radius:8px;border:1.5px solid var(--border);background:#fff;color:var(--text-muted);font-size:12px;font-weight:700;cursor:pointer;">
+    💰 Due ↑
+  </button>
+  <button class="sort-btn" data-sort="amount-desc" onclick="applySort('amount-desc',this)"
+    style="padding:5px 12px;border-radius:8px;border:1.5px solid var(--border);background:#fff;color:var(--text-muted);font-size:12px;font-weight:700;cursor:pointer;">
+    💰 Due ↓
+  </button>
+  {% if fresh_start_enabled %}
+  <span style="margin-left:auto;font-size:11px;font-weight:700;background:#d1fae5;color:#065f46;padding:4px 10px;border-radius:8px;">📅 Showing from {{ fresh_start_date }}</span>
+  {% endif %}
+</div>
+
 <!-- Table -->
 <div style="overflow-x:auto;">
   <table style="width:100%;border-collapse:collapse;font-size:13px;">
@@ -74,6 +106,10 @@
         data-upcoming="{{ 'true' if o.due_soon and not o.overdue else 'false' }}"
         data-pickup-pending="{{ 'true' if o.pickup_pending else 'false' }}"
         data-s="{{ o.order_code }} {{ o.repeat_of }} {{ o.cname|lower }} {{ o.mobile }}"
+        data-date="{{ o.delivery_date or '9999-12-31' }}"
+        data-code="{{ o.order_code | replace('#','') }}"
+        data-name="{{ o.cname | lower }}"
+        data-amount="{{ o.remaining | int }}"
         style="border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.1s;"
         onmouseover="this.style.background='#fafbff'" onmouseout="this.style.background=''"
         onclick="toggleExpand(this,'exp-{{ o.order_code }}')">
@@ -368,6 +404,56 @@
 {% block extra_js %}
 <script>
 let activeTab = "all", notifyCode = "", notifyD = {};
+let currentSort = "date";
+
+function applySort(sortKey, btn) {
+  currentSort = sortKey;
+  // Update button styles
+  document.querySelectorAll(".sort-btn").forEach(b => {
+    b.style.background = "#fff";
+    b.style.color = "var(--text-muted)";
+    b.style.borderColor = "var(--border)";
+    b.classList.remove("active");
+  });
+  if (btn) {
+    btn.style.background = "var(--accent)";
+    btn.style.color = "#fff";
+    btn.style.borderColor = "var(--accent)";
+    btn.classList.add("active");
+  }
+  sortRows();
+}
+
+function sortRows() {
+  const tbody = document.getElementById("orders-tbody");
+  if (!tbody) return;
+  const rows = Array.from(tbody.querySelectorAll("tr.orow"));
+  rows.sort((a, b) => {
+    switch (currentSort) {
+      case "date":
+        return (a.dataset.date || "9999").localeCompare(b.dataset.date || "9999");
+      case "date-desc":
+        return (b.dataset.date || "9999").localeCompare(a.dataset.date || "9999");
+      case "code":
+        return parseInt(a.dataset.code || "0") - parseInt(b.dataset.code || "0");
+      case "name":
+        return (a.dataset.name || "").localeCompare(b.dataset.name || "");
+      case "amount":
+        return parseInt(a.dataset.amount || "0") - parseInt(b.dataset.amount || "0");
+      case "amount-desc":
+        return parseInt(b.dataset.amount || "0") - parseInt(a.dataset.amount || "0");
+      default:
+        return 0;
+    }
+  });
+  // Also move associated expand rows with their parent
+  rows.forEach(row => {
+    const code = (row.dataset.s || "").split(" ")[0];
+    const expRow = document.getElementById("exp-" + code);
+    tbody.appendChild(row);
+    if (expRow) tbody.appendChild(expRow);
+  });
+}
 
 function setTab(f, btn) {
   activeTab = f;
@@ -384,6 +470,7 @@ function setTab(f, btn) {
   btn.querySelector("span").style.background = "var(--accent-light)";
   btn.querySelector("span").style.color = "var(--accent)";
   filterRows();
+  sortRows();
 }
 
 // Auto-select tab from URL param e.g. ?tab=pending
