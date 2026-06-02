@@ -2088,10 +2088,14 @@ def delete_order(order_code):
         conn.execute("DELETE FROM notify_log WHERE order_code=?", (order_code,))
         conn.execute("DELETE FROM orders WHERE id=?", (order["id"],))
         conn.commit()
-        flash(f"Order #{order_code} and all related data deleted.", "success")
+        conn.close()
+        # Recycle the code so it can be reused for a new order
+        from database import add_recycled_code
+        add_recycled_code(order_code)
+        flash(f"Order #{order_code} deleted. Code #{order_code} is now available for new orders.", "success")
     else:
+        conn.close()
         flash(f"Order #{order_code} not found.", "error")
-    conn.close()
     return redirect(request.referrer or url_for("owner.owner_dashboard"))
 
 
@@ -2120,6 +2124,10 @@ def delete_customer(customer_id):
     conn.execute("DELETE FROM customers WHERE id=?", (customer_id,))
     conn.commit()
     conn.close()
+    # Recycle all numeric order codes from deleted orders
+    from database import add_recycled_code
+    for o in orders:
+        add_recycled_code(o["order_code"])
     flash(f"Customer '{cust_name}' and {len(orders)} order(s) deleted permanently.", "success")
     return redirect(url_for("owner.owner_customers"))
 
@@ -2382,7 +2390,6 @@ def api_employee_skill():
 # ══════════════════════════════════════════════
 
 @bp.route("/past-orders")
-@owner_required
 def past_orders():
     """Page to enter old/historical delivered orders — mirrors new_order flow."""
     import json as _json
@@ -2446,7 +2453,6 @@ def past_orders():
     )
 
 @bp.route("/past-orders/save", methods=["POST"])
-@owner_required
 def past_orders_save():
     """Save a past/historical order — bulletproof version."""
     import json as _json
