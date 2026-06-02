@@ -98,6 +98,8 @@
           </td>
           <td style="padding:12px 14px;text-align:center;">
             <div style="display:flex;gap:5px;justify-content:center;flex-wrap:wrap;">
+              <a href="/owner/orders/edit/{{ o.order_code }}"
+                style="background:#dbeafe;color:#1e40af;border:none;border-radius:7px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-block;">✏️ Edit</a>
               <button onclick="window.open('/print-slip/{{ o.order_code }}','_blank')"
                 style="background:var(--accent-light);color:var(--accent);border:none;border-radius:7px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">🖨️ Slip</button>
               {% if o.status != 'delivered' and o.status != 'cancelled' %}
