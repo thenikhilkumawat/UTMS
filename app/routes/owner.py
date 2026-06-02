@@ -576,6 +576,9 @@ def dashboard():
             if name not in stitch_rates:
                 stitch_rates[name] = row["value"]
 
+    fresh_start_enabled = get_setting("utms_fresh_start", "0") == "1"
+    fresh_start_date    = get_setting("utms_fresh_start_date", "2026-06-01")
+
     return render_template("owner/dashboard.html",
         active_page="owner_dashboard", show_voice=False, urgent_count=urgent_count,
         today_str=today_str, today_date=selected_date,
@@ -585,6 +588,8 @@ def dashboard():
         stitch_rates=stitch_rates,
         today_transactions=today_transactions,
         last_backup=last_backup,
+        fresh_start_enabled=fresh_start_enabled,
+        fresh_start_date=fresh_start_date,
         stats={
             "today_income":  fin_today.get("income",0),
             "today_expense": fin_today.get("expense",0),
@@ -1201,6 +1206,7 @@ def owner_finance():
         return f"{p[2]}-{p[1]}-{p[0]}" if len(p)==3 else d
 
     transactions = [{
+        "id":          r["id"],
         "tx_date":     r["tx_date"],
         "tx_date_fmt": fmtd(r["tx_date"]),
         "tx_time":     (r["created_at"] or "")[11:16],
@@ -1229,6 +1235,82 @@ def owner_finance():
         },
         transactions=transactions
     )
+
+
+# ══════════════════════════════════════════════
+#  FINANCE ENTRY DELETE
+# ══════════════════════════════════════════════
+
+@bp.route("/api/finance/delete/<int:tx_id>", methods=["POST"])
+@owner_required
+def delete_finance_entry(tx_id):
+    """Delete a finance entry. Reverses advance/payment impact on order if applicable."""
+    conn = get_db()
+    entry = conn.execute("SELECT * FROM finance WHERE id=?", (tx_id,)).fetchone()
+    if not entry:
+        conn.close()
+        return jsonify({"ok": False, "error": "Entry not found"})
+
+    # If it was an income entry linked to an order (advance/payment), reverse it
+    if entry["tx_type"] == "income" and entry["order_id"] and \
+       entry["category"] and entry["category"].lower() in ("advance", "payment"):
+        order = conn.execute(
+            "SELECT advance_paid, remaining, payable_amount FROM orders WHERE id=?",
+            (entry["order_id"],)
+        ).fetchone()
+        if order:
+            amount       = float(entry["amount"] or 0)
+            new_advance  = max(0.0, float(order["advance_paid"] or 0) - amount)
+            payable      = float(order["payable_amount"] or 0)
+            new_remaining = max(0.0, payable - new_advance)
+            conn.execute(
+                "UPDATE orders SET advance_paid=?, remaining=? WHERE id=?",
+                (new_advance, new_remaining, entry["order_id"])
+            )
+
+    conn.execute("DELETE FROM finance WHERE id=?", (tx_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True})
+
+
+# ══════════════════════════════════════════════
+#  FRESH START (DATE FILTER) TOGGLE
+# ══════════════════════════════════════════════
+
+@bp.route("/api/fresh-start/toggle", methods=["POST"])
+@owner_required
+def toggle_fresh_start():
+    """Toggle the 'show only this month' fresh-start filter across all of UTMS."""
+    from database import set_setting, invalidate_settings_cache
+    current = get_setting("utms_fresh_start", "0")
+    new_val = "0" if current == "1" else "1"
+    set_setting("utms_fresh_start", new_val)
+    # Set the cutoff date to the start of the current month if not already set
+    if new_val == "1":
+        existing_date = get_setting("utms_fresh_start_date", "")
+        if not existing_date:
+            from datetime import date as _date
+            d = _date.today()
+            set_setting("utms_fresh_start_date", f"{d.year}-{d.month:02d}-01")
+    invalidate_settings_cache()
+    enabled_date = get_setting("utms_fresh_start_date", "2026-06-01")
+    return jsonify({"ok": True, "enabled": new_val == "1", "date": enabled_date})
+
+
+@bp.route("/api/fresh-start/set-date", methods=["POST"])
+@owner_required
+def set_fresh_start_date():
+    """Update the fresh-start cutoff date."""
+    from database import set_setting, invalidate_settings_cache
+    data = request.get_json(silent=True) or {}
+    new_date = (data.get("date") or "").strip()
+    if not new_date:
+        return jsonify({"ok": False, "error": "Date required"})
+    set_setting("utms_fresh_start_date", new_date)
+    set_setting("utms_fresh_start", "1")  # Enable when date is explicitly set
+    invalidate_settings_cache()
+    return jsonify({"ok": True, "date": new_date})
 
 
 # ══════════════════════════════════════════════
@@ -1929,6 +2011,7 @@ def owner_orders():
         "status":        r["status"],
         "order_date":    fmtd(r["order_date"]),
         "delivery_date": fmtd(r["delivery_date"]),
+        "delivery_date_iso": (r["delivery_date"] or "").replace("-",""),
         "payable":       r["payable_amount"] or 0,
         "remaining":     r["remaining"] or 0,
         "is_urgent":     r["is_urgent"],
