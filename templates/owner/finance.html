@@ -65,11 +65,12 @@
             <th style="padding:10px 16px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Mode</th>
             <th style="padding:10px 16px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">By</th>
             <th style="padding:10px 16px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Amount</th>
+            <th style="padding:10px 16px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">🗑️</th>
           </tr>
         </thead>
         <tbody>
           {% for tx in transactions %}
-          <tr style="border-bottom:1px solid var(--border);"
+          <tr id="txrow-{{ tx.id }}" style="border-bottom:1px solid var(--border);"
             onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
             <td style="padding:11px 16px;"><div style="font-size:12px;font-weight:700;">{{ tx.tx_date_fmt }}</div><div style="font-size:10px;color:var(--text-muted);">{{ tx.tx_time }}</div></td>
             <td style="padding:11px 16px;"><span style="font-size:11px;font-weight:800;padding:2px 9px;border-radius:8px;background:{% if tx.tx_type=='income' %}#d1fae5;color:#065f46{% else %}#fee2e2;color:#dc2626{% endif %};">{% if tx.tx_type=='income' %}↑{% else %}↓{% endif %} {{ tx.tx_type|title }}</span></td>
@@ -78,9 +79,14 @@
             <td style="padding:11px 16px;text-align:center;"><span style="font-size:11px;font-weight:700;background:#f1f5f9;padding:2px 8px;border-radius:7px;">{{ tx.mode|upper if tx.mode else '—' }}</span></td>
             <td style="padding:11px 16px;text-align:center;font-size:11px;color:var(--text-muted);">{{ tx.created_by }}</td>
             <td style="padding:11px 16px;text-align:right;font-size:15px;font-weight:900;color:{% if tx.tx_type=='income' %}var(--success){% else %}var(--danger){% endif %};">{% if tx.tx_type=='income' %}+{% else %}−{% endif %}₹{{ tx.amount|int }}</td>
+            <td style="padding:11px 16px;text-align:center;">
+              <button onclick="deleteTx({{ tx.id }}, '{{ tx.tx_type }}', {{ tx.amount|int }}, '{{ tx.category }}')"
+                style="background:#fee2e2;color:#dc2626;border:none;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;"
+                title="Delete this entry">🗑️</button>
+            </td>
           </tr>
           {% else %}
-          <tr><td colspan="7" style="padding:48px;text-align:center;color:var(--text-muted);"><div style="font-size:28px;margin-bottom:8px;">💸</div><div style="font-weight:700;">No transactions in this period</div></td></tr>
+          <tr><td colspan="8" style="padding:48px;text-align:center;color:var(--text-muted);"><div style="font-size:28px;margin-bottom:8px;">💸</div><div style="font-weight:700;">No transactions in this period</div></td></tr>
           {% endfor %}
         </tbody>
       </table>
@@ -106,6 +112,36 @@ function setPreset(p) {
   document.getElementById("to-date").value   = to;
   applyFilter();
 }
+
+/* ── Finance Entry Delete ── */
+function deleteTx(id, type, amount, category) {
+  const msg = `Delete this entry?\n\n${type === 'income' ? '↑' : '↓'} ₹${amount} — ${category}\n\nThis cannot be undone.\n${(type==='income' && (category.toLowerCase()==='advance' || category.toLowerCase()==='payment')) ? '\n⚠️ Order advance/payment balance will also be reversed.' : ''}`;
+  if (!confirm(msg)) return;
+  fetch("/owner/api/finance/delete/" + id, {method:"POST"})
+    .then(r => r.json())
+    .then(d => {
+      if (d.ok) {
+        const row = document.getElementById("txrow-" + id);
+        if (row) {
+          row.style.transition = "opacity 0.3s";
+          row.style.opacity = "0";
+          setTimeout(() => { row.remove(); showToast("Entry deleted", "success"); }, 300);
+        }
+      } else {
+        showToast("Error: " + (d.error || "Delete failed"), "error");
+      }
+    })
+    .catch(() => showToast("Network error", "error"));
+}
+
+function showToast(msg, type) {
+  const t = document.createElement("div");
+  t.style.cssText = `position:fixed;bottom:24px;right:24px;z-index:9999;padding:12px 20px;border-radius:12px;font-weight:700;font-size:13px;box-shadow:0 4px 20px rgba(0,0,0,0.15);transition:all 0.3s;background:${type==='success'?'#d1fae5;color:#065f46':'#fee2e2;color:#991b1b'}`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.opacity="0"; setTimeout(()=>t.remove(),300); }, 2500);
+}
+
 const SECS=5*60;let last=Date.now();
 ["click","keydown","mousemove","touchstart"].forEach(ev=>document.addEventListener(ev,()=>{last=Date.now();},{passive:true}));
 setInterval(()=>{if(Math.floor((Date.now()-last)/1000)>=SECS)window.location.href="/owner/login?expired=1";},5000);
