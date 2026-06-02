@@ -31,6 +31,18 @@
       {% endfor %}
     </div>
   </div>
+  <!-- Sort Bar -->
+  <div style="background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:10px 16px;margin-bottom:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+    <span style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Sort by:</span>
+    <button class="osort active" onclick="adminSort('date',this)" style="padding:5px 12px;border-radius:8px;border:1.5px solid var(--accent);background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;">📅 Delivery ↑</button>
+    <button class="osort" onclick="adminSort('date-desc',this)" style="padding:5px 12px;border-radius:8px;border:1.5px solid var(--border);background:#fff;color:var(--text-muted);font-size:12px;font-weight:700;cursor:pointer;">📅 Delivery ↓</button>
+    <button class="osort" onclick="adminSort('code',this)" style="padding:5px 12px;border-radius:8px;border:1.5px solid var(--border);background:#fff;color:var(--text-muted);font-size:12px;font-weight:700;cursor:pointer;">🔢 Order #</button>
+    <button class="osort" onclick="adminSort('name',this)" style="padding:5px 12px;border-radius:8px;border:1.5px solid var(--border);background:#fff;color:var(--text-muted);font-size:12px;font-weight:700;cursor:pointer;">👤 Name A→Z</button>
+    <button class="osort" onclick="adminSort('amount',this)" style="padding:5px 12px;border-radius:8px;border:1.5px solid var(--border);background:#fff;color:var(--text-muted);font-size:12px;font-weight:700;cursor:pointer;">💰 Due ↑</button>
+    <button class="osort" onclick="adminSort('amount-desc',this)" style="padding:5px 12px;border-radius:8px;border:1.5px solid var(--border);background:#fff;color:var(--text-muted);font-size:12px;font-weight:700;cursor:pointer;">💰 Due ↓</button>
+    <button class="osort" onclick="adminSort('newest',this)" style="padding:5px 12px;border-radius:8px;border:1.5px solid var(--border);background:#fff;color:var(--text-muted);font-size:12px;font-weight:700;cursor:pointer;">🆕 Newest</button>
+  </div>
+
   <div style="overflow-x:auto;">
     <table style="width:100%;border-collapse:collapse;font-size:13px;">
       <thead>
@@ -48,6 +60,10 @@
         {% for o in orders %}
         <tr class="orow" data-status="{{ o.status }}"
           data-s="{{ o.display_code }} {{ o.order_code }} {{ o.cname|lower }} {{ o.mobile }} {{ o.garments|lower }}"
+          data-date="{{ o.delivery_date_iso if o.delivery_date_iso else '99991231' }}"
+          data-code="{{ o.order_code | replace('#','') }}"
+          data-name="{{ o.cname | lower }}"
+          data-amount="{{ o.remaining | int }}"
           style="border-bottom:1px solid var(--border);transition:background 0.1s;"
           onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
           <td style="padding:12px 14px;">
@@ -111,6 +127,8 @@
 {% block extra_js %}
 <script>
 var activeTab = "all";
+var currentAdminSort = "date";
+
 function setTab(key, btn) {
   activeTab = key;
   document.querySelectorAll(".ftab").forEach(function(b) {
@@ -118,7 +136,9 @@ function setTab(key, btn) {
   });
   btn.style.background = "var(--accent)"; btn.style.color = "#fff"; btn.style.borderColor = "var(--accent)";
   filterRows();
+  adminSortRows();
 }
+
 function filterRows() {
   var q = document.getElementById("srch").value.toLowerCase().trim();
   document.querySelectorAll(".orow").forEach(function(row) {
@@ -127,6 +147,46 @@ function filterRows() {
     row.style.display = (matchQ && matchF) ? "" : "none";
   });
 }
+
+function adminSort(sortKey, btn) {
+  currentAdminSort = sortKey;
+  document.querySelectorAll(".osort").forEach(b => {
+    b.style.background = "#fff"; b.style.color = "var(--text-muted)"; b.style.borderColor = "var(--border)"; b.classList.remove("active");
+  });
+  btn.style.background = "var(--accent)"; btn.style.color = "#fff"; btn.style.borderColor = "var(--accent)"; btn.classList.add("active");
+  adminSortRows();
+}
+
+function adminSortRows() {
+  const tbody = document.getElementById("tbody");
+  if (!tbody) return;
+  const rows = Array.from(tbody.querySelectorAll("tr.orow"));
+  rows.sort((a, b) => {
+    switch (currentAdminSort) {
+      case "date":
+        return (a.dataset.date || "99991231").localeCompare(b.dataset.date || "99991231");
+      case "date-desc":
+        return (b.dataset.date || "99991231").localeCompare(a.dataset.date || "99991231");
+      case "code":
+        return parseInt(a.dataset.code || "0") - parseInt(b.dataset.code || "0");
+      case "name":
+        return (a.dataset.name || "").localeCompare(b.dataset.name || "");
+      case "amount":
+        return parseInt(a.dataset.amount || "0") - parseInt(b.dataset.amount || "0");
+      case "amount-desc":
+        return parseInt(b.dataset.amount || "0") - parseInt(a.dataset.amount || "0");
+      case "newest":
+        return parseInt(b.dataset.code || "0") - parseInt(a.dataset.code || "0");
+      default:
+        return 0;
+    }
+  });
+  rows.forEach(row => tbody.appendChild(row));
+}
+
+// Apply initial sort on page load
+document.addEventListener("DOMContentLoaded", function() { adminSortRows(); });
+
 const SECS=5*60; let last=Date.now();
 ["click","keydown","mousemove","touchstart"].forEach(ev=>document.addEventListener(ev,()=>{last=Date.now();},{passive:true}));
 setInterval(()=>{if(Math.floor((Date.now()-last)/1000)>=SECS)window.location.href="/owner/login?expired=1";},5000);
