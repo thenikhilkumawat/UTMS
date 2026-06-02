@@ -71,20 +71,37 @@ def _urgent_count():
 def dashboard():
     conn = get_db()
     today = date.today().isoformat()
-    # Today's orders = created today
-    todays_orders = conn.execute("SELECT COUNT(*) as c FROM orders WHERE order_date=?",(today,)).fetchone()["c"]
-    # Urgent = any pending urgent order
-    urgent_today  = conn.execute("SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status!='delivered'",(noone,)).fetchone()["c"] if False else                     conn.execute("SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status!='delivered'").fetchone()["c"]
-    pending_delivery = conn.execute("SELECT COUNT(*) as c FROM orders WHERE status!='delivered'").fetchone()["c"]
+
+    # Fresh start filter
+    fresh_start_enabled = get_setting("utms_fresh_start", "0") == "1"
+    fresh_start_date    = get_setting("utms_fresh_start_date", "2026-06-01") if fresh_start_enabled else None
+
+    if fresh_start_date:
+        todays_orders    = conn.execute("SELECT COUNT(*) as c FROM orders WHERE order_date=? AND order_date >= ?", (today, fresh_start_date)).fetchone()["c"]
+        urgent_today     = conn.execute("SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status!='delivered' AND order_date >= ?", (fresh_start_date,)).fetchone()["c"]
+        pending_delivery = conn.execute("SELECT COUNT(*) as c FROM orders WHERE status!='delivered' AND order_date >= ?", (fresh_start_date,)).fetchone()["c"]
+        urgent_orders    = conn.execute("""
+            SELECT o.id,o.order_code,o.delivery_date,o.status,o.is_urgent,
+                   o.remaining, COALESCE(o.repeat_of,'') as repeat_of,
+                   c.name as customer_name,c.mobile
+            FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
+            WHERE o.is_urgent=1 AND o.status!='delivered' AND o.order_date >= ?
+            ORDER BY o.delivery_date ASC LIMIT 10
+        """, (fresh_start_date,)).fetchall()
+    else:
+        todays_orders    = conn.execute("SELECT COUNT(*) as c FROM orders WHERE order_date=?", (today,)).fetchone()["c"]
+        urgent_today     = conn.execute("SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status!='delivered'").fetchone()["c"]
+        pending_delivery = conn.execute("SELECT COUNT(*) as c FROM orders WHERE status!='delivered'").fetchone()["c"]
+        urgent_orders    = conn.execute("""
+            SELECT o.id,o.order_code,o.delivery_date,o.status,o.is_urgent,
+                   o.remaining, COALESCE(o.repeat_of,'') as repeat_of,
+                   c.name as customer_name,c.mobile
+            FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
+            WHERE o.is_urgent=1 AND o.status!='delivered'
+            ORDER BY o.delivery_date ASC LIMIT 10
+        """).fetchall()
+
     total_customers  = conn.execute("SELECT COUNT(*) as c FROM customers").fetchone()["c"]
-    urgent_orders = conn.execute("""
-        SELECT o.id,o.order_code,o.delivery_date,o.status,o.is_urgent,
-               o.remaining, COALESCE(o.repeat_of,'') as repeat_of,
-               c.name as customer_name,c.mobile
-        FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
-        WHERE o.is_urgent=1 AND o.status!='delivered'
-        ORDER BY o.delivery_date ASC LIMIT 10
-    """).fetchall()
     conn.close()
     today_str = datetime.today().strftime("%A, %d %B %Y")
     # Build CUSTOMER rate list (what customers pay)
@@ -120,6 +137,8 @@ def dashboard():
 
     return render_template("employee/dashboard.html", active_page="dashboard",
         urgent_count=urgent_today, show_voice=True, today_str=today_str,
+        fresh_start_enabled=fresh_start_enabled,
+        fresh_start_date=fresh_start_date or "",
         stats=dict(todays_orders=todays_orders, urgent_today=urgent_today,
                    pending_delivery=pending_delivery, total_customers=total_customers),
         urgent_orders=urgent_list,
@@ -974,19 +993,27 @@ def order_status():
     today = date.today().isoformat()
     now_dt = datetime.now()
 
+    # Fresh start filter
+    fresh_start_enabled = get_setting("utms_fresh_start", "0") == "1"
+    fresh_start_date    = get_setting("utms_fresh_start_date", "2026-06-01") if fresh_start_enabled else None
+
+    date_clause = "AND o.order_date >= ?" if fresh_start_date else ""
+    date_params = (fresh_start_date,) if fresh_start_date else ()
+
     # Single fast query - no correlated subqueries
-    raw = conn.execute("""
+    raw = conn.execute(f"""
         SELECT o.id, o.order_code, o.status, o.is_urgent, o.note,
                o.order_date, o.delivery_date, o.delivered_at, o.repeat_of,
                o.payable_amount, o.advance_paid, o.remaining, o.customer_id,
                c.name as cname, c.mobile, c.address as caddress
         FROM orders o
         LEFT JOIN customers c ON c.id = o.customer_id
+        WHERE 1=1 {date_clause}
         ORDER BY
           o.is_urgent DESC,
           CASE o.status WHEN 'pending' THEN 0 WHEN 'ready' THEN 1 ELSE 2 END,
           o.id DESC
-    """).fetchall()
+    """, date_params).fetchall()
 
     # Customer order counts in one query
     cust_counts = {}
@@ -1142,6 +1169,8 @@ def order_status():
         ready_count=counts["ready"], delivered_count=counts["delivered"],
         cancelled_count=counts["cancelled"],
         pickup_pending_count=counts["pickup_pending"],
+        fresh_start_enabled=fresh_start_enabled,
+        fresh_start_date=fresh_start_date or "",
         hindi_map=HINDI_MAP)
 
 
