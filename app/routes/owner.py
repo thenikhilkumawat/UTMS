@@ -81,6 +81,7 @@ ORDERS_PAGE = """{% extends 'base.html' %}
             <td style="padding:12px 14px;text-align:center;"><span style="font-size:11px;padding:3px 10px;border-radius:8px;font-weight:800;background:{% if o.status=='delivered' %}#d1fae5;color:#065f46{% elif o.status=='ready' %}#ede9fe;color:#6d28d9{% elif o.status=='cancelled' %}#fee2e2;color:#dc2626{% else %}#dbeafe;color:#1e40af{% endif %};">{{ o.status|upper }}</span></td>
             <td style="padding:12px 14px;text-align:center;" onclick="event.stopPropagation()">
               <div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;">
+                <a href="/owner/orders/edit/{{ o.order_code }}" style="background:#f0fdf4;color:#16a34a;border-radius:7px;padding:4px 9px;font-size:11px;font-weight:700;text-decoration:none;display:inline-block;">✏️</a>
                 <button onclick="window.open('/print-slip/{{ o.order_code }}','_blank')" style="background:var(--accent-light);color:var(--accent);border:none;border-radius:7px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;">🖨️</button>
                 {% if o.status != 'delivered' and o.status != 'cancelled' %}
                 <form action="/owner/orders/cancel/{{ o.order_code }}" method="POST" style="margin:0;" onsubmit="return confirm('Cancel #{{ o.order_code }}?')"><button type="submit" style="background:var(--danger-light);color:var(--danger);border:none;border-radius:7px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;">✕</button></form>
