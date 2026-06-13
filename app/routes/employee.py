@@ -200,12 +200,21 @@ def new_order():
             garment_rates[n] = cr
         else:
             garment_rates[n] = get_setting("rate_"+n, default_rate)
-    # Include any custom garment types added via settings
+    # Include any custom garment types added via settings (customer_rate_*)
     custom_rows = conn.execute("SELECT key, value FROM settings WHERE key LIKE 'customer_rate_%'").fetchall()
     for row in custom_rows:
         name = row["key"][14:]
         if name not in garment_rates and name not in deleted_set and row["value"] and row["value"].strip() and row["value"] != "0":
             garment_rates[name] = row["value"]
+    # FIX: Also include garments added via Garment Manager (types_* entries)
+    # These may not have a customer_rate entry yet but should still appear in dropdown
+    types_rows = conn.execute("SELECT key, value FROM settings WHERE key LIKE 'types_%'").fetchall()
+    for row in types_rows:
+        name = row["key"][6:]  # strip "types_"
+        if name not in garment_rates and name not in deleted_set and row["value"]:
+            # Try to find any rate for this garment
+            r = get_setting("customer_rate_"+name, "") or get_setting("rate_"+name, "")
+            garment_rates[name] = r if r else "0"
     # Get measurement fields per garment from DB
     meas_fields = {}
     mf_rows = conn.execute("SELECT garment_type, field_name FROM measurement_fields ORDER BY sort_order ASC").fetchall()
