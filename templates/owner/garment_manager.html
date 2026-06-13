@@ -1,0 +1,578 @@
+{% extends "base.html" %}
+{% block title %}Garment Manager — Uttam Tailors{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h1>🧵 Garment Manager</h1>
+    <div class="header-sub">सभी कपड़ों की price, rate और style options एक जगह</div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <a href="/owner/dashboard" class="btn btn-ghost btn-sm">← Back</a>
+    <button class="menu-toggle" onclick="openSidebar()">☰</button>
+  </div>
+</div>
+
+<div class="page-body" style="max-width:960px;margin:0 auto;padding:20px 24px;">
+
+  <!-- ── FLASH MESSAGES ── -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}{% for cat,msg in messages %}
+  <div class="alert alert-{{cat}}" style="margin-bottom:16px;padding:12px 16px;border-radius:10px;
+    background:{% if cat=='success' %}#d1fae5{% elif cat=='error' %}#fee2e2{% else %}#fef3c7{% endif %};
+    color:{% if cat=='success' %}#065f46{% elif cat=='error' %}#991b1b{% else %}#92400e{% endif %};
+    border:1px solid {% if cat=='success' %}#6ee7b7{% elif cat=='error' %}#fca5a5{% else %}#fcd34d{% endif %};
+    font-size:13px;font-weight:600;">{{ msg }}</div>
+  {% endfor %}{% endif %}{% endwith %}
+
+  <!-- ── TOAST ── -->
+  <div id="gm-toast" style="position:fixed;bottom:24px;right:24px;padding:12px 20px;border-radius:12px;
+    font-size:14px;font-weight:700;color:#fff;box-shadow:0 4px 20px rgba(0,0,0,0.2);
+    transition:all 0.3s;opacity:0;pointer-events:none;z-index:9999;transform:translateY(10px);">
+  </div>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- ADD NEW GARMENT CARD -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div class="card mb-24" style="margin-bottom:20px;border:2px solid var(--accent);border-radius:16px;overflow:visible;">
+    <div class="card-header" style="background:linear-gradient(135deg,#eef2ff,#e0e7ff);cursor:pointer;border-radius:14px 14px 0 0;"
+         onclick="toggleAddForm()">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:36px;height:36px;background:var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;">➕</div>
+        <div>
+          <div class="card-title" style="color:#4338ca;">नया कपड़ा जोड़ें — Add New Garment</div>
+          <div style="font-size:11px;color:#6366f1;margin-top:2px;">Click to expand / collapse</div>
+        </div>
+      </div>
+      <div id="add-toggle-icon" style="font-size:20px;color:var(--accent);transition:transform 0.2s;">▼</div>
+    </div>
+    <div id="add-form-body" style="display:none;">
+    <div class="card-body" style="padding:20px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px;">
+        <div class="field-wrap">
+          <label>Garment Name (English)</label>
+          <input type="text" id="new-name" placeholder="e.g. Kameej, Bandhgala..." style="font-size:15px;font-weight:600;">
+        </div>
+        <div class="field-wrap">
+          <label>Customer Price ₹</label>
+          <input type="number" id="new-crate" placeholder="0" min="0" style="font-size:15px;">
+        </div>
+        <div class="field-wrap">
+          <label>Stitching Rate ₹ / piece</label>
+          <input type="number" id="new-srate" placeholder="0" min="0" style="font-size:15px;">
+        </div>
+      </div>
+
+      <!-- Style Options for new garment -->
+      <div style="background:#f9fafb;border-radius:12px;padding:16px;border:1.5px dashed var(--border);margin-bottom:16px;">
+        <div style="font-size:13px;font-weight:800;color:#4338ca;margin-bottom:12px;">🏷️ Style Options (Optional) — नाम लिखें, Enter दबाएं</div>
+        <div id="new-chips-display" style="display:flex;flex-wrap:wrap;gap:8px;min-height:36px;margin-bottom:12px;align-items:center;">
+          <span style="font-size:12px;color:var(--text-muted);font-style:italic;">अभी कोई option नहीं — नीचे जोड़ें</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="new-chip-input" placeholder="हिंदी नाम जैसे: स्लिम, रेगुलर, पार्टी..."
+            style="flex:1;padding:9px 12px;font-size:14px;border:1.5px solid #a5b4fc;border-radius:8px;"
+            onkeydown="if(event.key==='Enter'){addNewChip();event.preventDefault();}">
+          <button onclick="addNewChip()"
+            style="padding:9px 18px;background:#6366f1;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;">
+            + जोड़ें
+          </button>
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:8px;">
+          💡 ये options order form में दिखेंगे — जैसे Slim, Regular, Party Wear आदि
+        </div>
+      </div>
+      <input type="hidden" id="new-chips-raw" value="">
+
+      <button onclick="saveNewGarment()"
+        style="width:100%;padding:14px;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;
+               border:none;border-radius:12px;font-size:16px;font-weight:800;cursor:pointer;
+               box-shadow:0 4px 15px rgba(99,102,241,0.35);">
+        ✅ Add Garment — कपड़ा जोड़ें
+      </button>
+    </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- SEARCH + STATS BAR -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+    <input type="text" id="search-garments" placeholder="🔍 Search garments..."
+      oninput="filterGarments(this.value)"
+      style="flex:1;min-width:200px;padding:10px 14px;font-size:14px;border:1.5px solid var(--border);
+             border-radius:10px;background:#fff;outline:none;">
+    <div style="display:flex;gap:8px;">
+      <span style="padding:6px 14px;background:#eef2ff;color:#4338ca;border-radius:20px;font-size:12px;font-weight:700;">
+        📦 {{ garments|length }} Total
+      </span>
+      <span style="padding:6px 14px;background:#d1fae5;color:#065f46;border-radius:20px;font-size:12px;font-weight:700;">
+        ✅ {{ garments|selectattr('is_standard')|list|length }} Standard
+      </span>
+      <span style="padding:6px 14px;background:#fef3c7;color:#92400e;border-radius:20px;font-size:12px;font-weight:700;">
+        ⭐ {{ garments|rejectattr('is_standard')|list|length }} Custom
+      </span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- GARMENT CARDS -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div id="garments-container">
+  {% for g in garments %}
+  {% set safe_name = g.name|replace(' ','_')|replace('2','2')|replace('3','3') %}
+  <div class="garment-card" data-name="{{ g.name|lower }}"
+       style="background:#fff;border:1px solid var(--border);border-radius:14px;
+              margin-bottom:14px;box-shadow:var(--shadow-sm);overflow:hidden;">
+
+    <!-- Card Header -->
+    <div style="padding:14px 18px;border-bottom:1px solid var(--border);
+                background:{% if g.is_standard %}linear-gradient(135deg,#f8faff,#f0f4ff){% else %}linear-gradient(135deg,#fffbf0,#fef3c7){% endif %};
+                display:flex;align-items:center;justify-content:space-between;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:32px;height:32px;border-radius:8px;
+                    background:{% if g.is_standard %}#6366f1{% else %}#d97706{% endif %};
+                    display:flex;align-items:center;justify-content:center;
+                    font-size:15px;color:#fff;font-weight:900;">
+          {{ g.name[0] }}
+        </div>
+        <div>
+          <div style="font-size:15px;font-weight:800;color:var(--text-primary);">{{ g.name }}</div>
+          <div style="font-size:10px;margin-top:1px;">
+            {% if g.is_standard %}
+            <span style="background:#eef2ff;color:#4338ca;padding:2px 8px;border-radius:10px;font-weight:700;">Standard</span>
+            {% else %}
+            <span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:10px;font-weight:700;">Custom</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button onclick="toggleCard('{{ safe_name }}')"
+          id="toggle-btn-{{ safe_name }}"
+          style="padding:6px 14px;border:1.5px solid var(--border);background:#fff;border-radius:8px;
+                 font-size:12px;font-weight:700;cursor:pointer;color:var(--text-secondary);">
+          ✏️ Edit
+        </button>
+        {% if not g.is_standard %}
+        <button onclick="deleteGarment('{{ g.name }}')"
+          style="padding:6px 14px;border:1.5px solid #fca5a5;background:#fee2e2;border-radius:8px;
+                 font-size:12px;font-weight:700;cursor:pointer;color:#dc2626;">
+          🗑️ Delete
+        </button>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Quick Info (always visible) -->
+    <div style="padding:12px 18px;display:flex;gap:20px;align-items:center;flex-wrap:wrap;
+                border-bottom:1px solid #f3f4f6;">
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="font-size:11px;color:var(--text-muted);font-weight:600;">CUSTOMER RATE</span>
+        <span style="font-size:16px;font-weight:900;color:#059669;">₹{{ g.customer_rate }}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="font-size:11px;color:var(--text-muted);font-weight:600;">STITCH RATE</span>
+        <span style="font-size:16px;font-weight:900;color:#6366f1;">₹{{ g.stitch_rate }}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;flex:1;">
+        <span style="font-size:11px;color:var(--text-muted);font-weight:600;">STYLES</span>
+        {% if g.chips %}
+          {% for chip in g.chips[:5] %}
+          <span style="background:#f0f4ff;color:#4338ca;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;">{{ chip.v }}</span>
+          {% endfor %}
+          {% if g.chips|length > 5 %}
+          <span style="color:var(--text-muted);font-size:11px;">+{{ g.chips|length - 5 }} more</span>
+          {% endif %}
+        {% else %}
+          <span style="color:var(--text-muted);font-size:11px;font-style:italic;">None</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Edit Form (hidden by default) -->
+    <div id="edit-{{ safe_name }}" style="display:none;padding:20px 18px;background:#fafbfd;">
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+        <!-- Customer Rate -->
+        <div style="background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:16px;">
+          <div style="font-size:12px;font-weight:800;color:#059669;margin-bottom:10px;">
+            💰 Customer Price
+            <span style="font-size:10px;color:var(--text-muted);font-weight:500;"> — Customer ko charge karte hain</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:20px;font-weight:900;color:#059669;">₹</span>
+            <input type="number" id="cr-{{ safe_name }}" value="{{ g.customer_rate }}"
+              min="0" placeholder="0"
+              style="flex:1;padding:10px 12px;font-size:18px;font-weight:700;
+                     border:1.5px solid #6ee7b7;border-radius:10px;text-align:center;">
+          </div>
+        </div>
+
+        <!-- Stitch Rate -->
+        <div style="background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:16px;">
+          <div style="font-size:12px;font-weight:800;color:#6366f1;margin-bottom:10px;">
+            ✂️ Stitching Rate
+            <span style="font-size:10px;color:var(--text-muted);font-weight:500;"> — Employee ko milti hai per piece</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:20px;font-weight:900;color:#6366f1;">₹</span>
+            <input type="number" id="sr-{{ safe_name }}" value="{{ g.stitch_rate }}"
+              min="0" placeholder="0"
+              style="flex:1;padding:10px 12px;font-size:18px;font-weight:700;
+                     border:1.5px solid #a5b4fc;border-radius:10px;text-align:center;">
+          </div>
+        </div>
+      </div>
+
+      <!-- Style Chips -->
+      <div style="background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;">
+        <div style="font-size:12px;font-weight:800;color:#92400e;margin-bottom:12px;">
+          🏷️ Style Options
+          <span style="font-size:10px;color:var(--text-muted);font-weight:500;"> — Order form mein dikhne wale buttons, click karke hatayein</span>
+        </div>
+        <div id="chips-{{ safe_name }}" style="display:flex;flex-wrap:wrap;gap:8px;min-height:40px;margin-bottom:12px;align-items:center;">
+          {% for chip in g.chips %}
+          <span class="chip-tag" data-garment="{{ safe_name }}" data-k="{{ chip.k }}" data-v="{{ chip.v }}"
+            onclick="removeChipTag(this)"
+            style="background:#6366f1;color:#fff;border-radius:20px;padding:7px 14px;font-size:13px;font-weight:700;
+                   cursor:pointer;display:inline-flex;align-items:center;gap:6px;user-select:none;"
+            onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#6366f1'">
+            {{ chip.v }} <span style="font-size:10px;opacity:0.8;">✕</span>
+          </span>
+          {% endfor %}
+          {% if not g.chips %}
+          <span id="no-chips-{{ safe_name }}" style="font-size:12px;color:var(--text-muted);font-style:italic;">
+            अभी कोई style option नहीं
+          </span>
+          {% endif %}
+        </div>
+        <!-- Add chip input -->
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="chip-input-{{ safe_name }}"
+            placeholder="हिंदी नाम जैसे: स्लिम, रेगुलर, पार्टी..."
+            onkeydown="if(event.key==='Enter'){addChipToGarment('{{ safe_name }}','{{ g.name }}');event.preventDefault();}"
+            style="flex:1;padding:9px 12px;font-size:14px;border:1.5px solid #a5b4fc;border-radius:8px;">
+          <button onclick="addChipToGarment('{{ safe_name }}','{{ g.name }}')"
+            style="padding:9px 18px;background:#6366f1;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer;">
+            + जोड़ें
+          </button>
+        </div>
+        <!-- Hidden chips_raw input -->
+        <input type="hidden" id="chips-raw-{{ safe_name }}" value="{{ g.chips_raw }}">
+      </div>
+
+      <!-- Save Button -->
+      <button onclick="saveGarment('{{ g.name }}','{{ safe_name }}')"
+        style="width:100%;padding:13px;background:linear-gradient(135deg,#059669,#047857);color:#fff;
+               border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;
+               box-shadow:0 4px 12px rgba(5,150,105,0.3);">
+        💾 Save Changes — {{ g.name }}
+      </button>
+    </div>
+
+  </div>
+  {% endfor %}
+  </div>
+
+  <!-- Empty state for search -->
+  <div id="no-results" style="display:none;text-align:center;padding:40px;color:var(--text-muted);">
+    <div style="font-size:40px;margin-bottom:12px;">🔍</div>
+    <div style="font-size:14px;font-weight:600;">No garments found</div>
+  </div>
+
+</div><!-- /page-body -->
+
+<script>
+// ── TOGGLE ADD FORM ──────────────────────────────
+function toggleAddForm() {
+  const body = document.getElementById('add-form-body');
+  const icon = document.getElementById('add-toggle-icon');
+  if (body.style.display === 'none') {
+    body.style.display = 'block';
+    icon.style.transform = 'rotate(180deg)';
+  } else {
+    body.style.display = 'none';
+    icon.style.transform = 'rotate(0deg)';
+  }
+}
+
+// ── TOGGLE EDIT CARD ──────────────────────────────
+function toggleCard(safeName) {
+  const panel = document.getElementById('edit-' + safeName);
+  const btn   = document.getElementById('toggle-btn-' + safeName);
+  if (panel.style.display === 'none') {
+    panel.style.display = 'block';
+    btn.textContent = '🔼 Close';
+    btn.style.background = '#fef3c7';
+    btn.style.borderColor = '#fcd34d';
+    btn.style.color = '#92400e';
+  } else {
+    panel.style.display = 'none';
+    btn.textContent = '✏️ Edit';
+    btn.style.background = '#fff';
+    btn.style.borderColor = 'var(--border)';
+    btn.style.color = 'var(--text-secondary)';
+  }
+}
+
+// ── CHIPS for existing garments ──────────────────
+function removeChipTag(el) {
+  const safeName = el.dataset.garment;
+  el.remove();
+  rebuildChipsRaw(safeName);
+  updateNoChipsMsg(safeName);
+}
+
+function addChipToGarment(safeName, garmentName) {
+  const input = document.getElementById('chip-input-' + safeName);
+  const label = (input.value || '').trim();
+  if (!label) { input.focus(); return; }
+  // Generate 2-char key from label
+  const key = generateKey(label, safeName);
+  const container = document.getElementById('chips-' + safeName);
+  // Remove "no chips" message
+  const noMsg = document.getElementById('no-chips-' + safeName);
+  if (noMsg) noMsg.remove();
+  // Create tag
+  const tag = document.createElement('span');
+  tag.className = 'chip-tag';
+  tag.dataset.garment = safeName;
+  tag.dataset.k = key;
+  tag.dataset.v = label;
+  tag.onclick = function() { removeChipTag(this); };
+  tag.style.cssText = 'background:#6366f1;color:#fff;border-radius:20px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;user-select:none;';
+  tag.onmouseover = function() { this.style.background='#dc2626'; };
+  tag.onmouseout  = function() { this.style.background='#6366f1'; };
+  tag.innerHTML = label + ' <span style="font-size:10px;opacity:0.8;">✕</span>';
+  container.appendChild(tag);
+  rebuildChipsRaw(safeName);
+  input.value = '';
+  input.focus();
+}
+
+function rebuildChipsRaw(safeName) {
+  const container = document.getElementById('chips-' + safeName);
+  const tags = container.querySelectorAll('.chip-tag');
+  const parts = [];
+  const seen = {};
+  tags.forEach(t => {
+    const k = t.dataset.k || generateKey(t.dataset.v, safeName);
+    const v = t.dataset.v;
+    if (k && v && !seen[k]) { parts.push(k + ':' + v); seen[k] = 1; }
+  });
+  document.getElementById('chips-raw-' + safeName).value = parts.join('|');
+}
+
+function updateNoChipsMsg(safeName) {
+  const container = document.getElementById('chips-' + safeName);
+  const tags = container.querySelectorAll('.chip-tag');
+  if (tags.length === 0 && !document.getElementById('no-chips-' + safeName)) {
+    const msg = document.createElement('span');
+    msg.id = 'no-chips-' + safeName;
+    msg.style.cssText = 'font-size:12px;color:var(--text-muted);font-style:italic;';
+    msg.textContent = 'अभी कोई style option नहीं';
+    container.appendChild(msg);
+  }
+}
+
+function generateKey(label, prefix) {
+  // 2-char key from label
+  const clean = label.replace(/[^a-zA-Z\u0900-\u097F]/g, '');
+  if (clean.length >= 2) return (clean[0] + clean[1]).toUpperCase();
+  // fallback: use prefix + random
+  return (prefix || 'XX').substring(0, 2).toUpperCase() + Math.floor(Math.random()*9);
+}
+
+// ── SAVE GARMENT ─────────────────────────────────
+async function saveGarment(name, safeName) {
+  const cr = document.getElementById('cr-' + safeName).value || '0';
+  const sr = document.getElementById('sr-' + safeName).value || '0';
+  rebuildChipsRaw(safeName);
+  const chipsRaw = document.getElementById('chips-raw-' + safeName).value || '';
+
+  showToast('Saving...', '#6366f1');
+  try {
+    const resp = await fetch('/owner/api/garment/save', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ name, customer_rate: cr, stitch_rate: sr, chips_raw: chipsRaw })
+    });
+    const data = await resp.json();
+    if (data.ok) {
+      showToast('✅ ' + name + ' saved!', '#059669');
+      // Update quick-info display
+      updateQuickInfo(safeName, cr, sr, chipsRaw);
+      // Close edit panel
+      setTimeout(() => toggleCard(safeName), 800);
+    } else {
+      showToast('❌ Error: ' + (data.error || 'Unknown'), '#dc2626');
+    }
+  } catch(e) {
+    showToast('❌ Network error', '#dc2626');
+  }
+}
+
+function updateQuickInfo(safeName, cr, sr, chipsRaw) {
+  // Update the quick-info strip visible when card is closed
+  const card = document.querySelector(`.garment-card[data-name]`);
+  // Re-render happens on next page load; just show toast for now
+}
+
+// ── DELETE GARMENT ───────────────────────────────
+async function deleteGarment(name) {
+  if (!confirm('Delete "' + name + '"?\n\nYeh garment dropdown se hat jayega. Existing orders safe rahenge.')) return;
+  showToast('Deleting...', '#dc2626');
+  try {
+    const resp = await fetch('/owner/api/garment/delete', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ name })
+    });
+    const data = await resp.json();
+    if (data.ok) {
+      showToast('🗑️ ' + name + ' deleted!', '#dc2626');
+      // Remove the card from DOM
+      const cards = document.querySelectorAll('.garment-card');
+      cards.forEach(c => {
+        const nameEl = c.querySelector('[style*="font-size:15px;font-weight:800"]');
+        if (nameEl && nameEl.textContent.trim() === name) c.remove();
+      });
+    } else {
+      showToast('❌ Error: ' + (data.error || 'Unknown'), '#dc2626');
+    }
+  } catch(e) {
+    showToast('❌ Network error', '#dc2626');
+  }
+}
+
+// ── NEW GARMENT CHIPS ────────────────────────────
+const newChips = [];  // [{k,v}]
+
+function addNewChip() {
+  const input = document.getElementById('new-chip-input');
+  const label = (input.value || '').trim();
+  if (!label) { input.focus(); return; }
+  const key = 'N' + newChips.length;
+  newChips.push({ k: key, v: label });
+  renderNewChips();
+  input.value = '';
+  input.focus();
+}
+
+function renderNewChips() {
+  const container = document.getElementById('new-chips-display');
+  if (newChips.length === 0) {
+    container.innerHTML = '<span style="font-size:12px;color:var(--text-muted);font-style:italic;">अभी कोई option नहीं — नीचे जोड़ें</span>';
+    document.getElementById('new-chips-raw').value = '';
+    return;
+  }
+  container.innerHTML = newChips.map((c, i) =>
+    `<span onclick="removeNewChip(${i})"
+      style="background:#6366f1;color:#fff;border-radius:20px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;"
+      onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#6366f1'">
+      ${c.v} <span style="font-size:10px;opacity:0.8;">✕</span>
+    </span>`
+  ).join('');
+  document.getElementById('new-chips-raw').value = newChips.map(c => c.k + ':' + c.v).join('|');
+}
+
+function removeNewChip(idx) {
+  newChips.splice(idx, 1);
+  renderNewChips();
+}
+
+// ── SAVE NEW GARMENT ─────────────────────────────
+async function saveNewGarment() {
+  const name = (document.getElementById('new-name').value || '').trim();
+  const cr   = (document.getElementById('new-crate').value || '0');
+  const sr   = (document.getElementById('new-srate').value || '0');
+  const chipsRaw = document.getElementById('new-chips-raw').value || '';
+
+  if (!name) {
+    showToast('⚠️ Garment ka naam likhein!', '#d97706');
+    document.getElementById('new-name').focus();
+    return;
+  }
+  if (parseFloat(cr) <= 0) {
+    showToast('⚠️ Customer price zaroori hai!', '#d97706');
+    document.getElementById('new-crate').focus();
+    return;
+  }
+
+  showToast('Adding garment...', '#6366f1');
+  try {
+    const resp = await fetch('/owner/api/garment/add', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ name, customer_rate: cr, stitch_rate: sr, chips_raw: chipsRaw })
+    });
+    const data = await resp.json();
+    if (data.ok) {
+      showToast('✅ ' + name + ' added! Page refresh ho raha hai...', '#059669');
+      setTimeout(() => location.reload(), 1200);
+    } else {
+      showToast('❌ Error: ' + (data.error || 'Unknown'), '#dc2626');
+    }
+  } catch(e) {
+    showToast('❌ Network error', '#dc2626');
+  }
+}
+
+// ── SEARCH / FILTER ──────────────────────────────
+function filterGarments(query) {
+  const q = query.toLowerCase().trim();
+  const cards = document.querySelectorAll('.garment-card');
+  let visible = 0;
+  cards.forEach(c => {
+    const name = (c.dataset.name || '');
+    if (!q || name.includes(q)) {
+      c.style.display = '';
+      visible++;
+    } else {
+      c.style.display = 'none';
+    }
+  });
+  document.getElementById('no-results').style.display = (visible === 0 && q) ? 'block' : 'none';
+}
+
+// ── TOAST ────────────────────────────────────────
+function showToast(msg, bg) {
+  const t = document.getElementById('gm-toast');
+  t.textContent = msg;
+  t.style.background = bg || '#111';
+  t.style.opacity = '1';
+  t.style.transform = 'translateY(0)';
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => {
+    t.style.opacity = '0';
+    t.style.transform = 'translateY(10px)';
+  }, 2800);
+}
+</script>
+
+<style>
+.garment-card { transition: box-shadow 0.2s; }
+.garment-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+.btn { padding: var(--btn-pad); border-radius: var(--radius-md); font-size: 13px; font-weight: 600;
+       border: none; cursor: pointer; transition: all var(--transition); display: inline-flex; align-items: center; gap: 6px; }
+.btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); }
+.btn-ghost:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+.btn-sm { padding: 7px 14px; font-size: 12px; }
+.field-wrap { display: flex; flex-direction: column; gap: 6px; }
+.field-wrap label { font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.4px; }
+.field-wrap input { width: 100%; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: var(--radius-md);
+  font-size: 14px; color: var(--text-primary); background: #fafbfc; outline: none; }
+.field-wrap input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); background: #fff; }
+.mb-24 { margin-bottom: 24px; }
+.menu-toggle { display: none; }
+@media (max-width: 768px) {
+  .menu-toggle { display: flex; align-items: center; justify-content: center;
+    width: 36px; height: 36px; border: 1px solid var(--border); background: #fff;
+    border-radius: 8px; font-size: 18px; cursor: pointer; }
+  .page-body { padding: 16px !important; }
+  div[style*="grid-template-columns:1fr 1fr 1fr"] { grid-template-columns: 1fr !important; }
+  div[style*="grid-template-columns:1fr 1fr;"] { grid-template-columns: 1fr !important; }
+}
+</style>
+{% endblock %}
