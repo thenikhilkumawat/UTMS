@@ -2386,6 +2386,134 @@ def api_employee_skill():
     return jsonify({"ok":True})
 
 
+
+# ══════════════════════════════════════════════
+#  GARMENT MANAGER — Unified Garment Admin
+# ══════════════════════════════════════════════
+
+STANDARD_GARMENTS = [
+    "Shirt","Shirt Linen","Pant","Pant Double","Jeans","Suit 2pc","Suit 3pc",
+    "Blazer","Kurta","Kurta Pajama","Pajama","Pathani","Sherwani","Safari","Waistcoat",
+    "Alteration","Cutting Only"
+]
+
+@bp.route("/garments")
+@owner_required
+def garment_manager():
+    conn = get_db()
+    today = date.today().isoformat()
+    urgent_count = conn.execute(
+        "SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status!='delivered' AND delivery_date>=?",
+        (today,)
+    ).fetchone()["c"]
+
+    deleted_csv = get_setting("deleted_customer_rates", "")
+    deleted_set = set(x.strip() for x in deleted_csv.split(",") if x.strip())
+
+    all_settings_rows = conn.execute("SELECT key, value FROM settings").fetchall()
+    sd = {r["key"]: r["value"] for r in all_settings_rows}
+
+    # Collect ALL garment names (standard + custom via any key)
+    garment_names = [g for g in STANDARD_GARMENTS if g not in deleted_set]
+    for key in sd:
+        for prefix in ("customer_rate_", "stitch_rate_", "types_"):
+            if key.startswith(prefix):
+                name = key[len(prefix):]
+                if name not in garment_names and name not in deleted_set and name not in STANDARD_GARMENTS:
+                    garment_names.append(name)
+
+    garments = []
+    for name in garment_names:
+        cr = sd.get("customer_rate_"+name, "") or sd.get("rate_"+name, "0") or "0"
+        sr = sd.get("stitch_rate_"+name, "0") or "0"
+        chips_raw = sd.get("types_"+name, "")
+        chips = []
+        for t in chips_raw.split("|"):
+            if ":" in t:
+                k, v = t.split(":", 1)
+                if k.strip() and v.strip():
+                    chips.append({"k": k.strip(), "v": v.strip()})
+        garments.append({
+            "name": name,
+            "is_standard": name in STANDARD_GARMENTS,
+            "customer_rate": cr,
+            "stitch_rate": sr,
+            "chips": chips,
+            "chips_raw": chips_raw,
+        })
+
+    conn.close()
+    return render_template("owner/garment_manager.html",
+        active_page="garments", show_voice=False, urgent_count=urgent_count,
+        garments=garments,
+    )
+
+
+@bp.route("/api/garment/save", methods=["POST"])
+@owner_required
+def api_garment_save():
+    data = request.get_json(silent=True) or {}
+    name = (data.get("name") or "").strip()
+    if not name:
+        return jsonify({"ok": False, "error": "No garment name"})
+    customer_rate = str(data.get("customer_rate", "0") or "0").strip()
+    stitch_rate   = str(data.get("stitch_rate", "0") or "0").strip()
+    chips_raw     = (data.get("chips_raw") or "").strip()
+    set_setting("customer_rate_"+name, customer_rate)
+    set_setting("rate_"+name, customer_rate)
+    set_setting("stitch_rate_"+name, stitch_rate)
+    set_setting("types_"+name, chips_raw)
+    # Un-delete if previously deleted
+    deleted_csv = get_setting("deleted_customer_rates", "")
+    deleted_set = set(x.strip() for x in deleted_csv.split(",") if x.strip())
+    deleted_set.discard(name)
+    set_setting("deleted_customer_rates", ",".join(sorted(deleted_set)))
+    from database import invalidate_settings_cache; invalidate_settings_cache()
+    return jsonify({"ok": True})
+
+
+@bp.route("/api/garment/add", methods=["POST"])
+@owner_required
+def api_garment_add():
+    data = request.get_json(silent=True) or {}
+    name = (data.get("name") or "").strip()
+    if not name:
+        return jsonify({"ok": False, "error": "No garment name"})
+    customer_rate = str(data.get("customer_rate", "0") or "0").strip()
+    stitch_rate   = str(data.get("stitch_rate", "0") or "0").strip()
+    chips_raw     = (data.get("chips_raw") or "").strip()
+    set_setting("customer_rate_"+name, customer_rate)
+    set_setting("rate_"+name, customer_rate)
+    set_setting("stitch_rate_"+name, stitch_rate)
+    if chips_raw:
+        set_setting("types_"+name, chips_raw)
+    deleted_csv = get_setting("deleted_customer_rates", "")
+    deleted_set = set(x.strip() for x in deleted_csv.split(",") if x.strip())
+    deleted_set.discard(name)
+    set_setting("deleted_customer_rates", ",".join(sorted(deleted_set)))
+    from database import invalidate_settings_cache; invalidate_settings_cache()
+    return jsonify({"ok": True, "name": name})
+
+
+@bp.route("/api/garment/delete", methods=["POST"])
+@owner_required
+def api_garment_delete():
+    data = request.get_json(silent=True) or {}
+    name = (data.get("name") or "").strip()
+    if not name:
+        return jsonify({"ok": False, "error": "No garment name"})
+    conn = get_db()
+    conn.execute("DELETE FROM settings WHERE key=?", ("customer_rate_"+name,))
+    conn.execute("DELETE FROM settings WHERE key=?", ("rate_"+name,))
+    conn.commit(); conn.close()
+    deleted_csv = get_setting("deleted_customer_rates", "")
+    deleted_set = set(x.strip() for x in deleted_csv.split(",") if x.strip())
+    deleted_set.add(name)
+    set_setting("deleted_customer_rates", ",".join(sorted(deleted_set)))
+    from database import invalidate_settings_cache; invalidate_settings_cache()
+    return jsonify({"ok": True})
+
+
 # ══════════════════════════════════════════════
 #  PAST ORDERS (OLD DATA ENTRY)
 # ══════════════════════════════════════════════
