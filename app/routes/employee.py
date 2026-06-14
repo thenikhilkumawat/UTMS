@@ -815,15 +815,15 @@ def api_customer_search():
     if not q:
         return jsonify([])
     conn = get_db()
-    like = f"%{q}%"
     results = []
+
+    # ── Code search (order number / loyalty code) ─────────────────────────
     search_code = q.lstrip("#").lstrip("C-").lstrip("c-") if (
         q.isdigit() or q.startswith("#") or q.upper().startswith("C-")
     ) else None
 
     if search_code and search_code.isdigit():
         code = search_code
-        # Search by exact order code (original OR repeat order)
         order_rows = conn.execute("""
             SELECT c.id, c.name, c.mobile, c.address, o.order_code as matched_code
             FROM orders o JOIN customers c ON c.id = o.customer_id
@@ -840,24 +840,44 @@ def api_customer_search():
                 })
                 seen_codes.add(r["id"])
 
-    # Also search by name, mobile, address (case-insensitive)
-    rows = conn.execute("""
-        SELECT c.id, c.name, c.mobile, c.address, COUNT(o.id) as order_count
-        FROM customers c
-        LEFT JOIN orders o ON o.customer_id = c.id
-        WHERE LOWER(c.name) LIKE LOWER(?) OR c.mobile LIKE ? OR LOWER(c.address) LIKE LOWER(?)
-        GROUP BY c.id
-        ORDER BY c.name ASC LIMIT 15
-    """, (like, like, like)).fetchall()
-    seen_ids = {r["id"] for r in results}
-    for r in rows:
-        if r["id"] not in seen_ids:
-            results.append({"id": r["id"], "name": r["name"],
-                "mobile": r["mobile"] or "", "address": r["address"] or "",
-                "matched_code": None, "order_count": r["order_count"] or 0})
-            seen_ids.add(r["id"])
+    # ── Name / mobile / address search — multi-word AND ───────────────────
+    # Split query into words; each word must appear somewhere in name/mobile/address.
+    # This makes "Kumar Ram" find "Ram Kumar", and "rames" find "Ramesh".
+    words = [w.lower() for w in q.split() if w]
+    if words:
+        # Build: (LOWER(name) LIKE %w1% OR mobile LIKE %w1% OR ...) AND (...w2...) AND ...
+        word_clauses = " AND ".join(
+            "(LOWER(c.name) LIKE ? OR c.mobile LIKE ? OR LOWER(c.address) LIKE ?)"
+            for _ in words
+        )
+        word_params = []
+        for w in words:
+            lk = f"%{w}%"
+            word_params.extend([lk, lk, lk])
 
-    # Add order_count + permanent code (first order) to all results
+        rows = conn.execute(f"""
+            SELECT c.id, c.name, c.mobile, c.address, COUNT(o.id) as order_count
+            FROM customers c
+            LEFT JOIN orders o ON o.customer_id = c.id
+            WHERE {word_clauses}
+            GROUP BY c.id
+            ORDER BY
+              CASE WHEN LOWER(c.name) LIKE ? THEN 0 ELSE 1 END,
+              c.name ASC
+            LIMIT 15
+        """, word_params + [f"%{words[0]}%"]).fetchall()
+
+        seen_ids = {r["id"] for r in results}
+        for r in rows:
+            if r["id"] not in seen_ids:
+                results.append({
+                    "id": r["id"], "name": r["name"],
+                    "mobile": r["mobile"] or "", "address": r["address"] or "",
+                    "matched_code": None, "order_count": r["order_count"] or 0
+                })
+                seen_ids.add(r["id"])
+
+    # ── Enrich results with order count + loyalty code ────────────────────
     for res in results:
         if "order_count" not in res:
             cnt = conn.execute("SELECT COUNT(*) as c FROM orders WHERE customer_id=?", (res["id"],)).fetchone()
@@ -867,10 +887,9 @@ def api_customer_search():
             (res["id"],)
         ).fetchone()
         res["loyalty_code"] = first["order_code"] if first else None
+
     conn.close()
     return jsonify(results[:15])
-
-
 
 
 
@@ -1772,18 +1791,30 @@ def api_pickup_search():
                 rows.append(row)
                 seen_codes.add(row["order_code"])
 
-    # Search by name or mobile (case-insensitive)
-    r3 = conn.execute("""
-        SELECT o.order_code, o.status, o.delivery_date, o.order_date, o.remaining, o.is_urgent,
-               o.repeat_of, c.name as customer_name, c.mobile
-        FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
-        WHERE (LOWER(c.name) LIKE LOWER(?) OR c.mobile LIKE ?)
-        ORDER BY o.id DESC LIMIT 20
-    """, (like, like)).fetchall()
-    for row in r3:
-        if row["order_code"] not in seen_codes:
-            rows.append(row)
-            seen_codes.add(row["order_code"])
+    # Search by name or mobile — multi-word AND logic
+    # "Kumar Ram" will find "Ram Kumar", "rames" finds "Ramesh" etc.
+    words = [w.lower() for w in q.split() if w]
+    if words:
+        word_clauses = " AND ".join(
+            "(LOWER(c.name) LIKE ? OR c.mobile LIKE ?)"
+            for _ in words
+        )
+        word_params = []
+        for w in words:
+            lk = f"%{w}%"
+            word_params.extend([lk, lk])
+
+        r3 = conn.execute(f"""
+            SELECT o.order_code, o.status, o.delivery_date, o.order_date, o.remaining, o.is_urgent,
+                   o.repeat_of, c.name as customer_name, c.mobile
+            FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
+            WHERE {word_clauses}
+            ORDER BY o.id DESC LIMIT 30
+        """, word_params).fetchall()
+        for row in r3:
+            if row["order_code"] not in seen_codes:
+                rows.append(row)
+                seen_codes.add(row["order_code"])
     conn.close()
 
     return jsonify([{
