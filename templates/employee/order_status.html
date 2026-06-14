@@ -105,7 +105,7 @@
         data-overdue="{{ 'true' if o.overdue else 'false' }}"
         data-upcoming="{{ 'true' if o.due_soon and not o.overdue else 'false' }}"
         data-pickup-pending="{{ 'true' if o.pickup_pending else 'false' }}"
-        data-s="{{ o.order_code }} {{ o.repeat_of }} {{ o.cname|lower }} {{ o.mobile }}"
+        data-s="{{ o.order_code }} {{ o.repeat_of or '' }} {{ o.cname|default('')|lower|trim }} {{ o.mobile }} {{ o.garments|map(attribute='garment_type')|join(' ')|lower }}"
         data-date="{{ o.delivery_date or '9999-12-31' }}"
         data-code="{{ o.order_code | replace('#','') }}"
         data-name="{{ o.cname | lower }}"
@@ -484,14 +484,18 @@ function setTab(f, btn) {
 })();
 
 function filterRows() {
-  const q = document.getElementById("srch").value.toLowerCase().trim();
+  const raw   = document.getElementById("srch").value.toLowerCase().trim();
+  // Split into individual words — each must match independently (AND logic)
+  // This way "Kumar Ram" finds "Ram Kumar" and "ram" finds "Ramesh Kumar" etc.
+  const words = raw.split(/\s+/).filter(Boolean);
   document.querySelectorAll(".orow").forEach(row => {
-    const status   = row.dataset.status;
-    const overdue  = row.dataset.overdue === "true";
-    const upcoming = row.dataset.upcoming === "true";
+    const status        = row.dataset.status;
+    const overdue       = row.dataset.overdue === "true";
+    const upcoming      = row.dataset.upcoming === "true";
     const pickupPending = row.dataset.pickupPending === "true";
-    const srch     = row.dataset.s;
-    const matchQ   = !q || srch.includes(q);
+    const srch          = (row.dataset.s || "").toLowerCase();
+    // ALL words must be present somewhere in the search string
+    const matchQ = words.length === 0 || words.every(w => srch.includes(w));
     let matchF = true;
     if      (activeTab === "late")           matchF = overdue && status !== "delivered" && status !== "cancelled";
     else if (activeTab === "upcoming")       matchF = upcoming && status !== "cancelled";
@@ -499,9 +503,8 @@ function filterRows() {
     else if (activeTab === "pickup_pending") matchF = pickupPending;
     else if (activeTab === "delivered")      matchF = status === "delivered";
     else if (activeTab === "cancelled")      matchF = status === "cancelled";
-    // All tab shows everything including cancelled
 
-    const expRow = document.getElementById("exp-" + row.dataset.s.split(" ")[0]);
+    const expRow = document.getElementById("exp-" + (row.dataset.s || "").split(" ")[0]);
     row.style.display = (matchQ && matchF) ? "" : "none";
     if (expRow) expRow.style.display = "none";
   });
