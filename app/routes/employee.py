@@ -2402,7 +2402,7 @@ def measurements_page():
         garment_types_cfg[gname] = pairs
 
     orders = conn.execute("""
-        SELECT o.*, c.name as customer_name, c.mobile
+        SELECT o.*, COALESCE(c.name,'') as customer_name, COALESCE(c.mobile,'') as cust_mobile
         FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
         WHERE o.status NOT IN ('delivered','cancelled')
         ORDER BY o.is_urgent DESC, o.delivery_date ASC
@@ -2471,7 +2471,7 @@ def measurements_page():
             "entry_code":        o["order_code"] if o["repeat_of"] else "",
             "repeat_of":         o["repeat_of"] or "",
             "customer_name":     o["customer_name"] or "—",
-            "mobile":            o["mobile"] or "",
+            "mobile":            o["cust_mobile"] or o.get("mobile", "") or "",
             "status":            o["status"],
             "is_urgent":         o["is_urgent"],
             "delivery_date_fmt": fmtd(o["delivery_date"]),
