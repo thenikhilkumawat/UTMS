@@ -2404,7 +2404,7 @@ def measurements_page():
     orders = conn.execute("""
         SELECT o.*, COALESCE(c.name,'') as customer_name, COALESCE(c.mobile,'') as cust_mobile
         FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
-        ORDER BY o.is_urgent DESC, o.delivery_date ASC
+        ORDER BY o.is_urgent DESC, o.id DESC
     """).fetchall()
 
     urgent_count = conn.execute(
