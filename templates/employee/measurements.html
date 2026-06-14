@@ -86,7 +86,7 @@
 <div style="padding:16px 22px;" id="cards-container">
 {% for o in orders %}
 <div class="m-card {% if o.is_urgent %}urgent-card{% endif %} {% if o.status == 'delivered' %}delivered-card{% endif %}"
-  data-search="{{ o.order_code }} {{ o.display_code }} {{ o.customer_name|lower }} {{ o.mobile }}">
+  data-search="{{ o.order_code }} {{ o.display_code }} {{ o.repeat_of or '' }} {{ (o.customer_name or '') | lower | trim }} {{ o.mobile | default('') }}">
 
   <!-- Header -->
   <div class="m-header {% if o.is_urgent %}m-header-urgent{% else %}m-header-normal{% endif %}">
@@ -216,11 +216,21 @@ var _cutGarmentType = "";
 var _cutQty = 0;
 
 function filterCards() {
-  var raw   = (document.getElementById("m-search").value || "").toLowerCase().trim();
-  var words = raw.split(/\s+/).filter(Boolean);
+  var q = (document.getElementById("m-search").value || "").trim().toLowerCase();
+
+  if (!q) {
+    // Empty search — show all cards
+    document.querySelectorAll(".m-card").forEach(function(c){ c.style.display = ""; });
+    return;
+  }
+
+  // Split into words — each word must appear independently (AND logic)
+  var words = q.split(/\s+/).filter(function(w){ return w.length > 0; });
+
   document.querySelectorAll(".m-card").forEach(function(c){
     var s = (c.getAttribute("data-search") || "").toLowerCase();
-    c.style.display = (words.length === 0 || words.every(function(w){ return s.includes(w); })) ? "" : "none";
+    var match = words.every(function(w){ return s.indexOf(w) !== -1; });
+    c.style.display = match ? "" : "none";
   });
 }
 
