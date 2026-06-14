@@ -59,7 +59,7 @@
       <tbody id="tbody">
         {% for o in orders %}
         <tr class="orow" data-status="{{ o.status }}"
-          data-s="{{ o.display_code }} {{ o.order_code }} {{ o.cname|lower }} {{ o.mobile }} {{ o.garments|lower }}"
+          data-s="{{ o.display_code }} {{ o.order_code }} {{ o.cname|default('')|lower|trim }} {{ o.mobile }} {{ o.garments|default('')|lower }}"
           data-date="{{ o.delivery_date_iso if o.delivery_date_iso else '99991231' }}"
           data-code="{{ o.order_code | replace('#','') }}"
           data-name="{{ o.cname | lower }}"
@@ -142,9 +142,11 @@ function setTab(key, btn) {
 }
 
 function filterRows() {
-  var q = document.getElementById("srch").value.toLowerCase().trim();
+  var raw   = document.getElementById("srch").value.toLowerCase().trim();
+  var words = raw.split(/\s+/).filter(Boolean);
   document.querySelectorAll(".orow").forEach(function(row) {
-    var matchQ = !q || row.dataset.s.includes(q);
+    var srch   = (row.dataset.s || "").toLowerCase();
+    var matchQ = words.length === 0 || words.every(function(w){ return srch.includes(w); });
     var matchF = activeTab === "all" || row.dataset.status === activeTab;
     row.style.display = (matchQ && matchF) ? "" : "none";
   });
