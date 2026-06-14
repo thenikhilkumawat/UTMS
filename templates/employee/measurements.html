@@ -216,10 +216,11 @@ var _cutGarmentType = "";
 var _cutQty = 0;
 
 function filterCards() {
-  var q = (document.getElementById("m-search").value || "").toLowerCase();
+  var raw   = (document.getElementById("m-search").value || "").toLowerCase().trim();
+  var words = raw.split(/\s+/).filter(Boolean);
   document.querySelectorAll(".m-card").forEach(function(c){
     var s = (c.getAttribute("data-search") || "").toLowerCase();
-    c.style.display = (!q || s.indexOf(q) !== -1) ? "" : "none";
+    c.style.display = (words.length === 0 || words.every(function(w){ return s.includes(w); })) ? "" : "none";
   });
 }
 
