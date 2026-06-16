@@ -25,7 +25,7 @@
 
 <!-- Filter tabs -->
 <div style="background:#fff;border-bottom:1px solid var(--border);padding:0 28px;display:flex;gap:0;">
-  {% set tabs = [('all','All Orders',total),('late','Late',late_count),('upcoming','Upcoming',upcoming_count),('ready','Ready',ready_count),('pickup_pending','Pickup Pending',pickup_pending_count),('delivered','Delivered',delivered_count),('cancelled','Cancelled',cancelled_count)] %}
+  {% set tabs = [('all','All Orders',total),('today','Today',today_count),('late','Late',late_count),('upcoming','Upcoming',upcoming_count),('ready','Ready',ready_count),('pickup_pending','Pickup Pending',pickup_pending_count),('delivered','Delivered',delivered_count),('cancelled','Cancelled',cancelled_count)] %}
   {% for key,label,count in tabs %}
   <button class="sched-tab {% if loop.first %}active{% endif %}" data-f="{{ key }}" onclick="setTab('{{ key }}',this)"
     style="padding:12px 18px;font-size:13px;font-weight:700;border:none;border-bottom:3px solid {% if loop.first %}var(--accent){% else %}transparent{% endif %};background:transparent;cursor:pointer;color:{% if loop.first %}var(--accent){% else %}var(--text-muted){% endif %};">
@@ -404,6 +404,7 @@
 {% block extra_js %}
 <script>
 let activeTab = "all", notifyCode = "", notifyD = {};
+const TODAY_DATE = "{{ today_iso }}";
 let currentSort = "date";
 
 function applySort(sortKey, btn) {
@@ -497,7 +498,8 @@ function filterRows() {
     // ALL words must be present somewhere in the search string
     const matchQ = words.length === 0 || words.every(w => srch.includes(w));
     let matchF = true;
-    if      (activeTab === "late")           matchF = overdue && status !== "delivered" && status !== "cancelled";
+    if      (activeTab === "today")          matchF = row.dataset.date === TODAY_DATE;
+    else if (activeTab === "late")           matchF = overdue && status !== "delivered" && status !== "cancelled";
     else if (activeTab === "upcoming")       matchF = upcoming && status !== "cancelled";
     else if (activeTab === "ready")          matchF = status === "ready";
     else if (activeTab === "pickup_pending") matchF = pickupPending;
