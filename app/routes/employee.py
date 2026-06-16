@@ -1155,25 +1155,95 @@ def order_status():
             "pickup_pending":   o["status"] == "ready" and overdue,
         })
 
-    # Build customer order history — for "2 orders" badge detail
-    cust_order_history = {}  # customer_id → [(order_code, display_code, date_fmt)]
-    for o in orders:
-        cid = next((r["customer_id"] for r in raw if r["order_code"] == o["order_code"]), None)
-        if cid:
-            cust_order_history.setdefault(cid, []).append({
-                "code":    o["display_code"],
-                "entry":   o["entry_code"],
-                "date":    o["order_date_fmt"],
-                "status":  o["status"],
+    # ── Visit Number + Previous Orders System ─────────────────────────────
+    # Build customer_id lookup from raw rows
+    raw_by_code = {r["order_code"]: r for r in raw}
+
+    # Load ALL orders for customers in current view (ignoring fresh start filter)
+    # Needed so visit history shows even if old orders are outside fresh start range
+    customer_ids_in_view = list({r["customer_id"] for r in raw if r["customer_id"]})
+    all_cust_orders = {}  # customer_id → [{order_code, order_date, delivery_date, status, payable_amount, advance_paid, remaining, garments:[]}]
+
+    if customer_ids_in_view:
+        placeholders = ",".join("?" * len(customer_ids_in_view))
+        hist_raw = conn.execute(f"""
+            SELECT o.id, o.order_code, o.repeat_of, o.order_date, o.delivery_date,
+                   o.status, o.payable_amount, o.advance_paid, o.remaining, o.customer_id
+            FROM orders o
+            WHERE o.customer_id IN ({placeholders})
+            ORDER BY o.id ASC
+        """, customer_ids_in_view).fetchall()
+
+        # Load garments for historical orders
+        hist_ids = [r["id"] for r in hist_raw]
+        hist_items = {}
+        if hist_ids:
+            ph2 = ",".join("?" * len(hist_ids))
+            for it in conn.execute(f"SELECT order_id, garment_type, quantity FROM order_items WHERE order_id IN ({ph2})", hist_ids).fetchall():
+                hist_items.setdefault(it["order_id"], []).append({"garment_type": it["garment_type"], "quantity": it["quantity"]})
+
+        def fmtd(d):
+            if not d: return "—"
+            p = str(d).split("-")
+            return f"{p[2]}-{p[1]}-{p[0]}" if len(p)==3 else d
+
+        for r in hist_raw:
+            cid = r["customer_id"]
+            all_cust_orders.setdefault(cid, []).append({
+                "order_code":    r["order_code"],
+                "display_code":  r["repeat_of"] if r["repeat_of"] else r["order_code"],
+                "order_date":    r["order_date"] or "",
+                "order_date_fmt": fmtd(r["order_date"]),
+                "delivery_date_fmt": fmtd(r["delivery_date"]),
+                "status":        r["status"],
+                "payable_amount": r["payable_amount"] or 0,
+                "advance_paid":  r["advance_paid"] or 0,
+                "remaining":     r["remaining"] or 0,
+                "garments":      hist_items.get(r["id"], []),
             })
 
-    # Attach prev_orders list to each order
+    # Group all order codes per customer, sorted by DB id ASC (oldest = visit 1)
+    from collections import defaultdict
+    cust_visits = defaultdict(list)
+    for cid, corders in all_cust_orders.items():
+        cust_visits[cid] = [o["order_code"] for o in corders]  # already sorted by id ASC
+
+    # Pass 1: assign visit_number + is_latest to every order
     for o in orders:
-        cid = next((r["customer_id"] for r in raw if r["order_code"] == o["order_code"]), None)
-        all_cust_orders = cust_order_history.get(cid, [])
-        # Other orders = all orders of this customer EXCEPT the current one
-        o["prev_orders"] = [x for x in all_cust_orders
-                            if x["code"] != o["display_code"] or x["entry"] != o["entry_code"]]
+        raw_row  = raw_by_code.get(o["order_code"])
+        cid      = raw_row["customer_id"] if raw_row else None
+        visits   = cust_visits.get(cid, [o["order_code"]]) if cid else [o["order_code"]]
+        try:    idx = visits.index(o["order_code"])
+        except: idx = 0
+        o["visit_number"] = idx + 1
+        o["is_latest"]    = (idx == len(visits) - 1)
+
+    # Pass 2: build prev_orders_full for expanded panel (uses ALL historical orders)
+    for o in orders:
+        raw_row = raw_by_code.get(o["order_code"])
+        cid     = raw_row["customer_id"] if raw_row else None
+        if not cid:
+            o["prev_orders_full"] = []
+            continue
+        all_visits = all_cust_orders.get(cid, [])
+        total_visits = len(all_visits)
+        prev = []
+        for idx, ho in enumerate(all_visits):
+            if ho["order_code"] == o["order_code"]:
+                continue
+            prev.append({
+                "visit_number":   idx + 1,
+                "code":           ho["display_code"],
+                "order_date":     ho["order_date_fmt"],
+                "delivery_date":  ho["delivery_date_fmt"],
+                "status":         ho["status"],
+                "total":          ho["payable_amount"],
+                "paid":           ho["advance_paid"],
+                "remaining":      ho["remaining"],
+                "garments":       ho["garments"],
+                "is_latest":      (idx == total_visits - 1),
+            })
+        o["prev_orders_full"] = prev
 
     # Load images for all orders (batch query)
     all_images = conn.execute("""
