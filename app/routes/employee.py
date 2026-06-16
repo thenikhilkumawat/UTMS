@@ -1179,7 +1179,7 @@ def order_status():
         "cancelled": sum(1 for o in orders if o["status"]=="cancelled"),
         "urgent":    sum(1 for o in orders if o["is_urgent"] and o["status"]!="delivered"),
         "pickup_pending": sum(1 for o in orders if o.get("pickup_pending")),
-        "today":     sum(1 for o in orders if o.get("delivery_date") == date.today().isoformat()),
+        "today":     sum(1 for o in orders if o.get("order_date") == date.today().isoformat()),
     }
     conn.close()
     HINDI_MAP = {
