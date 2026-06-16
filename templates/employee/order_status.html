@@ -163,6 +163,16 @@
             {% endif %}
           </div>
           {% if o.mobile %}<div style="font-size:11px;color:var(--text-muted);margin-top:1px;">{{ o.mobile }}</div>{% endif %}
+          {% if o.prev_orders %}
+          <div style="margin-top:5px;display:flex;flex-direction:column;gap:3px;">
+            {% for p in o.prev_orders %}
+            <div style="font-size:10px;color:#6366f1;font-weight:700;background:#eef2ff;padding:2px 8px;border-radius:8px;display:inline-block;width:fit-content;">
+              📋 #{{ p.code }}{% if p.entry %} (Entry #{{ p.entry }}){% endif %} — {{ p.date }}
+              <span style="color:#94a3b8;font-weight:500;margin-left:4px;">{{ p.status }}</span>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
         </td>
 
         <!-- Col 4: Payment -->
