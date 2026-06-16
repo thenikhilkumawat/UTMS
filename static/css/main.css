@@ -660,3 +660,198 @@ tbody tr:hover{background:#f9fafb;}
 [data-theme="dark"] [onmouseover*="#fafbff"]:hover,
 [data-theme="dark"] [onmouseover*="#f8fafc"]:hover,
 [data-theme="dark"] [onmouseover*="#fef2f2"]:hover { background: rgba(99,102,241,0.1) !important; }
+
+/* ══════════════════════════════════════════════════
+   BOTTOM NAV — Mobile App Style
+══════════════════════════════════════════════════ */
+.bottom-nav { display: none; }
+
+@media (max-width: 768px) {
+
+  /* ── Bottom Navigation ── */
+  .bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--sidebar-bg);
+    border-top: 1px solid rgba(255,255,255,0.1);
+    z-index: 200;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.3);
+  }
+  .bnav-item {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 8px 4px 6px;
+    color: #6b7280;
+    font-size: 10px; font-weight: 700;
+    text-decoration: none;
+    transition: all 0.15s;
+    gap: 3px;
+  }
+  .bnav-item.active { color: #818cf8; }
+  .bnav-item.active .bnav-icon { transform: scale(1.15); }
+  .bnav-icon { font-size: 22px; line-height: 1; }
+  .bnav-label { font-size: 9px; font-weight: 700; letter-spacing: 0.2px; }
+
+  /* ── Main content padding for bottom nav ── */
+  .main-content { padding-bottom: 72px !important; }
+  .voice-fab-container { bottom: 82px !important; }
+  .toast-container { bottom: 82px !important; }
+
+  /* ── Page Header — compact ── */
+  .page-header {
+    padding: 10px 14px !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    position: sticky; top: 0; z-index: 50;
+    background: var(--card-bg) !important;
+    border-bottom: 1px solid var(--border) !important;
+  }
+  .page-header h1 { font-size: 16px !important; }
+  .header-sub { display: none; }
+
+  /* ── Page Body ── */
+  .page-body { padding: 12px 12px !important; }
+
+  /* ── Cards ── */
+  .card { border-radius: 12px !important; margin-bottom: 10px; }
+  .card-body { padding: 12px !important; }
+  .card-header { padding: 10px 12px !important; }
+
+  /* ── Stat grid 2-col on mobile ── */
+  .stat-grid { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+
+  /* ── Tables → Card List ── */
+  .mobile-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table.responsive-table thead { display: none !important; }
+  table.responsive-table,
+  table.responsive-table tbody,
+  table.responsive-table tr,
+  table.responsive-table td { display: block !important; }
+  table.responsive-table tr {
+    background: var(--card-bg) !important;
+    border-radius: 12px !important;
+    margin-bottom: 10px !important;
+    padding: 12px 14px !important;
+    border: 1px solid var(--border) !important;
+    box-shadow: var(--shadow-sm) !important;
+  }
+  table.responsive-table td {
+    padding: 4px 0 !important;
+    border: none !important;
+    font-size: 13px !important;
+  }
+  table.responsive-table td[data-label]::before {
+    content: attr(data-label) ": ";
+    font-size: 10px; font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    display: block; margin-bottom: 2px;
+  }
+
+  /* ── Order Status Table → Cards ── */
+  .orders-table { display: block !important; }
+  .orders-table thead { display: none !important; }
+  .orders-table tbody { display: block !important; }
+  .orders-table tbody tr.orow {
+    display: block !important;
+    background: var(--card-bg) !important;
+    border-radius: 14px !important;
+    margin-bottom: 10px !important;
+    padding: 14px !important;
+    border: 1px solid var(--border) !important;
+    box-shadow: var(--shadow-sm) !important;
+    cursor: pointer;
+  }
+  .orders-table tbody tr.orow td {
+    display: block !important;
+    padding: 3px 0 !important;
+    border: none !important;
+  }
+  /* Hide progress column on mobile */
+  .orders-table td:nth-child(5) { display: none !important; }
+  /* Show delivery date + order inline */
+  .orders-table td:nth-child(1) { font-size: 11px !important; color: var(--text-muted) !important; margin-bottom: 2px; }
+  .orders-table td:nth-child(2) { margin-bottom: 4px; }
+  .orders-table td:nth-child(3) { margin-bottom: 4px; }
+  .orders-table td:nth-child(4) { margin-bottom: 4px; }
+  .orders-table td:nth-child(6) { margin-bottom: 6px; }
+  /* Actions full width */
+  .orders-table td:nth-child(7) { display: flex !important; gap: 8px; margin-top: 6px; padding-top: 8px !important; border-top: 1px solid var(--border) !important; }
+  .orders-table td:nth-child(7) button,
+  .orders-table td:nth-child(7) a { flex: 1; text-align: center; padding: 10px !important; font-size: 13px !important; }
+
+  /* ── Tabs — scrollable ── */
+  .sched-tabs, [style*="display:flex"][style*="overflow"] {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    flex-wrap: nowrap !important;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+  .sched-tabs::-webkit-scrollbar { display: none; }
+  .sched-tab, .filter-tab { white-space: nowrap !important; flex-shrink: 0 !important; }
+
+  /* ── Sort buttons — scrollable ── */
+  .sort-bar { overflow-x: auto !important; flex-wrap: nowrap !important; -webkit-overflow-scrolling: touch; }
+
+  /* ── Inputs — bigger touch targets ── */
+  input, select, textarea {
+    font-size: 16px !important; /* Prevents iOS zoom */
+    padding: 12px !important;
+    min-height: 44px;
+  }
+  button, .btn {
+    min-height: 44px;
+    font-size: 14px !important;
+  }
+
+  /* ── Form grids → single col ── */
+  [style*="grid-template-columns:1fr 1fr"],
+  [style*="grid-template-columns: 1fr 1fr"],
+  [style*="grid-template-columns:1fr 1fr 1fr"],
+  [style*="grid-template-columns: 1fr 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* ── Dashboard cards ── */
+  [style*="grid-template-columns:repeat(3,1fr)"],
+  [style*="grid-template-columns: repeat(3,1fr)"] {
+    grid-template-columns: 1fr !important;
+  }
+  [style*="grid-template-columns:repeat(2,1fr)"],
+  [style*="grid-template-columns: repeat(2,1fr)"] {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  /* ── Work log table ── */
+  .wl-table { font-size: 12px !important; }
+  .wl-table th, .wl-table td { padding: 6px 8px !important; }
+
+  /* ── Measurement cells ── */
+  .meas-grid { grid-template-columns: repeat(3,1fr) !important; }
+  .meas-cell input { font-size: 16px !important; min-height: 44px; }
+
+  /* ── Expanded order panel ── */
+  [style*="grid-template-columns:1fr 1fr auto"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* ── Search bar — full width on mobile ── */
+  #srch, [id*="search"], [id*="Search"] {
+    width: 100% !important;
+    font-size: 16px !important;
+    padding: 12px !important;
+  }
+
+  /* ── Pickup page — bigger cards ── */
+  .pickup-card { padding: 14px !important; }
+
+  /* ── Dark mode bottom nav ── */
+  [data-theme="dark"] .bottom-nav {
+    background: #0a0f1e;
+    border-color: rgba(255,255,255,0.06);
+  }
+}
