@@ -1155,7 +1155,25 @@ def order_status():
             "pickup_pending":   o["status"] == "ready" and overdue,
         })
 
-    # Images not loaded on order status page (for speed)
+    # Build customer order history — for "2 orders" badge detail
+    cust_order_history = {}  # customer_id → [(order_code, display_code, date_fmt)]
+    for o in orders:
+        cid = next((r["customer_id"] for r in raw if r["order_code"] == o["order_code"]), None)
+        if cid:
+            cust_order_history.setdefault(cid, []).append({
+                "code":    o["display_code"],
+                "entry":   o["entry_code"],
+                "date":    o["order_date_fmt"],
+                "status":  o["status"],
+            })
+
+    # Attach prev_orders list to each order
+    for o in orders:
+        cid = next((r["customer_id"] for r in raw if r["order_code"] == o["order_code"]), None)
+        all_cust_orders = cust_order_history.get(cid, [])
+        # Other orders = all orders of this customer EXCEPT the current one
+        o["prev_orders"] = [x for x in all_cust_orders
+                            if x["code"] != o["display_code"] or x["entry"] != o["entry_code"]]
 
     # Load images for all orders (batch query)
     all_images = conn.execute("""
