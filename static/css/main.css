@@ -645,3 +645,18 @@ tbody tr:hover{background:#f9fafb;}
   box-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
 .dark-toggle-track.on .dark-toggle-thumb { transform: translateX(16px); }
+
+/* ── Dark mode hover fix — override inline onmouseover backgrounds ── */
+/* CSS !important overrides inline styles set via JS */
+[data-theme="dark"] tr                          { background: var(--card-bg) !important; }
+[data-theme="dark"] tbody tr:nth-child(even)    { background: #1a2540 !important; }
+[data-theme="dark"] tr:hover                    { background: rgba(99,102,241,0.12) !important; }
+[data-theme="dark"] tr:hover td                 { background: transparent !important; }
+
+/* Fix inline white backgrounds on hover for all elements */
+[data-theme="dark"] *:hover[style*="background"]{ background-color: unset; }
+
+/* Specific hover colors used in templates */
+[data-theme="dark"] [onmouseover*="#fafbff"]:hover,
+[data-theme="dark"] [onmouseover*="#f8fafc"]:hover,
+[data-theme="dark"] [onmouseover*="#fef2f2"]:hover { background: rgba(99,102,241,0.1) !important; }
