@@ -2,7 +2,14 @@
 <html lang="hi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<link rel="manifest" href="/static/manifest.json">
+<meta name="theme-color" content="#6366f1">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Uttam UTMS">
+<link rel="apple-touch-icon" href="/static/img/pwa-icon-192.png">
 <title>{% block title %}Uttam Tailors{% endblock %}</title>
 <link rel="stylesheet" href="/static/css/main.css">
 {% block extra_css %}{% endblock %}
@@ -183,12 +190,16 @@
 <!-- ── DARK MODE ── -->
 <script>
 (function() {
-  // Apply saved theme IMMEDIATELY (before paint) to avoid flash
   var saved = localStorage.getItem('utms-theme');
-  if (saved === 'dark') {
-    document.documentElement.setAttribute('data-theme', 'dark');
-  }
+  if (saved === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
 })();
+
+// Register Service Worker (PWA)
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/static/sw.js').catch(function(){});
+  });
+}
 
 function toggleDarkMode() {
   var html  = document.documentElement;
