@@ -7,16 +7,15 @@ from config import Config
 bp = Blueprint("employee", __name__)
 
 def check_and_auto_ready(conn, order_code):
-    """Check if all garments for an order have been fully STITCHED (silai only).
-    Excludes naap/measurement and kataai/cutting logs.
-    If yes, auto-update status to 'ready'. Returns True if became ready."""
+    """Order becomes READY only when ALL garments have completed
+    ALL THREE stages: Naap + Kataai + Silai — each >= required quantity."""
     order = conn.execute(
         "SELECT id, status FROM orders WHERE order_code=?", (order_code,)
     ).fetchone()
     if not order or order["status"] in ("ready", "delivered"):
         return False
 
-    # Total required quantities per garment type
+    # Required quantities per garment type
     required = {}
     for r in conn.execute(
         "SELECT garment_type, SUM(quantity) as total FROM order_items WHERE order_id=? GROUP BY garment_type",
@@ -27,25 +26,32 @@ def check_and_auto_ready(conn, order_code):
     if not required:
         return False
 
-    # Count ONLY stitching logs — exclude naap/measure and kataai/cut
-    logged = {}
-    for r in conn.execute(
-        """SELECT garment_type, COALESCE(SUM(qty_done),0) as total
-           FROM work_logs
-           WHERE order_code=?
-             AND (notes IS NULL
-               OR (notes NOT LIKE 'Measure%'
-               AND notes NOT LIKE 'Naap%'
-               AND notes NOT LIKE 'Cut%'
-               AND notes NOT LIKE 'Kataai%'))
-           GROUP BY garment_type""",
+    all_logs = conn.execute(
+        "SELECT garment_type, notes, COALESCE(SUM(qty_done),0) as total FROM work_logs WHERE order_code=? GROUP BY garment_type, notes",
         (order_code,)
-    ).fetchall():
-        logged[r["garment_type"]] = r["total"]
+    ).fetchall()
 
-    # ALL garments must be fully stitched
+    # Group by stage: naap, kataai, silai
+    naap   = {}  # garment_type → qty done
+    kataai = {}
+    silai  = {}
+
+    for r in all_logs:
+        gt  = r["garment_type"]
+        n   = (r["notes"] or "").strip()
+        qty = r["total"] or 0
+        if n.startswith("Naap") or n.startswith("Measure"):
+            naap[gt]   = naap.get(gt, 0) + qty
+        elif n.startswith("Cut") or n.startswith("Kataai"):
+            kataai[gt] = kataai.get(gt, 0) + qty
+        else:
+            silai[gt]  = silai.get(gt, 0) + qty
+
+    # ALL garments must have ALL 3 stages >= required qty
     all_done = all(
-        logged.get(gt, 0) >= qty
+        naap.get(gt, 0)   >= qty and
+        kataai.get(gt, 0) >= qty and
+        silai.get(gt, 0)  >= qty
         for gt, qty in required.items()
     )
 
