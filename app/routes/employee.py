@@ -7,7 +7,8 @@ from config import Config
 bp = Blueprint("employee", __name__)
 
 def check_and_auto_ready(conn, order_code):
-    """Check if all garments for an order have been fully stitched.
+    """Check if all garments for an order have been fully STITCHED (silai only).
+    Excludes naap/measurement and kataai/cutting logs.
     If yes, auto-update status to 'ready'. Returns True if became ready."""
     order = conn.execute(
         "SELECT id, status FROM orders WHERE order_code=?", (order_code,)
@@ -26,15 +27,23 @@ def check_and_auto_ready(conn, order_code):
     if not required:
         return False
 
-    # Total logged quantities per garment type
+    # Count ONLY stitching logs — exclude naap/measure and kataai/cut
     logged = {}
     for r in conn.execute(
-        "SELECT garment_type, SUM(qty_done) as total FROM work_logs WHERE order_code=? GROUP BY garment_type",
+        """SELECT garment_type, COALESCE(SUM(qty_done),0) as total
+           FROM work_logs
+           WHERE order_code=?
+             AND (notes IS NULL
+               OR (notes NOT LIKE 'Measure%'
+               AND notes NOT LIKE 'Naap%'
+               AND notes NOT LIKE 'Cut%'
+               AND notes NOT LIKE 'Kataai%'))
+           GROUP BY garment_type""",
         (order_code,)
     ).fetchall():
         logged[r["garment_type"]] = r["total"]
 
-    # Check if all garments are fully logged
+    # ALL garments must be fully stitched
     all_done = all(
         logged.get(gt, 0) >= qty
         for gt, qty in required.items()
