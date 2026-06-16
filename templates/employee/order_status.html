@@ -107,6 +107,7 @@
         data-pickup-pending="{{ 'true' if o.pickup_pending else 'false' }}"
         data-s="{{ o.order_code }} {{ o.repeat_of or '' }} {{ o.cname|default('')|lower|trim }} {{ o.mobile }} {{ o.garments|map(attribute='garment_type')|join(' ')|lower }}"
         data-date="{{ o.delivery_date or '9999-12-31' }}"
+        data-order-date="{{ o.order_date or '' }}"
         data-code="{{ o.order_code | replace('#','') }}"
         data-name="{{ o.cname | lower }}"
         data-amount="{{ o.remaining | int }}"
@@ -498,7 +499,7 @@ function filterRows() {
     // ALL words must be present somewhere in the search string
     const matchQ = words.length === 0 || words.every(w => srch.includes(w));
     let matchF = true;
-    if      (activeTab === "today")          matchF = row.dataset.date === TODAY_DATE;
+    if      (activeTab === "today")          matchF = row.dataset.orderDate === TODAY_DATE;
     else if (activeTab === "late")           matchF = overdue && status !== "delivered" && status !== "cancelled";
     else if (activeTab === "upcoming")       matchF = upcoming && status !== "cancelled";
     else if (activeTab === "ready")          matchF = status === "ready";
