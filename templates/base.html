@@ -135,6 +135,30 @@
   <div class="main-content">{% block content %}{% endblock %}</div>
 </div>
 
+<!-- ── BOTTOM NAV — Mobile Only ── -->
+<nav class="bottom-nav" id="bottomNav">
+  <a href="/" class="bnav-item {% if active_page == 'dashboard' %}active{% endif %}">
+    <span class="bnav-icon">🏠</span>
+    <span class="bnav-label lang-en">Home</span><span class="bnav-label lang-hi" style="display:none;">होम</span>
+  </a>
+  <a href="/new-order" class="bnav-item {% if active_page == 'new_order' %}active{% endif %}">
+    <span class="bnav-icon">➕</span>
+    <span class="bnav-label lang-en">Order</span><span class="bnav-label lang-hi" style="display:none;">ऑर्डर</span>
+  </a>
+  <a href="/order-status" class="bnav-item {% if active_page == 'order_status' %}active{% endif %}">
+    <span class="bnav-icon">📋</span>
+    <span class="bnav-label lang-en">Status</span><span class="bnav-label lang-hi" style="display:none;">स्थिति</span>
+  </a>
+  <a href="/work-log" class="bnav-item {% if active_page == 'work_log' %}active{% endif %}">
+    <span class="bnav-icon">✂️</span>
+    <span class="bnav-label lang-en">Work</span><span class="bnav-label lang-hi" style="display:none;">काम</span>
+  </a>
+  <a href="/pickup" class="bnav-item {% if active_page == 'pickup' %}active{% endif %}">
+    <span class="bnav-icon">🚚</span>
+    <span class="bnav-label lang-en">Pickup</span><span class="bnav-label lang-hi" style="display:none;">डिलीवरी</span>
+  </a>
+</nav>
+
 {% if show_voice %}
 <div class="voice-fab-container">
   <div id="voice-hint">Tap a field first</div>
