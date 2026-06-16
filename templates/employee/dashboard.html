@@ -53,10 +53,7 @@
   <!-- ── ROW 1: 3 STAT CARDS ── -->
   <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
 
-    <a href="/order-status" style="text-decoration:none;">
-      <div style="background:linear-gradient(135deg,#4338ca,#6366f1);border-radius:18px;padding:28px 28px 24px;color:#fff;position:relative;overflow:hidden;">
-        <div style="position:absolute;right:-20px;top:-20px;font-size:90px;opacity:0.1;">📋</div>
-        <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;opacity:0.85;margin-bottom:10px;"><span data-t="todays_orders">Today's Orders</span></div>
+    <a href="/order-status?tab=today" style="text-decoration:none;">
         <div style="font-size:56px;font-weight:900;line-height:1;margin-bottom:10px;">{{ stats.todays_orders }}</div>
         <div style="font-size:13px;opacity:0.8;font-weight:600;"><span data-t="view_schedule">View delivery schedule →</span></div>
       </div>
