@@ -1139,6 +1139,7 @@ def order_status():
             "repeat_of":        o["repeat_of"],
             "delivery_date":    o["delivery_date"] or "",
             "delivery_date_fmt":fmtd(o["delivery_date"]),
+            "order_date":       o["order_date"] or "",
             "order_date_fmt":   fmtd(o["order_date"]),
             "payable_amount":   o["payable_amount"] or 0,
             "advance_paid":     o["advance_paid"] or 0,
