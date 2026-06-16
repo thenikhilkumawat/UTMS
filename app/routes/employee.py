@@ -1160,53 +1160,57 @@ def order_status():
     raw_by_code = {r["order_code"]: r for r in raw}
 
     # Load ALL orders for customers in current view (ignoring fresh start filter)
-    # Needed so visit history shows even if old orders are outside fresh start range
-    customer_ids_in_view = list({r["customer_id"] for r in raw if r["customer_id"]})
-    all_cust_orders = {}  # customer_id → [{order_code, order_date, delivery_date, status, payable_amount, advance_paid, remaining, garments:[]}]
+    all_cust_orders = {}
+    try:
+        customer_ids_in_view = list({r["customer_id"] for r in raw if r["customer_id"]})
+        if customer_ids_in_view:
+            ph = ",".join(["?" ] * len(customer_ids_in_view))
+            hist_raw = conn.execute(
+                f"SELECT o.id, o.order_code, o.repeat_of, o.order_date, o.delivery_date, "
+                f"o.status, o.payable_amount, o.advance_paid, o.remaining, o.customer_id "
+                f"FROM orders o WHERE o.customer_id IN ({ph}) ORDER BY o.id ASC",
+                tuple(customer_ids_in_view)
+            ).fetchall()
 
-    if customer_ids_in_view:
-        placeholders = ",".join("?" * len(customer_ids_in_view))
-        hist_raw = conn.execute(f"""
-            SELECT o.id, o.order_code, o.repeat_of, o.order_date, o.delivery_date,
-                   o.status, o.payable_amount, o.advance_paid, o.remaining, o.customer_id
-            FROM orders o
-            WHERE o.customer_id IN ({placeholders})
-            ORDER BY o.id ASC
-        """, customer_ids_in_view).fetchall()
+            # Garments for all historical orders
+            hist_ids = [r["id"] for r in hist_raw]
+            hist_items = {}
+            if hist_ids:
+                ph2 = ",".join(["?"] * len(hist_ids))
+                for it in conn.execute(
+                    f"SELECT order_id, garment_type, quantity FROM order_items WHERE order_id IN ({ph2})",
+                    tuple(hist_ids)
+                ).fetchall():
+                    hist_items.setdefault(it["order_id"], []).append(
+                        {"garment_type": it["garment_type"], "quantity": it["quantity"]}
+                    )
 
-        # Load garments for historical orders
-        hist_ids = [r["id"] for r in hist_raw]
-        hist_items = {}
-        if hist_ids:
-            ph2 = ",".join("?" * len(hist_ids))
-            for it in conn.execute(f"SELECT order_id, garment_type, quantity FROM order_items WHERE order_id IN ({ph2})", hist_ids).fetchall():
-                hist_items.setdefault(it["order_id"], []).append({"garment_type": it["garment_type"], "quantity": it["quantity"]})
+            def _fmt(d):
+                if not d: return "—"
+                p = str(d).split("-")
+                return f"{p[2]}-{p[1]}-{p[0]}" if len(p) == 3 else d
 
-        def fmtd(d):
-            if not d: return "—"
-            p = str(d).split("-")
-            return f"{p[2]}-{p[1]}-{p[0]}" if len(p)==3 else d
+            for r in hist_raw:
+                cid = r["customer_id"]
+                all_cust_orders.setdefault(cid, []).append({
+                    "order_code":        r["order_code"],
+                    "display_code":      r["repeat_of"] if r["repeat_of"] else r["order_code"],
+                    "order_date_fmt":    _fmt(r["order_date"]),
+                    "delivery_date_fmt": _fmt(r["delivery_date"]),
+                    "status":            r["status"],
+                    "payable_amount":    r["payable_amount"] or 0,
+                    "advance_paid":      r["advance_paid"] or 0,
+                    "remaining":         r["remaining"] or 0,
+                    "garments":          hist_items.get(r["id"], []),
+                })
+    except Exception:
+        pass  # visit history optional — never crash main page
 
-        for r in hist_raw:
-            cid = r["customer_id"]
-            all_cust_orders.setdefault(cid, []).append({
-                "order_code":    r["order_code"],
-                "display_code":  r["repeat_of"] if r["repeat_of"] else r["order_code"],
-                "order_date":    r["order_date"] or "",
-                "order_date_fmt": fmtd(r["order_date"]),
-                "delivery_date_fmt": fmtd(r["delivery_date"]),
-                "status":        r["status"],
-                "payable_amount": r["payable_amount"] or 0,
-                "advance_paid":  r["advance_paid"] or 0,
-                "remaining":     r["remaining"] or 0,
-                "garments":      hist_items.get(r["id"], []),
-            })
-
-    # Group all order codes per customer, sorted by DB id ASC (oldest = visit 1)
+    # Group order codes per customer sorted by id ASC (oldest = visit 1)
     from collections import defaultdict
     cust_visits = defaultdict(list)
     for cid, corders in all_cust_orders.items():
-        cust_visits[cid] = [o["order_code"] for o in corders]  # already sorted by id ASC
+        cust_visits[cid] = [o["order_code"] for o in corders]
 
     # Pass 1: assign visit_number + is_latest to every order
     for o in orders:
