@@ -370,41 +370,115 @@
             </div>
 
             {% if o.prev_orders_full %}
-            <!-- ── PREVIOUS ORDERS HISTORY ── -->
-            <div style="margin-top:16px;border-top:1.5px dashed #c7d2fe;padding-top:16px;">
-              <div style="font-size:11px;font-weight:800;text-transform:uppercase;color:#6366f1;margin-bottom:10px;letter-spacing:0.5px;">
-                📋 {{ o.cname }} — Visit History
+            <!-- ── VISIT HISTORY — CLEAR & BIG FOR ELDERLY USERS ── -->
+            <div style="margin-top:20px;border-top:2px dashed #6366f1;padding-top:20px;">
+
+              <div style="font-size:15px;font-weight:900;color:#4338ca;margin-bottom:16px;display:flex;align-items:center;gap:8px;">
+                📋 {{ o.cname }} — पिछले सभी ऑर्डर (Visit History)
               </div>
-              <div style="display:flex;flex-direction:column;gap:8px;">
-                {% for p in o.prev_orders_full|sort(attribute='visit_number') %}
-                <div style="background:#fff;border:1.5px solid {% if p.is_latest %}#6366f1{% else %}#e0e7ff{% endif %};border-radius:12px;padding:12px 16px;position:relative;">
-                  {% if p.is_latest %}
-                  <span style="position:absolute;top:-8px;right:12px;background:#6366f1;color:#fff;font-size:9px;font-weight:900;padding:2px 10px;border-radius:20px;">✨ LATEST</span>
-                  {% endif %}
-                  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;">
-                    <span style="font-size:13px;font-weight:900;color:var(--accent);">#{{ p.code }}</span>
-                    <span style="background:#ede9fe;color:#6d28d9;font-size:10px;font-weight:800;padding:2px 8px;border-radius:6px;">Visit {{ p.visit_number }}</span>
-                    <span style="font-size:11px;color:var(--text-muted);">📅 {{ p.order_date }} → {{ p.delivery_date }}</span>
-                    <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;
+
+              <!-- CURRENT ORDER — shown first, clearly marked -->
+              <div style="background:linear-gradient(135deg,#eef2ff,#e0e7ff);border:2.5px solid #6366f1;border-radius:14px;padding:16px 20px;margin-bottom:12px;position:relative;">
+                <div style="position:absolute;top:-12px;left:16px;background:#6366f1;color:#fff;font-size:12px;font-weight:900;padding:3px 14px;border-radius:20px;letter-spacing:0.5px;">
+                  ✅ अभी का ऑर्डर — Visit {{ o.visit_number }}
+                </div>
+                <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:20px;align-items:center;">
+                  <div>
+                    <div style="font-size:11px;color:#6366f1;font-weight:700;margin-bottom:2px;">ORDER #</div>
+                    <div style="font-size:20px;font-weight:900;color:#4338ca;">#{{ o.display_code }}</div>
+                  </div>
+                  <div>
+                    <div style="font-size:11px;color:#6366f1;font-weight:700;margin-bottom:2px;">ORDER DATE</div>
+                    <div style="font-size:16px;font-weight:800;color:#1e1b4b;">{{ o.order_date_fmt }}</div>
+                  </div>
+                  <div>
+                    <div style="font-size:11px;color:#6366f1;font-weight:700;margin-bottom:2px;">DELIVERY DATE</div>
+                    <div style="font-size:16px;font-weight:800;color:#1e1b4b;">{{ o.delivery_date_fmt }}</div>
+                  </div>
+                  <div>
+                    <div style="font-size:11px;color:#6366f1;font-weight:700;margin-bottom:2px;">STATUS</div>
+                    <div style="font-size:15px;font-weight:900;color:#059669;">{{ o.status|upper }}</div>
+                  </div>
+                </div>
+                <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:8px;">
+                  {% for g in o.garments %}
+                  <span style="background:#6366f1;color:#fff;font-size:14px;font-weight:700;padding:5px 14px;border-radius:10px;">
+                    {{ g.garment_type }} × {{ g.quantity }}
+                  </span>
+                  {% endfor %}
+                </div>
+                <div style="margin-top:12px;display:flex;gap:24px;flex-wrap:wrap;">
+                  <div style="text-align:center;background:#fff;border-radius:10px;padding:8px 16px;min-width:80px;">
+                    <div style="font-size:11px;color:#6b7280;font-weight:700;">TOTAL</div>
+                    <div style="font-size:18px;font-weight:900;color:#111;">₹{{ o.payable_amount|int }}</div>
+                  </div>
+                  <div style="text-align:center;background:#fff;border-radius:10px;padding:8px 16px;min-width:80px;">
+                    <div style="font-size:11px;color:#059669;font-weight:700;">PAID</div>
+                    <div style="font-size:18px;font-weight:900;color:#059669;">₹{{ o.advance_paid|int }}</div>
+                  </div>
+                  <div style="text-align:center;background:#fff;border-radius:10px;padding:8px 16px;min-width:80px;">
+                    <div style="font-size:11px;color:#dc2626;font-weight:700;">BAKI</div>
+                    <div style="font-size:18px;font-weight:900;color:{% if o.remaining > 0 %}#dc2626{% else %}#059669{% endif %};">
+                      {% if o.remaining > 0 %}₹{{ o.remaining|int }}{% else %}✓ 0{% endif %}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- PREVIOUS VISITS -->
+              {% for p in o.prev_orders_full|sort(attribute='visit_number', reverse=True) %}
+              <div style="background:#fff;border:2px solid #e0e7ff;border-radius:14px;padding:16px 20px;margin-bottom:10px;position:relative;">
+                <div style="position:absolute;top:-12px;left:16px;background:#f1f5f9;color:#475569;font-size:12px;font-weight:900;padding:3px 14px;border-radius:20px;border:1.5px solid #e2e8f0;">
+                  📌 पहले का ऑर्डर — Visit {{ p.visit_number }}
+                </div>
+                <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:20px;align-items:center;margin-bottom:12px;">
+                  <div>
+                    <div style="font-size:11px;color:#6b7280;font-weight:700;margin-bottom:2px;">ORDER #</div>
+                    <div style="font-size:20px;font-weight:900;color:#374151;">#{{ p.code }}</div>
+                  </div>
+                  <div>
+                    <div style="font-size:11px;color:#6b7280;font-weight:700;margin-bottom:2px;">ORDER DATE</div>
+                    <div style="font-size:16px;font-weight:800;color:#374151;">{{ p.order_date }}</div>
+                  </div>
+                  <div>
+                    <div style="font-size:11px;color:#6b7280;font-weight:700;margin-bottom:2px;">DELIVERY DATE</div>
+                    <div style="font-size:16px;font-weight:800;color:#374151;">{{ p.delivery_date }}</div>
+                  </div>
+                  <div>
+                    <div style="font-size:11px;color:#6b7280;font-weight:700;margin-bottom:2px;">STATUS</div>
+                    <span style="font-size:14px;font-weight:900;padding:4px 12px;border-radius:8px;
                       background:{% if p.status=='delivered' %}#d1fae5{% elif p.status=='ready' %}#fef3c7{% else %}#f1f5f9{% endif %};
-                      color:{% if p.status=='delivered' %}#065f46{% elif p.status=='ready' %}#92400e{% else %}#475569{% endif %};">
+                      color:{% if p.status=='delivered' %}#065f46{% elif p.status=='ready' %}#92400e{% else %}#374151{% endif %};">
                       {{ p.status|upper }}
                     </span>
                   </div>
-                  <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
-                    {% for g in p.garments %}
-                    <span style="background:#eef2ff;color:#4338ca;font-size:11px;font-weight:700;padding:3px 10px;border-radius:8px;">{{ g.garment_type }} ×{{ g.quantity }}</span>
-                    {% endfor %}
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+                  {% for g in p.garments %}
+                  <span style="background:#f1f5f9;color:#374151;font-size:14px;font-weight:700;padding:5px 14px;border-radius:10px;border:1px solid #e2e8f0;">
+                    {{ g.garment_type }} × {{ g.quantity }}
+                  </span>
+                  {% endfor %}
+                </div>
+                <div style="display:flex;gap:24px;flex-wrap:wrap;">
+                  <div style="text-align:center;background:#f9fafb;border-radius:10px;padding:8px 16px;min-width:80px;border:1px solid #e5e7eb;">
+                    <div style="font-size:11px;color:#6b7280;font-weight:700;">TOTAL</div>
+                    <div style="font-size:18px;font-weight:900;color:#374151;">₹{{ p.total|int }}</div>
                   </div>
-                  <div style="display:flex;gap:16px;font-size:11px;">
-                    <span style="color:var(--text-muted);">Total: <strong>₹{{ p.total|int }}</strong></span>
-                    <span style="color:#059669;">Paid: <strong>₹{{ p.paid|int }}</strong></span>
-                    {% if p.remaining > 0 %}<span style="color:#dc2626;">Baki: <strong>₹{{ p.remaining|int }}</strong></span>
-                    {% else %}<span style="color:#059669;font-weight:700;">✓ Fully Paid</span>{% endif %}
+                  <div style="text-align:center;background:#f0fdf4;border-radius:10px;padding:8px 16px;min-width:80px;border:1px solid #bbf7d0;">
+                    <div style="font-size:11px;color:#059669;font-weight:700;">PAID</div>
+                    <div style="font-size:18px;font-weight:900;color:#059669;">₹{{ p.paid|int }}</div>
+                  </div>
+                  <div style="text-align:center;background:{% if p.remaining > 0 %}#fef2f2{% else %}#f0fdf4{% endif %};border-radius:10px;padding:8px 16px;min-width:80px;border:1px solid {% if p.remaining > 0 %}#fecaca{% else %}#bbf7d0{% endif %};">
+                    <div style="font-size:11px;color:{% if p.remaining > 0 %}#dc2626{% else %}#059669{% endif %};font-weight:700;">BAKI</div>
+                    <div style="font-size:18px;font-weight:900;color:{% if p.remaining > 0 %}#dc2626{% else %}#059669{% endif %};">
+                      {% if p.remaining > 0 %}₹{{ p.remaining|int }}{% else %}✓ 0{% endif %}
+                    </div>
                   </div>
                 </div>
-                {% endfor %}
               </div>
+              {% endfor %}
+
             </div>
             {% endif %}
 
