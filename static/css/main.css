@@ -854,4 +854,38 @@ tbody tr:hover{background:#f9fafb;}
     background: #0a0f1e;
     border-color: rgba(255,255,255,0.06);
   }
+
+  /* ══ FIX: Sidebar text visibility on mobile (white/light text always) ══ */
+  .sidebar, .sidebar * { color: #e5e7eb !important; }
+  .sidebar .nav-link { color: #d1d5db !important; }
+  .sidebar .nav-link.active { color: #ffffff !important; background: rgba(99,102,241,0.25) !important; }
+  .sidebar .nav-link:hover { color: #ffffff !important; }
+  .sidebar .shop-sub { color: #9ca3af !important; }
+  .sidebar .nav-section-label { color: #9ca3af !important; }
+  .sidebar .owner-btn { color: #c7d2fe !important; }
+  .sidebar #dark-toggle { color: #e5e7eb !important; }
+  .sidebar-overlay.show { background: rgba(0,0,0,0.65) !important; }
+
+  /* ══ FIX: Dashboard hero tiles — much smaller on mobile ══ */
+  [style*="font-size:56px"]   { font-size: 32px !important; }
+  [style*="font-size:90px"]   { font-size: 48px !important; }
+  [style*="font-size:48px"]   { font-size: 28px !important; }
+  [style*="font-size:36px"]   { font-size: 24px !important; }
+  [style*="font-size:32px"]   { font-size: 22px !important; }
+  [style*="font-size:28px"]   { font-size: 20px !important; }
+  [style*="font-size:24px"]   { font-size: 18px !important; }
+  [style*="font-size:22px"]   { font-size: 17px !important; }
+  [style*="font-size:20px"]   { font-size: 16px !important; }
+
+  /* ══ FIX: Hero/stat card padding — more compact ══ */
+  [style*="padding:28px 28px 24px"],
+  [style*="padding:24px 24px 20px"] { padding: 16px 16px 14px !important; }
+  [style*="border-radius:18px"]     { border-radius: 14px !important; }
+
+  /* ══ FIX: Dashboard cards — reduce excessive gap ══ */
+  [style*="margin-bottom:10px"][style*="font-size:56px"] { margin-bottom: 4px !important; }
+
+  /* ══ General: reduce oversized icons/emoji in headers ══ */
+  .card-title, h1, h2 { font-size: 16px !important; }
+  h1[style*="font-size"] { font-size: 18px !important; }
 }
