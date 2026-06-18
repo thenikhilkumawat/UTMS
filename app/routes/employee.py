@@ -3,6 +3,7 @@ from datetime import date, datetime, timedelta
 from database import get_db, get_setting, next_order_code, peek_order_code, next_repeat_code, peek_repeat_code
 import json, os, time
 from config import Config
+from app.common_names import COMMON_NAMES_LOOKUP
 
 bp = Blueprint("employee", __name__)
 
@@ -919,6 +920,28 @@ def api_check_name_similar():
                 "distance": dist,
             }
             best_dist = dist
+
+    # ── Fallback: if no existing customer matched, check the common
+    # names dictionary (Sikar/Rajasthan region names). This catches
+    # spelling typos even for a customer's very FIRST order, since
+    # there's no database history to compare against yet. ──
+    if best is None:
+        common_best = None
+        common_best_dist = 999
+        for norm_common, canonical in COMMON_NAMES_LOOKUP.items():
+            if norm_common == norm_input:
+                continue
+            dist = edit_distance(norm_input, norm_common)
+            threshold = max(1, len(norm_input) // 5)
+            if dist <= threshold and dist < common_best_dist:
+                common_best = {
+                    "id": None, "name": canonical,
+                    "mobile": "", "order_count": 0,
+                    "distance": dist, "source": "common_dictionary",
+                }
+                common_best_dist = dist
+        if common_best:
+            best = common_best
 
     return jsonify({"match": best})
 
