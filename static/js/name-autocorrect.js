@@ -1,40 +1,30 @@
 /* ════════════════════════════════════════════════════════
-   NAME AUTOSUGGEST — Uttam Tailors UTMS
-   ════════════════════════════════════════════════════════
-   Shows a tappable dropdown of name suggestions while the
-   employee types — combining existing customers (DB) and a
-   3000+ common Indian names dictionary. Designed for an
-   employee who may make spelling mistakes — big, clear,
-   one-tap selection. Nothing is silently auto-changed.
-
-   USAGE:
-   <input type="text" id="n_name" data-autocorrect-name>
-   (auto-attaches on page load to any field with this attribute)
+   NAME AUTOSUGGEST — Uttam Tailors UTMS (v3 — simplified)
    ════════════════════════════════════════════════════════ */
 
 function setupNameAutoCorrect(inputId) {
   const input = document.getElementById(inputId);
-  if (!input) return;
+  if (!input) { console.warn("[name-autocorrect] input not found:", inputId); return; }
+  if (input.dataset.autocorrectAttached === "1") return; // prevent double-attach
+  input.dataset.autocorrectAttached = "1";
 
-  // Wrap input so the dropdown can be positioned right below it
-  if (!input.parentElement.classList.contains("name-suggest-wrap")) {
-    const wrap = document.createElement("div");
-    wrap.className = "name-suggest-wrap";
-    wrap.style.cssText = "position:relative;width:100%;";
-    input.parentNode.insertBefore(wrap, input);
-    wrap.appendChild(input);
+  // Ensure the immediate parent can host an absolutely-positioned dropdown.
+  // We do NOT move the input in the DOM — just set position on its existing parent.
+  const parent = input.parentElement;
+  const computedPos = window.getComputedStyle(parent).position;
+  if (computedPos === "static") {
+    parent.style.position = "relative";
   }
 
-  // Dropdown container
   const dropdown = document.createElement("div");
   dropdown.className = "name-suggest-dropdown";
-  dropdown.style.cssText = `
-    position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px;
-    background: #fff; border: 2px solid #6366f1; border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.18); z-index: 500;
-    max-height: 280px; overflow-y: auto; display: none;
-  `;
-  input.parentElement.appendChild(dropdown);
+  dropdown.style.cssText = [
+    "position:absolute", "top:100%", "left:0", "right:0", "margin-top:4px",
+    "background:#ffffff", "border:2px solid #6366f1", "border-radius:12px",
+    "box-shadow:0 8px 24px rgba(0,0,0,0.18)", "z-index:9999",
+    "max-height:280px", "overflow-y:auto", "display:none",
+  ].join(";");
+  parent.appendChild(dropdown);
 
   let debounceTimer = null;
   let currentSuggestions = [];
@@ -49,40 +39,35 @@ function setupNameAutoCorrect(inputId) {
     currentSuggestions = suggestions;
     if (!suggestions.length) { hideDropdown(); return; }
 
-    dropdown.innerHTML = suggestions.map((s, i) => `
-      <div class="name-suggest-item" data-idx="${i}"
-        style="display:flex;align-items:center;gap:10px;padding:12px 14px;
-               cursor:pointer;border-bottom:1px solid #f1f5f9;
-               ${i === suggestions.length - 1 ? 'border-bottom:none;' : ''}">
-        <div style="width:34px;height:34px;border-radius:10px;flex-shrink:0;
-             background:${s.source === 'customer' ? '#eef2ff' : '#f8fafc'};
-             display:flex;align-items:center;justify-content:center;font-size:16px;">
-          ${s.source === 'customer' ? '👤' : '✨'}
-        </div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:15px;font-weight:800;color:#1e1b4b;">${s.name}</div>
-          <div style="font-size:11px;color:#6b7280;margin-top:1px;">
-            ${s.source === 'customer'
-              ? (s.mobile ? '📱 ' + s.mobile + (s.order_count > 0 ? ' · ⭐ ' + s.order_count + ' order' + (s.order_count > 1 ? 's' : '') : '') : 'Existing customer')
-              : 'सुझाव · Suggested name'}
-          </div>
-        </div>
-        <div style="font-size:12px;font-weight:700;color:#6366f1;">चुनें →</div>
-      </div>
-    `).join("");
+    let html = "";
+    suggestions.forEach(function(s, i) {
+      const icon  = s.source === "customer" ? "👤" : "✨";
+      const subtxt = s.source === "customer"
+        ? (s.mobile ? "📱 " + s.mobile + (s.order_count > 0 ? " · ⭐ " + s.order_count + " order" + (s.order_count > 1 ? "s" : "") : "") : "Existing customer")
+        : "सुझाव · Suggested name";
+      html += '<div class="name-suggest-item" data-idx="' + i + '" ' +
+        'style="display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;' +
+        'border-bottom:' + (i === suggestions.length - 1 ? 'none' : '1px solid #f1f5f9') + ';">' +
+        '<div style="width:34px;height:34px;border-radius:10px;flex-shrink:0;' +
+        'background:' + (s.source === 'customer' ? '#eef2ff' : '#f8fafc') + ';' +
+        'display:flex;align-items:center;justify-content:center;font-size:16px;">' + icon + '</div>' +
+        '<div style="flex:1;min-width:0;">' +
+        '<div style="font-size:15px;font-weight:800;color:#1e1b4b;">' + s.name + '</div>' +
+        '<div style="font-size:11px;color:#6b7280;margin-top:1px;">' + subtxt + '</div>' +
+        '</div>' +
+        '<div style="font-size:12px;font-weight:700;color:#6366f1;">चुनें →</div>' +
+        '</div>';
+    });
+    dropdown.innerHTML = html;
 
-    dropdown.querySelectorAll(".name-suggest-item").forEach(function(el) {
+    const items = dropdown.querySelectorAll(".name-suggest-item");
+    items.forEach(function(el) {
       el.addEventListener("mousedown", function(e) {
-        e.preventDefault(); // prevent input blur before click registers
-        const idx = parseInt(el.dataset.idx, 10);
-        selectSuggestion(idx);
+        e.preventDefault();
+        selectSuggestion(parseInt(el.dataset.idx, 10));
       });
-      el.addEventListener("mouseover", function() {
-        el.style.background = "#eef2ff";
-      });
-      el.addEventListener("mouseout", function() {
-        el.style.background = "";
-      });
+      el.addEventListener("mouseover", function() { el.style.background = "#eef2ff"; });
+      el.addEventListener("mouseout",  function() { el.style.background = ""; });
     });
 
     dropdown.style.display = "block";
@@ -94,23 +79,22 @@ function setupNameAutoCorrect(inputId) {
     input.value = s.name;
     hideDropdown();
     input.dispatchEvent(new Event("change", { bubbles: true }));
-    // Brief green flash to confirm selection
     input.style.transition = "background-color 0.3s";
     input.style.backgroundColor = "#d1fae5";
-    setTimeout(() => { input.style.backgroundColor = ""; }, 600);
+    setTimeout(function() { input.style.backgroundColor = ""; }, 600);
   }
 
   function fetchSuggestions() {
     const q = input.value.trim();
     if (q.length < 2) { hideDropdown(); return; }
     fetch("/api/customers/check-name-similar?name=" + encodeURIComponent(q))
-      .then(r => r.json())
-      .then(data => {
-        if (input.value.trim() === q) {  // still relevant (not stale)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (input.value.trim() === q) {
           renderDropdown(data.suggestions || []);
         }
       })
-      .catch(() => {});
+      .catch(function(err) { console.error("[name-autocorrect] fetch failed:", err); });
   }
 
   input.addEventListener("input", function() {
@@ -122,18 +106,17 @@ function setupNameAutoCorrect(inputId) {
     if (input.value.trim().length >= 2) fetchSuggestions();
   });
 
-  // Keyboard navigation: Arrow keys + Enter
   input.addEventListener("keydown", function(e) {
     if (dropdown.style.display !== "block" || !currentSuggestions.length) return;
     const items = dropdown.querySelectorAll(".name-suggest-item");
     if (e.key === "ArrowDown") {
       e.preventDefault();
       activeIndex = Math.min(activeIndex + 1, currentSuggestions.length - 1);
-      items.forEach((el, i) => el.style.background = i === activeIndex ? "#eef2ff" : "");
+      items.forEach(function(el, i) { el.style.background = i === activeIndex ? "#eef2ff" : ""; });
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       activeIndex = Math.max(activeIndex - 1, 0);
-      items.forEach((el, i) => el.style.background = i === activeIndex ? "#eef2ff" : "");
+      items.forEach(function(el, i) { el.style.background = i === activeIndex ? "#eef2ff" : ""; });
     } else if (e.key === "Enter" && activeIndex >= 0) {
       e.preventDefault();
       selectSuggestion(activeIndex);
@@ -142,20 +125,22 @@ function setupNameAutoCorrect(inputId) {
     }
   });
 
-  // Hide dropdown when clicking elsewhere
   document.addEventListener("click", function(e) {
-    if (!input.parentElement.contains(e.target)) hideDropdown();
+    if (!parent.contains(e.target)) hideDropdown();
   });
 
   input.addEventListener("blur", function() {
-    // Slight delay so a mousedown-selected item still registers first
     setTimeout(hideDropdown, 150);
   });
+
+  console.log("[name-autocorrect] attached to:", inputId);
 }
 
-// Auto-attach to any field marked with data-autocorrect-name on page load
 document.addEventListener("DOMContentLoaded", function() {
-  document.querySelectorAll("[data-autocorrect-name]").forEach(function(el) {
+  console.log("[name-autocorrect] scanning for fields...");
+  const fields = document.querySelectorAll("[data-autocorrect-name]");
+  console.log("[name-autocorrect] found", fields.length, "field(s)");
+  fields.forEach(function(el) {
     if (el.id) setupNameAutoCorrect(el.id);
   });
 });
