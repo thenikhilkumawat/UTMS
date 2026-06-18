@@ -898,7 +898,7 @@ def api_check_name_similar():
     # ── 1) Existing customers — prefix match OR close fuzzy match ──
     conn = get_db()
     all_customers = conn.execute(
-        "SELECT id, name, mobile, COUNT(o.id) as order_count "
+        "SELECT c.id, c.name, c.mobile, COUNT(o.id) as order_count "
         "FROM customers c LEFT JOIN orders o ON o.customer_id=c.id "
         "GROUP BY c.id"
     ).fetchall()
