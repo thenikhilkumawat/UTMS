@@ -923,32 +923,52 @@ def api_check_name_similar():
             seen_norm.add(norm_existing)
 
     # ── 2) Common Indian names dictionary — prefix + fuzzy match ──
-    # Only add dictionary suggestions if we don't already have plenty
-    # of real customer matches (real customers are more useful/relevant)
-    if len(suggestions) < 8:
-        for norm_common, canonical in COMMON_NAMES_LOOKUP.items():
-            if norm_common in seen_norm:
+    # ALWAYS check the dictionary too (previously this was skipped
+    # whenever 8+ DB customers already matched, which happened almost
+    # every time since short prefixes match many existing customers —
+    # that bug meant dictionary names never appeared in practice).
+    for norm_common, canonical in COMMON_NAMES_LOOKUP.items():
+        if norm_common in seen_norm:
+            continue
+        is_prefix = norm_common.startswith(norm_input) or norm_input.startswith(norm_common)
+        if not is_prefix:
+            if abs(len(norm_common) - input_len) > threshold:
                 continue
-            is_prefix = norm_common.startswith(norm_input) or norm_input.startswith(norm_common)
-            if not is_prefix:
-                if abs(len(norm_common) - input_len) > threshold:
-                    continue
-                dist = edit_distance(norm_input, norm_common)
-                if dist > threshold:
-                    continue
-            else:
-                dist = 0
-            suggestions.append({
-                "name": canonical, "mobile": "", "order_count": 0,
-                "source": "common_dictionary", "id": None,
-                "score": (0 if is_prefix else dist + 1) + 0.5,  # rank slightly below real customers
-            })
-            seen_norm.add(norm_common)
-            if len(suggestions) >= 20:
-                break
+            dist = edit_distance(norm_input, norm_common)
+            if dist > threshold:
+                continue
+        else:
+            dist = 0
+        suggestions.append({
+            "name": canonical, "mobile": "", "order_count": 0,
+            "source": "common_dictionary", "id": None,
+            "score": (0 if is_prefix else dist + 1) + 0.5,  # rank slightly below real customers
+        })
+        seen_norm.add(norm_common)
+        if len(suggestions) >= 40:  # performance cap before final sort+slice
+            break
 
-    suggestions.sort(key=lambda x: (x["score"], len(x["name"])))
-    return jsonify({"suggestions": suggestions[:6]})
+    # Separate by source, sort each group independently
+    customer_matches = sorted(
+        [s for s in suggestions if s["source"] == "customer"],
+        key=lambda x: (x["score"], len(x["name"]))
+    )
+    dictionary_matches = sorted(
+        [s for s in suggestions if s["source"] == "common_dictionary"],
+        key=lambda x: (x["score"], len(x["name"]))
+    )
+
+    # Guarantee a MIX: real customers are prioritized, but at least 2
+    # dictionary suggestions are always included when available — so
+    # dictionary names aren't drowned out when many customers match.
+    final = customer_matches[:4] + dictionary_matches[:2]
+    if len(final) < 6:
+        # Fill remaining slots from whichever list has more left
+        remaining = (customer_matches[4:] + dictionary_matches[2:])
+        remaining.sort(key=lambda x: (x["score"], len(x["name"])))
+        final += remaining[: 6 - len(final)]
+
+    return jsonify({"suggestions": final[:6]})
 
 
 
