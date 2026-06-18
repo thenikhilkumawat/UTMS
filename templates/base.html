@@ -186,7 +186,7 @@
 {% endwith %}
 
 <script src="/static/js/lang.js"></script>
-<script src="/static/js/name-autocorrect.js?v=20260618"></script>
+<script src="/static/js/name-autocorrect.js?v=20260618c"></script>
 
 <!-- ── DARK MODE ── -->
 <script>
@@ -195,10 +195,12 @@
   if (saved === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
 })();
 
-// Register Service Worker (PWA)
+// Register Service Worker (PWA) — force update check every load
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
-    navigator.serviceWorker.register('/static/sw.js').catch(function(){});
+    navigator.serviceWorker.register('/static/sw.js').then(function(reg) {
+      reg.update(); // force check for new sw.js immediately, don't wait for browser's own schedule
+    }).catch(function(){});
   });
 }
 
