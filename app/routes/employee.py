@@ -860,23 +860,22 @@ def api_check_mobile():
 
 @bp.route("/api/customers/check-name-similar")
 def api_check_name_similar():
-    """Find the closest existing customer name for AUTO-CORRECT purposes.
-    Normalizes common Hindi honorifics (ji/jee/jii) and spacing so that
-    typos like 'Shispal jee' correctly match 'Sispal Ji'.
-    Returns the single best match if confident enough to auto-correct."""
+    """Return a LIST of suggested names — for a visible autosuggest
+    dropdown the employee can tap to select. Combines:
+    1) Existing customers whose name starts with / closely matches input
+    2) Common Indian names dictionary (for first-time customers)
+    Honorifics (ji/jee/jii) are normalized so typos still match correctly."""
     raw_name = request.args.get("name", "").strip()
-    if len(raw_name) < 3:
-        return jsonify({"match": None})
+    if len(raw_name) < 2:
+        return jsonify({"suggestions": []})
 
     def normalize(s):
         s = s.lower().strip()
-        # Normalize common honorific spellings to one canonical form
         for suffix in [" jee", " jii", " ji", "jee", "jii"]:
             if s.endswith(suffix):
-                s = s[: -len(suffix)].strip() + " ji"
+                s = s[: -len(suffix)].strip()
                 break
-        s = " ".join(s.split())  # collapse multiple spaces
-        return s
+        return " ".join(s.split())
 
     def edit_distance(a, b):
         if len(a) < len(b): a, b = b, a
@@ -890,7 +889,13 @@ def api_check_name_similar():
         return prev[-1]
 
     norm_input = normalize(raw_name)
+    input_len  = len(norm_input)
+    threshold  = max(1, input_len // 4)
 
+    suggestions = []  # list of {name, mobile, order_count, source, score}
+    seen_norm   = set()
+
+    # ── 1) Existing customers — prefix match OR close fuzzy match ──
     conn = get_db()
     all_customers = conn.execute(
         "SELECT id, name, mobile, COUNT(o.id) as order_count "
@@ -899,57 +904,51 @@ def api_check_name_similar():
     ).fetchall()
     conn.close()
 
-    best = None
-    best_dist = 999
     for r in all_customers:
         existing_raw = (r["name"] or "").strip()
         if not existing_raw:
             continue
         norm_existing = normalize(existing_raw)
-        if norm_existing == norm_input:
-            continue  # exact match already — no correction needed
-        dist = edit_distance(norm_input, norm_existing)
-        # Tight threshold = confident typo-correction, not random name confusion
-        # Allows ~1 typo per 4-5 characters
-        threshold = max(1, len(norm_input) // 5)
-        if dist <= threshold and dist < best_dist:
-            best = {
-                "id": r["id"], "name": existing_raw,
-                "mobile": r["mobile"] or "",
+        if norm_existing in seen_norm:
+            continue
+        is_prefix = norm_existing.startswith(norm_input) or norm_input.startswith(norm_existing)
+        dist = 0 if is_prefix else edit_distance(norm_input, norm_existing)
+        if is_prefix or (abs(len(norm_existing) - input_len) <= threshold and dist <= threshold):
+            suggestions.append({
+                "name": existing_raw, "mobile": r["mobile"] or "",
                 "order_count": r["order_count"] or 0,
-                "distance": dist,
-            }
-            best_dist = dist
+                "source": "customer", "id": r["id"],
+                "score": (0 if is_prefix else dist + 1),  # prefix matches rank first
+            })
+            seen_norm.add(norm_existing)
 
-    # ── Fallback: if no existing customer matched, check the common
-    # names dictionary (Sikar/Rajasthan region names). This catches
-    # spelling typos even for a customer's very FIRST order, since
-    # there's no database history to compare against yet. ──
-    if best is None:
-        common_best = None
-        common_best_dist = 999
-        threshold = max(1, len(norm_input) // 5)
-        input_len = len(norm_input)
+    # ── 2) Common Indian names dictionary — prefix + fuzzy match ──
+    # Only add dictionary suggestions if we don't already have plenty
+    # of real customer matches (real customers are more useful/relevant)
+    if len(suggestions) < 8:
         for norm_common, canonical in COMMON_NAMES_LOOKUP.items():
-            if norm_common == norm_input:
+            if norm_common in seen_norm:
                 continue
-            # Fast pre-filter: skip names whose length differs more than
-            # the threshold allows (edit distance can't be smaller than
-            # the length difference) — avoids running full DP on far-off names
-            if abs(len(norm_common) - input_len) > threshold:
-                continue
-            dist = edit_distance(norm_input, norm_common)
-            if dist <= threshold and dist < common_best_dist:
-                common_best = {
-                    "id": None, "name": canonical,
-                    "mobile": "", "order_count": 0,
-                    "distance": dist, "source": "common_dictionary",
-                }
-                common_best_dist = dist
-        if common_best:
-            best = common_best
+            is_prefix = norm_common.startswith(norm_input) or norm_input.startswith(norm_common)
+            if not is_prefix:
+                if abs(len(norm_common) - input_len) > threshold:
+                    continue
+                dist = edit_distance(norm_input, norm_common)
+                if dist > threshold:
+                    continue
+            else:
+                dist = 0
+            suggestions.append({
+                "name": canonical, "mobile": "", "order_count": 0,
+                "source": "common_dictionary", "id": None,
+                "score": (0 if is_prefix else dist + 1) + 0.5,  # rank slightly below real customers
+            })
+            seen_norm.add(norm_common)
+            if len(suggestions) >= 20:
+                break
 
-    return jsonify({"match": best})
+    suggestions.sort(key=lambda x: (x["score"], len(x["name"])))
+    return jsonify({"suggestions": suggestions[:6]})
 
 
 
