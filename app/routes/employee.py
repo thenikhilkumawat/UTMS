@@ -824,7 +824,106 @@ def api_peek_repeat_code():
     return jsonify({"code": peek_repeat_code()})
 
 
-@bp.route("/api/customers/search")
+@bp.route("/api/customers/check-mobile")
+def api_check_mobile():
+    """Check if a mobile number already belongs to an existing customer.
+    Used to prevent employees from creating duplicate customers with
+    misspelled names when the customer already exists."""
+    mobile = request.args.get("mobile", "").strip()
+    if not mobile or len(mobile) < 10:
+        return jsonify({"found": False})
+
+    conn = get_db()
+    row = conn.execute(
+        "SELECT id, name, mobile, address FROM customers WHERE mobile=? LIMIT 1",
+        (mobile,)
+    ).fetchone()
+
+    if not row:
+        conn.close()
+        return jsonify({"found": False})
+
+    cnt = conn.execute(
+        "SELECT COUNT(*) as c FROM orders WHERE customer_id=?", (row["id"],)
+    ).fetchone()
+    conn.close()
+    return jsonify({
+        "found":       True,
+        "id":          row["id"],
+        "name":        row["name"],
+        "mobile":      row["mobile"],
+        "address":     row["address"] or "",
+        "order_count": cnt["c"] if cnt else 0,
+    })
+
+
+@bp.route("/api/customers/check-name-similar")
+def api_check_name_similar():
+    """Find the closest existing customer name for AUTO-CORRECT purposes.
+    Normalizes common Hindi honorifics (ji/jee/jii) and spacing so that
+    typos like 'Shispal jee' correctly match 'Sispal Ji'.
+    Returns the single best match if confident enough to auto-correct."""
+    raw_name = request.args.get("name", "").strip()
+    if len(raw_name) < 3:
+        return jsonify({"match": None})
+
+    def normalize(s):
+        s = s.lower().strip()
+        # Normalize common honorific spellings to one canonical form
+        for suffix in [" jee", " jii", " ji", "jee", "jii"]:
+            if s.endswith(suffix):
+                s = s[: -len(suffix)].strip() + " ji"
+                break
+        s = " ".join(s.split())  # collapse multiple spaces
+        return s
+
+    def edit_distance(a, b):
+        if len(a) < len(b): a, b = b, a
+        if len(b) == 0: return len(a)
+        prev = list(range(len(b) + 1))
+        for i, ca in enumerate(a):
+            cur = [i + 1]
+            for j, cb in enumerate(b):
+                cur.append(min(prev[j+1]+1, cur[j]+1, prev[j]+(ca != cb)))
+            prev = cur
+        return prev[-1]
+
+    norm_input = normalize(raw_name)
+
+    conn = get_db()
+    all_customers = conn.execute(
+        "SELECT id, name, mobile, COUNT(o.id) as order_count "
+        "FROM customers c LEFT JOIN orders o ON o.customer_id=c.id "
+        "GROUP BY c.id"
+    ).fetchall()
+    conn.close()
+
+    best = None
+    best_dist = 999
+    for r in all_customers:
+        existing_raw = (r["name"] or "").strip()
+        if not existing_raw:
+            continue
+        norm_existing = normalize(existing_raw)
+        if norm_existing == norm_input:
+            continue  # exact match already — no correction needed
+        dist = edit_distance(norm_input, norm_existing)
+        # Tight threshold = confident typo-correction, not random name confusion
+        # Allows ~1 typo per 4-5 characters
+        threshold = max(1, len(norm_input) // 5)
+        if dist <= threshold and dist < best_dist:
+            best = {
+                "id": r["id"], "name": existing_raw,
+                "mobile": r["mobile"] or "",
+                "order_count": r["order_count"] or 0,
+                "distance": dist,
+            }
+            best_dist = dist
+
+    return jsonify({"match": best})
+
+
+
 def api_customer_search():
     q = request.args.get("q","").strip()
     if not q:
