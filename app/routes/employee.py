@@ -928,11 +928,17 @@ def api_check_name_similar():
     if best is None:
         common_best = None
         common_best_dist = 999
+        threshold = max(1, len(norm_input) // 5)
+        input_len = len(norm_input)
         for norm_common, canonical in COMMON_NAMES_LOOKUP.items():
             if norm_common == norm_input:
                 continue
+            # Fast pre-filter: skip names whose length differs more than
+            # the threshold allows (edit distance can't be smaller than
+            # the length difference) — avoids running full DP on far-off names
+            if abs(len(norm_common) - input_len) > threshold:
+                continue
             dist = edit_distance(norm_input, norm_common)
-            threshold = max(1, len(norm_input) // 5)
             if dist <= threshold and dist < common_best_dist:
                 common_best = {
                     "id": None, "name": canonical,
