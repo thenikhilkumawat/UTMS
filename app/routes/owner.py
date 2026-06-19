@@ -224,6 +224,41 @@ function setTab(k, btn) {
   filterOrders();
 }
 
+// ─── URL STATE SYNC ────────────────────────────────
+// Keeps search text + active tab in the URL (?q=...&tab=...) so that
+// after editing an order and saving, we can return to this exact
+// search/filter state instead of a blank list (needed for bulk edits
+// like going through order codes 3720-3730 one by one).
+function syncOrdersUrlState() {
+  var srch = document.getElementById("srch");
+  var q = srch ? srch.value : "";
+  var params = new URLSearchParams(window.location.search);
+  if (q) params.set("q", q); else params.delete("q");
+  if (activeTab && activeTab !== "all") params.set("tab", activeTab); else params.delete("tab");
+  var newUrl = window.location.pathname + (params.toString() ? "?" + params.toString() : "");
+  history.replaceState(null, "", newUrl);
+}
+
+function restoreOrdersUrlState() {
+  var params = new URLSearchParams(window.location.search);
+  var q   = params.get("q");
+  var tab = params.get("tab");
+  var srch = document.getElementById("srch");
+  if (q && srch) srch.value = q;
+  if (tab) {
+    activeTab = tab;
+    var btn = document.querySelector('.ftab[data-key="' + tab + '"]');
+    if (btn) {
+      document.querySelectorAll(".ftab").forEach(function(b) {
+        b.style.background = "#fff"; b.style.color = "var(--text-muted)"; b.style.borderColor = "var(--border)";
+      });
+      btn.style.background = "var(--accent)"; btn.style.color = "#fff"; btn.style.borderColor = "var(--accent)";
+    }
+  }
+  if (q || tab) filterOrders();
+}
+window.addEventListener("DOMContentLoaded", restoreOrdersUrlState);
+
 // ─── SEARCH + FILTER ──────────────────────────────
 function filterOrders() {
   var srch = document.getElementById("srch");
@@ -243,6 +278,7 @@ function filterOrders() {
       if (dr && !show) { dr.style.display = "none"; }
     }
   });
+  syncOrdersUrlState();
 }
 
 // ─── EXPANDABLE ROWS ──────────────────────────────
