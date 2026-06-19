@@ -215,8 +215,26 @@ var _cutOrderCode = "";
 var _cutGarmentType = "";
 var _cutQty = 0;
 
+function syncMeasureUrlState() {
+  var q = document.getElementById("m-search").value;
+  var params = new URLSearchParams(window.location.search);
+  if (q) params.set("q", q); else params.delete("q");
+  var newUrl = window.location.pathname + (params.toString() ? "?" + params.toString() : "");
+  history.replaceState(null, "", newUrl);
+}
+
+(function restoreMeasureUrlState() {
+  var params = new URLSearchParams(window.location.search);
+  var q = params.get('q');
+  if (q) {
+    document.getElementById("m-search").value = q;
+    filterCards();
+  }
+})();
+
 function filterCards() {
   var q = (document.getElementById("m-search").value || "").trim().toLowerCase();
+  syncMeasureUrlState();
 
   if (!q) {
     // Empty search — show all cards
