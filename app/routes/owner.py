@@ -429,7 +429,22 @@ CUSTOMERS_PAGE = """{% extends 'base.html' %}
   </table></div>
 </div>
 {% endblock %}
-{% block extra_js %}<script>function filterRows(){var q=document.getElementById("srch").value.toLowerCase().trim();document.querySelectorAll(".crow").forEach(function(r){r.style.display=(!q||r.dataset.s.includes(q))?"":"none";});}const SECS=5*60;let last=Date.now();["click","keydown","mousemove","touchstart"].forEach(ev=>document.addEventListener(ev,()=>{last=Date.now();},{passive:true}));setInterval(()=>{if(Math.floor((Date.now()-last)/1000)>=SECS)window.location.href="/owner/login?expired=1";},5000);window.addEventListener("pageshow",function(e){if(e.persisted){fetch("/owner/logout",{method:"POST",keepalive:true}).finally(()=>{window.location.href="/owner/login";})}});</script>{% endblock %}
+{% block extra_js %}<script>
+function filterRows(){
+  var q=document.getElementById("srch").value.toLowerCase().trim();
+  document.querySelectorAll(".crow").forEach(function(r){r.style.display=(!q||r.dataset.s.includes(q))?"":"none";});
+  var params = new URLSearchParams(window.location.search);
+  if (q) params.set("q", q); else params.delete("q");
+  var newUrl = window.location.pathname + (params.toString() ? "?" + params.toString() : "");
+  history.replaceState(null, "", newUrl);
+}
+window.addEventListener("DOMContentLoaded", function(){
+  var params = new URLSearchParams(window.location.search);
+  var q = params.get("q");
+  if (q) { document.getElementById("srch").value = q; filterRows(); }
+});
+const SECS=5*60;let last=Date.now();["click","keydown","mousemove","touchstart"].forEach(ev=>document.addEventListener(ev,()=>{last=Date.now();},{passive:true}));setInterval(()=>{if(Math.floor((Date.now()-last)/1000)>=SECS)window.location.href="/owner/login?expired=1";},5000);window.addEventListener("pageshow",function(e){if(e.persisted){fetch("/owner/logout",{method:"POST",keepalive:true}).finally(()=>{window.location.href="/owner/login";})}});
+</script>{% endblock %}
 """
 
 WORK_PROGRESS_PAGE = """{% extends 'base.html' %}
