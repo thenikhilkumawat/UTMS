@@ -384,7 +384,18 @@ function saveOrder() {
     btn.textContent = "💾 Save Changes";
     if (d.ok) {
       showToast("✅ Order #{{ order.order_code }} saved!");
-      setTimeout(function() { window.location.href = "/owner/orders"; }, 900);
+      // Go back to wherever the employee came from (preserves their
+      // search/filter state, e.g. "?q=372") instead of a blank orders
+      // list — so bulk edits (372X series) don't require re-searching
+      // every single time.
+      var backUrl = "/owner/orders";
+      try {
+        var ref = document.referrer;
+        if (ref && new URL(ref).origin === window.location.origin && ref.indexOf("/owner/orders") !== -1) {
+          backUrl = ref;
+        }
+      } catch(e) {}
+      setTimeout(function() { window.location.href = backUrl; }, 900);
     } else {
       alert("Error: " + (d.error || "Save failed. Please try again."));
     }
