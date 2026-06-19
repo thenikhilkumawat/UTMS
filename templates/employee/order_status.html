@@ -604,13 +604,30 @@ function setTab(f, btn) {
   sortRows();
 }
 
-// Auto-select tab from URL param e.g. ?tab=pending
+// ── URL STATE SYNC ──────────────────────────────────
+// Keeps search text + active tab in the URL (?q=...&tab=...) so that
+// pressing Browser Back after opening an order restores the exact
+// search/filter state instead of resetting to a blank page.
+function syncUrlState() {
+  var q = document.getElementById("srch").value;
+  var params = new URLSearchParams(window.location.search);
+  if (q) params.set("q", q); else params.delete("q");
+  if (activeTab && activeTab !== "all") params.set("tab", activeTab); else params.delete("tab");
+  var newUrl = window.location.pathname + (params.toString() ? "?" + params.toString() : "");
+  history.replaceState(null, "", newUrl);
+}
+
+// Restore both tab AND search text from URL on page load
 (function() {
   var params = new URLSearchParams(window.location.search);
   var tab = params.get('tab');
+  var q   = params.get('q');
+  if (q) document.getElementById("srch").value = q;
   if (tab) {
     var btn = document.querySelector('[data-f="' + tab + '"]');
     if (btn) setTab(tab, btn);
+  } else if (q) {
+    filterRows();
   }
 })();
 
@@ -640,6 +657,7 @@ function filterRows() {
     row.style.display = (matchQ && matchF) ? "" : "none";
     if (expRow) expRow.style.display = "none";
   });
+  syncUrlState();
 }
 
 function toggleExpand(rowEl, expId) {
