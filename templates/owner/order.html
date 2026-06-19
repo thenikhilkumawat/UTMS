@@ -131,6 +131,38 @@
 var activeTab = "all";
 var currentAdminSort = "date";
 
+// ── URL STATE SYNC ──────────────────────────────────
+// Keeps search text + active tab in the URL (?q=...&tab=...) so that
+// when the employee navigates away (e.g. opens an order to edit) and
+// then presses Browser Back, their search/filter is restored exactly
+// as they left it — instead of resetting to a blank page.
+function syncUrlState() {
+  var q = document.getElementById("srch").value;
+  var params = new URLSearchParams(window.location.search);
+  if (q) params.set("q", q); else params.delete("q");
+  if (activeTab && activeTab !== "all") params.set("tab", activeTab); else params.delete("tab");
+  var newUrl = window.location.pathname + (params.toString() ? "?" + params.toString() : "");
+  history.replaceState(null, "", newUrl);
+}
+
+function restoreUrlState() {
+  var params = new URLSearchParams(window.location.search);
+  var q   = params.get("q");
+  var tab = params.get("tab");
+  if (q) document.getElementById("srch").value = q;
+  if (tab) {
+    activeTab = tab;
+    var btn = document.querySelector('.ftab[data-f="' + tab + '"]');
+    if (btn) {
+      document.querySelectorAll(".ftab").forEach(function(b) {
+        b.style.background = "#fff"; b.style.color = "var(--text-muted)"; b.style.borderColor = "var(--border)";
+      });
+      btn.style.background = "var(--accent)"; btn.style.color = "#fff"; btn.style.borderColor = "var(--accent)";
+    }
+  }
+  if (q || tab) filterRows();
+}
+
 function setTab(key, btn) {
   activeTab = key;
   document.querySelectorAll(".ftab").forEach(function(b) {
@@ -139,6 +171,7 @@ function setTab(key, btn) {
   btn.style.background = "var(--accent)"; btn.style.color = "#fff"; btn.style.borderColor = "var(--accent)";
   filterRows();
   adminSortRows();
+  syncUrlState();
 }
 
 function filterRows() {
@@ -150,7 +183,10 @@ function filterRows() {
     var matchF = activeTab === "all" || row.dataset.status === activeTab;
     row.style.display = (matchQ && matchF) ? "" : "none";
   });
+  syncUrlState();
 }
+
+document.addEventListener("DOMContentLoaded", restoreUrlState);
 
 function adminSort(sortKey, btn) {
   currentAdminSort = sortKey;
