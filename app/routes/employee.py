@@ -448,29 +448,45 @@ function openCamera() {{
 // devices, regardless of camera resolution or server config.
 function compressImage(file, maxDim, quality) {{
   return new Promise(function(resolve) {{
-    var img = new Image();
-    var reader = new FileReader();
-    reader.onload = function(e) {{
+    var settled = false;
+    var objectUrl = null;
+    function finish(result) {{
+      if (settled) return;
+      settled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      resolve(result);
+    }}
+    // Safety net: some low-RAM phones (especially with very high-megapixel
+    // cameras) can hang or silently fail during canvas compression. If
+    // compression doesn't finish within 6 seconds, just use the original
+    // photo instead of leaving the user stuck with no preview.
+    var timeoutId = setTimeout(function() {{ finish(file); }}, 6000);
+
+    try {{
+      objectUrl = URL.createObjectURL(file);  // lighter on memory than base64 (readAsDataURL)
+      var img = new Image();
       img.onload = function() {{
-        var w = img.width, h = img.height;
-        if (w > maxDim || h > maxDim) {{
-          if (w > h) {{ h = Math.round(h * maxDim / w); w = maxDim; }}
-          else       {{ w = Math.round(w * maxDim / h); h = maxDim; }}
-        }}
-        var canvas = document.createElement('canvas');
-        canvas.width = w; canvas.height = h;
-        var ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, w, h);
-        canvas.toBlob(function(blob) {{
-          if (!blob) {{ resolve(file); return; }}  // fallback to original if compression fails
-          resolve(new File([blob], (file.name || 'photo') + '.jpg', {{ type: 'image/jpeg' }}));
-        }}, 'image/jpeg', quality);
+        try {{
+          var w = img.width, h = img.height;
+          if (!w || !h) {{ clearTimeout(timeoutId); finish(file); return; }}
+          if (w > maxDim || h > maxDim) {{
+            if (w > h) {{ h = Math.round(h * maxDim / w); w = maxDim; }}
+            else       {{ w = Math.round(w * maxDim / h); h = maxDim; }}
+          }}
+          var canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          var ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          canvas.toBlob(function(blob) {{
+            clearTimeout(timeoutId);
+            if (!blob) {{ finish(file); return; }}
+            finish(new File([blob], (file.name || 'photo') + '.jpg', {{ type: 'image/jpeg' }}));
+          }}, 'image/jpeg', quality);
+        }} catch(e) {{ clearTimeout(timeoutId); finish(file); }}
       }};
-      img.onerror = function() {{ resolve(file); }};  // fallback to original on error
-      img.src = e.target.result;
-    }};
-    reader.onerror = function() {{ resolve(file); }};
-    reader.readAsDataURL(file);
+      img.onerror = function() {{ clearTimeout(timeoutId); finish(file); }};
+      img.src = objectUrl;
+    }} catch(e) {{ clearTimeout(timeoutId); finish(file); }}
   }});
 }}
 
