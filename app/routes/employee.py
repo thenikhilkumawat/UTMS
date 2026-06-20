@@ -972,6 +972,7 @@ def api_check_name_similar():
 
 
 
+@bp.route("/api/customers/search")
 def api_customer_search():
     q = request.args.get("q","").strip()
     if not q:
@@ -1309,7 +1310,7 @@ def order_status():
             "note":             o["note"] or "",
             "overdue":          overdue,
             "due_soon":         due_soon,
-            "days_left":        days_left if (dl and not overdue) else 999,
+            "days_left":        days_left if dl else 9999,
             "delivered_at":     (o["delivered_at"] if "delivered_at" in o.keys() else "") or "",
             "delivered_at_fmt": fmtd(((o["delivered_at"] if "delivered_at" in o.keys() else "") or "")[:10]),
             "garments":         items,
