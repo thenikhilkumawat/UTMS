@@ -114,13 +114,36 @@
         </select>
       </div>
 
-      <!-- Order Code (shown when Advance is selected) -->
+      <!-- Order Code (shown for Advance / Payment / Remaining Amount) -->
       <div id="f-order-code-row" style="display:none;margin-bottom:10px;">
-        <label style="font-size:10px;font-weight:700;text-transform:uppercase;color:#6366f1;display:block;margin-bottom:4px;">
-          <span class="lang-en">Order Code (for Advance)</span><span class="lang-hi" style="display:none;">ऑर्डर कोड (अग्रिम के लिए)</span>
+        <label id="f-order-code-label" style="font-size:10px;font-weight:700;text-transform:uppercase;color:#6366f1;display:block;margin-bottom:4px;">
+          <span class="lang-en">Order Code</span><span class="lang-hi" style="display:none;">ऑर्डर कोड</span>
         </label>
-        <input type="text" id="f-order-code" placeholder="#3605"
+        <input type="text" id="f-order-code" placeholder="#3605" oninput="onOrderCodeInput()"
           style="width:100%;padding:10px 12px;font-size:15px;font-weight:800;border:2px solid #6366f1;border-radius:12px;background:#eef2ff;color:#4338ca;">
+        <!-- Live payment status display -->
+        <div id="f-order-status" style="display:none;margin-top:8px;padding:10px 12px;border-radius:10px;background:#fff;border:1.5px solid #c7d2fe;font-size:13px;">
+          <div style="font-weight:800;color:#1e1b4b;margin-bottom:4px;" id="f-order-status-name"></div>
+          <div style="display:flex;justify-content:space-between;color:#16a34a;font-weight:700;">
+            <span class="lang-en">Paid so far</span><span class="lang-hi" style="display:none;">अब तक भुगतान</span>
+            <span id="f-order-status-paid"></span>
+          </div>
+          <div style="display:flex;justify-content:space-between;color:#dc2626;font-weight:700;margin-top:2px;">
+            <span class="lang-en">Remaining</span><span class="lang-hi" style="display:none;">बकाया</span>
+            <span id="f-order-status-remaining"></span>
+          </div>
+        </div>
+        <div id="f-order-status-error" style="display:none;margin-top:6px;color:#dc2626;font-size:12px;font-weight:700;"></div>
+      </div>
+
+      <!-- Employee picker (shown when expense category is Salary) -->
+      <div id="f-employee-row" style="display:none;margin-bottom:10px;">
+        <label style="font-size:10px;font-weight:700;text-transform:uppercase;color:#dc2626;display:block;margin-bottom:4px;">
+          <span class="lang-en">Employee</span><span class="lang-hi" style="display:none;">कर्मचारी</span>
+        </label>
+        <select id="f-employee" style="width:100%;padding:10px 12px;font-size:14px;font-weight:700;border:2px solid #dc2626;border-radius:12px;background:#fef2f2;color:#7f1d1d;">
+          <option value="">-- चुनें --</option>
+        </select>
       </div>
 
       <!-- Mode -->
@@ -287,6 +310,7 @@ function setType(t) {
   be.style.borderColor = t==="expense" ? "#dc2626" : "var(--border)";
   document.getElementById("f-submit").style.background = t==="income" ? "#16a34a" : "#dc2626";
   populateCats();
+  onCategoryChange();
 }
 
 function setMode(m) {
@@ -327,16 +351,22 @@ function addEntry() {
   var cat = document.getElementById("f-category").value;
   var note= document.getElementById("f-note").value.trim();
   var orderCode = (document.getElementById("f-order-code").value || "").trim().replace(/^#/,"");
+  var empSel = document.getElementById("f-employee");
+  var employeeName = empSel ? empSel.value : "";
+  var catLower = cat.toLowerCase();
+  var needsOrderCode = ["advance","payment","remaining amount"].indexOf(catLower) !== -1;
+
   if (amt <= 0) { showToast("रकम दर्ज करें","warning"); return; }
   if (!cat)     { showToast("श्रेणी चुनें","warning"); return; }
-  if (cat.toLowerCase() === "advance" && !orderCode) { showToast("अग्रिम के लिए ऑर्डर कोड दर्ज करें","warning"); return; }
+  if (needsOrderCode && !orderCode) { showToast("ऑर्डर कोड दर्ज करें","warning"); return; }
+  if (txType === "expense" && catLower === "salary" && !employeeName) { showToast("कर्मचारी चुनें","warning"); return; }
 
   var btn = document.getElementById("f-submit");
   btn.disabled = true; btn.textContent = "सेव हो रहा है...";
 
   fetch("/api/finance/add", {
     method:"POST", headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({tx_type:txType, amount:amt, category:cat, mode:payMode, note:note, order_code:orderCode})
+    body: JSON.stringify({tx_type:txType, amount:amt, category:cat, mode:payMode, note:note, order_code:orderCode, employee_name:employeeName})
   }).then(function(r){ return r.json(); }).then(function(d){
     btn.disabled = false;
     btn.innerHTML = '✅ <span class="lang-en">Add Entry</span><span class="lang-hi" style="display:none;">जोड़ें</span>';
@@ -354,11 +384,83 @@ function addEntry() {
   });
 }
 
+// Debounced live lookup of order's paid/remaining when order code is typed
+var _orderStatusTimer = null;
+function onOrderCodeInput() {
+  clearTimeout(_orderStatusTimer);
+  _orderStatusTimer = setTimeout(fetchOrderStatus, 400);
+}
+
+function fetchOrderStatus() {
+  var code = (document.getElementById("f-order-code").value || "").trim().replace(/^#/,"");
+  var statusBox = document.getElementById("f-order-status");
+  var errBox    = document.getElementById("f-order-status-error");
+  statusBox.style.display = "none";
+  errBox.style.display = "none";
+  if (!code) return;
+
+  fetch("/api/orders/payment-status/" + encodeURIComponent(code))
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      var currentCode = (document.getElementById("f-order-code").value || "").trim().replace(/^#/,"");
+      if (currentCode !== code) return;  // stale response, input changed since
+      if (!d.ok) {
+        errBox.style.display = "block";
+        errBox.textContent = d.error || "Order not found";
+        return;
+      }
+      document.getElementById("f-order-status-name").textContent      = d.customer_name + " · #" + d.order_code;
+      document.getElementById("f-order-status-paid").textContent      = "₹" + d.advance_paid.toFixed(0) + " / ₹" + d.payable_amount.toFixed(0);
+      document.getElementById("f-order-status-remaining").textContent = "₹" + d.remaining.toFixed(0);
+      statusBox.style.display = "block";
+
+      // For "Remaining Amount" category — auto-fill the amount field with
+      // the exact remaining due, so the employee doesn't have to calculate
+      // or retype it manually.
+      var cat = (document.getElementById("f-category").value || "").toLowerCase();
+      if (cat === "remaining amount") {
+        document.getElementById("f-amount").value = d.remaining > 0 ? d.remaining : "";
+      }
+    })
+    .catch(function(){
+      errBox.style.display = "block";
+      errBox.textContent = "Lookup failed, try again";
+    });
+}
+
+function loadEmployeesForFinance() {
+  fetch("/api/employees-list")
+    .then(function(r){ return r.json(); })
+    .then(function(list){
+      var sel = document.getElementById("f-employee");
+      sel.innerHTML = '<option value="">-- चुनें --</option>';
+      (list || []).forEach(function(e){
+        var opt = document.createElement("option");
+        opt.value = e.name;
+        opt.textContent = e.hindi_name ? (e.name + " / " + e.hindi_name) : e.name;
+        sel.appendChild(opt);
+      });
+    });
+}
+
 function onCategoryChange() {
   var cat = (document.getElementById("f-category").value || "").toLowerCase();
   var row = document.getElementById("f-order-code-row");
-  row.style.display = (cat === "advance") ? "block" : "none";
-  if (cat !== "advance") document.getElementById("f-order-code").value = "";
+  var needsOrderCode = (cat === "advance" || cat === "payment" || cat === "remaining amount");
+  row.style.display = needsOrderCode ? "block" : "none";
+  if (!needsOrderCode) {
+    document.getElementById("f-order-code").value = "";
+    document.getElementById("f-order-status").style.display = "none";
+    document.getElementById("f-order-status-error").style.display = "none";
+  }
+
+  // Employee picker only for expense → Salary
+  var empRow = document.getElementById("f-employee-row");
+  var showEmp = (txType === "expense" && cat === "salary");
+  empRow.style.display = showEmp ? "block" : "none";
+  if (showEmp && document.getElementById("f-employee").options.length <= 1) {
+    loadEmployeesForFinance();
+  }
 }
 
 document.addEventListener("DOMContentLoaded", function(){
