@@ -1068,11 +1068,6 @@ function closeUploadPopup() {
   document.getElementById("upload-iframe").src = "";
 }
 
-function closeUploadPopup() {
-  document.getElementById("upload-popup").style.display = "none";
-  document.getElementById("upload-iframe").src = "";
-}
-
 function addGarment() {
   const type=document.getElementById("g_type").value.trim();
   const qty=parseInt(document.getElementById("g_qty").value)||1;
@@ -1267,13 +1262,30 @@ function getActiveUploadCode() {
 }
 
 function buildQR(boxId, linkId) {
-  const box=document.getElementById(boxId); if(!box) return;
+  const box=document.getElementById(boxId);
+  if(!box) { console.warn("[buildQR] box element not found:", boxId); return; }
   box.innerHTML="";
   const code = getActiveUploadCode();
+  if (!code || code === "None" || code === "" || code === "0") {
+    console.warn("[buildQR] invalid upload code:", code);
+    box.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">Order code not ready yet</div>';
+    return;
+  }
   const url=window.location.origin+"/upload/"+code;
   const link=document.getElementById(linkId); if(link) link.href=url;
-  try{new QRCode(box,{text:url,width:170,height:170,colorDark:"#111827",colorLight:"#ffffff"});}
-  catch(e){box.innerHTML=`<a href="${url}">${url}</a>`;}
+  if (typeof QRCode === "undefined") {
+    console.error("[buildQR] QRCode library not loaded! Falling back to link.");
+    box.innerHTML=`<a href="${url}" target="_blank">${url}</a>`;
+    return;
+  }
+  try{
+    new QRCode(box,{text:url,width:170,height:170,colorDark:"#111827",colorLight:"#ffffff"});
+    console.log("[buildQR] QR code generated for:", url);
+  }
+  catch(e){
+    console.error("[buildQR] QRCode generation failed:", e);
+    box.innerHTML=`<a href="${url}" target="_blank">${url}</a>`;
+  }
 }
 
 function loadImages(previewId) {
@@ -1302,6 +1314,8 @@ function loadImages(previewId) {
       };
       box.appendChild(el);
     });
+  }).catch(err=>{
+    console.error("[loadImages] failed for code="+code+":", err);
   });
 }
 let imgPreviewId = "img-preview";
