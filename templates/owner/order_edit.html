@@ -41,7 +41,7 @@
       </div>
       <div>
         <label style="font-size:12px;font-weight:700;color:var(--text-secondary);display:block;margin-bottom:4px;">Address</label>
-        <input id="caddress" value="{{ order.caddress or '' }}" placeholder="Address"
+        <input id="caddress" value="{{ order.caddress or '' }}" placeholder="Address" data-autocorrect-address autocomplete="off"
           style="width:100%;padding:9px 12px;border:2px solid var(--border);border-radius:10px;font-size:13px;font-weight:600;outline:none;box-sizing:border-box;">
       </div>
     </div>
