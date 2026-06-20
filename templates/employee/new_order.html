@@ -743,6 +743,13 @@ function searchCustomers() {
           </div>
           <div style="font-size:13px;font-weight:700;color:var(--accent);">Select →</div>
         </div>`).join("");
+    })
+    .catch(err => {
+      box.innerHTML = `<div style="padding:24px;text-align:center;color:var(--danger);">
+        <div style="font-size:32px;margin-bottom:8px;">⚠️</div>
+        <div style="font-weight:700;font-size:15px;">Search failed</div>
+        <div style="font-size:13px;margin-top:6px;color:var(--text-muted);">Please try again or check your connection</div></div>`;
+      console.error("[customer search] failed:", err);
     });
 }
 
