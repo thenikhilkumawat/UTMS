@@ -2603,6 +2603,31 @@ def finance():
     )
 
 
+@bp.route("/api/orders/payment-status/<order_code>")
+def api_order_payment_status(order_code):
+    """Returns paid/remaining amounts for an order — used by the Finance
+    page to show live payment status when an order code is typed for
+    Advance / Payment / Remaining Amount categories."""
+    code = order_code.strip().lstrip("#")
+    conn = get_db()
+    o = conn.execute(
+        "SELECT o.order_code, c.name as cname, o.payable_amount, o.advance_paid, o.remaining "
+        "FROM orders o JOIN customers c ON c.id = o.customer_id WHERE o.order_code=?",
+        (code,)
+    ).fetchone()
+    conn.close()
+    if not o:
+        return jsonify({"ok": False, "error": f"Order #{code} not found"})
+    return jsonify({
+        "ok": True,
+        "order_code": o["order_code"],
+        "customer_name": o["cname"],
+        "payable_amount": float(o["payable_amount"] or 0),
+        "advance_paid":   float(o["advance_paid"] or 0),
+        "remaining":      float(o["remaining"] or 0),
+    })
+
+
 @bp.route("/api/finance/add", methods=["POST"])
 def api_finance_add():
     data      = request.get_json(silent=True) or {}
@@ -2613,11 +2638,14 @@ def api_finance_add():
     tx_date   = data.get("tx_date", date.today().isoformat())
     note      = data.get("note","").strip()
     order_code= data.get("order_code","").strip().lstrip("#")
+    employee_name = data.get("employee_name","").strip()
 
     if amount <= 0 or not category:
         return jsonify({"ok": False, "error": "Amount and category required"})
     if tx_type not in ("income","expense"):
         return jsonify({"ok": False, "error": "Invalid type"})
+
+    cat_lower = category.lower()
 
     conn = get_db()
     order_id = None
@@ -2629,9 +2657,12 @@ def api_finance_add():
             conn.close()
             return jsonify({"ok": False, "error": f"Order #{order_code} not found"})
 
-    # If category is Advance, update order's advance_paid and remaining
-    is_advance = category.lower() == "advance"
-    if is_advance and order_id:
+    # Advance / Payment / Remaining Amount all represent money received
+    # against an order at different stages (booking deposit, mid-process
+    # payment, final settlement) — all three update the order's payment
+    # tracking the same way.
+    is_order_payment = cat_lower in ("advance", "payment", "remaining amount")
+    if is_order_payment and order_id:
         old_advance  = float(o["advance_paid"] or 0)
         old_remaining= float(o["remaining"] or 0)
         new_advance  = old_advance + amount
@@ -2640,7 +2671,20 @@ def api_finance_add():
             UPDATE orders SET advance_paid=?, remaining=? WHERE id=?
         """, (new_advance, new_remaining, order_id))
         if not note:
-            note = f"Advance for order #{order_code}"
+            note = f"{category} for order #{order_code}"
+
+    # Salary expense — when an employee is selected, also log it as a
+    # salary advance so it auto-deducts on the Owner Salary page (same
+    # table the Salary page already reads from).
+    if tx_type == "expense" and cat_lower == "salary" and employee_name:
+        today = date.today().isoformat()
+        now0  = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        conn.execute(
+            "INSERT INTO salary_advances(employee_name,amount,note,advance_date,created_at) VALUES(?,?,?,?,?)",
+            (employee_name, amount, note or "Finance page entry", today, now0)
+        )
+        if not note:
+            note = f"Salary — {employee_name}"
 
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     conn.execute("""
@@ -2750,10 +2794,27 @@ def public_finance_categories():
     """Public endpoint - returns finance categories for employee use."""
     income_cats  = get_setting("finance_income_cats",  "advance,payment,alteration,other income").split(",")
     expense_cats = get_setting("finance_expense_cats", "thread,buttons,fabric,electricity,rent,salary,transport,maintenance,other expense").split(",")
+    income_cats  = [c.strip() for c in income_cats  if c.strip()]
+    expense_cats = [c.strip() for c in expense_cats if c.strip()]
+    # Always ensure "remaining amount" is available, even if the income
+    # categories were customized before this feature existed.
+    if not any(c.lower() == "remaining amount" for c in income_cats):
+        income_cats.append("remaining amount")
     return jsonify({
-        "income":  [c.strip() for c in income_cats  if c.strip()],
-        "expense": [c.strip() for c in expense_cats if c.strip()]
+        "income":  income_cats,
+        "expense": expense_cats
     })
+
+
+@bp.route("/api/employees-list")
+def api_employees_list():
+    """Active employee names for dropdowns (e.g. Finance page Salary picker)."""
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT id, name, COALESCE(hindi_name,'') as hindi_name FROM employees WHERE active=1 ORDER BY name"
+    ).fetchall()
+    conn.close()
+    return jsonify([{"id": r["id"], "name": r["name"], "hindi_name": r["hindi_name"]} for r in rows])
 
 
 @bp.route("/api/log-notify", methods=["POST"])
