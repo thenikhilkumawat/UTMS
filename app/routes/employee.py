@@ -441,12 +441,50 @@ function openCamera() {{
   document.getElementById('cam-input').click();
 }}
 
+// Compress + resize image client-side before upload.
+// Raw camera photos can be 5-20MB depending on the phone, which can hit
+// server upload limits and fail silently on some devices but not others.
+// Resizing to a sane max dimension + JPEG compression fixes this for ALL
+// devices, regardless of camera resolution or server config.
+function compressImage(file, maxDim, quality) {{
+  return new Promise(function(resolve) {{
+    var img = new Image();
+    var reader = new FileReader();
+    reader.onload = function(e) {{
+      img.onload = function() {{
+        var w = img.width, h = img.height;
+        if (w > maxDim || h > maxDim) {{
+          if (w > h) {{ h = Math.round(h * maxDim / w); w = maxDim; }}
+          else       {{ w = Math.round(w * maxDim / h); h = maxDim; }}
+        }}
+        var canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        canvas.toBlob(function(blob) {{
+          if (!blob) {{ resolve(file); return; }}  // fallback to original if compression fails
+          resolve(new File([blob], (file.name || 'photo') + '.jpg', {{ type: 'image/jpeg' }}));
+        }}, 'image/jpeg', quality);
+      }};
+      img.onerror = function() {{ resolve(file); }};  // fallback to original on error
+      img.src = e.target.result;
+    }};
+    reader.onerror = function() {{ resolve(file); }};
+    reader.readAsDataURL(file);
+  }});
+}}
+
 document.getElementById('cam-input').addEventListener('change', function() {{
   var file = this.files[0];
   if (!file) return;
   if (capturedFiles.length >= 5) return;
-  capturedFiles.push(file);
-  renderPreviews();
+  // Show immediate feedback while compressing (can take a second on older phones)
+  var bigBtn = document.getElementById('big-cam-btn');
+  if (bigBtn) bigBtn.innerHTML = '<span class="icon">⏳</span>Processing photo...';
+  compressImage(file, 1600, 0.8).then(function(compressed) {{
+    capturedFiles.push(compressed);
+    renderPreviews();
+  }});
 }});
 
 function renderPreviews() {{
@@ -482,7 +520,12 @@ function renderPreviews() {{
   }}
 
   // Toggle big button
-  bigBtn.style.display = capturedFiles.length === 0 ? 'block' : 'none';
+  if (capturedFiles.length === 0) {{
+    bigBtn.innerHTML = '<span class="icon">📸</span>Tap to take a photo';
+    bigBtn.style.display = 'block';
+  }} else {{
+    bigBtn.style.display = 'none';
+  }}
 
   // Enable upload only when photos added
   uploadBtn.disabled = capturedFiles.length === 0;
