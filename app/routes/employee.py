@@ -404,9 +404,35 @@ def upload_images(order_code):
 
   input[type=file] {{ display: none; }}
   .uploading {{ text-align: center; padding: 20px; color: #6366f1; font-weight: 600; }}
+
+  /* In-page camera viewfinder — avoids launching external camera app,
+     which kills the page's JS on low-RAM phones (background process gets
+     killed by Android to free memory, losing all captured photo state) */
+  .cam-modal {{ display: none; position: fixed; inset: 0; background: #000; z-index: 9000; flex-direction: column; }}
+  .cam-modal.open {{ display: flex; }}
+  .cam-video-wrap {{ flex: 1; position: relative; overflow: hidden; background: #000; }}
+  .cam-video-wrap video {{ width: 100%; height: 100%; object-fit: cover; }}
+  .cam-controls {{ background: #000; padding: 20px 24px 28px; display: flex; align-items: center; justify-content: space-between; }}
+  .cam-close-btn {{ background: rgba(255,255,255,0.15); border: none; color: #fff; width: 44px; height: 44px; border-radius: 50%; font-size: 20px; cursor: pointer; }}
+  .cam-shutter-btn {{ width: 70px; height: 70px; border-radius: 50%; background: #fff; border: 4px solid rgba(255,255,255,0.4); cursor: pointer; }}
+  .cam-shutter-btn:active {{ background: #e5e7eb; }}
+  .cam-spacer {{ width: 44px; }}
+  .cam-error-box {{ color: #fff; text-align: center; padding: 30px 20px; font-size: 14px; }}
 </style>
 </head>
 <body>
+<!-- In-page camera viewfinder modal -->
+<div class="cam-modal" id="cam-modal">
+  <div class="cam-video-wrap">
+    <video id="cam-video" autoplay playsinline muted></video>
+    <div id="cam-error" class="cam-error-box" style="display:none;"></div>
+  </div>
+  <div class="cam-controls">
+    <button class="cam-close-btn" onclick="closeCameraView()">✕</button>
+    <button class="cam-shutter-btn" id="cam-shutter" onclick="capturePhoto()"></button>
+    <div class="cam-spacer"></div>
+  </div>
+</div>
 <div class="card">
   <h2>📷 Order #{order_code}</h2>
   <p class="subtitle">Take photos to attach to this order</p>
@@ -434,11 +460,82 @@ def upload_images(order_code):
 
 <script>
 var capturedFiles = [];
+var camStream = null;
 
+// In-page camera viewfinder. We avoid launching the phone's external camera
+// APP (via <input capture>) because on lower-RAM phones, Android often kills
+// the backgrounded browser tab while the camera app is open to free memory —
+// when the user returns, the page silently reloads and ALL captured photos
+// + JS state are lost, even though nothing visibly "crashed". Showing the
+// camera feed directly inside the page (getUserMedia) keeps everything in
+// one continuous JS context, so this can never happen.
 function openCamera() {{
   if (capturedFiles.length >= 5) return;
-  document.getElementById('cam-input').value = '';
-  document.getElementById('cam-input').click();
+
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {{
+    // Very old browser with no camera API support — fall back to file picker
+    document.getElementById('cam-input').value = '';
+    document.getElementById('cam-input').click();
+    return;
+  }}
+
+  var modal = document.getElementById('cam-modal');
+  var video = document.getElementById('cam-video');
+  var errBox = document.getElementById('cam-error');
+  var shutter = document.getElementById('cam-shutter');
+  errBox.style.display = 'none';
+  shutter.style.display = 'block';
+  modal.classList.add('open');
+
+  navigator.mediaDevices.getUserMedia({{
+    video: {{ facingMode: {{ ideal: 'environment' }}, width: {{ ideal: 1920 }}, height: {{ ideal: 1080 }} }},
+    audio: false
+  }}).then(function(stream) {{
+    camStream = stream;
+    video.srcObject = stream;
+  }}).catch(function(err) {{
+    console.error('[camera] getUserMedia failed:', err);
+    shutter.style.display = 'none';
+    errBox.style.display = 'block';
+    errBox.innerHTML = '⚠️ Camera access nahi mili.<br><br>' +
+      '<button onclick="closeCameraView();document.getElementById(\\'cam-input\\').value=\\'\\';document.getElementById(\\'cam-input\\').click();" ' +
+      'style="background:#6366f1;color:#fff;border:none;padding:12px 20px;border-radius:10px;font-weight:700;font-size:14px;margin-top:10px;">' +
+      '📁 Gallery se chuno</button>';
+  }});
+}}
+
+function closeCameraView() {{
+  var modal = document.getElementById('cam-modal');
+  modal.classList.remove('open');
+  if (camStream) {{
+    camStream.getTracks().forEach(function(t) {{ t.stop(); }});
+    camStream = null;
+  }}
+  document.getElementById('cam-video').srcObject = null;
+}}
+
+function capturePhoto() {{
+  var video = document.getElementById('cam-video');
+  if (!video.videoWidth || !video.videoHeight) return;  // not ready yet
+
+  var maxDim = 1600;
+  var w = video.videoWidth, h = video.videoHeight;
+  if (w > maxDim || h > maxDim) {{
+    if (w > h) {{ h = Math.round(h * maxDim / w); w = maxDim; }}
+    else       {{ w = Math.round(w * maxDim / h); h = maxDim; }}
+  }}
+  var canvas = document.createElement('canvas');
+  canvas.width = w; canvas.height = h;
+  var ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0, w, h);
+
+  canvas.toBlob(function(blob) {{
+    closeCameraView();
+    if (!blob) {{ return; }}
+    var file = new File([blob], 'photo_' + Date.now() + '.jpg', {{ type: 'image/jpeg' }});
+    capturedFiles.push(file);
+    renderPreviews();
+  }}, 'image/jpeg', 0.85);
 }}
 
 // Compress + resize image client-side before upload.
@@ -490,11 +587,13 @@ function compressImage(file, maxDim, quality) {{
   }});
 }}
 
+// Fallback file input — used only if getUserMedia is unsupported or denied.
+// No "capture" attribute forced here in JS-triggered fallback path above,
+// so this naturally shows the OS picker (camera + gallery options both).
 document.getElementById('cam-input').addEventListener('change', function() {{
   var file = this.files[0];
   if (!file) return;
   if (capturedFiles.length >= 5) return;
-  // Show immediate feedback while compressing (can take a second on older phones)
   var bigBtn = document.getElementById('big-cam-btn');
   if (bigBtn) bigBtn.innerHTML = '<span class="icon">⏳</span>Processing photo...';
   compressImage(file, 1600, 0.8).then(function(compressed) {{
