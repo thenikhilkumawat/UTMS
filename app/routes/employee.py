@@ -4,6 +4,7 @@ from database import get_db, get_setting, next_order_code, peek_order_code, next
 import json, os, time
 from config import Config
 from app.common_names import COMMON_NAMES_LOOKUP
+from app.villages_sikar import VILLAGE_LOOKUP
 
 bp = Blueprint("employee", __name__)
 
@@ -1128,6 +1129,57 @@ def api_check_name_similar():
 
     return jsonify({"suggestions": final[:6]})
 
+
+@bp.route("/api/address/check-similar")
+def api_check_address_similar():
+    """Village/town autosuggest for address fields — matches the LAST
+    comma-separated chunk of whatever the employee has typed against the
+    Sikar district village dictionary (1170+ villages across all 6
+    tehsils, source: Census 2011). Returns canonical village name +
+    tehsil so duplicate village names across tehsils stay distinguishable."""
+    raw = request.args.get("q", "").strip()
+    if len(raw) < 2:
+        return jsonify({"suggestions": []})
+
+    def normalize(s):
+        return " ".join(s.lower().strip().split())
+
+    def edit_distance(a, b):
+        if len(a) < len(b): a, b = b, a
+        if len(b) == 0: return len(a)
+        prev = list(range(len(b) + 1))
+        for i, ca in enumerate(a):
+            cur = [i + 1]
+            for j, cb in enumerate(b):
+                cur.append(min(prev[j+1]+1, cur[j]+1, prev[j]+(ca != cb)))
+            prev = cur
+        return prev[-1]
+
+    norm_input = normalize(raw)
+    input_len  = len(norm_input)
+    threshold  = max(1, input_len // 4)
+
+    suggestions = []
+    for norm_village, entries in VILLAGE_LOOKUP.items():
+        is_prefix = norm_village.startswith(norm_input)
+        if not is_prefix:
+            if abs(len(norm_village) - input_len) > threshold:
+                continue
+            dist = edit_distance(norm_input, norm_village)
+            if dist > threshold:
+                continue
+        else:
+            dist = 0
+        for canonical, tehsil in entries:
+            suggestions.append({
+                "name": canonical, "tehsil": tehsil,
+                "score": (0 if is_prefix else dist + 1),
+            })
+        if len(suggestions) >= 60:
+            break
+
+    suggestions.sort(key=lambda x: (x["score"], len(x["name"])))
+    return jsonify({"suggestions": suggestions[:8]})
 
 
 @bp.route("/api/customers/search")
