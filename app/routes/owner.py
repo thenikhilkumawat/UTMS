@@ -2739,14 +2739,12 @@ def past_orders_save():
                     VALUES(?,?,?,?,?,?,?)
                 """, (order_id, gtype, qty, rate, qty*rate, _json.dumps(meas), notes))
 
-        # 5. Finance (single entry only)
-        finance_date = order_date or delivery_date or now_str[:10]
-        if advance_paid > 0:
-            conn.execute("""
-                INSERT INTO finance(tx_date,tx_type,category,amount,mode,order_id,note,created_by,created_at)
-                VALUES(?,'income','payment',?,?,?,?,'owner',?)
-            """, (finance_date, advance_paid, payment_mode, order_id,
-                  "Past order #" + order_code, now_str))
+        # NOTE: Past orders are historical records only — the money for
+        # these orders was already received outside/before UTMS, so we do
+        # NOT log a finance entry here. Doing so would double-count income
+        # in Finance reports (showing old money as if received today).
+        # The order's own advance_paid/remaining fields still get set
+        # correctly above, for accurate order-level payment reference.
 
         conn.commit()
         conn.close()
