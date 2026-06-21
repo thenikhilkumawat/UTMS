@@ -12,7 +12,7 @@
   </div>
 </div>
 
-<div class="page-body" style="padding:16px 24px;max-width:960px;">
+<div class="page-body" style="padding:16px 24px;max-width:960px;margin:0 auto;">
 
   <!-- Flash messages -->
   {% with messages = get_flashed_messages(with_categories=true) %}
@@ -41,7 +41,7 @@
       </div>
       <div>
         <label style="font-size:12px;font-weight:700;color:var(--text-secondary);display:block;margin-bottom:4px;">Address</label>
-        <input id="caddress" value="{{ order.caddress or '' }}" placeholder="Address" data-autocorrect-address autocomplete="off"
+        <input id="caddress" value="{{ order.caddress or '' }}" placeholder="Address"
           style="width:100%;padding:9px 12px;border:2px solid var(--border);border-radius:10px;font-size:13px;font-weight:600;outline:none;box-sizing:border-box;">
       </div>
     </div>
@@ -135,6 +135,7 @@
         <input type="number" id="advance_paid" step="1" min="0" value="{{ order.advance_paid|int if order.advance_paid else 0 }}"
           oninput="onAdvanceChange()"
           style="width:100%;padding:9px 12px;border:2px solid var(--border);border-radius:10px;font-size:14px;font-weight:800;outline:none;box-sizing:border-box;color:#16a34a;">
+        <div id="advance-warning" style="display:none;color:#dc2626;font-size:11px;font-weight:700;margin-top:4px;"></div>
       </div>
     </div>
     <div style="background:#f8fafc;border-radius:10px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;">
@@ -327,6 +328,17 @@ function updateRemainingDisplay() {
   var el      = document.getElementById("remaining-display");
   el.textContent   = "₹" + Math.round(rem);
   el.style.color   = rem > 0 ? "#dc2626" : "#16a34a";
+
+  var advInput = document.getElementById("advance_paid");
+  var warnBox  = document.getElementById("advance-warning");
+  if (adv > payable && payable > 0) {
+    advInput.style.borderColor = "#dc2626";
+    warnBox.style.display = "block";
+    warnBox.textContent = "⚠️ Advance can't be more than the order amount (₹" + Math.round(payable) + ")";
+  } else {
+    advInput.style.borderColor = "var(--border)";
+    warnBox.style.display = "none";
+  }
 }
 
 // ─── SAVE ──────────────────────────────────────────────────
@@ -337,6 +349,12 @@ function saveOrder() {
   var payable   = parseFloat(document.getElementById("payable_amount").value) || 0;
   var advance   = parseFloat(document.getElementById("advance_paid").value) || 0;
   var remaining = Math.max(0, payable - advance);
+
+  if (advance > payable && payable > 0) {
+    alert("Advance Paid (₹" + Math.round(advance) + ") can't be more than the order amount (₹" + Math.round(payable) + ").\n\nPlease correct it before saving.");
+    document.getElementById("advance_paid").focus();
+    return;
+  }
 
   var filteredGarments = garments.filter(function(g) { return g.type && g.type.trim() !== ""; });
   if (filteredGarments.length === 0) {
