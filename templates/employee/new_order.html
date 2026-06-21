@@ -130,6 +130,10 @@
         <div id="garment-count-row" style="display:none;margin-top:10px;padding:10px 14px;background:#f0f9ff;border-radius:8px;font-size:13px;font-weight:600;color:var(--accent);">
           <span id="g-count-text"></span>
         </div>
+        <button id="g-continue-btn" onclick="switchGarmentPhase('garments','measure')"
+          style="display:none;width:100%;margin-top:14px;padding:14px;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;">
+          ✅ Sab kapde add ho gaye — Ab Measurement bharo →
+        </button>
       </div>
     </div>
     <div style="display:flex;justify-content:space-between;">
@@ -177,7 +181,7 @@
         <div class="form-grid">
           <div class="field-wrap"><label>Customer Name <span style="color:var(--danger);">*</span></label><input type="text" id="n_name" data-tp="customer_name" data-autocorrect-name autocomplete="off"></div>
           <div class="field-wrap"><label>Mobile Number <span style="color:var(--danger);">*</span></label><input type="tel" id="n_mobile" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" required oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)"></div>
-          <div class="field-wrap full"><label data-t="address">Address</label><input type="text" id="n_address" data-autocorrect-address autocomplete="off"></div>
+          <div class="field-wrap full"><label data-t="address">Address</label><input type="text" id="n_address"></div>
           <div class="field-wrap"><label>Order Date</label><input type="date" id="n_odate"></div>
           <div class="field-wrap">
             <label>Delivery Date <span style="color:var(--danger);">*</span> <a href="https://calendar.google.com" target="_blank" onclick="openCalendar(event)" style="font-size:10px;color:var(--accent);margin-left:6px;font-weight:600;text-decoration:none;">📅 Calendar</a></label>
@@ -321,6 +325,10 @@
         <div id="existing-garment-count-row" style="display:none;margin-top:10px;padding:10px 14px;background:#f0f9ff;border-radius:8px;font-size:13px;font-weight:600;color:var(--accent);">
           <span id="eg-count-text"></span>
         </div>
+        <button id="eg-continue-btn" onclick="switchGarmentPhase('existingGarments','measure')"
+          style="display:none;width:100%;margin-top:14px;padding:14px;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;">
+          ✅ Sab kapde add ho gaye — Ab Measurement bharo →
+        </button>
       </div>
     </div>
     <div style="display:flex;justify-content:space-between;">
@@ -363,7 +371,7 @@
         <div class="form-grid">
           <div class="field-wrap"><label data-t="customer_name">Name</label><input type="text" id="e_name" data-autocorrect-name autocomplete="off"></div>
           <div class="field-wrap"><label data-t="mobile">Mobile</label><input type="tel" id="e_mobile" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)"></div>
-          <div class="field-wrap full"><label data-t="address">Address</label><input type="text" id="e_address" data-autocorrect-address autocomplete="off"></div>
+          <div class="field-wrap full"><label data-t="address">Address</label><input type="text" id="e_address"></div>
           <div class="field-wrap"><label>Order Date</label><input type="date" id="e_odate"></div>
           <div class="field-wrap">
             <label>Delivery Date <a href="https://calendar.google.com" target="_blank" onclick="openCalendar(event)" style="font-size:10px;color:var(--accent);margin-left:6px;font-weight:600;text-decoration:none;">📅 Calendar</a></label>
@@ -589,6 +597,11 @@ let ecCustomerData = null;
 // Shared garment list (used by both flows)
 let garments = [];
 let existingGarments = [];
+// Two-phase garment UX: 'select' = quick add-all-garments list (no
+// measurements shown yet, so nothing gets forgotten before measurements
+// begin); 'measure' = full cards with measurement fields, one per garment.
+let garmentsPhase = 'select';
+let existingGarmentsPhase = 'select';
 
 // ── DATE HELPERS ─────────────────────────
 function fmtDate(d) {
@@ -675,6 +688,13 @@ function goNewStep(n) {
 
 function validateGarments(flow) {
   if (!garments.length) { showToast("Add at least one garment","warning"); return; }
+  if (garmentsPhase === 'select') {
+    // Don't skip straight past measurements — show the measurement
+    // cards first so nothing gets missed.
+    switchGarmentPhase('garments','measure');
+    showToast("Ab har kapde ki measurement bharo","success");
+    return;
+  }
   if (flow==="new") goNewStep(3);
 }
 
@@ -698,6 +718,11 @@ function goExistingStep(n) {
 
 function validateExistingGarments() {
   if (!existingGarments.length) { showToast("Add at least one garment","warning"); return; }
+  if (existingGarmentsPhase === 'select') {
+    switchGarmentPhase('existingGarments','measure');
+    showToast("Ab har kapde ki measurement bharo","success");
+    return;
+  }
   goExistingStep(3);
 }
 
@@ -1010,6 +1035,8 @@ function useTheseMeasurements(mi, garmentType, keys) {
     showToast("Added: "+tGarment(garmentType),"success");
   }
   renderExistingGarments();
+  existingGarmentsPhase = 'measure';
+  renderExistingGarments();
   goExistingStep(2);
 }
 
@@ -1100,6 +1127,45 @@ function addExistingGarment() {
     renderExistingGarments();
   }
   document.getElementById("eg_type").value=""; document.getElementById("eg_qty").value="1";
+}
+
+// ── PHASE 1: Simple chip view — just type+qty, no measurements yet.
+// This is shown first so the employee adds EVERYTHING the customer
+// brought (Pant + Shirt + ...) before getting pulled into measurement
+// details for any one garment — preventing forgotten items. ──
+function buildGarmentChip(g, idx, listType) {
+  const removeFn = listType==='garments'
+    ? `garments=garments.filter(g=>g.id!==${g.id});renderGarments()`
+    : `existingGarments=existingGarments.filter(g=>g.id!==${g.id});renderExistingGarments()`;
+  return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;background:#fff;border:2px solid var(--border);border-radius:12px;margin-bottom:8px;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span style="font-size:22px;">🧥</span>
+      <div>
+        <div style="font-weight:800;font-size:14px;color:#1e1b4b;">${tGarment(g.type)}</div>
+        <div style="font-size:12px;color:var(--text-muted);">Qty: ${g.qty}</div>
+      </div>
+    </div>
+    <button onclick="${removeFn}" style="background:var(--danger-light);color:var(--danger);border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;">✕ Remove</button>
+  </div>`;
+}
+
+// Switch between 'select' (quick list) and 'measure' (full cards) phases.
+function switchGarmentPhase(listType, phase) {
+  if (listType === 'garments') {
+    if (phase === 'measure' && garments.length === 0) {
+      showToast("Pehle kam se kam ek kapda add karo", "warning");
+      return;
+    }
+    garmentsPhase = phase;
+    renderGarments();
+  } else {
+    if (phase === 'measure' && existingGarments.length === 0) {
+      showToast("Pehle kam se kam ek kapda add karo", "warning");
+      return;
+    }
+    existingGarmentsPhase = phase;
+    renderExistingGarments();
+  }
 }
 
 function buildGarmentCard(g, idx, listType) {
@@ -1240,7 +1306,19 @@ function removeCustomChip(idx, chipIdx, listType) {
 function renderGarments() {
   const box=document.getElementById("garments-list");
   const cr=document.getElementById("garment-count-row");
-  box.innerHTML = garments.map((g,i)=>buildGarmentCard(g,i,"garments")).join("");
+  const continueBtn=document.getElementById("g-continue-btn");
+
+  if (garmentsPhase === 'select') {
+    box.innerHTML = garments.map((g,i)=>buildGarmentChip(g,i,"garments")).join("");
+    continueBtn.style.display = garments.length ? "block" : "none";
+  } else {
+    const backLink = `<button onclick="switchGarmentPhase('garments','select')"
+      style="display:flex;align-items:center;gap:6px;background:none;border:none;color:var(--accent);font-weight:700;font-size:13px;cursor:pointer;padding:0 0 12px 0;">
+      ← Aur kapde add karo / Edit list</button>`;
+    box.innerHTML = backLink + garments.map((g,i)=>buildGarmentCard(g,i,"garments")).join("");
+    continueBtn.style.display = "none";
+  }
+
   cr.style.display = garments.length?"block":"none";
   document.getElementById("g-count-text").textContent = garments.length+" garment"+(garments.length!==1?"s":"")+" added";
 }
@@ -1248,7 +1326,19 @@ function renderGarments() {
 function renderExistingGarments() {
   const box=document.getElementById("existing-garments-list");
   const cr=document.getElementById("existing-garment-count-row");
-  box.innerHTML = existingGarments.map((g,i)=>buildGarmentCard(g,i,"existingGarments")).join("");
+  const continueBtn=document.getElementById("eg-continue-btn");
+
+  if (existingGarmentsPhase === 'select') {
+    box.innerHTML = existingGarments.map((g,i)=>buildGarmentChip(g,i,"existingGarments")).join("");
+    continueBtn.style.display = existingGarments.length ? "block" : "none";
+  } else {
+    const backLink = `<button onclick="switchGarmentPhase('existingGarments','select')"
+      style="display:flex;align-items:center;gap:6px;background:none;border:none;color:var(--accent);font-weight:700;font-size:13px;cursor:pointer;padding:0 0 12px 0;">
+      ← Aur kapde add karo / Edit list</button>`;
+    box.innerHTML = backLink + existingGarments.map((g,i)=>buildGarmentCard(g,i,"existingGarments")).join("");
+    continueBtn.style.display = "none";
+  }
+
   cr.style.display = existingGarments.length?"block":"none";
   document.getElementById("eg-count-text").textContent = existingGarments.length+" garment"+(existingGarments.length!==1?"s":"")+" added";
   const hint=document.getElementById("ec-garment-hint");
