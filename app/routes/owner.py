@@ -1303,9 +1303,10 @@ def delete_finance_entry(tx_id):
         conn.close()
         return jsonify({"ok": False, "error": "Entry not found"})
 
-    # If it was an income entry linked to an order (advance/payment), reverse it
+    # If it was an income entry linked to an order (advance/payment/
+    # remaining amount), reverse it
     if entry["tx_type"] == "income" and entry["order_id"] and \
-       entry["category"] and entry["category"].lower() in ("advance", "payment"):
+       entry["category"] and entry["category"].lower() in ("advance", "payment", "remaining amount"):
         order = conn.execute(
             "SELECT advance_paid, remaining, payable_amount FROM orders WHERE id=?",
             (entry["order_id"],)
@@ -2950,11 +2951,12 @@ def order_edit_save(order_code):
     data = request.get_json(silent=True) or {}
     conn = get_db()
     try:
-        o = conn.execute("SELECT id, customer_id FROM orders WHERE order_code=?", (order_code,)).fetchone()
+        o = conn.execute("SELECT id, customer_id, advance_paid FROM orders WHERE order_code=?", (order_code,)).fetchone()
         if not o:
             return jsonify({"ok": False, "error": "Order not found"})
         order_id    = o["id"]
         customer_id = o["customer_id"]
+        old_advance = float(o["advance_paid"] or 0)
 
         # Update customer
         name    = (data.get("customer_name") or "").strip()
@@ -2965,6 +2967,7 @@ def order_edit_save(order_code):
                          (name, mobile, address, customer_id))
 
         # Update order
+        new_advance = float(data.get("advance_paid",0))
         conn.execute("""
             UPDATE orders SET
                 order_date=?, delivery_date=?, note=?, is_urgent=?,
@@ -2979,12 +2982,29 @@ def order_edit_save(order_code):
             float(data.get("total_amount",0)),
             float(data.get("extra_charges",0)),
             float(data.get("payable_amount",0)),
-            float(data.get("advance_paid",0)),
+            new_advance,
             float(data.get("remaining",0)),
             data.get("payment_mode","cash"),
             data.get("status","pending"),
             order_id
         ))
+
+        # ── Keep Finance ledger in sync ──────────────────────────────
+        # If the owner increased the advance/paid amount directly on
+        # this edit screen (instead of going through the Finance page),
+        # that money was never logged anywhere — meaning Finance reports
+        # would be missing this income entirely. Auto-log the difference
+        # so the two stay connected. (Decreases are NOT auto-logged here
+        # since those are typically data-entry corrections, not refunds.)
+        payment_diff = round(new_advance - old_advance, 2)
+        if payment_diff > 0:
+            now0 = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            today0 = date.today().isoformat()
+            conn.execute("""
+                INSERT INTO finance(tx_date,tx_type,category,amount,mode,order_id,note,created_by,created_at)
+                VALUES(?,'income','payment',?,?,?,?,'owner',?)
+            """, (today0, payment_diff, data.get("payment_mode","cash"), order_id,
+                  f"Payment updated via Order Edit for #{order_code}", now0))
 
         # Replace garment items
         conn.execute("DELETE FROM order_items WHERE order_id=?", (order_id,))
