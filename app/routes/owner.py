@@ -2980,7 +2980,13 @@ def order_edit_save(order_code):
                          (name, mobile, address, customer_id))
 
         # Update order
+        new_payable = float(data.get("payable_amount",0))
         new_advance = float(data.get("advance_paid",0))
+        # Safety net: never allow advance to exceed the order's payable
+        # amount, even if frontend validation was somehow bypassed.
+        if new_payable > 0 and new_advance > new_payable:
+            new_advance = new_payable
+        new_remaining = max(0, round(new_payable - new_advance, 2))
         conn.execute("""
             UPDATE orders SET
                 order_date=?, delivery_date=?, note=?, is_urgent=?,
@@ -2994,9 +3000,9 @@ def order_edit_save(order_code):
             1 if data.get("is_urgent") else 0,
             float(data.get("total_amount",0)),
             float(data.get("extra_charges",0)),
-            float(data.get("payable_amount",0)),
+            new_payable,
             new_advance,
-            float(data.get("remaining",0)),
+            new_remaining,
             data.get("payment_mode","cash"),
             data.get("status","pending"),
             order_id
