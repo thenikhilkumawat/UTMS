@@ -1257,11 +1257,26 @@ def owner_finance():
         p = str(d).split("-")
         return f"{p[2]}-{p[1]}-{p[0]}" if len(p)==3 else d
 
+    def fmt_time12(ts):
+        """Convert 'YYYY-MM-DD HH:MM:SS' (24h) to 12-hour 'h:MM AM/PM'."""
+        if not ts or len(ts) < 16:
+            return ""
+        try:
+            hh = int(ts[11:13])
+            mm = ts[14:16]
+            suffix = "AM" if hh < 12 else "PM"
+            hh12 = hh % 12
+            if hh12 == 0:
+                hh12 = 12
+            return f"{hh12}:{mm} {suffix}"
+        except (ValueError, IndexError):
+            return ts[11:16]
+
     transactions = [{
         "id":          r["id"],
         "tx_date":     r["tx_date"],
         "tx_date_fmt": fmtd(r["tx_date"]),
-        "tx_time":     (r["created_at"] or "")[11:16],
+        "tx_time":     fmt_time12(r["created_at"]),
         "tx_type":     r["tx_type"],
         "category":    r["category"] or "",
         "note":        r["note"] or "",
