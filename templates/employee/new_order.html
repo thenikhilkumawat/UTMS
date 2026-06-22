@@ -132,7 +132,7 @@
         </div>
         <button id="g-continue-btn" onclick="switchGarmentPhase('garments','measure')"
           style="display:none;width:100%;margin-top:14px;padding:14px;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;">
-          ✅ Sab kapde add ho gaye — Ab Measurement bharo →
+          <span class="lang-en">✅ All garments added — Fill Measurements →</span><span class="lang-hi" style="display:none;">✅ सभी कपड़े जुड़ गए — अब माप भरें →</span>
         </button>
       </div>
     </div>
@@ -327,7 +327,7 @@
         </div>
         <button id="eg-continue-btn" onclick="switchGarmentPhase('existingGarments','measure')"
           style="display:none;width:100%;margin-top:14px;padding:14px;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;">
-          ✅ Sab kapde add ho gaye — Ab Measurement bharo →
+          <span class="lang-en">✅ All garments added — Fill Measurements →</span><span class="lang-hi" style="display:none;">✅ सभी कपड़े जुड़ गए — अब माप भरें →</span>
         </button>
       </div>
     </div>
@@ -692,7 +692,7 @@ function validateGarments(flow) {
     // Don't skip straight past measurements — show the measurement
     // cards first so nothing gets missed.
     switchGarmentPhase('garments','measure');
-    showToast("Ab har kapde ki measurement bharo","success");
+    showToast(typeof currentLang!=="undefined"&&currentLang==="hi"?"अब हर कपड़े की माप भरें":"Now fill measurements for each garment","success");
     return;
   }
   if (flow==="new") goNewStep(3);
@@ -720,7 +720,7 @@ function validateExistingGarments() {
   if (!existingGarments.length) { showToast("Add at least one garment","warning"); return; }
   if (existingGarmentsPhase === 'select') {
     switchGarmentPhase('existingGarments','measure');
-    showToast("Ab har kapde ki measurement bharo","success");
+    showToast(typeof currentLang!=="undefined"&&currentLang==="hi"?"अब हर कपड़े की माप भरें":"Now fill measurements for each garment","success");
     return;
   }
   goExistingStep(3);
@@ -1153,14 +1153,14 @@ function buildGarmentChip(g, idx, listType) {
 function switchGarmentPhase(listType, phase) {
   if (listType === 'garments') {
     if (phase === 'measure' && garments.length === 0) {
-      showToast("Pehle kam se kam ek kapda add karo", "warning");
+      showToast(typeof currentLang!=="undefined"&&currentLang==="hi"?"पहले कम से कम एक कपड़ा जोड़ें":"Add at least one garment first", "warning");
       return;
     }
     garmentsPhase = phase;
     renderGarments();
   } else {
     if (phase === 'measure' && existingGarments.length === 0) {
-      showToast("Pehle kam se kam ek kapda add karo", "warning");
+      showToast(typeof currentLang!=="undefined"&&currentLang==="hi"?"पहले कम से कम एक कपड़ा जोड़ें":"Add at least one garment first", "warning");
       return;
     }
     existingGarmentsPhase = phase;
@@ -1314,7 +1314,7 @@ function renderGarments() {
   } else {
     const backLink = `<button onclick="switchGarmentPhase('garments','select')"
       style="display:flex;align-items:center;gap:6px;background:none;border:none;color:var(--accent);font-weight:700;font-size:13px;cursor:pointer;padding:0 0 12px 0;">
-      ← Aur kapde add karo / Edit list</button>`;
+      ${typeof currentLang!=='undefined'&&currentLang==='hi' ? '← और कपड़े जोड़ें / सूची बदलें' : '← Add more garments / Edit list'}</button>`;
     box.innerHTML = backLink + garments.map((g,i)=>buildGarmentCard(g,i,"garments")).join("");
     continueBtn.style.display = "none";
   }
@@ -1334,7 +1334,7 @@ function renderExistingGarments() {
   } else {
     const backLink = `<button onclick="switchGarmentPhase('existingGarments','select')"
       style="display:flex;align-items:center;gap:6px;background:none;border:none;color:var(--accent);font-weight:700;font-size:13px;cursor:pointer;padding:0 0 12px 0;">
-      ← Aur kapde add karo / Edit list</button>`;
+      ${typeof currentLang!=='undefined'&&currentLang==='hi' ? '← और कपड़े जोड़ें / सूची बदलें' : '← Add more garments / Edit list'}</button>`;
     box.innerHTML = backLink + existingGarments.map((g,i)=>buildGarmentCard(g,i,"existingGarments")).join("");
     continueBtn.style.display = "none";
   }
