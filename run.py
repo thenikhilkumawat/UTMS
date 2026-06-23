@@ -182,3 +182,5 @@ if __name__ == "__main__":
     print("  Next order: #" + str(int(get_setting("last_order_code","3599")) + 1))
     print("="*50 + "\n")
     app.run(debug=True, host="0.0.0.0", port=5000)
+
+# restart-trigger 2026-06-23 12:08:01
