@@ -290,14 +290,23 @@
           <span style="font-size:10px;color:var(--text-muted);font-weight:500;"> — Order form mein is garment ke liye konse naap fields dikhein</span>
         </div>
         <!-- Current fields as draggable chips -->
-        <div id="meas-chips-{{ safe_name }}" style="display:flex;flex-wrap:wrap;gap:8px;min-height:40px;margin-bottom:12px;align-items:center;">
+        <div id="meas-chips-{{ safe_name }}"
+          ondragover="event.preventDefault()"
+          ondrop="dropMeasChip(event,'{{ safe_name }}')"
+          style="display:flex;flex-wrap:wrap;gap:8px;min-height:40px;margin-bottom:12px;align-items:center;padding:8px;border-radius:8px;transition:background 0.15s;">
           {% set mf = meas_by_garment.get(g.name, []) %}
           {% if mf %}
             {% for field in mf %}
             <span class="meas-chip" data-id="{{ field.id }}" data-owner="{{ safe_name }}"
+              draggable="true"
+              ondragstart="dragStartMeas(event,'{{ safe_name }}')"
+              ondragend="dragEndMeas(event,'{{ safe_name }}')"
+              ondragover="event.preventDefault();event.currentTarget.style.outline='2px solid #3b82f6'"
+              ondragleave="event.currentTarget.style.outline=''"
               style="background:#dbeafe;color:#1e40af;border:1.5px solid #93c5fd;border-radius:10px;padding:6px 12px;
-                     font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:8px;cursor:grab;">
-              <span style="opacity:0.5;font-size:10px;cursor:grab;">⠿</span>
+                     font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:8px;cursor:grab;
+                     user-select:none;transition:opacity 0.15s;">
+              <span style="opacity:0.4;font-size:12px;cursor:grab;" title="Drag to reorder">⠿</span>
               {{ field.field_name }}
               <span onclick="deleteMeasField({{ field.id }}, '{{ safe_name }}')"
                 style="color:#dc2626;cursor:pointer;font-size:11px;font-weight:800;opacity:0.7;"
@@ -402,8 +411,13 @@ async function addMeasField(garmentName, safeName) {
   chip.className = "meas-chip";
   chip.dataset.id = d.id;
   chip.dataset.owner = safeName;
-  chip.style.cssText = "background:#dbeafe;color:#1e40af;border:1.5px solid #93c5fd;border-radius:10px;padding:6px 12px;font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:8px;cursor:grab;";
-  chip.innerHTML = `<span style="opacity:0.5;font-size:10px;">⠿</span>${fieldName}<span onclick="deleteMeasField(${d.id},'${safeName}')" style="color:#dc2626;cursor:pointer;font-size:11px;font-weight:800;opacity:0.7;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">✕</span>`;
+  chip.draggable = true;
+  chip.style.cssText = "background:#dbeafe;color:#1e40af;border:1.5px solid #93c5fd;border-radius:10px;padding:6px 12px;font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:8px;cursor:grab;user-select:none;transition:opacity 0.15s;";
+  chip.setAttribute("ondragstart", `dragStartMeas(event,'${safeName}')`);
+  chip.setAttribute("ondragend", `dragEndMeas(event,'${safeName}')`);
+  chip.setAttribute("ondragover", "event.preventDefault();event.currentTarget.style.outline='2px solid #3b82f6'");
+  chip.setAttribute("ondragleave", "event.currentTarget.style.outline=''");
+  chip.innerHTML = `<span style="opacity:0.4;font-size:12px;cursor:grab;" title="Drag to reorder">⠿</span>${fieldName}<span onclick="deleteMeasField(${d.id},'${safeName}')" style="color:#dc2626;cursor:pointer;font-size:11px;font-weight:800;opacity:0.7;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">✕</span>`;
   box.appendChild(chip);
   inp.value = "";
   inp.focus();
@@ -440,6 +454,52 @@ function showGarmentToast(msg) {
   t.textContent = "✅ " + msg;
   document.body.appendChild(t);
   setTimeout(() => { t.style.opacity = "0"; setTimeout(() => t.remove(), 300); }, 2000);
+}
+
+// ── DRAG-AND-DROP for Measurement Field chips ──────
+let _dragSrc = null;
+
+function dragStartMeas(event, safeName) {
+  _dragSrc = event.currentTarget;
+  _dragSrc.style.opacity = "0.4";
+  event.dataTransfer.effectAllowed = "move";
+  event.dataTransfer.setData("text/plain", _dragSrc.dataset.id);
+}
+
+function dragEndMeas(event, safeName) {
+  if (_dragSrc) { _dragSrc.style.opacity = ""; }
+  document.querySelectorAll(".meas-chip").forEach(c => { c.style.outline = ""; });
+  const box = document.getElementById("meas-chips-" + safeName);
+  if (box) box.style.background = "";
+  _dragSrc = null;
+  saveMeasOrder(safeName);
+}
+
+function dropMeasChip(event, safeName) {
+  event.preventDefault();
+  const target = event.target.closest(".meas-chip");
+  if (!target || !_dragSrc || target === _dragSrc) return;
+  const box = document.getElementById("meas-chips-" + safeName);
+  if (!box) return;
+  const rect = target.getBoundingClientRect();
+  const after = event.clientX > rect.left + rect.width / 2;
+  box.insertBefore(_dragSrc, after ? target.nextSibling : target);
+  target.style.outline = "";
+}
+
+async function saveMeasOrder(safeName) {
+  const box = document.getElementById("meas-chips-" + safeName);
+  if (!box) return;
+  const ids = Array.from(box.querySelectorAll(".meas-chip"))
+    .map(c => parseInt(c.dataset.id)).filter(Boolean);
+  if (!ids.length) return;
+  const res = await fetch("/owner/api/garment/meas-fields/reorder", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ ids })
+  });
+  const d = await res.json().catch(() => ({}));
+  if (d.ok) showGarmentToast("Order saved!");
 }
 
 // ── CHIPS for existing garments ──────────────────
