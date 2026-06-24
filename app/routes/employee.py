@@ -233,7 +233,7 @@ def new_order():
             garment_rates[name] = r if r else "0"
     # Get measurement fields per garment from DB
     meas_fields = {}
-    mf_rows = conn.execute("SELECT garment_type, field_name FROM measurement_fields ORDER BY sort_order ASC").fetchall()
+    mf_rows = conn.execute("SELECT garment_type, field_name FROM measurement_fields ORDER BY sort_order ASC, id ASC").fetchall()
     for row in mf_rows:
         meas_fields.setdefault(row["garment_type"], []).append(row["field_name"])
     conn.close()
