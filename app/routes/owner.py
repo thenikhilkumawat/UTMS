@@ -486,6 +486,11 @@ def owner_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if not session.get("owner_logged_in"):
+            # AJAX/API requests expect JSON, not a redirect
+            if (request.is_json or
+                request.path.startswith("/owner/api/") or
+                request.headers.get("X-Requested-With") == "XMLHttpRequest"):
+                return jsonify({"ok": False, "error": "Session expired — please refresh and login again"}), 401
             return redirect(url_for("owner.login"))
         return f(*args, **kwargs)
     return decorated
