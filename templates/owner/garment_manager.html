@@ -233,7 +233,7 @@
         </div>
         <div id="chips-{{ safe_name }}" style="display:flex;flex-wrap:wrap;gap:8px;min-height:40px;margin-bottom:12px;align-items:center;">
           {% for chip in g.chips %}
-          <span class="chip-tag" data-garment="{{ safe_name }}" data-k="{{ chip.k }}" data-v="{{ chip.v }}"
+          <span class="chip-tag" data-owner="{{ safe_name }}" data-k="{{ chip.k }}" data-v="{{ chip.v }}"
             onclick="removeChipTag(this)"
             style="background:#6366f1;color:#fff;border-radius:20px;padding:7px 14px;font-size:13px;font-weight:700;
                    cursor:pointer;display:inline-flex;align-items:center;gap:6px;user-select:none;"
@@ -273,11 +273,11 @@
           {% set mf = meas_by_garment.get(g.name, []) %}
           {% if mf %}
             {% for field in mf %}
-            <span class="meas-chip" data-id="{{ field.id }}" data-garment="{{ safe_name }}"
+            <span class="meas-chip" data-id="{{ field.id }}" data-owner="{{ safe_name }}"
               style="background:#dbeafe;color:#1e40af;border:1.5px solid #93c5fd;border-radius:10px;padding:6px 12px;
                      font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:8px;cursor:grab;">
               <span style="opacity:0.5;font-size:10px;cursor:grab;">⠿</span>
-              {{ field.name }}
+              {{ field.field_name }}
               <span onclick="deleteMeasField({{ field.id }}, '{{ safe_name }}')"
                 style="color:#dc2626;cursor:pointer;font-size:11px;font-weight:800;opacity:0.7;"
                 onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">✕</span>
@@ -380,7 +380,7 @@ async function addMeasField(garmentName, safeName) {
   const chip = document.createElement("span");
   chip.className = "meas-chip";
   chip.dataset.id = d.id;
-  chip.dataset.garment = safeName;
+  chip.dataset.owner = safeName;
   chip.style.cssText = "background:#dbeafe;color:#1e40af;border:1.5px solid #93c5fd;border-radius:10px;padding:6px 12px;font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:8px;cursor:grab;";
   chip.innerHTML = `<span style="opacity:0.5;font-size:10px;">⠿</span>${fieldName}<span onclick="deleteMeasField(${d.id},'${safeName}')" style="color:#dc2626;cursor:pointer;font-size:11px;font-weight:800;opacity:0.7;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">✕</span>`;
   box.appendChild(chip);
@@ -423,7 +423,7 @@ function showGarmentToast(msg) {
 
 // ── CHIPS for existing garments ──────────────────
 function removeChipTag(el) {
-  const safeName = el.dataset.garment;
+  const safeName = el.dataset.owner;
   el.remove();
   rebuildChipsRaw(safeName);
   updateNoChipsMsg(safeName);
@@ -442,7 +442,7 @@ function addChipToGarment(safeName, garmentName) {
   // Create tag
   const tag = document.createElement('span');
   tag.className = 'chip-tag';
-  tag.dataset.garment = safeName;
+  tag.dataset.owner = safeName;
   tag.dataset.k = key;
   tag.dataset.v = label;
   tag.onclick = function() { removeChipTag(this); };
