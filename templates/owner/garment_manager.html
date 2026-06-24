@@ -513,18 +513,23 @@ async function saveGarment(name, safeName) {
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ name, customer_rate: cr, stitch_rate: sr, chips_raw: chipsRaw })
     });
+    if (!resp.ok) {
+      const txt = await resp.text().catch(()=>'');
+      showToast('❌ Server error ' + resp.status, '#dc2626');
+      console.error('saveGarment server error:', resp.status, txt.substring(0, 300));
+      return;
+    }
     const data = await resp.json();
     if (data.ok) {
       showToast('✅ ' + name + ' saved!', '#059669');
-      // Update quick-info display
       updateQuickInfo(safeName, cr, sr, chipsRaw);
-      // Close edit panel
       setTimeout(() => toggleCard(safeName), 800);
     } else {
       showToast('❌ Error: ' + (data.error || 'Unknown'), '#dc2626');
     }
   } catch(e) {
-    showToast('❌ Network error', '#dc2626');
+    showToast('❌ ' + (e.message || 'Network error'), '#dc2626');
+    console.error('saveGarment exception:', e);
   }
 }
 
