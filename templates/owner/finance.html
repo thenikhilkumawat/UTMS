@@ -25,26 +25,102 @@
     </div>
   </div>
 
-  <!-- Summary cards -->
+  <!-- Summary cards — click to filter -->
   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;">
-    <div style="background:linear-gradient(135deg,#059669,#047857);border-radius:14px;padding:18px 20px;color:#fff;">
+    <div onclick="filterByCard('income')" id="card-income"
+      style="background:linear-gradient(135deg,#059669,#047857);border-radius:14px;padding:18px 20px;color:#fff;cursor:pointer;transition:all 0.2s;box-shadow:0 2px 8px rgba(0,0,0,0.1);"
+      onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(0,0,0,0.2)'"
+      onmouseout="this.style.transform='';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'">
       <div style="font-size:11px;font-weight:700;opacity:0.8;text-transform:uppercase;margin-bottom:6px;">Total Income</div>
       <div style="font-size:28px;font-weight:900;">₹{{ stats.total_income }}</div>
       <div style="font-size:11px;opacity:0.75;margin-top:4px;">Cash ₹{{ stats.cash_income }} · UPI ₹{{ stats.upi_income }}</div>
+      <div style="font-size:10px;opacity:0.6;margin-top:6px;">👆 Click to filter</div>
     </div>
-    <div style="background:linear-gradient(135deg,#ef4444,#dc2626);border-radius:14px;padding:18px 20px;color:#fff;">
+    <div onclick="filterByCard('expense')" id="card-expense"
+      style="background:linear-gradient(135deg,#ef4444,#dc2626);border-radius:14px;padding:18px 20px;color:#fff;cursor:pointer;transition:all 0.2s;box-shadow:0 2px 8px rgba(0,0,0,0.1);"
+      onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(0,0,0,0.2)'"
+      onmouseout="this.style.transform='';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'">
       <div style="font-size:11px;font-weight:700;opacity:0.8;text-transform:uppercase;margin-bottom:6px;">Total Expense</div>
       <div style="font-size:28px;font-weight:900;">₹{{ stats.total_expense }}</div>
       <div style="font-size:11px;opacity:0.75;margin-top:4px;">{{ stats.expense_count }} entries</div>
+      <div style="font-size:10px;opacity:0.6;margin-top:6px;">👆 Click to filter</div>
     </div>
-    <div style="background:linear-gradient(135deg,#6366f1,#4f46e5);border-radius:14px;padding:18px 20px;color:#fff;">
+    <div onclick="filterByCard('all')" id="card-net"
+      style="background:linear-gradient(135deg,#6366f1,#4f46e5);border-radius:14px;padding:18px 20px;color:#fff;cursor:pointer;transition:all 0.2s;box-shadow:0 2px 8px rgba(0,0,0,0.1);"
+      onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(0,0,0,0.2)'"
+      onmouseout="this.style.transform='';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'">
       <div style="font-size:11px;font-weight:700;opacity:0.8;text-transform:uppercase;margin-bottom:6px;">Net Profit</div>
       <div style="font-size:28px;font-weight:900;">₹{{ stats.net }}</div>
+      <div style="font-size:11px;opacity:0.75;margin-top:4px;">Income − Expense</div>
+      <div style="font-size:10px;opacity:0.6;margin-top:6px;">👆 Click for all entries</div>
     </div>
-    <div style="background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:14px;padding:18px 20px;color:#fff;">
+    <div onclick="filterByCard('pending')" id="card-pending"
+      style="background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:14px;padding:18px 20px;color:#fff;cursor:pointer;transition:all 0.2s;box-shadow:0 2px 8px rgba(0,0,0,0.1);"
+      onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(0,0,0,0.2)'"
+      onmouseout="this.style.transform='';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'">
       <div style="font-size:11px;font-weight:700;opacity:0.8;text-transform:uppercase;margin-bottom:6px;">Pending Due</div>
       <div style="font-size:28px;font-weight:900;">₹{{ stats.pending_due }}</div>
-      <div style="font-size:11px;opacity:0.75;margin-top:4px;">From active orders</div>
+      <div style="font-size:11px;opacity:0.75;margin-top:4px;">{{ pending_orders|length }} active orders</div>
+      <div style="font-size:10px;opacity:0.6;margin-top:6px;">👆 Click to see orders</div>
+    </div>
+  </div>
+
+  <!-- Pending Due Orders section — shown only when card clicked -->
+  <div id="pending-due-section" style="display:none;margin-bottom:16px;">
+    <div class="card">
+      <div class="card-header" style="background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:12px 12px 0 0;">
+        <span class="card-title" style="color:#fff;">⏳ Pending Due Orders</span>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:12px;font-weight:700;background:rgba(255,255,255,0.2);color:#fff;padding:3px 10px;border-radius:10px;">{{ pending_orders|length }} orders</span>
+          <button onclick="filterByCard('all')" style="background:rgba(255,255,255,0.2);color:#fff;border:none;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;">✕ Close</button>
+        </div>
+      </div>
+      {% if pending_orders %}
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead>
+            <tr style="background:#fffbeb;border-bottom:2px solid #fde68a;">
+              <th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:#92400e;">Order</th>
+              <th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:#92400e;">Customer</th>
+              <th style="padding:10px 16px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;color:#92400e;">Status</th>
+              <th style="padding:10px 16px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;color:#92400e;">Total</th>
+              <th style="padding:10px 16px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;color:#92400e;">Paid</th>
+              <th style="padding:10px 16px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;color:#92400e;">Due ⬇</th>
+              <th style="padding:10px 16px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;color:#92400e;">Delivery</th>
+              <th style="padding:10px 16px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;color:#92400e;">Edit</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for o in pending_orders %}
+            <tr style="border-bottom:1px solid #fde68a;"
+              onmouseover="this.style.background='#fffbeb'" onmouseout="this.style.background=''">
+              <td style="padding:11px 16px;font-weight:800;color:#d97706;">#{{ o.order_code }}</td>
+              <td style="padding:11px 16px;font-weight:600;">{{ o.cname }}</td>
+              <td style="padding:11px 16px;text-align:center;">
+                <span style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:8px;
+                  background:{% if o.status=='ready' %}#d1fae5;color:#065f46{% elif o.status=='pending' %}#dbeafe;color:#1e40af{% else %}#f3f4f6;color:#374151{% endif %};">
+                  {{ o.status|title }}
+                </span>
+              </td>
+              <td style="padding:11px 16px;text-align:right;font-weight:700;">₹{{ o.payable }}</td>
+              <td style="padding:11px 16px;text-align:right;color:#16a34a;font-weight:700;">₹{{ o.advance_paid }}</td>
+              <td style="padding:11px 16px;text-align:right;color:#dc2626;font-weight:900;font-size:15px;">₹{{ o.remaining }}</td>
+              <td style="padding:11px 16px;text-align:center;font-size:12px;color:#6b7280;">{{ o.delivery_date }}</td>
+              <td style="padding:11px 16px;text-align:center;">
+                <a href="/owner/orders/edit/{{ o.order_code }}"
+                  style="background:#fef3c7;color:#d97706;padding:5px 12px;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;">Edit ↗</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div style="padding:40px;text-align:center;color:var(--text-muted);">
+        <div style="font-size:32px;margin-bottom:8px;">🎉</div>
+        <div style="font-weight:700;">No pending dues! All orders are fully paid.</div>
+      </div>
+      {% endif %}
     </div>
   </div>
 
@@ -161,6 +237,39 @@ function applyFilter() {
   const f = document.getElementById("from-date").value;
   const t = document.getElementById("to-date").value;
   window.location.href = "/owner/finance?from=" + f + "&to=" + t;
+}
+
+/* ── Card click → filter transactions + show/hide pending section ── */
+function filterByCard(type) {
+  // Reset all card outlines
+  ["card-income","card-expense","card-net","card-pending"].forEach(id => {
+    const c = document.getElementById(id);
+    if (c) c.style.outline = "none";
+  });
+
+  const pendingSection = document.getElementById("pending-due-section");
+  const txCard = document.querySelector(".card");
+
+  if (type === "pending") {
+    // Show pending due orders section, hide transaction filter tabs
+    if (pendingSection) pendingSection.style.display = "block";
+    pendingSection.scrollIntoView({ behavior: "smooth", block: "start" });
+    const c = document.getElementById("card-pending");
+    if (c) c.style.outline = "3px solid #fff";
+  } else {
+    // Hide pending section, filter transactions
+    if (pendingSection) pendingSection.style.display = "none";
+    // Map card type to tx filter
+    const tabType = type === "all" ? "all" : type; // income/expense/all
+    const tabBtn = document.querySelector(`.tx-type-tab[data-type="${tabType}"]`);
+    if (tabBtn) setTypeFilter(tabType, tabBtn);
+    // Highlight active card
+    const cardId = type === "income" ? "card-income" : type === "expense" ? "card-expense" : "card-net";
+    const c = document.getElementById(cardId);
+    if (c) c.style.outline = "3px solid #fff";
+    // Scroll to transactions
+    if (txCard) txCard.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 }
 function setPreset(p) {
   const today = new Date();
