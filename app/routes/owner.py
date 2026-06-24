@@ -2534,7 +2534,7 @@ def garment_manager():
     meas_by_garment = {}
     for r in mf_rows:
         meas_by_garment.setdefault(r["garment_type"], []).append({
-            "id": r["id"], "name": r["field_name"], "sort_order": r["sort_order"]
+            "id": r["id"], "field_name": r["field_name"], "sort_order": r["sort_order"]
         })
 
     conn.close()
