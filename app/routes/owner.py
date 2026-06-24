@@ -2628,9 +2628,13 @@ def api_meas_field_add():
     if exists:
         conn.close()
         return jsonify({"ok": False, "error": "Field already exists"})
+    # Get next sort_order for this garment type (so new fields go to end in order)
+    max_order = conn.execute(
+        "SELECT COALESCE(MAX(sort_order), 0) as m FROM measurement_fields WHERE garment_type=?", (garment,)
+    ).fetchone()["m"]
     conn.execute(
-        "INSERT INTO measurement_fields(garment_type, field_name, sort_order) VALUES(?,?,99)",
-        (garment, field)
+        "INSERT INTO measurement_fields(garment_type, field_name, sort_order) VALUES(?,?,?)",
+        (garment, field, max_order + 1)
     )
     conn.commit()
     new_id = conn.execute(
