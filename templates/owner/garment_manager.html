@@ -262,7 +262,48 @@
         <input type="hidden" id="chips-raw-{{ safe_name }}" value="{{ g.chips_raw }}">
       </div>
 
-      <!-- Save Button -->
+      <!-- Measurement Fields -->
+      <div style="background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;">
+        <div style="font-size:12px;font-weight:800;color:#1e40af;margin-bottom:12px;">
+          📏 Measurement Fields
+          <span style="font-size:10px;color:var(--text-muted);font-weight:500;"> — Order form mein is garment ke liye konse naap fields dikhein</span>
+        </div>
+        <!-- Current fields as draggable chips -->
+        <div id="meas-chips-{{ safe_name }}" style="display:flex;flex-wrap:wrap;gap:8px;min-height:40px;margin-bottom:12px;align-items:center;">
+          {% set mf = meas_by_garment.get(g.name, []) %}
+          {% if mf %}
+            {% for field in mf %}
+            <span class="meas-chip" data-id="{{ field.id }}" data-garment="{{ safe_name }}"
+              style="background:#dbeafe;color:#1e40af;border:1.5px solid #93c5fd;border-radius:10px;padding:6px 12px;
+                     font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:8px;cursor:grab;">
+              <span style="opacity:0.5;font-size:10px;cursor:grab;">⠿</span>
+              {{ field.name }}
+              <span onclick="deleteMeasField({{ field.id }}, '{{ safe_name }}')"
+                style="color:#dc2626;cursor:pointer;font-size:11px;font-weight:800;opacity:0.7;"
+                onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">✕</span>
+            </span>
+            {% endfor %}
+          {% else %}
+          <span id="no-meas-{{ safe_name }}" style="font-size:12px;color:var(--text-muted);font-style:italic;">
+            अभी कोई measurement field नहीं — नीचे से जोड़ें
+          </span>
+          {% endif %}
+        </div>
+        <!-- Add new field -->
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="meas-input-{{ safe_name }}"
+            placeholder="Field name e.g. Lambai, Kamar, Seeno..."
+            onkeydown="if(event.key==='Enter'){addMeasField('{{ g.name }}','{{ safe_name }}');event.preventDefault();}"
+            style="flex:1;padding:9px 12px;font-size:14px;border:1.5px solid #93c5fd;border-radius:8px;outline:none;"
+            onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#93c5fd'">
+          <button onclick="addMeasField('{{ g.name }}','{{ safe_name }}')"
+            style="padding:9px 18px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer;">
+            + Add Field
+          </button>
+        </div>
+      </div>
+
+      <!-- Save Button (only saves Rate + Styles, meas fields save instantly above) -->
       <button onclick="saveGarment('{{ g.name }}','{{ safe_name }}')"
         style="width:100%;padding:13px;background:linear-gradient(135deg,#059669,#047857);color:#fff;
                border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;
@@ -314,6 +355,70 @@ function toggleCard(safeName) {
     btn.style.borderColor = 'var(--border)';
     btn.style.color = 'var(--text-secondary)';
   }
+}
+
+// ── MEASUREMENT FIELDS — inline management ────────
+
+async function addMeasField(garmentName, safeName) {
+  const inp = document.getElementById("meas-input-" + safeName);
+  const fieldName = (inp.value || "").trim();
+  if (!fieldName) { inp.focus(); return; }
+
+  const res = await fetch("/owner/api/garment/meas-fields/add", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ garment_type: garmentName, field_name: fieldName })
+  });
+  const d = await res.json();
+  if (!d.ok) { alert(d.error || "Error"); return; }
+
+  // Inject new chip into DOM instantly
+  const box = document.getElementById("meas-chips-" + safeName);
+  const noMsg = document.getElementById("no-meas-" + safeName);
+  if (noMsg) noMsg.remove();
+
+  const chip = document.createElement("span");
+  chip.className = "meas-chip";
+  chip.dataset.id = d.id;
+  chip.dataset.garment = safeName;
+  chip.style.cssText = "background:#dbeafe;color:#1e40af;border:1.5px solid #93c5fd;border-radius:10px;padding:6px 12px;font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:8px;cursor:grab;";
+  chip.innerHTML = `<span style="opacity:0.5;font-size:10px;">⠿</span>${fieldName}<span onclick="deleteMeasField(${d.id},'${safeName}')" style="color:#dc2626;cursor:pointer;font-size:11px;font-weight:800;opacity:0.7;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">✕</span>`;
+  box.appendChild(chip);
+  inp.value = "";
+  inp.focus();
+  showGarmentToast("Field added: " + fieldName);
+}
+
+async function deleteMeasField(fid, safeName) {
+  if (!confirm("Remove this measurement field?")) return;
+  const res = await fetch("/owner/api/garment/meas-fields/delete/" + fid, { method: "POST" });
+  const d = await res.json();
+  if (!d.ok) { alert("Error deleting"); return; }
+  const chip = document.querySelector(`.meas-chip[data-id="${fid}"]`);
+  if (chip) {
+    chip.style.transition = "opacity 0.2s";
+    chip.style.opacity = "0";
+    setTimeout(() => {
+      chip.remove();
+      const box = document.getElementById("meas-chips-" + safeName);
+      if (box && !box.querySelector(".meas-chip")) {
+        const msg = document.createElement("span");
+        msg.id = "no-meas-" + safeName;
+        msg.style.cssText = "font-size:12px;color:var(--text-muted);font-style:italic;";
+        msg.textContent = "अभी कोई measurement field नहीं — नीचे से जोड़ें";
+        box.appendChild(msg);
+      }
+    }, 200);
+  }
+  showGarmentToast("Field removed");
+}
+
+function showGarmentToast(msg) {
+  const t = document.createElement("div");
+  t.style.cssText = "position:fixed;bottom:24px;right:24px;z-index:9999;padding:12px 20px;border-radius:12px;font-weight:700;font-size:13px;box-shadow:0 4px 20px rgba(0,0,0,0.15);background:#d1fae5;color:#065f46;transition:opacity 0.3s;";
+  t.textContent = "✅ " + msg;
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.opacity = "0"; setTimeout(() => t.remove(), 300); }, 2000);
 }
 
 // ── CHIPS for existing garments ──────────────────
