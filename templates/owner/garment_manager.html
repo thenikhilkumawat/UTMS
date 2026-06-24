@@ -462,9 +462,19 @@ function rebuildChipsRaw(safeName) {
   const parts = [];
   const seen = {};
   tags.forEach(t => {
-    const k = t.dataset.k || generateKey(t.dataset.v, safeName);
+    let k = t.dataset.k || generateKey(t.dataset.v, safeName);
     const v = t.dataset.v;
-    if (k && v && !seen[k]) { parts.push(k + ':' + v); seen[k] = 1; }
+    if (!k || !v) return;
+    // Make key unique — if collision, add numeric suffix so no chip is lost
+    let finalKey = k;
+    let suffix = 2;
+    while (seen[finalKey]) {
+      finalKey = k.substring(0, 1) + suffix;
+      suffix++;
+    }
+    seen[finalKey] = 1;
+    t.dataset.k = finalKey; // keep element in sync
+    parts.push(finalKey + ':' + v);
   });
   document.getElementById('chips-raw-' + safeName).value = parts.join('|');
 }
