@@ -1250,6 +1250,13 @@ def owner_finance():
     urgent_count = conn.execute(
         "SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status!='delivered'"
     ).fetchone()["c"]
+    pending_orders_rows = conn.execute("""
+        SELECT o.order_code, c.name as cname, o.remaining, o.payable_amount,
+               o.advance_paid, o.delivery_date, o.status
+        FROM orders o JOIN customers c ON c.id=o.customer_id
+        WHERE o.status!='delivered' AND o.remaining>0
+        ORDER BY o.remaining DESC
+    """).fetchall()
     conn.close()
 
     def fmtd(d):
@@ -1272,6 +1279,16 @@ def owner_finance():
         except (ValueError, IndexError):
             return ts[11:16]
 
+    pending_orders = [{
+        "order_code":   r["order_code"],
+        "cname":        r["cname"],
+        "remaining":    int(r["remaining"] or 0),
+        "payable":      int(r["payable_amount"] or 0),
+        "advance_paid": int(r["advance_paid"] or 0),
+        "delivery_date":fmtd(r["delivery_date"]),
+        "status":       r["status"]
+    } for r in pending_orders_rows]
+
     transactions = [{
         "id":          r["id"],
         "tx_date":     r["tx_date"],
@@ -1291,6 +1308,7 @@ def owner_finance():
         active_page="finance", show_voice=False,
         urgent_count=urgent_count,
         from_date=from_date, to_date=to_date,
+        pending_orders=pending_orders,
         stats={
             "total_income":  int(stats_r["income"] or 0),
             "cash_income":   int(stats_r["cash_i"] or 0),
