@@ -84,6 +84,27 @@
       </div>
       <input type="hidden" id="new-chips-raw" value="">
 
+      <!-- Measurement Fields for new garment -->
+      <div style="background:#f0f4ff;border-radius:12px;padding:16px;border:1.5px dashed #93c5fd;margin-bottom:16px;">
+        <div style="font-size:13px;font-weight:800;color:#1e40af;margin-bottom:12px;">📏 Measurement Fields — naap ke fields (Lambai, Kamar, Seeno...)</div>
+        <div id="new-meas-display" style="display:flex;flex-wrap:wrap;gap:8px;min-height:36px;margin-bottom:12px;align-items:center;">
+          <span id="new-meas-empty" style="font-size:12px;color:var(--text-muted);font-style:italic;">अभी कोई field नहीं — नीचे जोड़ें</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="new-meas-input" placeholder="Field name e.g. Lambai, Kamar, Seeno..."
+            style="flex:1;padding:9px 12px;font-size:14px;border:1.5px solid #93c5fd;border-radius:8px;outline:none;"
+            onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#93c5fd'"
+            onkeydown="if(event.key==='Enter'){addNewMeasField();event.preventDefault();}">
+          <button onclick="addNewMeasField()"
+            style="padding:9px 18px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;">
+            + Add Field
+          </button>
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:8px;">
+          💡 Garment add hone ke baad ये fields order form mein measurement section mein dikhenge
+        </div>
+      </div>
+
       <button onclick="saveNewGarment()"
         style="width:100%;padding:14px;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;
                border:none;border-radius:12px;font-size:16px;font-weight:800;cursor:pointer;
@@ -603,6 +624,46 @@ function removeNewChip(idx) {
 }
 
 // ── SAVE NEW GARMENT ─────────────────────────────
+// ── NEW GARMENT MEASUREMENT FIELDS ───────────────
+const newMeasFields = []; // [{name}]
+
+function addNewMeasField() {
+  const inp = document.getElementById('new-meas-input');
+  const name = (inp.value || '').trim();
+  if (!name) { inp.focus(); return; }
+  if (newMeasFields.find(f => f.name === name)) {
+    showToast('⚠️ Yeh field pehle se hai!', '#d97706'); return;
+  }
+  newMeasFields.push({ name });
+
+  // Remove empty message
+  const emptyMsg = document.getElementById('new-meas-empty');
+  if (emptyMsg) emptyMsg.remove();
+
+  // Add chip
+  const box = document.getElementById('new-meas-display');
+  const chip = document.createElement('span');
+  chip.style.cssText = 'background:#dbeafe;color:#1e40af;border:1.5px solid #93c5fd;border-radius:10px;padding:6px 12px;font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:8px;';
+  chip.innerHTML = name + '<span onclick="removeNewMeasField(this,\'' + name.replace(/'/g,"\\'") + '\')" style="color:#dc2626;cursor:pointer;font-size:11px;font-weight:800;">✕</span>';
+  box.appendChild(chip);
+  inp.value = '';
+  inp.focus();
+}
+
+function removeNewMeasField(el, name) {
+  const idx = newMeasFields.findIndex(f => f.name === name);
+  if (idx >= 0) newMeasFields.splice(idx, 1);
+  el.closest('span').remove();
+  if (newMeasFields.length === 0) {
+    const box = document.getElementById('new-meas-display');
+    const msg = document.createElement('span');
+    msg.id = 'new-meas-empty';
+    msg.style.cssText = 'font-size:12px;color:var(--text-muted);font-style:italic;';
+    msg.textContent = 'अभी कोई field नहीं — नीचे जोड़ें';
+    box.appendChild(msg);
+  }
+}
+
 async function saveNewGarment() {
   const name = (document.getElementById('new-name').value || '').trim();
   const cr   = (document.getElementById('new-crate').value || '0');
@@ -629,6 +690,16 @@ async function saveNewGarment() {
     });
     const data = await resp.json();
     if (data.ok) {
+      // Also save measurement fields if any were added
+      if (newMeasFields.length > 0) {
+        for (let i = 0; i < newMeasFields.length; i++) {
+          await fetch('/owner/api/garment/meas-fields/add', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ garment_type: name, field_name: newMeasFields[i].name })
+          }).catch(() => {});
+        }
+      }
       showToast('✅ ' + name + ' added! Page refresh ho raha hai...', '#059669');
       setTimeout(() => location.reload(), 1200);
     } else {
