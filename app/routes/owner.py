@@ -2527,10 +2527,21 @@ def garment_manager():
             "chips_raw": chips_raw,
         })
 
+    # Also fetch measurement fields per garment so they can be managed inline
+    mf_rows = conn.execute(
+        "SELECT id, garment_type, field_name, sort_order FROM measurement_fields ORDER BY sort_order ASC, id ASC"
+    ).fetchall()
+    meas_by_garment = {}
+    for r in mf_rows:
+        meas_by_garment.setdefault(r["garment_type"], []).append({
+            "id": r["id"], "name": r["field_name"], "sort_order": r["sort_order"]
+        })
+
     conn.close()
     return render_template("owner/garment_manager.html",
         active_page="garments", show_voice=False, urgent_count=urgent_count,
         garments=garments,
+        meas_by_garment=meas_by_garment,
     )
 
 
@@ -2596,6 +2607,58 @@ def api_garment_delete():
     deleted_set.add(name)
     set_setting("deleted_customer_rates", ",".join(sorted(deleted_set)))
     from database import invalidate_settings_cache; invalidate_settings_cache()
+    return jsonify({"ok": True})
+
+
+# ── Measurement fields — inline management from Garment Manager ──
+
+@bp.route("/api/garment/meas-fields/add", methods=["POST"])
+@owner_required
+def api_meas_field_add():
+    data = request.get_json(silent=True) or {}
+    garment = (data.get("garment_type") or "").strip()
+    field   = (data.get("field_name") or "").strip()
+    if not garment or not field:
+        return jsonify({"ok": False, "error": "Missing garment or field"})
+    conn = get_db()
+    # Check not duplicate
+    exists = conn.execute(
+        "SELECT id FROM measurement_fields WHERE garment_type=? AND field_name=?", (garment, field)
+    ).fetchone()
+    if exists:
+        conn.close()
+        return jsonify({"ok": False, "error": "Field already exists"})
+    conn.execute(
+        "INSERT INTO measurement_fields(garment_type, field_name, sort_order) VALUES(?,?,99)",
+        (garment, field)
+    )
+    conn.commit()
+    new_id = conn.execute(
+        "SELECT id FROM measurement_fields WHERE garment_type=? AND field_name=? ORDER BY id DESC LIMIT 1",
+        (garment, field)
+    ).fetchone()["id"]
+    conn.close()
+    return jsonify({"ok": True, "id": new_id})
+
+
+@bp.route("/api/garment/meas-fields/delete/<int:fid>", methods=["POST"])
+@owner_required
+def api_meas_field_delete(fid):
+    conn = get_db()
+    conn.execute("DELETE FROM measurement_fields WHERE id=?", (fid,))
+    conn.commit(); conn.close()
+    return jsonify({"ok": True})
+
+
+@bp.route("/api/garment/meas-fields/reorder", methods=["POST"])
+@owner_required
+def api_meas_field_reorder():
+    data = request.get_json(silent=True) or {}
+    ordered_ids = data.get("ids", [])
+    conn = get_db()
+    for pos, fid in enumerate(ordered_ids):
+        conn.execute("UPDATE measurement_fields SET sort_order=? WHERE id=?", (pos, fid))
+    conn.commit(); conn.close()
     return jsonify({"ok": True})
 
 
