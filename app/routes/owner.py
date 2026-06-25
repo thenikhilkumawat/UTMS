@@ -2490,7 +2490,44 @@ def api_salary_advance():
     return jsonify({"ok":True})
 
 
-@bp.route("/api/salary/sync-finance", methods=["GET","POST"])
+@bp.route("/api/orders/change-code", methods=["POST"])
+@owner_required
+def api_change_order_code():
+    data     = request.get_json(silent=True) or {}
+    old_code = (data.get("old_code") or "").strip()
+    new_code = (data.get("new_code") or "").strip()
+
+    if not old_code or not new_code:
+        return jsonify({"ok": False, "error": "Both old and new code required"})
+    if old_code == new_code:
+        return jsonify({"ok": False, "error": "Same as current code"})
+
+    conn = get_db()
+
+    # Check old code exists
+    order = conn.execute("SELECT id FROM orders WHERE order_code=?", (old_code,)).fetchone()
+    if not order:
+        conn.close()
+        return jsonify({"ok": False, "error": f"Order #{old_code} not found"})
+
+    # Check new code not already taken
+    existing = conn.execute("SELECT id FROM orders WHERE order_code=?", (new_code,)).fetchone()
+    if existing:
+        conn.close()
+        return jsonify({"ok": False, "error": f"Order #{new_code} already exists — choose a different code"})
+
+    # Update orders table
+    conn.execute("UPDATE orders SET order_code=? WHERE order_code=?", (new_code, old_code))
+
+    # Update finance notes that reference old code
+    conn.execute("""
+        UPDATE finance SET note = REPLACE(note, ?, ?)
+        WHERE note LIKE ?
+    """, (f"#{old_code}", f"#{new_code}", f"%{old_code}%"))
+
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True})
 @owner_required
 def api_salary_sync_finance():
     """Sync Finance-page salary expenses into salary_advances table so the
