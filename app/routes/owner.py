@@ -2385,15 +2385,21 @@ def salary():
         total_orders  = len(set(r["order_code"] for r in logs if r["order_code"]))
 
         # Read salary advances from finance table (single source of truth).
-        # Both sources (Salary page "Record Advance" + Finance page salary
-        # expense) now write to finance table with employee_name set, so
-        # this one query captures everything without double-counting.
-        adv_period = conn.execute("""
-            SELECT COALESCE(SUM(amount),0) as total
-            FROM finance
-            WHERE tx_type='expense' AND LOWER(category)='salary'
-            AND employee_name=? AND tx_date >= ?
-        """, (name, start)).fetchone()["total"] or 0
+        # Fallback to salary_advances if finance.employee_name column not yet
+        # migrated (safe for existing deployments).
+        try:
+            adv_period = conn.execute("""
+                SELECT COALESCE(SUM(amount),0) as total
+                FROM finance
+                WHERE tx_type='expense' AND LOWER(category)='salary'
+                AND employee_name=? AND tx_date >= ?
+            """, (name, start)).fetchone()["total"] or 0
+        except Exception:
+            # Fallback: column not migrated yet, use salary_advances table
+            adv_period = conn.execute(
+                "SELECT COALESCE(SUM(amount),0) as total FROM salary_advances WHERE employee_name=? AND advance_date >= ?",
+                (name, start)
+            ).fetchone()["total"] or 0
 
         employees.append({
             "name":         name,
@@ -2454,27 +2460,36 @@ def api_salary_advance():
     return jsonify({"ok":True})
 
 
-@bp.route("/api/salary/sync-finance", methods=["POST"])
+@bp.route("/api/salary/sync-finance", methods=["GET","POST"])
 @owner_required
 def api_salary_sync_finance():
-    """One-time fix: backfill employee_name in finance table for existing
-    salary entries where note is 'Salary — {name}' but employee_name is NULL."""
+    """Backfill employee_name in finance table for existing salary entries
+    where note is 'Salary — {name}' but employee_name is NULL.
+    Also ensures the employee_name column exists (safe to run repeatedly)."""
     conn = get_db()
+    # Ensure column exists first (idempotent)
+    try:
+        conn.execute("ALTER TABLE finance ADD COLUMN employee_name TEXT DEFAULT NULL")
+        conn.commit()
+    except Exception:
+        pass  # Already exists
+    # Backfill from note pattern "Salary — {name}"
     rows = conn.execute("""
         SELECT id, note FROM finance
         WHERE tx_type='expense' AND LOWER(category)='salary'
-        AND (employee_name IS NULL OR employee_name='')
         AND note LIKE 'Salary — %'
     """).fetchall()
     updated = 0
     for r in rows:
-        # Extract name from "Salary — Bhagwan" → "Bhagwan"
         emp = r["note"].replace("Salary — ", "").strip()
         if emp:
-            conn.execute("UPDATE finance SET employee_name=? WHERE id=?", (emp, r["id"]))
+            conn.execute("UPDATE finance SET employee_name=? WHERE id=? AND (employee_name IS NULL OR employee_name='')", (emp, r["id"]))
             updated += 1
     conn.commit(); conn.close()
-    return jsonify({"ok": True, "updated": updated})
+    # Return a friendly HTML page so browser can see it too
+    if updated > 0:
+        return f"<h2>✅ Sync complete! {updated} entries updated.</h2><p><a href='/owner/salary'>Go to Salary page</a></p>"
+    return "<h2>✅ Already synced! No changes needed.</h2><p><a href='/owner/salary'>Go to Salary page</a></p>"
 
 
 @bp.route("/api/salary/fresh-start", methods=["POST"])
