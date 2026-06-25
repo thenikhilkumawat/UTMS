@@ -2384,22 +2384,13 @@ def salary():
         total_pieces  = sum(r["qty_done"] or 0 for r in logs)
         total_orders  = len(set(r["order_code"] for r in logs if r["order_code"]))
 
-        # Read salary advances from finance table (single source of truth).
-        # Fallback to salary_advances if finance.employee_name column not yet
-        # migrated (safe for existing deployments).
-        try:
-            adv_period = conn.execute("""
-                SELECT COALESCE(SUM(amount),0) as total
-                FROM finance
-                WHERE tx_type='expense' AND LOWER(category)='salary'
-                AND employee_name=? AND tx_date >= ?
-            """, (name, start)).fetchone()["total"] or 0
-        except Exception:
-            # Fallback: column not migrated yet, use salary_advances table
-            adv_period = conn.execute(
-                "SELECT COALESCE(SUM(amount),0) as total FROM salary_advances WHERE employee_name=? AND advance_date >= ?",
-                (name, start)
-            ).fetchone()["total"] or 0
+        # Advances from salary_advances table (canonical source).
+        # Both the Salary page "Record Advance" button AND the Finance page
+        # salary expense sync route write here, so this captures everything.
+        adv_period = conn.execute(
+            "SELECT COALESCE(SUM(amount),0) as total FROM salary_advances WHERE employee_name=? AND advance_date >= ?",
+            (name, start)
+        ).fetchone()["total"] or 0
 
         employees.append({
             "name":         name,
@@ -2463,33 +2454,75 @@ def api_salary_advance():
 @bp.route("/api/salary/sync-finance", methods=["GET","POST"])
 @owner_required
 def api_salary_sync_finance():
-    """Backfill employee_name in finance table for existing salary entries
-    where note is 'Salary — {name}' but employee_name is NULL.
-    Also ensures the employee_name column exists (safe to run repeatedly)."""
+    """Sync Finance-page salary expenses into salary_advances table so the
+    Salary page picks them up. Safe to run multiple times (deduplicates)."""
     conn = get_db()
-    # Ensure column exists first (idempotent)
+
+    # Ensure employee_name column exists in finance table
     try:
-        conn.execute("ALTER TABLE finance ADD COLUMN employee_name TEXT DEFAULT NULL")
+        conn.execute("SAVEPOINT col_sp")
+        conn.execute("ALTER TABLE finance ADD COLUMN IF NOT EXISTS employee_name TEXT DEFAULT NULL")
+        conn.execute("RELEASE SAVEPOINT col_sp")
         conn.commit()
     except Exception:
-        pass  # Already exists
-    # Backfill from note pattern "Salary — {name}"
-    rows = conn.execute("""
-        SELECT id, note FROM finance
-        WHERE tx_type='expense' AND LOWER(category)='salary'
-        AND note LIKE 'Salary — %'
-    """).fetchall()
-    updated = 0
-    for r in rows:
-        emp = r["note"].replace("Salary — ", "").strip()
-        if emp:
-            conn.execute("UPDATE finance SET employee_name=? WHERE id=? AND (employee_name IS NULL OR employee_name='')", (emp, r["id"]))
-            updated += 1
-    conn.commit(); conn.close()
-    # Return a friendly HTML page so browser can see it too
-    if updated > 0:
-        return f"<h2>✅ Sync complete! {updated} entries updated.</h2><p><a href='/owner/salary'>Go to Salary page</a></p>"
-    return "<h2>✅ Already synced! No changes needed.</h2><p><a href='/owner/salary'>Go to Salary page</a></p>"
+        try: conn.execute("ROLLBACK TO SAVEPOINT col_sp")
+        except: pass
+
+    # Step 1: Backfill employee_name in finance table from note pattern
+    try:
+        rows = conn.execute("""
+            SELECT id, note FROM finance
+            WHERE tx_type='expense' AND LOWER(category)='salary'
+            AND note LIKE 'Salary — %'
+        """).fetchall()
+        for r in rows:
+            emp = r["note"].replace("Salary — ", "").strip()
+            if emp:
+                conn.execute(
+                    "UPDATE finance SET employee_name=? WHERE id=? AND (employee_name IS NULL OR employee_name='')",
+                    (emp, r["id"])
+                )
+        conn.commit()
+    except Exception:
+        pass
+
+    # Step 2: For each finance salary expense, ensure it's also in salary_advances
+    # (so the Salary page — which reads salary_advances — picks it up correctly)
+    synced = 0
+    try:
+        fin_rows = conn.execute("""
+            SELECT id, employee_name, amount, note, tx_date FROM finance
+            WHERE tx_type='expense' AND LOWER(category)='salary'
+            AND employee_name IS NOT NULL AND employee_name != ''
+        """).fetchall()
+
+        for r in fin_rows:
+            emp    = r["employee_name"]
+            amount = r["amount"]
+            note   = r["note"] or f"Salary — {emp}"
+            dt     = r["tx_date"]
+            # Check if already in salary_advances (same employee, amount, date)
+            exists = conn.execute("""
+                SELECT id FROM salary_advances
+                WHERE employee_name=? AND amount=? AND advance_date=?
+            """, (emp, amount, dt)).fetchone()
+            if not exists:
+                now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                conn.execute(
+                    "INSERT INTO salary_advances(employee_name,amount,note,advance_date,created_at) VALUES(?,?,?,?,?)",
+                    (emp, amount, note, dt, now)
+                )
+                synced += 1
+        conn.commit()
+    except Exception as e:
+        return f"<h2>❌ Sync error: {e}</h2>"
+
+    conn.close()
+    return (
+        f"<h2>✅ Sync complete!</h2>"
+        f"<p>{synced} new entries added to salary advances.</p>"
+        f"<p><a href='/owner/salary'>← Go to Salary page</a></p>"
+    )
 
 
 @bp.route("/api/salary/fresh-start", methods=["POST"])
