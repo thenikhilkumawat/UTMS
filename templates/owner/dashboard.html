@@ -144,32 +144,108 @@
   </div>
 
   <!-- Today's Upload Activity -->
-  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">
-    <div style="background:#fff;border:1.5px solid var(--border);border-radius:14px;padding:18px 20px;display:flex;align-items:center;gap:16px;">
-      <div style="width:48px;height:48px;border-radius:12px;background:#dbeafe;display:flex;align-items:center;justify-content:center;font-size:22px;">🆕</div>
-      <div>
-        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">New Orders Today</div>
-        <div style="font-size:32px;font-weight:900;color:#1e40af;line-height:1;">{{ stats.new_orders_today }}</div>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Live orders entered today</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+
+    <!-- New Orders Card -->
+    <div onclick="toggleTodayList('new')" style="background:#fff;border:2px solid #bfdbfe;border-radius:14px;padding:18px 20px;cursor:pointer;transition:all 0.2s;"
+      onmouseover="this.style.borderColor='#3b82f6';this.style.transform='translateY(-2px)'"
+      onmouseout="this.style.borderColor='#bfdbfe';this.style.transform=''">
+      <div style="display:flex;align-items:center;gap:14px;">
+        <div style="width:48px;height:48px;border-radius:12px;background:#dbeafe;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🆕</div>
+        <div style="flex:1;">
+          <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:4px;">New Orders Today</div>
+          <div style="font-size:36px;font-weight:900;color:#1e40af;line-height:1;">{{ stats.new_orders_today }}</div>
+          <div style="font-size:11px;color:#6b7280;margin-top:2px;">Live orders entered today</div>
+        </div>
+        <span id="caret-new" style="font-size:18px;color:#93c5fd;transition:transform 0.2s;">▾</span>
       </div>
     </div>
-    <div style="background:#fff;border:1.5px solid var(--border);border-radius:14px;padding:18px 20px;display:flex;align-items:center;gap:16px;">
-      <div style="width:48px;height:48px;border-radius:12px;background:#fef9c3;display:flex;align-items:center;justify-content:center;font-size:22px;">📋</div>
-      <div>
-        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Past Orders Today</div>
-        <div style="font-size:32px;font-weight:900;color:#92400e;line-height:1;">{{ stats.past_orders_today }}</div>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Historical orders uploaded today</div>
-      </div>
-    </div>
-    <div style="background:linear-gradient(135deg,#6366f1,#4f46e5);border-radius:14px;padding:18px 20px;display:flex;align-items:center;gap:16px;">
-      <div style="width:48px;height:48px;border-radius:12px;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:22px;">📊</div>
-      <div>
-        <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.75);text-transform:uppercase;margin-bottom:4px;">Total Uploaded Today</div>
-        <div style="font-size:32px;font-weight:900;color:#fff;line-height:1;">{{ stats.total_uploaded_today }}</div>
-        <div style="font-size:11px;color:rgba(255,255,255,0.7);margin-top:2px;">New + Past orders</div>
+
+    <!-- Past Orders Card -->
+    <div onclick="toggleTodayList('past')" style="background:#fff;border:2px solid #fde68a;border-radius:14px;padding:18px 20px;cursor:pointer;transition:all 0.2s;"
+      onmouseover="this.style.borderColor='#f59e0b';this.style.transform='translateY(-2px)'"
+      onmouseout="this.style.borderColor='#fde68a';this.style.transform=''">
+      <div style="display:flex;align-items:center;gap:14px;">
+        <div style="width:48px;height:48px;border-radius:12px;background:#fef9c3;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">📋</div>
+        <div style="flex:1;">
+          <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:4px;">Past Orders Today</div>
+          <div style="font-size:36px;font-weight:900;color:#92400e;line-height:1;">{{ stats.past_orders_today }}</div>
+          <div style="font-size:11px;color:#6b7280;margin-top:2px;">Historical orders uploaded today</div>
+        </div>
+        <span id="caret-past" style="font-size:18px;color:#fcd34d;transition:transform 0.2s;">▾</span>
       </div>
     </div>
   </div>
+
+  <!-- Expandable order list panel -->
+  <div id="today-list-panel" style="display:none;margin-bottom:20px;">
+    <div class="card">
+      <div id="today-list-header" class="card-header">
+        <span class="card-title" id="today-list-title">Orders</span>
+        <button onclick="closeTodayList()" style="background:#fee2e2;color:#dc2626;border:none;border-radius:8px;padding:5px 14px;font-size:12px;font-weight:700;cursor:pointer;">✕ Close</button>
+      </div>
+      <div id="today-list-body" style="overflow-x:auto;"></div>
+    </div>
+  </div>
+
+  <!-- Order data from backend -->
+  <script>
+  const NEW_ORDERS_TODAY  = {{ new_orders_list | tojson }};
+  const PAST_ORDERS_TODAY = {{ past_orders_list | tojson }};
+  let todayListOpen = null;
+
+  function toggleTodayList(type) {
+    if (todayListOpen === type) { closeTodayList(); return; }
+    todayListOpen = type;
+    const data   = type === 'new' ? NEW_ORDERS_TODAY : PAST_ORDERS_TODAY;
+    const title  = type === 'new' ? '🆕 New Orders Entered Today' : '📋 Past Orders Uploaded Today';
+    const accentColor = type === 'new' ? '#1e40af' : '#92400e';
+
+    document.getElementById('today-list-title').textContent = title;
+    document.getElementById('caret-new').style.transform  = type==='new'  ? 'rotate(180deg)' : '';
+    document.getElementById('caret-past').style.transform = type==='past' ? 'rotate(180deg)' : '';
+
+    const body = document.getElementById('today-list-body');
+    if (!data.length) {
+      body.innerHTML = '<div style="padding:40px;text-align:center;color:#9ca3af;"><div style="font-size:28px;margin-bottom:8px;">📭</div><div style="font-weight:700;">No orders yet today</div></div>';
+    } else {
+      body.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead><tr style="background:#f8fafc;border-bottom:2px solid #e5e7eb;">
+          <th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:#6b7280;">Order</th>
+          <th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:#6b7280;">Customer</th>
+          <th style="padding:10px 16px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;color:#6b7280;">Date</th>
+          <th style="padding:10px 16px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;color:#6b7280;">Total</th>
+          <th style="padding:10px 16px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;color:#6b7280;">Paid</th>
+          <th style="padding:10px 16px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;color:#6b7280;">Due</th>
+          <th style="padding:10px 16px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;color:#6b7280;">Edit</th>
+        </tr></thead>
+        <tbody>${data.map(o => `
+          <tr style="border-bottom:1px solid #f1f5f9;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
+            <td style="padding:11px 16px;font-weight:800;color:${accentColor};">#${o.code}</td>
+            <td style="padding:11px 16px;font-weight:600;">${o.name}</td>
+            <td style="padding:11px 16px;text-align:center;font-size:12px;color:#6b7280;">${o.date}</td>
+            <td style="padding:11px 16px;text-align:right;font-weight:700;">₹${o.payable}</td>
+            <td style="padding:11px 16px;text-align:right;color:#16a34a;font-weight:700;">₹${o.paid}</td>
+            <td style="padding:11px 16px;text-align:right;color:${o.due>0?'#dc2626':'#16a34a'};font-weight:700;">₹${o.due}</td>
+            <td style="padding:11px 16px;text-align:center;">
+              <a href="/owner/orders/edit/${o.code}" style="background:#eff6ff;color:#1d4ed8;padding:5px 12px;border-radius:8px;font-size:11px;font-weight:700;text-decoration:none;">Edit ↗</a>
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
+    }
+
+    document.getElementById('today-list-panel').style.display = 'block';
+    setTimeout(() => document.getElementById('today-list-panel').scrollIntoView({behavior:'smooth',block:'start'}), 50);
+  }
+
+  function closeTodayList() {
+    todayListOpen = null;
+    document.getElementById('today-list-panel').style.display = 'none';
+    document.getElementById('caret-new').style.transform  = '';
+    document.getElementById('caret-past').style.transform = '';
+  }
+  </script>
 
   <!-- Row 2: Transactions table (full width, most important) -->
   <div class="card" style="margin-bottom:20px;">
