@@ -196,6 +196,7 @@ def _init_pg():
             tx_type TEXT NOT NULL, category TEXT NOT NULL,
             amount REAL NOT NULL, mode TEXT DEFAULT 'cash',
             order_id INTEGER, note TEXT, created_by TEXT DEFAULT 'employee',
+            employee_name TEXT DEFAULT NULL,
             created_at TEXT DEFAULT TO_CHAR(NOW(),'YYYY-MM-DD HH24:MI:SS'))""",
         """CREATE TABLE IF NOT EXISTS inventory (
             id SERIAL PRIMARY KEY, item_name TEXT UNIQUE NOT NULL,
@@ -235,6 +236,16 @@ def _init_pg():
     ]
     for s in statements:
         cur.execute(s)
+
+    # Schema migrations — safe to run on existing DBs (IF NOT EXISTS / IF NOT EXISTS equivalent)
+    migrations = [
+        "ALTER TABLE finance ADD COLUMN employee_name TEXT DEFAULT NULL",
+    ]
+    for m in migrations:
+        try:
+            cur.execute(m)
+        except Exception:
+            pass  # Column already exists — ignore
 
     _insert_defaults_pg(cur)
     conn.commit()
@@ -336,6 +347,11 @@ def _init_sqlite():
     defaults = [("owner_pin","1234"),("shop_name","Uttam Tailors"),("whatsapp_number",""),("default_language","hinglish"),("last_order_code","3599"),("work_rate_measurement","0"),("work_rate_cutting","25"),("work_rate_alteration","15"),("finance_income_cats","advance,payment,alteration,other income"),("finance_expense_cats","thread,buttons,fabric,electricity,rent,salary,transport,maintenance,other expense"),("rate_list_image","")]
     for k,v in defaults:
         cur.execute("INSERT OR IGNORE INTO settings(key,value) VALUES(?,?)",(k,v))
+    # Schema migration — safe on existing DBs
+    try:
+        cur.execute("ALTER TABLE finance ADD COLUMN employee_name TEXT DEFAULT NULL")
+    except Exception:
+        pass  # Already exists
     conn.commit(); conn.close()
 
 
