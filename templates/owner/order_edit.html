@@ -7,6 +7,7 @@
     <div class="header-sub">Edit all order details below</div>
   </div>
   <div style="display:flex;gap:8px;align-items:center;">
+    <button onclick="openChangeCodeModal()" class="btn btn-ghost btn-sm" style="border-color:#f59e0b;color:#d97706;">🔢 Change Order Code</button>
     <a href="/owner/orders" class="btn btn-ghost btn-sm">← Back to Orders</a>
     <button class="menu-toggle" onclick="openSidebar()">☰</button>
   </div>
@@ -463,4 +464,73 @@ window.addEventListener("pageshow", function(e) {
     });
   }
 });
-</script>{% endblock %}
+
+// ── Change Order Code ─────────────────────────────────────────
+const CURRENT_CODE = "{{ order.order_code }}";
+
+function openChangeCodeModal() {
+  document.getElementById("change-code-modal").style.display = "flex";
+  document.getElementById("new-order-code-input").value = "";
+  document.getElementById("new-order-code-input").focus();
+  document.getElementById("code-check-msg").textContent = "";
+}
+function closeChangeCodeModal() {
+  document.getElementById("change-code-modal").style.display = "none";
+}
+async function submitChangeCode() {
+  const newCode = document.getElementById("new-order-code-input").value.trim();
+  if (!newCode) { document.getElementById("code-check-msg").textContent = "⚠️ Enter a new order code"; return; }
+  if (newCode === CURRENT_CODE) { document.getElementById("code-check-msg").textContent = "⚠️ Same as current code"; return; }
+
+  const btn = document.getElementById("confirm-code-btn");
+  btn.disabled = true; btn.textContent = "Saving...";
+  document.getElementById("code-check-msg").textContent = "";
+
+  const resp = await fetch("/owner/api/orders/change-code", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ old_code: CURRENT_CODE, new_code: newCode })
+  });
+  const d = await resp.json().catch(() => ({}));
+
+  if (d.ok) {
+    document.getElementById("code-check-msg").style.color = "#16a34a";
+    document.getElementById("code-check-msg").textContent = "✅ Changed! Redirecting...";
+    setTimeout(() => { window.location.href = "/owner/orders/edit/" + newCode; }, 1000);
+  } else {
+    document.getElementById("code-check-msg").style.color = "#dc2626";
+    document.getElementById("code-check-msg").textContent = "❌ " + (d.error || "Error");
+    btn.disabled = false; btn.textContent = "Confirm Change";
+  }
+}
+</script>
+
+<!-- Change Order Code Modal -->
+<div id="change-code-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:32px;max-width:480px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <h2 style="margin:0 0 8px;font-size:20px;color:#1e1b4b;">🔢 Change Order Code</h2>
+    <p style="color:#6b7280;font-size:13px;margin:0 0 20px;">
+      Current code: <strong>#{{ order.order_code }}</strong><br>
+      Change karne pe sab linked data (finance, work logs) automatically update ho jaayega.
+    </p>
+    <div style="margin-bottom:16px;">
+      <label style="font-size:12px;font-weight:700;color:#374151;text-transform:uppercase;margin-bottom:6px;display:block;">New Order Code</label>
+      <input type="text" id="new-order-code-input" placeholder="e.g. 3789"
+        onkeydown="if(event.key==='Enter') submitChangeCode()"
+        style="width:100%;padding:12px 16px;font-size:18px;font-weight:800;border:2px solid #e5e7eb;border-radius:10px;outline:none;box-sizing:border-box;text-align:center;letter-spacing:2px;"
+        onfocus="this.style.borderColor='#f59e0b'" onblur="this.style.borderColor='#e5e7eb'">
+    </div>
+    <div id="code-check-msg" style="font-size:13px;font-weight:700;min-height:20px;margin-bottom:16px;text-align:center;"></div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="closeChangeCodeModal()"
+        style="flex:1;padding:12px;background:#f3f4f6;color:#374151;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">
+        Cancel
+      </button>
+      <button id="confirm-code-btn" onclick="submitChangeCode()"
+        style="flex:1;padding:12px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">
+        Confirm Change
+      </button>
+    </div>
+  </div>
+</div>
+{% endblock %}
