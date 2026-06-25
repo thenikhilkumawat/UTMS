@@ -2384,10 +2384,16 @@ def salary():
         total_pieces  = sum(r["qty_done"] or 0 for r in logs)
         total_orders  = len(set(r["order_code"] for r in logs if r["order_code"]))
 
-        adv_period = conn.execute(
-            "SELECT COALESCE(SUM(amount),0) as total FROM salary_advances WHERE employee_name=? AND advance_date >= ?",
-            (name, start)
-        ).fetchone()["total"] or 0
+        # Read salary advances from finance table (single source of truth).
+        # Both sources (Salary page "Record Advance" + Finance page salary
+        # expense) now write to finance table with employee_name set, so
+        # this one query captures everything without double-counting.
+        adv_period = conn.execute("""
+            SELECT COALESCE(SUM(amount),0) as total
+            FROM finance
+            WHERE tx_type='expense' AND LOWER(category)='salary'
+            AND employee_name=? AND tx_date >= ?
+        """, (name, start)).fetchone()["total"] or 0
 
         employees.append({
             "name":         name,
@@ -2428,18 +2434,47 @@ def api_salary_advance():
     data   = request.get_json(silent=True) or {}
     name   = data.get("employee_name","").strip()
     amount = float(data.get("amount",0) or 0)
-    note   = data.get("note","").strip()
+    note   = data.get("note","").strip() or f"Salary — {name}"
     if not name or amount <= 0:
         return jsonify({"ok":False,"error":"Name and amount required"})
     today = date.today().isoformat()
     now   = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     conn  = get_db()
+    # Write to salary_advances (legacy/canonical table)
     conn.execute(
         "INSERT INTO salary_advances(employee_name,amount,note,advance_date,created_at) VALUES(?,?,?,?,?)",
         (name, amount, note, today, now)
     )
+    # Also write to finance table so both pages stay in sync
+    conn.execute("""
+        INSERT INTO finance(tx_date,tx_type,category,amount,mode,note,employee_name,created_by,created_at)
+        VALUES(?,'expense','salary',?,'cash',?,?,'owner',?)
+    """, (today, amount, note, name, now))
     conn.commit(); conn.close()
     return jsonify({"ok":True})
+
+
+@bp.route("/api/salary/sync-finance", methods=["POST"])
+@owner_required
+def api_salary_sync_finance():
+    """One-time fix: backfill employee_name in finance table for existing
+    salary entries where note is 'Salary — {name}' but employee_name is NULL."""
+    conn = get_db()
+    rows = conn.execute("""
+        SELECT id, note FROM finance
+        WHERE tx_type='expense' AND LOWER(category)='salary'
+        AND (employee_name IS NULL OR employee_name='')
+        AND note LIKE 'Salary — %'
+    """).fetchall()
+    updated = 0
+    for r in rows:
+        # Extract name from "Salary — Bhagwan" → "Bhagwan"
+        emp = r["note"].replace("Salary — ", "").strip()
+        if emp:
+            conn.execute("UPDATE finance SET employee_name=? WHERE id=?", (emp, r["id"]))
+            updated += 1
+    conn.commit(); conn.close()
+    return jsonify({"ok": True, "updated": updated})
 
 
 @bp.route("/api/salary/fresh-start", methods=["POST"])
