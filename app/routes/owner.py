@@ -595,6 +595,20 @@ def dashboard():
     low_stock = conn.execute("SELECT * FROM inventory WHERE quantity <= low_alert_at ORDER BY quantity ASC").fetchall()
     urgent_count = conn.execute("SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status != 'delivered' AND delivery_date >= ?",(today,)).fetchone()["c"]
 
+    # Today's order activity
+    # New orders: created_at today + not delivered at time of creation (live orders)
+    new_orders_today = conn.execute(
+        "SELECT COUNT(*) as c FROM orders WHERE created_at LIKE ? AND status != 'delivered'",
+        (today + "%",)
+    ).fetchone()["c"]
+    # Past orders: created_at today + already delivered + order_date is NOT today
+    # (past orders are entered today but have old order_date)
+    past_orders_today = conn.execute(
+        "SELECT COUNT(*) as c FROM orders WHERE created_at LIKE ? AND status='delivered' AND order_date != ?",
+        (today + "%", today)
+    ).fetchone()["c"]
+    total_uploaded_today = new_orders_today + past_orders_today
+
     # All rate settings
     custom_rates = conn.execute("SELECT key,value FROM settings WHERE key LIKE '%rate%'").fetchall()
     conn.close()
@@ -659,6 +673,9 @@ def dashboard():
             "pending_dues":  dues["total"] or 0 if dues else 0,
             "pending_orders":dues["cnt"] or 0 if dues else 0,
             "work_today":    work_today_proxy if (work_today["total"] or 0)==0 else work_today["total"],
+            "new_orders_today":   new_orders_today,
+            "past_orders_today":  past_orders_today,
+            "total_uploaded_today": total_uploaded_today,
         }
     )
 
