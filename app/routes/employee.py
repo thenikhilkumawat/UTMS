@@ -2095,6 +2095,15 @@ def api_worklog_add():
     return jsonify({"ok": True, "auto_ready": auto_ready, "progress": progress})
 
 
+@bp.route("/api/check-pin", methods=["POST"])
+def api_check_pin():
+    """Verify owner PIN without creating a session — used for action-level confirmation."""
+    data    = request.get_json(silent=True) or {}
+    entered = str(data.get("pin", "")).strip()
+    real    = get_setting("owner_pin", "1234")
+    return jsonify({"ok": entered == real})
+
+
 @bp.route("/api/work-log/delete/<int:log_id>", methods=["POST"])
 def api_worklog_delete(log_id):
     """Delete a single work log entry."""
