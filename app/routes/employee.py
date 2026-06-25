@@ -2706,9 +2706,10 @@ def api_finance_add():
 
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     conn.execute("""
-        INSERT INTO finance(tx_date,tx_type,category,amount,mode,order_id,note,created_by,created_at)
-        VALUES(?,?,?,?,?,?,?,'employee',?)
-    """, (tx_date, tx_type, category, amount, mode, order_id, note, now))
+        INSERT INTO finance(tx_date,tx_type,category,amount,mode,order_id,note,employee_name,created_by,created_at)
+        VALUES(?,?,?,?,?,?,?,?,'employee',?)
+    """, (tx_date, tx_type, category, amount, mode, order_id, note,
+          employee_name if (tx_type=="expense" and cat_lower=="salary") else None, now))
     conn.commit()
     conn.close()
     return jsonify({"ok": True})
