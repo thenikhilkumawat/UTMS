@@ -32,8 +32,8 @@
       onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(0,0,0,0.2)'"
       onmouseout="this.style.transform='';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'">
       <div style="font-size:11px;font-weight:700;opacity:0.8;text-transform:uppercase;margin-bottom:6px;">Total Income</div>
-      <div style="font-size:28px;font-weight:900;">₹{{ stats.total_income }}</div>
-      <div style="font-size:11px;opacity:0.75;margin-top:4px;">Cash ₹{{ stats.cash_income }} · UPI ₹{{ stats.upi_income }}</div>
+      <div style="font-size:28px;font-weight:900;">₹{{  stats.total_income | int }}</div>
+      <div style="font-size:11px;opacity:0.75;margin-top:4px;">Cash ₹{{  stats.cash_income | int }} · UPI ₹{{  stats.upi_income | int }}</div>
       <div style="font-size:10px;opacity:0.6;margin-top:6px;">👆 Click to filter</div>
     </div>
     <div onclick="filterByCard('expense')" id="card-expense"
@@ -41,7 +41,7 @@
       onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(0,0,0,0.2)'"
       onmouseout="this.style.transform='';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'">
       <div style="font-size:11px;font-weight:700;opacity:0.8;text-transform:uppercase;margin-bottom:6px;">Total Expense</div>
-      <div style="font-size:28px;font-weight:900;">₹{{ stats.total_expense }}</div>
+      <div style="font-size:28px;font-weight:900;">₹{{  stats.total_expense | int }}</div>
       <div style="font-size:11px;opacity:0.75;margin-top:4px;">{{ stats.expense_count }} entries</div>
       <div style="font-size:10px;opacity:0.6;margin-top:6px;">👆 Click to filter</div>
     </div>
@@ -50,7 +50,7 @@
       onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(0,0,0,0.2)'"
       onmouseout="this.style.transform='';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'">
       <div style="font-size:11px;font-weight:700;opacity:0.8;text-transform:uppercase;margin-bottom:6px;">Net Profit</div>
-      <div style="font-size:28px;font-weight:900;">₹{{ stats.net }}</div>
+      <div style="font-size:28px;font-weight:900;">₹{{  stats.net | int }}</div>
       <div style="font-size:11px;opacity:0.75;margin-top:4px;">Income − Expense</div>
       <div style="font-size:10px;opacity:0.6;margin-top:6px;">👆 Click for all entries</div>
     </div>
@@ -59,7 +59,7 @@
       onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(0,0,0,0.2)'"
       onmouseout="this.style.transform='';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'">
       <div style="font-size:11px;font-weight:700;opacity:0.8;text-transform:uppercase;margin-bottom:6px;">Pending Due</div>
-      <div style="font-size:28px;font-weight:900;">₹{{ stats.pending_due }}</div>
+      <div style="font-size:28px;font-weight:900;">₹{{  stats.pending_due | int }}</div>
       <div style="font-size:11px;opacity:0.75;margin-top:4px;">{{ pending_orders|length }} active orders</div>
       <div style="font-size:10px;opacity:0.6;margin-top:6px;">👆 Click to see orders</div>
     </div>
@@ -183,7 +183,7 @@
             </td>
             <td style="padding:11px 16px;text-align:center;"><span style="font-size:11px;font-weight:700;background:#f1f5f9;padding:2px 8px;border-radius:7px;">{{ tx.mode|upper if tx.mode else '—' }}</span></td>
             <td style="padding:11px 16px;text-align:center;font-size:11px;color:var(--text-muted);">{{ tx.created_by }}</td>
-            <td style="padding:11px 16px;text-align:right;font-size:15px;font-weight:900;color:{% if tx.tx_type=='income' %}var(--success){% else %}var(--danger){% endif %};">{% if tx.tx_type=='income' %}+{% else %}−{% endif %}₹{{ tx.amount|int }}</td>
+            <td style="padding:11px 16px;text-align:right;font-size:15px;font-weight:900;color:{% if tx.tx_type=='income' %}var(--success){% else %}var(--danger){% endif %};">{% if tx.tx_type=='income' %}+{% else %}−{% endif %}₹{{ tx.amount | int }}</td>
             <td style="padding:11px 16px;text-align:center;">
               <button onclick="event.stopPropagation();deleteTx({{ tx.id }}, '{{ tx.tx_type }}', {{ tx.amount|int }}, '{{ tx.category }}')"
                 style="background:#fee2e2;color:#dc2626;border:none;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;"
