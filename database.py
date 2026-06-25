@@ -237,15 +237,18 @@ def _init_pg():
     for s in statements:
         cur.execute(s)
 
-    # Schema migrations — safe to run on existing DBs (IF NOT EXISTS / IF NOT EXISTS equivalent)
+    # Schema migrations — each in its own savepoint so a failure doesn't
+    # abort the whole transaction (PostgreSQL requires this pattern).
     migrations = [
-        "ALTER TABLE finance ADD COLUMN employee_name TEXT DEFAULT NULL",
+        "ALTER TABLE finance ADD COLUMN IF NOT EXISTS employee_name TEXT DEFAULT NULL",
     ]
     for m in migrations:
         try:
+            cur.execute("SAVEPOINT migration_sp")
             cur.execute(m)
+            cur.execute("RELEASE SAVEPOINT migration_sp")
         except Exception:
-            pass  # Column already exists — ignore
+            cur.execute("ROLLBACK TO SAVEPOINT migration_sp")
 
     _insert_defaults_pg(cur)
     conn.commit()
