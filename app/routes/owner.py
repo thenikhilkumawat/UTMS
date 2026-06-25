@@ -602,12 +602,33 @@ def dashboard():
         (today + "%",)
     ).fetchone()["c"]
     # Past orders: created_at today + already delivered + order_date is NOT today
-    # (past orders are entered today but have old order_date)
     past_orders_today = conn.execute(
         "SELECT COUNT(*) as c FROM orders WHERE created_at LIKE ? AND status='delivered' AND order_date != ?",
         (today + "%", today)
     ).fetchone()["c"]
-    total_uploaded_today = new_orders_today + past_orders_today
+
+    def _fmtd(d):
+        if not d: return "—"
+        p = str(d).split("-")
+        return f"{p[2]}-{p[1]}-{p[0]}" if len(p)==3 else d
+
+    new_orders_list = [{"code":r["order_code"],"name":r["name"],
+        "date":_fmtd(r["order_date"]),"payable":int(r["payable_amount"] or 0),
+        "paid":int(r["advance_paid"] or 0),"due":int(r["remaining"] or 0)}
+        for r in conn.execute("""
+            SELECT o.order_code,c.name,o.order_date,o.payable_amount,o.advance_paid,o.remaining
+            FROM orders o JOIN customers c ON c.id=o.customer_id
+            WHERE o.created_at LIKE ? AND o.status!='delivered' ORDER BY o.id DESC
+        """, (today+"%",)).fetchall()]
+
+    past_orders_list = [{"code":r["order_code"],"name":r["name"],
+        "date":_fmtd(r["order_date"]),"payable":int(r["payable_amount"] or 0),
+        "paid":int(r["advance_paid"] or 0),"due":int(r["remaining"] or 0)}
+        for r in conn.execute("""
+            SELECT o.order_code,c.name,o.order_date,o.payable_amount,o.advance_paid,o.remaining
+            FROM orders o JOIN customers c ON c.id=o.customer_id
+            WHERE o.created_at LIKE ? AND o.status='delivered' AND o.order_date!=? ORDER BY o.id DESC
+        """, (today+"%", today)).fetchall()]
 
     # All rate settings
     custom_rates = conn.execute("SELECT key,value FROM settings WHERE key LIKE '%rate%'").fetchall()
@@ -675,8 +696,9 @@ def dashboard():
             "work_today":    work_today_proxy if (work_today["total"] or 0)==0 else work_today["total"],
             "new_orders_today":   new_orders_today,
             "past_orders_today":  past_orders_today,
-            "total_uploaded_today": total_uploaded_today,
-        }
+        },
+        new_orders_list=new_orders_list,
+        past_orders_list=past_orders_list,
     )
 
 @bp.route("/settings")
