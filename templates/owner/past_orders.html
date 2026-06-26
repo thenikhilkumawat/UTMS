@@ -18,39 +18,39 @@
   </div>
 </div>
 
-<div class="page-body" style="padding:20px 24px;">
+<div class="page-body" style="padding:16px 20px;">
 
   <!-- TWO-SECTION LAYOUT -->
-  <div style="display:grid;grid-template-columns:280px 1fr;gap:20px;align-items:start;">
+  <div style="display:grid;grid-template-columns:240px 1fr;gap:16px;align-items:start;">
 
     <!-- ─── SECTION 1: DIARY (QR + Code) ─── -->
-    <div style="background:#1e293b;border-radius:18px;padding:20px;position:sticky;top:20px;">
-      <div style="font-size:13px;font-weight:900;color:#f8fafc;margin-bottom:4px;">📖 Diary Upload</div>
-      <div style="font-size:11px;color:#64748b;margin-bottom:16px;">Mobile se diary photo kheecho</div>
+    <div style="background:#1e293b;border-radius:16px;padding:16px;position:sticky;top:16px;">
+      <div style="font-size:12px;font-weight:900;color:#f8fafc;margin-bottom:2px;">📖 Diary Upload</div>
+      <div style="font-size:10px;color:#64748b;margin-bottom:12px;">Mobile se diary photo lo</div>
 
       <!-- QR Code -->
-      <div style="background:#fff;border-radius:12px;padding:10px;margin-bottom:14px;text-align:center;">
-        <div id="past-upload-qr" style="display:inline-block;"></div>
+      <div style="background:#fff;border-radius:10px;padding:8px;margin-bottom:10px;text-align:center;display:flex;align-items:center;justify-content:center;min-height:186px;">
+        <div id="past-upload-qr"></div>
       </div>
 
-      <div style="font-size:11px;color:#64748b;text-align:center;margin-bottom:10px;line-height:1.6;">
-        QR scan karo → Code daalo<br>Photo lo → Done!
+      <div style="font-size:10px;color:#64748b;text-align:center;margin-bottom:10px;line-height:1.7;">
+        QR scan → Code daalo<br>Photo → Done!
       </div>
 
       <a id="past-upload-link" href="/owner/past-upload" target="_blank"
-        style="display:block;text-align:center;padding:9px;background:linear-gradient(135deg,#6366f1,#4f46e5);
-               color:#fff;border-radius:10px;text-decoration:none;font-size:12px;font-weight:800;">
+        style="display:block;text-align:center;padding:8px;background:linear-gradient(135deg,#6366f1,#4f46e5);
+               color:#fff;border-radius:8px;text-decoration:none;font-size:11px;font-weight:800;margin-bottom:12px;">
         🔗 Mobile Link Kholo
       </a>
 
-      <div style="margin:14px 0;border-top:1px solid #334155;"></div>
-
-      <div style="font-size:11px;font-weight:700;color:#94a3b8;text-align:center;margin-bottom:10px;">PEHLE CODE DAALO</div>
-      <input id="p-code-input-diary" type="text" inputmode="numeric" placeholder="2450"
-        oninput="syncDiaryCode(this.value)"
-        style="width:100%;padding:10px;font-size:24px;font-weight:900;border:2px solid #334155;border-radius:10px;
-               text-align:center;letter-spacing:4px;background:#0f172a;color:#f8fafc;outline:none;box-sizing:border-box;">
-      <div style="font-size:10px;color:#475569;text-align:center;margin-top:6px;">Diary number → QR link mein auto-fill</div>
+      <div style="border-top:1px solid #334155;padding-top:12px;">
+        <div style="font-size:9px;font-weight:700;color:#64748b;text-align:center;margin-bottom:6px;letter-spacing:1px;">PEHLE CODE DAALO</div>
+        <input id="p-code-input-diary" type="text" inputmode="numeric" placeholder="2450"
+          oninput="syncDiaryCode(this.value)"
+          style="width:100%;padding:8px;font-size:22px;font-weight:900;border:2px solid #334155;border-radius:8px;
+                 text-align:center;letter-spacing:3px;background:#0f172a;color:#f8fafc;outline:none;box-sizing:border-box;">
+        <div style="font-size:9px;color:#475569;text-align:center;margin-top:5px;">QR link mein auto-fill hoga</div>
+      </div>
     </div>
 
     <!-- ─── SECTION 2: PAST ORDER FORM ─── -->
@@ -398,14 +398,19 @@ document.addEventListener("DOMContentLoaded", function() {
   if (!qrBox) return;
   var url = window.location.origin + "/owner/past-upload";
   document.getElementById("past-upload-link").href = url;
-  if (typeof QRCode !== "undefined") {
-    try {
-      new QRCode(qrBox, { text: url, width: 160, height: 160,
-        colorDark: "#1e293b", colorLight: "#ffffff" });
-    } catch(e) { qrBox.innerHTML = "<small>" + url + "</small>"; }
-  } else {
-    qrBox.innerHTML = '<a href="' + url + '" style="font-size:11px;">' + url + '</a>';
+
+  function renderQR() {
+    if (typeof QRCode !== "undefined") {
+      qrBox.innerHTML = "";
+      try {
+        new QRCode(qrBox, { text: url, width: 170, height: 170,
+          colorDark: "#1e293b", colorLight: "#ffffff" });
+      } catch(e) { qrBox.innerHTML = "<small style='color:#333;word-break:break-all'>" + url + "</small>"; }
+    } else {
+      setTimeout(renderQR, 200);  // wait for QRCode script to load
+    }
   }
+  renderQR();
 });
 
 // ── Sync diary code input to main code input ──────────
