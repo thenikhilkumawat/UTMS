@@ -377,11 +377,18 @@ function addEntry(){
       document.getElementById("f-note").value="";
       document.getElementById("f-order-code").value="";
       onCategoryChange();
+      localStorage.setItem("fin_last_type", txType);
       setTimeout(()=>location.reload(),700);
     } else showToast("Error: "+d.error,"error");
   });
 }
 
-document.addEventListener("DOMContentLoaded",()=>{ loadCats(); filterTx(); });
+document.addEventListener("DOMContentLoaded",()=>{
+  loadCats();
+  filterTx();
+  var lastType = localStorage.getItem("fin_last_type");
+  if(lastType === "expense") setType("expense");
+  localStorage.removeItem("fin_last_type");
+});
 </script>
 {% endblock %}
