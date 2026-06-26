@@ -875,11 +875,44 @@ def measurement_book():
                 "image_only": False,
             })
 
-        # Also add image-only entries (photo uploaded but order not yet created in DB)
+        # Also add image-only entries — ONLY numeric order codes (not test/gallery folders)
         img_base = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.dirname(__file__))), "static", "order_images")
+
+        # Check Cloudinary/DB for orphaned image uploads (order_images with order_id=0)
+        temp_img_rows = conn.execute("""
+            SELECT file_path FROM order_images
+            WHERE order_id=0 AND file_path LIKE 'temp:%'
+        """).fetchall()
+        temp_codes = set()
+        for r in temp_img_rows:
+            parts = r["file_path"].split(":")
+            if len(parts) >= 3:
+                code = parts[1]
+                if code.isdigit() and code not in db_codes:
+                    temp_codes.add(code)
+
+        for code in sorted(temp_codes, reverse=True):
+            img_url = None
+            for r in temp_img_rows:
+                parts = r["file_path"].split(":")
+                if len(parts) >= 3 and parts[1] == code:
+                    img_url = parts[2]
+                    break
+            orders_data.insert(0, {
+                "code": code, "odate": "—", "ddate": "—",
+                "status": "image_only", "urgent": False,
+                "payable": 0, "paid": 0, "due": 0,
+                "note": "", "cname": "— Not saved yet —",
+                "mobile": "—", "address": "—",
+                "garments": [],
+                "image": img_url,
+                "image_only": True,
+            })
+
         if _os.path.isdir(img_base):
             for code in sorted(_os.listdir(img_base), reverse=True):
-                if code in db_codes or code == "gallery":
+                # Skip: already in DB, gallery, or non-numeric names
+                if code in db_codes or not code.isdigit():
                     continue
                 folder = _os.path.join(img_base, code)
                 if not _os.path.isdir(folder):
@@ -887,7 +920,6 @@ def measurement_book():
                 imgs = sorted(f for f in _os.listdir(folder) if f.lower().endswith((".jpg",".jpeg",".png",".webp")))
                 if not imgs:
                     continue
-                # Image exists but no order in DB yet
                 orders_data.insert(0, {
                     "code": code, "odate": "—", "ddate": "—",
                     "status": "image_only", "urgent": False,
