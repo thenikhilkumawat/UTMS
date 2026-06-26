@@ -165,7 +165,7 @@ function loadImages(code) {
       tmp.querySelectorAll("img").forEach(img => {
         const el = document.createElement("img");
         el.src = img.src;
-        el.style.cssText = "width:70px;height:70px;object-fit:cover;border-radius:8px;border:2px solid var(--border);cursor:zoom-in;margin:2px;";
+        el.style.cssText = "width:70px;height:70px;object-fit:cover;border-radius:8px;border:2px solid var(--border);cursor:zoom-in;margin:2px;"; el.onclick=function(){openZoomModal(this.src,"Order Image");};
         el.onclick = () => { document.getElementById("overlay-img").src=img.src; document.getElementById("img-overlay").style.display="flex"; };
         box.appendChild(el);
       });
