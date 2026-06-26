@@ -252,7 +252,7 @@
 
 {% block extra_js %}
 <script>
-var txType = "income", payMode = "cash", txFilter = "today";
+var txType = "income", payMode = "cash", txFilter = "all";
 
 if (window.innerWidth <= 768) {
   document.querySelector('.fin-fab').style.display = 'flex';
@@ -297,22 +297,27 @@ function setFilter(f) {
   txFilter = f;
   ["today","yesterday","all"].forEach(id => {
     var btn = document.getElementById("filter-"+id);
-    btn.className = "fil-btn" + (f===id ? " active" : "");
+    if(btn) btn.className = "fil-btn" + (f===id ? " active" : "");
   });
   filterTx();
 }
 
 function filterTx() {
   var now = new Date();
-  var today = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
-  var yD = new Date(now-86400000);
-  var yest = yD.getFullYear()+'-'+String(yD.getMonth()+1).padStart(2,'0')+'-'+String(yD.getDate()).padStart(2,'0');
+  var pad = n => String(n).padStart(2,'0');
+  var today = now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate());
+  var yD = new Date(+now - 86400000);
+  var yest = yD.getFullYear()+'-'+pad(yD.getMonth()+1)+'-'+pad(yD.getDate());
   var q = (document.getElementById("f-search").value||"").toLowerCase().trim();
-  document.querySelectorAll(".tx-row").forEach(row => {
-    var d = row.dataset.date;
-    var dateOk = txFilter==="all"||(txFilter==="today"&&d===today)||(txFilter==="yesterday"&&d===yest);
-    var qOk = !q||row.dataset.s.includes(q);
-    row.style.display = dateOk&&qOk ? "" : "none";
+  var rows = document.querySelectorAll(".tx-row");
+  var shown = 0;
+  rows.forEach(row => {
+    var d = (row.dataset.date||"").trim();
+    var dateOk = txFilter==="all" || (txFilter==="today"&&d===today) || (txFilter==="yesterday"&&d===yest);
+    var qOk = !q || (row.dataset.s||"").includes(q);
+    var show = dateOk && qOk;
+    row.style.display = show ? "" : "none";
+    if(show) shown++;
   });
 }
 
@@ -387,7 +392,9 @@ function addEntry(){
 
 document.addEventListener("DOMContentLoaded",()=>{
   loadCats();
-  filterTx();
+  // Set filter after DOM ready
+  txFilter = "today";
+  setFilter("today");
   var lastType = localStorage.getItem("fin_last_type");
   if(lastType === "expense") setType("expense");
   localStorage.removeItem("fin_last_type");
