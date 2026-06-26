@@ -811,6 +811,7 @@ def save_anthropic_key():
 @bp.route("/measurement-book")
 def measurement_book():
     import os as _os
+    from run import Config as _Config
     conn = get_db()
     uc   = conn.execute("SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status!='delivered'").fetchone()["c"]
 
@@ -857,7 +858,7 @@ def measurement_book():
         images = [r["file_path"] for r in img_rows
                   if r["file_path"] and not r["file_path"].startswith("temp:")]
         if not images:
-            folder = _os.path.join(Config.UPLOAD_FOLDER, o["order_code"])
+            folder = _os.path.join(_Config.UPLOAD_FOLDER, o["order_code"])
             if _os.path.isdir(folder):
                 imgs = sorted(f for f in _os.listdir(folder)
                               if f.lower().endswith((".jpg",".jpeg",".png",".webp")))
