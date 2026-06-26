@@ -34,30 +34,23 @@
     <div class="card mb-16">
       <div class="card-header" style="background:linear-gradient(135deg,#fef3c7,#fde68a);">
         <div>
-          <div class="card-title" style="color:#92400e;">🔢 Set Order Code</div>
-          <div style="font-size:12px;color:#b45309;margin-top:2px;">Enter your old order number, or leave blank to auto-assign</div>
+          <div class="card-title" style="color:#92400e;">🔢 Purana Order Number Daalo</div>
+          <div style="font-size:12px;color:#b45309;margin-top:2px;">Apna purana order number daalo — yahi number UTMS mein save hoga</div>
         </div>
       </div>
       <div class="card-body">
         <div style="display:flex;flex-direction:column;align-items:center;gap:24px;padding:10px 0;">
 
-          <div style="text-align:center;">
-            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.4px;color:var(--text-muted);margin-bottom:12px;">Order Code</div>
-            <div class="order-code-hero" onclick="document.getElementById('p-code-input').focus()" style="cursor:text;">
-              <span class="hash">#</span>
-              <span class="code" id="code-display">{{ next_code }}</span>
-            </div>
-            <div style="font-size:12px;color:var(--text-muted);margin-top:8px;">Next auto code: #{{ next_code }}</div>
-          </div>
-
           <div style="width:100%;max-width:420px;">
-            <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:6px;">
-              Enter Your Own Code <span style="font-weight:400;text-transform:none;">(optional — leave blank for auto)</span>
+            <label style="font-size:13px;font-weight:700;color:#92400e;display:block;margin-bottom:8px;">
+              Past Order Code <span style="color:#dc2626;">*</span>
             </label>
             <input id="p-code-input" type="text" inputmode="numeric"
               placeholder="e.g. 2450"
               oninput="updateCodeDisplay(this.value)"
-              style="width:100%;padding:14px 18px;font-size:22px;font-weight:900;border:2px solid var(--border);border-radius:12px;text-align:center;letter-spacing:3px;background:#fff;">
+              style="width:100%;padding:16px 18px;font-size:32px;font-weight:900;border:2px solid #fde68a;border-radius:14px;text-align:center;letter-spacing:4px;background:#fffbeb;outline:none;box-sizing:border-box;"
+              onfocus="this.style.borderColor='#f59e0b'" onblur="this.style.borderColor='#fde68a'">
+            <div style="font-size:12px;color:var(--text-muted);margin-top:6px;text-align:center;">Pehle wali diary ya register se number copy karo</div>
             <div id="code-clash-msg" style="display:none;margin-top:8px;padding:10px 14px;background:#fee2e2;border-radius:8px;font-size:13px;font-weight:700;color:#dc2626;">
               ⚠️ Order #<span id="clash-code-val"></span> already exists. Please use a different number.
             </div>
@@ -365,7 +358,11 @@ function updateCodeDisplay(val) {
 
 function validateStep1() {
   var code = document.getElementById("p-code-input").value.trim();
-  if (!code) { pastOrderCode=""; goStep(2); return; }
+  if (!code) {
+    showToast("⚠️ Order code required — purana number daalo", "warning");
+    document.getElementById("p-code-input").focus();
+    return;
+  }
   // Check clash via order-detail API
   fetch("/owner/api/order-detail/"+encodeURIComponent(code))
     .then(function(r){return r.json();})
