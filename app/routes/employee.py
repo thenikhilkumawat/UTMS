@@ -2568,7 +2568,11 @@ def api_pickup_force_complete():
 @bp.route("/finance")
 def finance():
     conn = get_db()
-    today     = date.today().isoformat()
+    # Use IST date (UTC+5:30) to match browser's local date
+    from datetime import timezone, timedelta as td
+    ist = datetime.now(timezone(td(hours=5, minutes=30)))
+    today     = ist.strftime("%Y-%m-%d")
+    yesterday_ist = (ist - td(days=1)).strftime("%Y-%m-%d")
     month_start = today[:7] + "-01"
 
     def fmt_d(d):
@@ -2597,7 +2601,7 @@ def finance():
         FROM finance WHERE tx_date = ?
     """, (today,)).fetchone()
 
-    yesterday = (date.today() - timedelta(days=1)).isoformat()
+    yesterday = yesterday_ist
     y = conn.execute("""
         SELECT
             COALESCE(SUM(CASE WHEN tx_type='income' THEN amount ELSE 0 END),0) as income,
