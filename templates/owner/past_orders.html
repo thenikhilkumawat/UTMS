@@ -800,7 +800,7 @@ function loadPastImages() {
       }
       box.innerHTML = html;
       box.querySelectorAll("img").forEach(function(img){
-        img.style.cursor="zoom-in"; img.style.width="90px"; img.style.height="90px";
+        img.style.cursor="zoom-in"; img.style.width="90px"; img.style.height="90px"; img.onclick=function(){openZoomModal(this.src,"Past Order Image");};
         img.style.objectFit="cover"; img.style.borderRadius="10px";
         img.style.border="2px solid var(--border)";
       });
