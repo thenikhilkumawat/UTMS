@@ -361,6 +361,14 @@ def upload_images(order_code):
                         fname = f"{int(time.time())}_{len(existing)+saved+1}{ext}"
                         f.save(os.path.join(folder, fname))
                         saved += 1
+                # Check if order exists in DB — if not, mark as diary-only upload
+                conn = get_db()
+                order_exists = conn.execute("SELECT id FROM orders WHERE order_code=?", (order_code,)).fetchone()
+                conn.close()
+                if not order_exists and saved > 0:
+                    marker = os.path.join(folder, ".diary_upload")
+                    with open(marker, "w") as mf:
+                        mf.write(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
             msg = f"Uploaded {saved} image(s). Max 5 per order." if saved else ("Max 5 images reached." if slots==0 else "No image selected.")
             return f"""<html><body style="font-family:sans-serif;padding:30px;text-align:center;">
