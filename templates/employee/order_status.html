@@ -51,7 +51,11 @@
   </button>
   <button class="sort-btn" data-sort="oldest" onclick="applySort('oldest',this)"
     style="padding:5px 12px;border-radius:8px;border:1.5px solid var(--border);background:#fff;color:var(--text-muted);font-size:12px;font-weight:700;cursor:pointer;">
-    🕐 <span class="lang-en">Oldest Order First</span><span class="lang-hi" style="display:none;">पुराना ऑर्डर पहले</span>
+    🕐 <span class="lang-en">Oldest First</span><span class="lang-hi" style="display:none;">पुराना पहले</span>
+  </button>
+  <button class="sort-btn" data-sort="newest" onclick="applySort('newest',this)"
+    style="padding:5px 12px;border-radius:8px;border:1.5px solid var(--border);background:#fff;color:var(--text-muted);font-size:12px;font-weight:700;cursor:pointer;">
+    🆕 <span class="lang-en">Newest First</span><span class="lang-hi" style="display:none;">नया पहले</span>
   </button>
   {% if fresh_start_enabled %}
   <span style="margin-left:auto;font-size:11px;font-weight:700;background:#d1fae5;color:#065f46;padding:4px 10px;border-radius:8px;">📅 Showing from {{ fresh_start_date }}</span>
@@ -567,8 +571,9 @@ function sortRows() {
       case "amount-desc":
         return parseInt(b.dataset.amount || "0") - parseInt(a.dataset.amount || "0");
       case "oldest":
-        // Oldest order date first — so nothing gets forgotten in the queue.
         return (a.dataset.orderDate || "9999").localeCompare(b.dataset.orderDate || "9999");
+      case "newest":
+        return (b.dataset.orderDate || "0000").localeCompare(a.dataset.orderDate || "0000");
       default:
         return 0;
     }
