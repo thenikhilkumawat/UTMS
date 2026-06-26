@@ -878,44 +878,18 @@ def measurement_book():
         # Also add image-only entries — ONLY numeric order codes (not test/gallery folders)
         img_base = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.dirname(__file__))), "static", "order_images")
 
-        # Check Cloudinary/DB for orphaned image uploads (order_images with order_id=0)
-        temp_img_rows = conn.execute("""
-            SELECT file_path FROM order_images
-            WHERE order_id=0 AND file_path LIKE 'temp:%'
-        """).fetchall()
-        temp_codes = set()
-        for r in temp_img_rows:
-            parts = r["file_path"].split(":")
-            if len(parts) >= 3:
-                code = parts[1]
-                if code.isdigit() and code not in db_codes:
-                    temp_codes.add(code)
-
-        for code in sorted(temp_codes, reverse=True):
-            img_url = None
-            for r in temp_img_rows:
-                parts = r["file_path"].split(":")
-                if len(parts) >= 3 and parts[1] == code:
-                    img_url = parts[2]
-                    break
-            orders_data.insert(0, {
-                "code": code, "odate": "—", "ddate": "—",
-                "status": "image_only", "urgent": False,
-                "payable": 0, "paid": 0, "due": 0,
-                "note": "", "cname": "— Not saved yet —",
-                "mobile": "—", "address": "—",
-                "garments": [],
-                "image": img_url,
-                "image_only": True,
-            })
-
+        import time as _time
+        ninety_days_ago = _time.time() - (90 * 24 * 3600)
         if _os.path.isdir(img_base):
             for code in sorted(_os.listdir(img_base), reverse=True):
-                # Skip: already in DB, gallery, or non-numeric names
+                # Only numeric codes, not already in DB, modified within last 90 days
                 if code in db_codes or not code.isdigit():
                     continue
                 folder = _os.path.join(img_base, code)
                 if not _os.path.isdir(folder):
+                    continue
+                # Skip old test folders
+                if _os.path.getmtime(folder) < ninety_days_ago:
                     continue
                 imgs = sorted(f for f in _os.listdir(folder) if f.lower().endswith((".jpg",".jpeg",".png",".webp")))
                 if not imgs:
