@@ -303,8 +303,10 @@ function setFilter(f) {
 }
 
 function filterTx() {
-  var today = new Date().toLocaleDateString("en-CA");
-  var yest  = new Date(Date.now()-86400000).toLocaleDateString("en-CA");
+  var now = new Date();
+  var today = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+  var yD = new Date(now-86400000);
+  var yest = yD.getFullYear()+'-'+String(yD.getMonth()+1).padStart(2,'0')+'-'+String(yD.getDate()).padStart(2,'0');
   var q = (document.getElementById("f-search").value||"").toLowerCase().trim();
   document.querySelectorAll(".tx-row").forEach(row => {
     var d = row.dataset.date;
