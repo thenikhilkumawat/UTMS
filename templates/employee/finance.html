@@ -222,8 +222,8 @@
                 {{ tx.category }}
                 {% if tx.order_code %}<span class="tx-badge order">#{{ tx.order_code }}</span>{% endif %}
                 <span class="tx-badge {{ 'cash' if tx.mode!='upi' else 'upi' }}">
-                  {{ "💵" if tx.mode!="upi" else "📱" }}
-                </span>
+                  {{ "Cash" if tx.mode!="upi" else "UPI" }}
+              </span>
               </div>
               <div class="tx-meta">
                 {{ tx.tx_time }}{% if tx.note %} · {{ tx.note }}{% endif %}
@@ -372,10 +372,13 @@ function addEntry(){
   if(!cat){showToast("Category chunein","warning");return;}
   if(["advance","payment","remaining amount"].includes(catL)&&!code){showToast("Order code daalo","warning");return;}
   if(txType==="expense"&&catL==="salary"&&!emp){showToast("Employee chunein","warning");return;}
+  // Send local date to avoid UTC vs IST mismatch
+  var now=new Date(), pad=n=>String(n).padStart(2,'0');
+  var localDate=now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate());
   var btn=document.getElementById("f-submit");
   btn.disabled=true; btn.textContent="Saving...";
   fetch("/api/finance/add",{method:"POST",headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({tx_type:txType,amount:amt,category:cat,mode:payMode,note,order_code:code,employee_name:emp})
+    body:JSON.stringify({tx_type:txType,amount:amt,category:cat,mode:payMode,note,order_code:code,employee_name:emp,tx_date:localDate})
   }).then(r=>r.json()).then(d=>{
     btn.disabled=false; btn.textContent="✅ Add Entry";
     if(d.ok){
