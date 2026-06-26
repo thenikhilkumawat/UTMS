@@ -276,6 +276,15 @@
     <div style="font-size:48px;margin-bottom:12px;">🔍</div>
     <div style="font-size:18px;font-weight:700;">No matching orders</div>
   </div>
+
+  <div id="mb-prompt" style="text-align:center;padding:80px 20px;color:#9ca3af;">
+    <div style="font-size:56px;margin-bottom:16px;">🔍</div>
+    <div style="font-size:20px;font-weight:800;color:#6366f1;margin-bottom:8px;">Search karo</div>
+    <div style="font-size:14px;">Customer ka naam, order code, mobile number ya garment type likho</div>
+    <div style="margin-top:16px;font-size:13px;background:#fff;border-radius:12px;padding:16px 24px;display:inline-block;border:1.5px solid #e5e7eb;">
+      💡 Examples: <b>Ramesh</b> · <b>3892</b> · <b>9876543210</b> · <b>Shirt</b>
+    </div>
+  </div>
 </div>
 
 <!-- Image zoom modal -->
@@ -295,7 +304,11 @@ let currentTab = "all";
 let currentSearch = "";
 
 function updateCount(n) {
-  document.getElementById("mb-count").textContent = n + " order" + (n!==1?"s":"") + " shown";
+  if (!currentSearch && currentTab === "all") {
+    document.getElementById("mb-count").textContent = "";
+  } else {
+    document.getElementById("mb-count").textContent = n + " order" + (n!==1?"s":"") + " found";
+  }
 }
 
 function filterOrders() {
@@ -319,6 +332,17 @@ function setTab(filter, btn) {
 function applyFilter() {
   var cards = document.querySelectorAll(".mb-card");
   var words = currentSearch.split(/\s+/).filter(Boolean);
+
+  // If no search and tab is "all" → hide everything, show prompt
+  if (!currentSearch && currentTab === "all") {
+    cards.forEach(function(c){ c.style.display = "none"; });
+    document.getElementById("mb-empty").style.display = "none";
+    document.getElementById("mb-prompt").style.display = "block";
+    updateCount(0);
+    return;
+  }
+
+  document.getElementById("mb-prompt").style.display = "none";
   var visible = 0;
   cards.forEach(function(card) {
     var srch  = card.dataset.search || "";
@@ -333,7 +357,7 @@ function applyFilter() {
   });
   updateCount(visible);
   document.getElementById("mb-empty").style.display =
-    (visible === 0 && cards.length > 0) ? "block" : "none";
+    (visible === 0) ? "block" : "none";
 }
 
 function openImageModal(src, code) {
@@ -350,9 +374,11 @@ document.addEventListener("keydown", function(e) {
   if (e.key === "Escape") closeImageModal();
 });
 
-// Init count
+// Init — hide all cards, show search prompt
 document.addEventListener("DOMContentLoaded", function() {
-  updateCount(document.querySelectorAll(".mb-card").length);
+  document.querySelectorAll(".mb-card").forEach(function(c){ c.style.display="none"; });
+  document.getElementById("mb-prompt").style.display = "block";
+  document.getElementById("mb-search").focus();
 });
 
 const SECS=5*60; let last=Date.now();
