@@ -163,7 +163,7 @@
         <div style="display:flex;flex-wrap:wrap;gap:10px;">
           {% for img in images %}
           <img src="{{ img }}" onclick="openOverlay('{{ img }}')"
-            style="width:100px;height:100px;object-fit:cover;border-radius:10px;border:2px solid var(--border);cursor:zoom-in;transition:transform 0.15s;"
+            style="width:100px;height:100px;object-fit:cover;border-radius:10px;border:2px solid var(--border);cursor:zoom-in;transition:transform 0.15s;" onclick="openZoomModal(this.src,'Order Image')"
             onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
           {% endfor %}
         </div>
