@@ -806,6 +806,80 @@ def save_anthropic_key():
     key  = (data.get("key") or "").strip()
     set_setting("anthropic_api_key", key)
     return jsonify({"ok": True})
+
+
+@bp.route("/measurement-book")
+@owner_required
+def measurement_book():
+    import os as _os
+    conn = get_db()
+    uc   = conn.execute("SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status!='delivered'").fetchone()["c"]
+
+    rows = conn.execute("""
+        SELECT o.id, o.order_code, o.order_date, o.delivery_date, o.status,
+               o.payable_amount, o.advance_paid, o.remaining, o.note, o.is_urgent,
+               c.name as cname, c.mobile, c.address
+        FROM orders o JOIN customers c ON c.id=o.customer_id
+        ORDER BY o.id DESC
+    """).fetchall()
+
+    def fmtd(d):
+        if not d: return "—"
+        p = str(d).split("-")
+        return f"{p[2]}-{p[1]}-{p[0]}" if len(p)==3 else d
+
+    orders_data = []
+    for o in rows:
+        oid = o["id"]
+        garments = conn.execute("""
+            SELECT oi.garment_type, oi.quantity, oi.rate, oi.notes,
+                   GROUP_CONCAT(m.field_name||':'||m.value, '|') as meas_str
+            FROM order_items oi
+            LEFT JOIN measurements m ON m.order_item_id=oi.id
+            WHERE oi.order_id=? GROUP BY oi.id ORDER BY oi.id
+        """, (oid,)).fetchall()
+
+        img_rows = conn.execute(
+            "SELECT file_path FROM order_images WHERE order_id=? ORDER BY id LIMIT 1", (oid,)
+        ).fetchall()
+        images = [r["file_path"] for r in img_rows
+                  if r["file_path"] and not r["file_path"].startswith("temp:")]
+        if not images:
+            folder = _os.path.join(Config.UPLOAD_FOLDER, o["order_code"])
+            if _os.path.isdir(folder):
+                imgs = sorted(f for f in _os.listdir(folder)
+                              if f.lower().endswith((".jpg",".jpeg",".png",".webp")))
+                if imgs:
+                    images = [f"/static/order_images/{o['order_code']}/{imgs[0]}"]
+
+        garments_list = []
+        for g in garments:
+            meas = {}
+            if g["meas_str"]:
+                for pair in g["meas_str"].split("|"):
+                    if ":" in pair:
+                        k, v = pair.split(":", 1)
+                        meas[k.strip()] = v.strip()
+            garments_list.append({
+                "type": g["garment_type"], "qty": g["quantity"],
+                "rate": int(g["rate"] or 0), "notes": g["notes"] or "", "meas": meas
+            })
+
+        orders_data.append({
+            "code": o["order_code"], "odate": fmtd(o["order_date"]),
+            "ddate": fmtd(o["delivery_date"]), "status": o["status"],
+            "urgent": bool(o["is_urgent"]),
+            "payable": int(o["payable_amount"] or 0), "paid": int(o["advance_paid"] or 0),
+            "due": int(o["remaining"] or 0), "note": o["note"] or "",
+            "cname": o["cname"] or "—", "mobile": o["mobile"] or "—",
+            "address": o["address"] or "—",
+            "garments": garments_list, "image": images[0] if images else None,
+        })
+
+    conn.close()
+    return render_template("owner/measurement_book.html",
+        active_page="measurement_book", show_voice=False,
+        urgent_count=uc, orders=orders_data)
     conn = get_db()
     today = date.today().isoformat()
     urgent_count = conn.execute("SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status != 'delivered' AND delivery_date >= ?",(today,)).fetchone()["c"]
