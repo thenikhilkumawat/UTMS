@@ -59,16 +59,35 @@
           <!-- Diary Image Upload (optional) -->
           <div style="width:100%;max-width:420px;">
             <div style="font-size:13px;font-weight:700;color:#6b7280;margin-bottom:8px;">📷 Diary Page Photo <span style="font-size:11px;font-weight:500;">(optional — baad mein bhi add ho sakti hai)</span></div>
+
+            <!-- QR Code for mobile -->
+            <div style="background:#1e293b;border-radius:14px;padding:20px;text-align:center;margin-bottom:12px;">
+              <div style="font-size:12px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">📱 Mobile Se Photo Lene Ke Liye</div>
+              <div id="past-upload-qr" style="display:inline-block;background:#fff;padding:10px;border-radius:10px;"></div>
+              <div style="font-size:12px;color:#94a3b8;margin-top:10px;">QR scan karo → Code daalo → Photo lo → Auto save</div>
+              <div style="margin-top:8px;">
+                <a id="past-upload-link" href="/owner/past-upload" target="_blank"
+                  style="font-size:11px;color:#6366f1;font-weight:700;">🔗 ya yeh link kholo ↗</a>
+              </div>
+            </div>
+
+            <!-- OR desktop upload -->
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+              <div style="flex:1;height:1px;background:#e5e7eb;"></div>
+              <span style="font-size:11px;color:#9ca3af;font-weight:700;">YA DESKTOP SE</span>
+              <div style="flex:1;height:1px;background:#e5e7eb;"></div>
+            </div>
+
             <div id="diary-img-zone"
               onclick="document.getElementById('diary-img-input').click()"
               style="border:2px dashed #e5e7eb;border-radius:12px;padding:20px;text-align:center;cursor:pointer;background:#f9fafb;transition:all 0.2s;"
               onmouseover="this.style.borderColor='#6366f1';this.style.background='#eef2ff'"
               onmouseout="this.style.borderColor='#e5e7eb';this.style.background='#f9fafb'">
               <div style="font-size:24px;margin-bottom:6px;">📖</div>
-              <div style="font-size:13px;font-weight:700;color:#374151;">Diary page click karo ya camera se photo lo</div>
+              <div style="font-size:13px;font-weight:700;color:#374151;">File select karo</div>
               <div style="font-size:11px;color:#9ca3af;margin-top:3px;">JPG, PNG — max 5MB</div>
             </div>
-            <input type="file" id="diary-img-input" accept="image/*" capture="environment" style="display:none"
+            <input type="file" id="diary-img-input" accept="image/*" style="display:none"
               onchange="handleDiaryImage(this.files[0])">
             <div id="diary-img-preview" style="display:none;margin-top:10px;position:relative;">
               <img id="diary-img-thumb" style="width:100%;border-radius:10px;border:2px solid #e5e7eb;max-height:250px;object-fit:contain;">
@@ -350,6 +369,22 @@ var pastGarmentsPhase = 'select';
 var pastPayMode   = "cash";
 var pastOrderCode = "";
 var diaryImageFile = null;  // holds the diary photo file for upload after save
+
+// ── Generate QR for mobile upload page ────────────────
+document.addEventListener("DOMContentLoaded", function() {
+  var qrBox = document.getElementById("past-upload-qr");
+  if (!qrBox) return;
+  var url = window.location.origin + "/owner/past-upload";
+  document.getElementById("past-upload-link").href = url;
+  if (typeof QRCode !== "undefined") {
+    try {
+      new QRCode(qrBox, { text: url, width: 150, height: 150,
+        colorDark: "#1e293b", colorLight: "#ffffff" });
+    } catch(e) { qrBox.innerHTML = "<small>" + url + "</small>"; }
+  } else {
+    qrBox.innerHTML = '<a href="' + url + '" style="font-size:11px;">' + url + '</a>';
+  }
+});
 
 // ── Diary image handlers ───────────────────────────────
 function handleDiaryImage(file) {
