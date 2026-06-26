@@ -18,10 +18,46 @@
   </div>
 </div>
 
-<div class="page-body centered" style="padding:20px 28px;">
+<div class="page-body" style="padding:20px 24px;">
+
+  <!-- TWO-SECTION LAYOUT -->
+  <div style="display:grid;grid-template-columns:280px 1fr;gap:20px;align-items:start;">
+
+    <!-- ─── SECTION 1: DIARY (QR + Code) ─── -->
+    <div style="background:#1e293b;border-radius:18px;padding:20px;position:sticky;top:20px;">
+      <div style="font-size:13px;font-weight:900;color:#f8fafc;margin-bottom:4px;">📖 Diary Upload</div>
+      <div style="font-size:11px;color:#64748b;margin-bottom:16px;">Mobile se diary photo kheecho</div>
+
+      <!-- QR Code -->
+      <div style="background:#fff;border-radius:12px;padding:10px;margin-bottom:14px;text-align:center;">
+        <div id="past-upload-qr" style="display:inline-block;"></div>
+      </div>
+
+      <div style="font-size:11px;color:#64748b;text-align:center;margin-bottom:10px;line-height:1.6;">
+        QR scan karo → Code daalo<br>Photo lo → Done!
+      </div>
+
+      <a id="past-upload-link" href="/owner/past-upload" target="_blank"
+        style="display:block;text-align:center;padding:9px;background:linear-gradient(135deg,#6366f1,#4f46e5);
+               color:#fff;border-radius:10px;text-decoration:none;font-size:12px;font-weight:800;">
+        🔗 Mobile Link Kholo
+      </a>
+
+      <div style="margin:14px 0;border-top:1px solid #334155;"></div>
+
+      <div style="font-size:11px;font-weight:700;color:#94a3b8;text-align:center;margin-bottom:10px;">PEHLE CODE DAALO</div>
+      <input id="p-code-input-diary" type="text" inputmode="numeric" placeholder="2450"
+        oninput="syncDiaryCode(this.value)"
+        style="width:100%;padding:10px;font-size:24px;font-weight:900;border:2px solid #334155;border-radius:10px;
+               text-align:center;letter-spacing:4px;background:#0f172a;color:#f8fafc;outline:none;box-sizing:border-box;">
+      <div style="font-size:10px;color:#475569;text-align:center;margin-top:6px;">Diary number → QR link mein auto-fill</div>
+    </div>
+
+    <!-- ─── SECTION 2: PAST ORDER FORM ─── -->
+    <div>
 
   <!-- WIZARD BAR -->
-  <div class="wizard-steps" id="wizard-past" style="margin-bottom:24px;display:flex;">
+  <div class="wizard-steps" id="wizard-past" style="margin-bottom:20px;display:flex;">
     <div class="wizard-step active" id="pw1"><span class="step-num">1</span><span>Order Code</span></div>
     <div class="wizard-step" id="pw2"><span class="step-num">2</span><span>Customer</span></div>
     <div class="wizard-step" id="pw3"><span class="step-num">3</span><span>Garments</span></div>
@@ -56,27 +92,8 @@
             </div>
           </div>
 
-          <!-- Diary Image Upload (optional) -->
           <div style="width:100%;max-width:420px;">
             <div style="font-size:13px;font-weight:700;color:#6b7280;margin-bottom:8px;">📷 Diary Page Photo <span style="font-size:11px;font-weight:500;">(optional — baad mein bhi add ho sakti hai)</span></div>
-
-            <!-- QR Code for mobile -->
-            <div style="background:#1e293b;border-radius:14px;padding:20px;text-align:center;margin-bottom:12px;">
-              <div style="font-size:12px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">📱 Mobile Se Photo Lene Ke Liye</div>
-              <div id="past-upload-qr" style="display:inline-block;background:#fff;padding:10px;border-radius:10px;"></div>
-              <div style="font-size:12px;color:#94a3b8;margin-top:10px;">QR scan karo → Code daalo → Photo lo → Auto save</div>
-              <div style="margin-top:8px;">
-                <a id="past-upload-link" href="/owner/past-upload" target="_blank"
-                  style="font-size:11px;color:#6366f1;font-weight:700;">🔗 ya yeh link kholo ↗</a>
-              </div>
-            </div>
-
-            <!-- OR desktop upload -->
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-              <div style="flex:1;height:1px;background:#e5e7eb;"></div>
-              <span style="font-size:11px;color:#9ca3af;font-weight:700;">YA DESKTOP SE</span>
-              <div style="flex:1;height:1px;background:#e5e7eb;"></div>
-            </div>
 
             <div id="diary-img-zone"
               onclick="document.getElementById('diary-img-input').click()"
@@ -356,6 +373,9 @@
     </div>
   </template>
 
+    </div><!-- end section 2 -->
+  </div><!-- end grid -->
+
 </div>
 {% endblock %}
 
@@ -380,9 +400,31 @@ document.addEventListener("DOMContentLoaded", function() {
   document.getElementById("past-upload-link").href = url;
   if (typeof QRCode !== "undefined") {
     try {
-      new QRCode(qrBox, { text: url, width: 150, height: 150,
+      new QRCode(qrBox, { text: url, width: 160, height: 160,
         colorDark: "#1e293b", colorLight: "#ffffff" });
     } catch(e) { qrBox.innerHTML = "<small>" + url + "</small>"; }
+  } else {
+    qrBox.innerHTML = '<a href="' + url + '" style="font-size:11px;">' + url + '</a>';
+  }
+});
+
+// ── Sync diary code input to main code input ──────────
+function syncDiaryCode(val) {
+  var mainInput = document.getElementById("p-code-input");
+  if (mainInput) {
+    mainInput.value = val;
+    updateCodeDisplay(val);
+  }
+}
+
+// Also sync main code → diary code input
+document.addEventListener("DOMContentLoaded", function() {
+  var main = document.getElementById("p-code-input");
+  var diary = document.getElementById("p-code-input-diary");
+  if (main && diary) {
+    main.addEventListener("input", function(){ diary.value = this.value; });
+  }
+});
   } else {
     qrBox.innerHTML = '<a href="' + url + '" style="font-size:11px;">' + url + '</a>';
   }
