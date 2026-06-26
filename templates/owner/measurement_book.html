@@ -261,11 +261,15 @@ function applyFilter() {
 }
 
 let _zoomLevel = 1;
+let _panX = 0, _panY = 0;
+let _dragging = false, _dragStartX = 0, _dragStartY = 0, _panStartX = 0, _panStartY = 0;
 
 function openImageModal(src, code) {
-  _zoomLevel = 1;
-  document.getElementById("modal-img").src = src;
-  document.getElementById("modal-img").style.transform = "scale(1)";
+  _zoomLevel = 1; _panX = 0; _panY = 0;
+  const img = document.getElementById("modal-img");
+  img.src = src;
+  img.style.transform = "scale(1) translate(0px,0px)";
+  img.style.cursor = "grab";
   document.getElementById("modal-code-label").textContent = "Order #" + code;
   document.getElementById("zoom-label").textContent = "100%";
   document.getElementById("img-modal").style.display = "flex";
@@ -274,27 +278,72 @@ function openImageModal(src, code) {
 function closeImageModal() {
   document.getElementById("img-modal").style.display = "none";
   document.body.style.overflow = "";
-  _zoomLevel = 1;
+  _zoomLevel = 1; _panX = 0; _panY = 0;
 }
 function handleModalClick(e) {
   if (e.target === document.getElementById("img-modal")) closeImageModal();
 }
+function applyTransform() {
+  document.getElementById("modal-img").style.transform =
+    "scale(" + _zoomLevel + ") translate(" + (_panX/_zoomLevel) + "px," + (_panY/_zoomLevel) + "px)";
+  document.getElementById("zoom-label").textContent = Math.round(_zoomLevel * 100) + "%";
+  document.getElementById("modal-img").style.cursor = _zoomLevel > 1 ? "grab" : "default";
+}
 function zoomImg(delta) {
   _zoomLevel = Math.max(0.25, Math.min(5, _zoomLevel + delta));
-  document.getElementById("modal-img").style.transform = "scale(" + _zoomLevel + ")";
-  document.getElementById("zoom-label").textContent = Math.round(_zoomLevel * 100) + "%";
+  applyTransform();
 }
 function resetZoom() {
-  _zoomLevel = 1;
-  document.getElementById("modal-img").style.transform = "scale(1)";
-  document.getElementById("zoom-label").textContent = "100%";
+  _zoomLevel = 1; _panX = 0; _panY = 0;
+  applyTransform();
 }
+
 // Scroll to zoom
 document.addEventListener("DOMContentLoaded", function() {
-  document.getElementById("modal-img").addEventListener("wheel", function(e) {
+  const img = document.getElementById("modal-img");
+
+  img.addEventListener("wheel", function(e) {
     e.preventDefault();
-    zoomImg(e.deltaY < 0 ? 0.15 : -0.15);
+    zoomImg(e.deltaY < 0 ? 0.2 : -0.2);
   }, {passive:false});
+
+  // Drag to pan
+  img.addEventListener("mousedown", function(e) {
+    if (_zoomLevel <= 1) return;
+    _dragging = true;
+    _dragStartX = e.clientX; _dragStartY = e.clientY;
+    _panStartX = _panX; _panStartY = _panY;
+    img.style.cursor = "grabbing";
+    e.preventDefault();
+  });
+  document.addEventListener("mousemove", function(e) {
+    if (!_dragging) return;
+    _panX = _panStartX + (e.clientX - _dragStartX);
+    _panY = _panStartY + (e.clientY - _dragStartY);
+    applyTransform();
+  });
+  document.addEventListener("mouseup", function() {
+    if (_dragging) {
+      _dragging = false;
+      document.getElementById("modal-img").style.cursor = _zoomLevel > 1 ? "grab" : "default";
+    }
+  });
+
+  // Touch drag to pan (mobile)
+  img.addEventListener("touchstart", function(e) {
+    if (e.touches.length === 1 && _zoomLevel > 1) {
+      _dragging = true;
+      _dragStartX = e.touches[0].clientX; _dragStartY = e.touches[0].clientY;
+      _panStartX = _panX; _panStartY = _panY;
+    }
+  }, {passive:true});
+  img.addEventListener("touchmove", function(e) {
+    if (!_dragging || e.touches.length !== 1) return;
+    _panX = _panStartX + (e.touches[0].clientX - _dragStartX);
+    _panY = _panStartY + (e.touches[0].clientY - _dragStartY);
+    applyTransform();
+  }, {passive:true});
+  img.addEventListener("touchend", function() { _dragging = false; });
 });
 
 function openFillModal(code) {
