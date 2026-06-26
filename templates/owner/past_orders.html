@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Past Orders Entry — Uttam Tailors{% endblock %}
 {% block content %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 <div class="order-code-sticky">
   Past Order &nbsp;<span class="oc-num" id="sticky-code">#<span id="sticky-num">{{ next_code }}</span></span>
@@ -18,10 +19,10 @@
   </div>
 </div>
 
-<div class="page-body" style="padding:16px 20px;">
+<div class="page-body" style="padding:16px 20px;min-height:unset;">
 
   <!-- TWO-SECTION LAYOUT -->
-  <div style="display:grid;grid-template-columns:240px 1fr;gap:16px;align-items:start;">
+  <div style="display:grid;grid-template-columns:240px 1fr;gap:16px;align-items:start;height:fit-content;">
 
     <!-- ─── SECTION 1: DIARY (QR + Code) ─── -->
     <div style="background:#1e293b;border-radius:16px;padding:16px;position:sticky;top:16px;">
@@ -29,7 +30,7 @@
       <div style="font-size:10px;color:#64748b;margin-bottom:12px;">Mobile se diary photo lo</div>
 
       <!-- QR Code -->
-      <div style="background:#fff;border-radius:10px;padding:8px;margin-bottom:10px;text-align:center;display:flex;align-items:center;justify-content:center;min-height:186px;">
+      <div style="background:#fff;border-radius:10px;padding:8px;margin-bottom:10px;text-align:center;display:flex;align-items:center;justify-content:center;">
         <div id="past-upload-qr"></div>
       </div>
 
@@ -380,7 +381,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
 <script>
 const MEAS_FIELDS   = {{ meas_fields_json | safe }};
 const GARMENT_TYPES = {{ garment_types_json | safe }};
@@ -393,7 +394,7 @@ var pastOrderCode = "";
 var diaryImageFile = null;  // holds the diary photo file for upload after save
 
 // ── Generate QR for mobile upload page ────────────────
-document.addEventListener("DOMContentLoaded", function() {
+window.addEventListener("load", function() {
   var qrBox = document.getElementById("past-upload-qr");
   if (!qrBox) return;
   var url = window.location.origin + "/owner/past-upload";
@@ -407,7 +408,7 @@ document.addEventListener("DOMContentLoaded", function() {
           colorDark: "#1e293b", colorLight: "#ffffff" });
       } catch(e) { qrBox.innerHTML = "<small style='color:#333;word-break:break-all'>" + url + "</small>"; }
     } else {
-      setTimeout(renderQR, 200);  // wait for QRCode script to load
+      setTimeout(renderQR, 100);
     }
   }
   renderQR();
