@@ -811,7 +811,7 @@ def save_anthropic_key():
 @bp.route("/measurement-book")
 def measurement_book():
     import os as _os
-    from run import Config as _Config
+    from config import Config as _Config
     conn = get_db()
     uc   = conn.execute("SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status!='delivered'").fetchone()["c"]
 
