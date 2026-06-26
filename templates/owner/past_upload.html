@@ -33,19 +33,19 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 .shutter:active { background:rgba(255,255,255,0.7); }
 
 /* Preview screen */
-#sc-preview { flex:1; display:none; flex-direction:column; position:relative; background:#000; }
-#prev-img { width:100%; height:55%; object-fit:cover; display:block; }
-.form-section { flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:10px; background:#0f172a; }
-.field label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#64748b; display:block; margin-bottom:5px; }
-.field input { width:100%; padding:12px; font-size:16px; font-weight:700;
+#sc-preview { flex:1; display:none; flex-direction:column; background:#0f172a; overflow-y:auto; }
+#prev-img { width:100%; height:200px; object-fit:cover; display:block; flex-shrink:0; }
+.form-section { flex:1; padding:14px; display:flex; flex-direction:column; gap:10px; background:#0f172a; }
+.field label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#64748b; display:block; margin-bottom:4px; }
+.field input { width:100%; padding:10px 12px; font-size:16px; font-weight:700;
                background:#1e293b; border:2px solid #334155; border-radius:10px;
                color:#fff; outline:none; }
 .field input:focus { border-color:#6366f1; }
 .field input::placeholder { color:#475569; font-weight:400; }
-.btn-save { padding:14px; background:linear-gradient(135deg,#059669,#047857);
+.btn-save { padding:13px; background:linear-gradient(135deg,#059669,#047857);
             color:#fff; border:none; border-radius:12px; font-size:15px; font-weight:800; cursor:pointer; }
 .btn-save:disabled { opacity:0.5; }
-.btn-retake { padding:10px; background:rgba(255,255,255,0.07); color:#94a3b8;
+.btn-retake { padding:9px; background:rgba(255,255,255,0.07); color:#94a3b8;
               border:1.5px solid #334155; border-radius:10px; font-size:13px; font-weight:700; cursor:pointer; }
 
 /* Saved screen */
