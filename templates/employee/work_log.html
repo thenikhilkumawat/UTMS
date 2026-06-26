@@ -600,15 +600,21 @@ function renderStats(data) {
     return;
   }
 
-  function workIcon(notes) {
-    var n = (notes||"").trim();
-    if (n.indexOf("Naap")!==-1||n.indexOf("Measurement")!==-1) return {icon:"📐",label:"नाप",bg:"#eef2ff",col:"#4338ca"};
-    if (n.indexOf("Kataai")!==-1||n.indexOf("Cutting")!==-1)   return {icon:"✂️",label:"कटाई",bg:"#fff7ed",col:"#c2410c"};
-    return {icon:"🪡",label:"सिलाई",bg:"#f0fdf4",col:"#15803d"};
+  function getWorkType(notes) {
+    var n=(notes||"").trim();
+    if(n.indexOf("Naap")!==-1||n.indexOf("Measurement")!==-1) return "naap";
+    if(n.indexOf("Kataai")!==-1||n.indexOf("Cutting")!==-1)   return "kataai";
+    return "silai";
   }
 
+  var WORK = {
+    naap:   {icon:"📐", label:"नाप",   bg:"#eef2ff", col:"#4338ca", ids:[]},
+    kataai: {icon:"✂️", label:"कटाई",  bg:"#fff7ed", col:"#c2410c", ids:[]},
+    silai:  {icon:"🪡", label:"सिलाई", bg:"#f0fdf4", col:"#15803d", ids:[]}
+  };
+
   box.innerHTML = data.daily.map(function(day) {
-    // Group entries by order_code
+    // Group by order_code
     var byOrder = {};
     day.entries.forEach(function(e) {
       if (!byOrder[e.order_code]) byOrder[e.order_code] = [];
@@ -617,52 +623,62 @@ function renderStats(data) {
 
     var orderCards = Object.keys(byOrder).map(function(code) {
       var entries = byOrder[code];
-      var totalQty = entries.reduce(function(s,e){return s+e.qty_done;},0);
+      var totalQty  = entries.reduce(function(s,e){return s+e.qty_done;},0);
       var totalEarn = entries.reduce(function(s,e){return s+e.earnings;},0);
 
-      var rows = entries.map(function(e) {
-        var w = workIcon(e.notes||"");
-        return '<div style="display:flex;align-items:center;justify-content:space-between;'
-          +'padding:7px 10px;border-top:1px solid #f1f5f9;">'
-          +'<div style="display:flex;align-items:center;gap:8px;">'
-          +'<span style="background:'+w.bg+';color:'+w.col+';font-size:10px;font-weight:800;'
-          +'padding:2px 8px;border-radius:20px;">'+w.icon+' '+w.label+'</span>'
-          +'<span style="font-size:13px;font-weight:700;color:#374151;">'+e.garment_type+'</span>'
+      // Group entries by work type
+      var byType = {naap:[], kataai:[], silai:[]};
+      entries.forEach(function(e){ byType[getWorkType(e.notes||"")].push(e); });
+
+      // Build one row per work type (with all garments + delete buttons)
+      var typeRows = ["naap","kataai","silai"].filter(function(t){return byType[t].length>0;}).map(function(t) {
+        var cfg = WORK[t];
+        var items = byType[t];
+        var typeQty  = items.reduce(function(s,e){return s+e.qty_done;},0);
+        var typeEarn = items.reduce(function(s,e){return s+e.earnings;},0);
+
+        // Garments: "Pant×1, Shirt×4" comma-joined
+        var garmentStr = items.map(function(e){
+          return '<span style="background:#f1f5f9;border-radius:6px;padding:1px 7px;font-size:12px;font-weight:700;color:#374151;white-space:nowrap;">'
+            +e.garment_type+' <span style="color:#6366f1;font-weight:900;">×'+e.qty_done+'</span></span>';
+        }).join(' ');
+
+        // Delete buttons (one per entry, small)
+        var delBtns = items.map(function(e){
+          return '<button onclick="deleteWorkLog('+e.id+')" title="Delete #'+e.id+'" '
+            +'style="background:#fee2e2;color:#dc2626;border:none;border-radius:5px;'
+            +'width:20px;height:20px;font-size:11px;cursor:pointer;flex-shrink:0;line-height:1;">×</button>';
+        }).join('');
+
+        return '<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-top:1px solid #f1f5f9;flex-wrap:wrap;">'
+          +'<span style="background:'+cfg.bg+';color:'+cfg.col+';font-size:11px;font-weight:800;'
+          +'padding:3px 9px;border-radius:20px;white-space:nowrap;flex-shrink:0;">'+cfg.icon+' '+cfg.label+'</span>'
+          +'<div style="display:flex;gap:4px;flex-wrap:wrap;flex:1;">'+garmentStr+'</div>'
+          +'<div style="display:flex;align-items:center;gap:4px;margin-left:auto;">'
+          +(typeEarn>0?'<span style="font-size:12px;font-weight:900;color:#16a34a;white-space:nowrap;">₹'+typeEarn+'</span>':'')
+          +delBtns
           +'</div>'
-          +'<div style="display:flex;align-items:center;gap:10px;">'
-          +'<div style="text-align:right;">'
-          +'<span style="font-size:16px;font-weight:900;color:#1e1b4b;">×'+e.qty_done+'</span>'
-          +(e.earnings>0?'<span style="font-size:11px;color:#16a34a;font-weight:700;margin-left:4px;">₹'+e.earnings+'</span>':'')
-          +'</div>'
-          +'<button onclick="deleteWorkLog('+e.id+')" title="Delete" '
-          +'style="background:#fee2e2;color:#dc2626;border:none;border-radius:6px;'
-          +'width:24px;height:24px;font-size:13px;cursor:pointer;flex-shrink:0;">×</button>'
-          +'</div></div>';
+          +'</div>';
       }).join("");
 
       return '<div style="background:#fff;border:1.5px solid #e5e7eb;border-radius:12px;overflow:hidden;margin-bottom:8px;">'
-        +'<div style="display:flex;align-items:center;justify-content:space-between;'
-        +'padding:9px 12px;background:linear-gradient(135deg,#f8faff,#eef2ff);">'
+        +'<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:linear-gradient(135deg,#f8faff,#eef2ff);">'
         +'<span style="font-size:15px;font-weight:900;color:#4338ca;">#'+code+'</span>'
         +'<div style="display:flex;align-items:center;gap:8px;">'
-        +'<span style="background:#4338ca;color:#fff;font-size:11px;font-weight:800;'
-        +'padding:2px 8px;border-radius:20px;">'+totalQty+' pcs</span>'
+        +'<span style="background:#4338ca;color:#fff;font-size:11px;font-weight:800;padding:2px 8px;border-radius:20px;">'+totalQty+' pcs</span>'
         +(totalEarn>0?'<span style="font-size:13px;font-weight:900;color:#16a34a;">₹'+totalEarn+'</span>':'')
         +'</div></div>'
-        +rows
+        +typeRows
         +'</div>';
     }).join("");
 
     return '<div style="margin-bottom:16px;">'
-      +'<div style="display:flex;justify-content:space-between;align-items:center;'
-      +'padding:8px 4px;margin-bottom:8px;border-bottom:2px solid #e5e7eb;">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 4px;margin-bottom:8px;border-bottom:2px solid #e5e7eb;">'
       +'<span style="font-size:13px;font-weight:900;color:#374151;">📅 '+day.date_fmt+'</span>'
-      +'<span style="font-size:12px;font-weight:800;background:#f1f5f9;'
-      +'padding:4px 10px;border-radius:20px;color:#374151;">'
+      +'<span style="font-size:12px;font-weight:800;background:#f1f5f9;padding:4px 10px;border-radius:20px;color:#374151;">'
       +day.total_qty+' pcs · <span style="color:#16a34a;">₹'+day.day_earnings+'</span></span>'
       +'</div>'
-      +orderCards
-      +'</div>';
+      +orderCards+'</div>';
   }).join("");
 }
 
