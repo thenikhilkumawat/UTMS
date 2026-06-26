@@ -848,17 +848,12 @@ def measurement_book():
                     "rate": int(g["rate"] or 0),
                     "notes": g["notes"] or "", "meas": meas
                 })
+            # ONLY use order_images DB table — no filesystem scan to avoid wrong images
             img_rows = conn.execute(
                 "SELECT file_path FROM order_images WHERE order_id=? ORDER BY id LIMIT 1", (oid,)
             ).fetchall()
             images = [r["file_path"] for r in img_rows
                       if r["file_path"] and not r["file_path"].startswith("temp:")]
-            if not images:
-                sf = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.dirname(__file__))), "static", "order_images", o["order_code"])
-                if _os.path.isdir(sf):
-                    imgs = sorted(f for f in _os.listdir(sf) if f.lower().endswith((".jpg",".jpeg",".png",".webp")))
-                    if imgs:
-                        images = [f"/static/order_images/{o['order_code']}/{imgs[0]}"]
             orders_data.append({
                 "code": o["order_code"], "odate": fmtd(o["order_date"]),
                 "ddate": fmtd(o["delivery_date"]), "status": o["status"],
