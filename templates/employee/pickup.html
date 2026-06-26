@@ -302,7 +302,7 @@ function loadOrder(code) {
           tmp.querySelectorAll("img").forEach(function(img){
             var src = img.getAttribute("src");
             var el = document.createElement("img");
-            el.src = src; el.style.cssText = "width:64px;height:64px;object-fit:cover;border-radius:10px;border:2px solid #fde68a;cursor:zoom-in;";
+            el.src = src; el.style.cssText = "width:64px;height:64px;object-fit:cover;border-radius:10px;border:2px solid #fde68a;cursor:zoom-in;"; el.onclick=function(){openZoomModal(this.src,"Order Image");};
             el.onclick = function(){ document.getElementById("overlay-img").src=src; document.getElementById("img-overlay").style.display="flex"; };
             imgBox.appendChild(el);
           });
