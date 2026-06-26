@@ -903,6 +903,71 @@ def measurement_book():
 
 
 
+@bp.route("/settings")
+@owner_required
+def settings():
+    conn = get_db()
+    today = date.today().isoformat()
+    urgent_count = conn.execute("SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status != 'delivered' AND delivery_date >= ?",(today,)).fetchone()["c"]
+    conn.close()
+    current_settings = {
+        "shop_name":        get_setting("shop_name","Uttam Tailors"),
+        "shop_name_hi":     get_setting("shop_name_hi","उत्तम टेलर्स"),
+        "whatsapp_number":  get_setting("whatsapp_number",""),
+        "owner_pin":        get_setting("owner_pin","1234"),
+        "default_language": get_setting("default_language","hinglish"),
+        "work_rate_measurement": get_setting("work_rate_measurement","0"),
+        "work_rate_cutting":     get_setting("work_rate_cutting","25"),
+        "work_rate_alteration":  get_setting("work_rate_alteration","15"),
+        "work_rate_stitching":   get_setting("work_rate_stitching",""),
+        "salary_fresh_start_date": get_setting("salary_fresh_start_date",""),
+        "utms_fresh_start":      get_setting("utms_fresh_start","0"),
+        "utms_fresh_start_date": get_setting("utms_fresh_start_date",""),
+        "finance_income_cats":   get_setting("finance_income_cats","advance,payment,alteration,other income"),
+        "finance_expense_cats":  get_setting("finance_expense_cats","thread,buttons,fabric,electricity,rent,salary,transport,maintenance,other expense"),
+        "shop_logo":             get_setting("shop_logo",""),
+    }
+    # Garment chip styles
+    garment_type_chips_raw = get_setting("garment_type_chips","")
+    try:
+        import json as _json
+        garment_type_chips = _json.loads(garment_type_chips_raw) if garment_type_chips_raw else {}
+    except Exception:
+        garment_type_chips = {}
+
+    # Garment rates
+    garment_names = [
+        "Shirt","Shirt Linen","Pant","Pant Double","Jeans","Suit 2pc","Suit 3pc",
+        "Blazer","Kurta","Kurta Pajama","Pajama","Pathani","Sherwani","Safari","Waistcoat",
+        "Alteration","Cutting Only"
+    ]
+    deleted_csv = get_setting("deleted_customer_rates","")
+    deleted_set = set(x.strip() for x in deleted_csv.split(",") if x.strip())
+    garment_rates = {}
+    for n in garment_names:
+        if n in deleted_set: continue
+        garment_rates[n] = get_setting("customer_rate_"+n,"") or get_setting("rate_"+n,"0")
+
+    # Work rates map
+    work_rates_map = {
+        "work_rate_measurement": get_setting("work_rate_measurement","0"),
+        "work_rate_cutting":     get_setting("work_rate_cutting","25"),
+        "work_rate_alteration":  get_setting("work_rate_alteration","15"),
+    }
+    # Stitch rates
+    stitch_rates = {n: get_setting("stitch_rate_"+n,"0") for n in garment_names}
+
+    return render_template("owner/settings.html",
+        active_page="settings", show_voice=False,
+        urgent_count=urgent_count,
+        settings=current_settings,
+        current_settings=current_settings,
+        garment_type_chips=garment_type_chips,
+        garment_rates=garment_rates,
+        stitch_rates=stitch_rates,
+        work_rates_map=work_rates_map)
+
+
 @bp.route("/settings/save", methods=["POST"])
 @owner_required
 def settings_save():
