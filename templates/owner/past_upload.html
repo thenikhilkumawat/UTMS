@@ -3,123 +3,142 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>📸 Past Order Photo</title>
+<title>📸 Past Order — Uttam Tailors</title>
 <style>
 * { box-sizing:border-box; margin:0; padding:0; }
 body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
        background:#0f172a; color:#fff; height:100dvh; display:flex;
        flex-direction:column; overflow:hidden; }
 
-/* Top bar */
 .topbar { padding:12px 16px; background:#1e293b; border-bottom:1px solid #334155;
           display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
 .topbar h1 { font-size:17px; font-weight:800; }
-.topbar .code-badge { background:#6366f1; color:#fff; padding:4px 12px;
-                      border-radius:20px; font-size:13px; font-weight:800; }
+.badge { background:#6366f1; color:#fff; padding:4px 12px;
+         border-radius:20px; font-size:13px; font-weight:800; }
 
-/* Code input screen */
+/* Screen: Code input */
 #screen-code { flex:1; display:flex; flex-direction:column;
                align-items:center; justify-content:center; padding:24px; gap:16px; }
-#screen-code label { font-size:13px; font-weight:700; text-transform:uppercase;
+#screen-code label { font-size:12px; font-weight:700; text-transform:uppercase;
                      letter-spacing:1px; color:#64748b; }
 #code-inp { width:100%; max-width:320px; padding:18px; font-size:36px; font-weight:900;
             background:#1e293b; border:2px solid #334155; border-radius:14px;
             color:#fff; text-align:center; letter-spacing:5px; outline:none; }
 #code-inp:focus { border-color:#6366f1; }
-.hint { font-size:13px; color:#64748b; text-align:center; }
-.btn-open { width:100%; max-width:320px; padding:16px; background:linear-gradient(135deg,#6366f1,#4f46e5);
-            color:#fff; border:none; border-radius:14px; font-size:17px; font-weight:800;
-            cursor:pointer; opacity:0.4; }
-.btn-open:not(:disabled) { opacity:1; }
 
-/* Camera screen — full viewport */
+/* Screen: Camera full screen */
 #screen-cam { flex:1; display:none; flex-direction:column; position:relative; background:#000; }
 #cam-video { width:100%; height:100%; object-fit:cover; display:block; }
-/* Shutter */
-.shutter-wrap { position:absolute; bottom:0; left:0; right:0;
-                padding:20px; display:flex; flex-direction:column;
-                align-items:center; gap:10px; background:linear-gradient(transparent,rgba(0,0,0,0.6)); }
+.shutter-wrap { position:absolute; bottom:0; left:0; right:0; padding:20px;
+                display:flex; flex-direction:column; align-items:center; gap:10px;
+                background:linear-gradient(transparent,rgba(0,0,0,0.7)); }
+.cam-code-lbl { font-size:13px; font-weight:800; background:rgba(0,0,0,0.5);
+                padding:4px 14px; border-radius:20px; }
 .shutter { width:72px; height:72px; border-radius:50%; border:4px solid #fff;
-           background:rgba(255,255,255,0.2); cursor:pointer; backdrop-filter:blur(4px); }
+           background:rgba(255,255,255,0.2); cursor:pointer; }
 .shutter:active { background:rgba(255,255,255,0.7); }
-.shutter-label { font-size:12px; color:rgba(255,255,255,0.7); font-weight:700; }
-.cam-code-label { font-size:13px; font-weight:800; background:rgba(0,0,0,0.5);
-                  padding:4px 14px; border-radius:20px; backdrop-filter:blur(4px); }
 
-/* Preview screen — full viewport */
-#screen-preview { flex:1; display:none; flex-direction:column; position:relative; background:#000; }
-#prev-img { width:100%; height:100%; object-fit:contain; display:block; }
-.preview-actions { position:absolute; bottom:0; left:0; right:0; padding:16px;
-                   display:flex; gap:10px;
-                   background:linear-gradient(transparent,rgba(0,0,0,0.7)); }
-.btn-retake { flex:1; padding:14px; background:rgba(255,255,255,0.15); color:#fff;
-              border:2px solid rgba(255,255,255,0.3); border-radius:12px;
-              font-size:15px; font-weight:800; cursor:pointer; backdrop-filter:blur(4px); }
-.btn-save   { flex:2; padding:14px; background:linear-gradient(135deg,#059669,#047857);
-              color:#fff; border:none; border-radius:12px;
-              font-size:15px; font-weight:800; cursor:pointer; }
+/* Screen: Details form */
+#screen-form { flex:1; display:none; flex-direction:column; overflow-y:auto; padding:20px; gap:14px; }
+.preview-thumb { width:100%; max-height:200px; object-fit:cover; border-radius:14px; border:2px solid #334155; }
+.form-title { font-size:18px; font-weight:800; color:#fff; }
+.form-sub { font-size:13px; color:#64748b; }
+.field { display:flex; flex-direction:column; gap:6px; }
+.field label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#64748b; }
+.field input { padding:14px; font-size:16px; font-weight:700;
+               background:#1e293b; border:2px solid #334155; border-radius:12px;
+               color:#fff; outline:none; }
+.field input:focus { border-color:#6366f1; }
+.field input::placeholder { color:#475569; font-weight:400; }
+.btn-save { padding:16px; background:linear-gradient(135deg,#059669,#047857);
+            color:#fff; border:none; border-radius:14px; font-size:16px;
+            font-weight:800; cursor:pointer; width:100%; }
 .btn-save:disabled { opacity:0.5; }
+.btn-retake-sm { padding:10px; background:rgba(255,255,255,0.08); color:#94a3b8;
+                 border:1.5px solid #334155; border-radius:10px; font-size:13px;
+                 font-weight:700; cursor:pointer; width:100%; text-align:center; }
 
-/* Saved screen */
+/* Screen: Saved */
 #screen-saved { flex:1; display:none; flex-direction:column;
                 align-items:center; justify-content:center; padding:24px; gap:16px; }
 .saved-icon { font-size:64px; }
-.saved-title { font-size:24px; font-weight:900; }
+.saved-title { font-size:24px; font-weight:900; text-align:center; }
 .saved-sub { font-size:14px; color:#94a3b8; text-align:center; }
 .btn-next { width:100%; max-width:320px; padding:16px;
             background:linear-gradient(135deg,#f59e0b,#d97706);
             color:#fff; border:none; border-radius:14px;
             font-size:17px; font-weight:800; cursor:pointer; }
 
-.status { font-size:13px; color:#94a3b8; text-align:center; min-height:18px; padding:0 24px; }
+.btn-primary { width:100%; max-width:320px; padding:16px;
+               background:linear-gradient(135deg,#6366f1,#4f46e5);
+               color:#fff; border:none; border-radius:14px;
+               font-size:16px; font-weight:800; cursor:pointer; }
+.btn-primary:disabled { opacity:0.4; }
+.hint { font-size:13px; color:#64748b; text-align:center; }
+.status { font-size:13px; color:#94a3b8; text-align:center; min-height:18px; }
 </style>
 </head>
 <body>
 
-<!-- Top bar -->
 <div class="topbar">
-  <h1>📸 Past Order Photo</h1>
-  <div class="code-badge" id="active-code-badge" style="display:none;">
-    #<span id="active-code-display"></span>
-  </div>
+  <h1>📸 Past Order</h1>
+  <div class="badge" id="top-badge" style="display:none;">#<span id="top-code"></span></div>
 </div>
 
-<!-- Screen 1: Code input -->
+<!-- Screen 1: Code -->
 <div id="screen-code">
   <label>Order Code Daalo</label>
-  <input type="text" id="code-inp" inputmode="numeric" placeholder="2450"
-         autocomplete="off" autofocus oninput="onCodeChange()">
-  <div class="hint">Diary se order number daalo, Enter dabao</div>
-  <button class="btn-open" id="open-cam-btn" disabled onclick="startCamera()">
+  <input type="text" id="code-inp" inputmode="numeric" placeholder="2001"
+         autocomplete="off" autofocus oninput="onCodeChange()"
+         onkeydown="if(event.key==='Enter'&&this.value.trim()) startCamera()">
+  <div class="hint">Diary se order number daalo</div>
+  <button class="btn-primary" id="open-cam-btn" disabled onclick="startCamera()">
     📷 Camera Kholo
   </button>
-  <div class="status" id="status1"></div>
+  <div class="status" id="s1"></div>
 </div>
 
-<!-- Screen 2: Camera (full screen) -->
+<!-- Screen 2: Camera -->
 <div id="screen-cam">
   <video id="cam-video" autoplay playsinline muted></video>
   <div class="shutter-wrap">
-    <div class="cam-code-label">Order #<span id="cam-code-label"></span></div>
+    <div class="cam-code-lbl">Order #<span id="cam-code-lbl"></span></div>
     <button class="shutter" onclick="capturePhoto()"></button>
-    <div class="shutter-label">Tap to capture</div>
+    <div style="font-size:12px;color:rgba(255,255,255,0.6);">Diary page ko frame karo → Tap</div>
   </div>
 </div>
 
-<!-- Screen 3: Preview (full screen) -->
-<div id="screen-preview">
-  <img id="prev-img" alt="">
-  <div class="preview-actions">
-    <button class="btn-retake" onclick="retake()">↩ Retake</button>
-    <button class="btn-save" id="save-btn" onclick="savePhoto()">💾 Save</button>
+<!-- Screen 3: Details Form -->
+<div id="screen-form">
+  <img id="prev-thumb" class="preview-thumb" alt="">
+  <div class="form-title">✅ Photo li! — Customer ki details daalo</div>
+  <div class="form-sub">Sirf naam aur mobile enough hai — baaki baad mein edit se add karo</div>
+
+  <div class="field">
+    <label>Customer Name *</label>
+    <input type="text" id="f-name" placeholder="Ramesh Ji" autocomplete="off">
   </div>
+  <div class="field">
+    <label>Mobile Number</label>
+    <input type="tel" id="f-mobile" placeholder="9876543210" inputmode="numeric" maxlength="10">
+  </div>
+  <div class="field">
+    <label>Address / Gaon</label>
+    <input type="text" id="f-address" placeholder="Sikar / Laxmangarh...">
+  </div>
+
+  <button class="btn-save" id="save-btn" onclick="saveOrder()">
+    💾 Save Order + Image
+  </button>
+  <button class="btn-retake-sm" onclick="retake()">↩ Retake Photo</button>
+  <div class="status" id="s3"></div>
 </div>
 
 <!-- Screen 4: Saved -->
 <div id="screen-saved">
   <div class="saved-icon">✅</div>
-  <div class="saved-title">Saved!</div>
-  <div class="saved-sub" id="saved-sub">Order #<span id="saved-code"></span> ki photo save ho gayi</div>
+  <div class="saved-title" id="saved-title">Order Saved!</div>
+  <div class="saved-sub" id="saved-sub"></div>
   <button class="btn-next" onclick="nextOrder()">➕ Next Order</button>
 </div>
 
@@ -133,35 +152,27 @@ function onCodeChange() {
   document.getElementById("open-cam-btn").disabled = !v;
 }
 
-document.getElementById("code-inp").addEventListener("keydown", function(e) {
-  if (e.key === "Enter" && this.value.trim()) startCamera();
-});
-
 async function startCamera() {
   currentCode = document.getElementById("code-inp").value.trim();
   if (!currentCode) return;
-  document.getElementById("active-code-badge").style.display = "flex";
-  document.getElementById("active-code-display").textContent = currentCode;
-  document.getElementById("cam-code-label").textContent = currentCode;
 
+  document.getElementById("top-badge").style.display = "flex";
+  document.getElementById("top-code").textContent = currentCode;
+  document.getElementById("cam-code-lbl").textContent = currentCode;
   showScreen("cam");
-  document.getElementById("status1").textContent = "";
 
   try {
     mediaStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal:"environment" },
-               width: { ideal:1920 }, height: { ideal:1440 } },
+      video: { facingMode:{ideal:"environment"}, width:{ideal:1920}, height:{ideal:1440} },
       audio: false
     });
     document.getElementById("cam-video").srcObject = mediaStream;
   } catch(e) {
-    // Fallback: file picker
+    // Fallback: file input
     showScreen("code");
     const inp = document.createElement("input");
-    inp.type = "file"; inp.accept = "image/*"; inp.capture = "environment";
-    inp.onchange = function() {
-      if (inp.files[0]) { capturedBlob = inp.files[0]; showPreview(URL.createObjectURL(inp.files[0])); }
-    };
+    inp.type="file"; inp.accept="image/*"; inp.capture="environment";
+    inp.onchange = function() { if(inp.files[0]) prepareForm(inp.files[0]); };
     inp.click();
   }
 }
@@ -173,69 +184,96 @@ function capturePhoto() {
   canvas.height = video.videoHeight || 960;
   canvas.getContext("2d").drawImage(video, 0, 0);
   canvas.toBlob(function(blob) {
-    capturedBlob = blob;
-    showPreview(URL.createObjectURL(blob));
     stopCamera();
+    prepareForm(blob);
   }, "image/jpeg", 0.88);
 }
 
-function showPreview(url) {
-  document.getElementById("prev-img").src = url;
-  showScreen("preview");
-  const btn = document.getElementById("save-btn");
-  btn.disabled = false; btn.textContent = "💾 Save";
+function prepareForm(blob) {
+  capturedBlob = blob;
+  document.getElementById("prev-thumb").src = URL.createObjectURL(blob);
+  showScreen("form");
+  document.getElementById("f-name").focus();
 }
 
-function retake() {
-  capturedBlob = null;
-  startCamera();
-}
+function retake() { capturedBlob=null; startCamera(); }
 
 function stopCamera() {
-  if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
+  if (mediaStream) { mediaStream.getTracks().forEach(t=>t.stop()); mediaStream=null; }
 }
 
-async function savePhoto() {
-  if (!capturedBlob || !currentCode) return;
+async function saveOrder() {
+  const name = document.getElementById("f-name").value.trim();
+  if (!name) { document.getElementById("s3").textContent="⚠️ Customer naam required"; return; }
+
   const btn = document.getElementById("save-btn");
-  btn.disabled = true; btn.textContent = "Saving...";
+  btn.disabled=true; btn.textContent="Saving...";
+  document.getElementById("s3").textContent="Order save ho raha hai...";
 
-  const formData = new FormData();
-  // ✅ Field name must be "photos" to match the upload endpoint
-  formData.append("photos", capturedBlob, "diary_" + currentCode + ".jpg");
+  // Step 1: Save order to DB
+  const orderRes = await fetch("/owner/past-orders/save", {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({
+      order_code:    currentCode,
+      customer_name: name,
+      mobile:        document.getElementById("f-mobile").value.trim(),
+      address:       document.getElementById("f-address").value.trim(),
+      order_date:    "",
+      delivery_date: "",
+      total_amount:  0,
+      advance_paid:  0,
+      payment_mode:  "cash",
+      is_delivered:  true,
+      garments:      []
+    })
+  });
+  const orderData = await orderRes.json().catch(()=>({}));
 
-  try {
-    const res = await fetch("/upload/" + currentCode, { method:"POST", body:formData });
-    // Endpoint returns HTML, not JSON — check HTTP status only
-    if (res.ok) {
-      document.getElementById("saved-code").textContent = currentCode;
-      showScreen("saved");
-    } else {
-      btn.disabled = false; btn.textContent = "💾 Save";
-      alert("Upload failed (status " + res.status + ") — retry karo");
-    }
-  } catch(e) {
-    btn.disabled = false; btn.textContent = "💾 Save";
-    alert("Network error — internet check karo");
+  if (!orderData.ok) {
+    btn.disabled=false; btn.textContent="💾 Save Order + Image";
+    document.getElementById("s3").textContent = "❌ " + (orderData.error||"Save failed");
+    return;
   }
+
+  const savedCode = orderData.order_code || currentCode;
+  document.getElementById("s3").textContent = "✅ Order saved! Image upload ho rahi hai...";
+
+  // Step 2: Upload image
+  if (capturedBlob) {
+    const fd = new FormData();
+    fd.append("photos", capturedBlob, "diary_" + savedCode + ".jpg");
+    await fetch("/upload/" + savedCode, { method:"POST", body:fd }).catch(()=>{});
+  }
+
+  // Show success
+  document.getElementById("saved-title").textContent = "Order #" + savedCode + " Saved! ✅";
+  document.getElementById("saved-sub").textContent =
+    name + " — har jagah search ho sakta hai ab\n(Order Status, Measurement Book, sab jagah)";
+  showScreen("saved");
 }
 
 function nextOrder() {
-  capturedBlob  = null;
-  currentCode   = "";
-  document.getElementById("code-inp").value = "";
-  document.getElementById("active-code-badge").style.display = "none";
-  document.getElementById("open-cam-btn").disabled = true;
+  capturedBlob=null; currentCode="";
+  document.getElementById("code-inp").value="";
+  document.getElementById("f-name").value="";
+  document.getElementById("f-mobile").value="";
+  document.getElementById("f-address").value="";
+  document.getElementById("top-badge").style.display="none";
+  document.getElementById("open-cam-btn").disabled=true;
+  document.getElementById("s1").textContent="";
+  document.getElementById("s3").textContent="";
+  const btn = document.getElementById("save-btn");
+  btn.disabled=false; btn.textContent="💾 Save Order + Image";
   showScreen("code");
-  setTimeout(function(){ document.getElementById("code-inp").focus(); }, 100);
+  setTimeout(()=>document.getElementById("code-inp").focus(), 100);
 }
 
 function showScreen(name) {
   stopCamera();
-  ["code","cam","preview","saved"].forEach(function(s) {
-    document.getElementById("screen-" + s).style.display = "none";
+  ["code","cam","form","saved"].forEach(s=>{
+    document.getElementById("screen-"+s).style.display="none";
   });
-  document.getElementById("screen-" + name).style.display = "flex";
+  document.getElementById("screen-"+name).style.display="flex";
 }
 </script>
 </body>
