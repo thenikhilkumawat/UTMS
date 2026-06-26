@@ -93,7 +93,7 @@ def dashboard():
     fresh_start_date    = get_setting("utms_fresh_start_date", "2026-06-01") if fresh_start_enabled else None
 
     if fresh_start_date:
-        todays_orders    = conn.execute("SELECT COUNT(*) as c FROM orders WHERE created_at LIKE ? AND order_date >= ?", (today + "%", fresh_start_date)).fetchone()["c"]
+        todays_orders    = conn.execute("SELECT COUNT(*) as c FROM orders WHERE order_date=? AND status!='delivered' AND order_date >= ?", (today, fresh_start_date)).fetchone()["c"]
         urgent_today     = conn.execute("SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status!='delivered' AND order_date >= ?", (fresh_start_date,)).fetchone()["c"]
         pending_delivery = conn.execute("SELECT COUNT(*) as c FROM orders WHERE status!='delivered' AND order_date >= ?", (fresh_start_date,)).fetchone()["c"]
         urgent_orders    = conn.execute("""
@@ -105,7 +105,7 @@ def dashboard():
             ORDER BY o.delivery_date ASC LIMIT 10
         """, (fresh_start_date,)).fetchall()
     else:
-        todays_orders    = conn.execute("SELECT COUNT(*) as c FROM orders WHERE created_at LIKE ?", (today + "%",)).fetchone()["c"]
+        todays_orders    = conn.execute("SELECT COUNT(*) as c FROM orders WHERE order_date=? AND status!='delivered'", (today,)).fetchone()["c"]
         urgent_today     = conn.execute("SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status!='delivered'").fetchone()["c"]
         pending_delivery = conn.execute("SELECT COUNT(*) as c FROM orders WHERE status!='delivered'").fetchone()["c"]
         urgent_orders    = conn.execute("""
@@ -1602,7 +1602,7 @@ def order_status():
         "cancelled": sum(1 for o in orders if o["status"]=="cancelled"),
         "urgent":    sum(1 for o in orders if o["is_urgent"] and o["status"]!="delivered"),
         "pickup_pending": sum(1 for o in orders if o.get("pickup_pending")),
-        "today":     sum(1 for o in orders if str(o.get("created_at","")).startswith(date.today().isoformat())),
+        "today":     sum(1 for o in orders if o.get("order_date") == date.today().isoformat() and o.get("status") != "delivered"),
     }
     conn.close()
     HINDI_MAP = {
