@@ -822,7 +822,7 @@ def bulk_import():
 @bp.route("/bulk-import/template")
 @owner_required
 def bulk_import_template():
-    """Download a sample Excel template for bulk order import."""
+    """Download ALL current UTMS orders as Excel — add new rows and re-upload to import."""
     import openpyxl as xl
     from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
     import io
@@ -863,32 +863,63 @@ def bulk_import_template():
     for i, w in enumerate(widths, 1):
         ws.column_dimensions[xl.utils.get_column_letter(i)].width = w
 
-    # Sample rows
-    sample = [
-        ["2450", "Ramesh Ji", "9876543210", "Sikar",
-         "01-01-2025", "15-01-2025",
-         "Shirt", 2, 350,
-         42, 38, 34, 16, 25, 15, 9, "", "", "", "", "",
-         700, 300, "Pocket under collar", "delivered"],
-        ["2450", "Ramesh Ji", "9876543210", "Sikar",
-         "01-01-2025", "15-01-2025",
-         "Pant", 1, 450,
-         39, "", 34, "", "", "", "", 16, 14, 26, 20, 25,
-         450, 0, "", "delivered"],
-        ["", "Suresh Kumar", "8765432109", "Laxmangarh",
-         "15-06-2026", "30-06-2026",
-         "Kurta", 3, 400,
-         44, 40, 36, 17, 26, 16, 10, "", "", "", "", "",
-         1200, 500, "", "new"],
-    ]
-    note_fill = PatternFill("solid", fgColor="FFF9C4")
-    for r_idx, row in enumerate(sample, 2):
-        for c_idx, val in enumerate(row, 1):
-            cell = ws.cell(row=r_idx, column=c_idx, value=val)
-            cell.alignment = Alignment(horizontal="center")
-            cell.border = border
-            if r_idx == 2 or r_idx == 3:  # Same order example
-                cell.fill = PatternFill("solid", fgColor="EFF6FF")
+    # Export ACTUAL data from DB
+    import json as _json
+    conn_exp = get_db()
+    MEAS_FIELDS_EXP = ["Lambai","Seena","Kamar","Shoulder","Aastin",
+                        "Collar","Cough","Seat","Mori","Jangh","Goda","Langot"]
+
+    rows_db = conn_exp.execute("""
+        SELECT o.order_code, c.name, c.mobile, c.address,
+               o.order_date, o.delivery_date, o.status,
+               o.payable_amount, o.advance_paid, o.note
+        FROM orders o JOIN customers c ON c.id=o.customer_id
+        ORDER BY o.id DESC
+    """).fetchall()
+
+    row_idx = 2
+    alt_fill  = PatternFill("solid", fgColor="F0F9FF")
+    norm_fill = PatternFill("solid", fgColor="FFFFFF")
+
+    def fmtd(d):
+        if not d: return ""
+        p = str(d).split("-")
+        return f"{p[2]}-{p[1]}-{p[0]}" if len(p)==3 else d
+
+    for oi, o in enumerate(rows_db):
+        items = conn_exp.execute(
+            "SELECT garment_type, quantity, rate, measurements, notes FROM order_items WHERE order_id=(SELECT id FROM orders WHERE order_code=?) ORDER BY id",
+            (o["order_code"],)
+        ).fetchall()
+        if not items:
+            # Order with no items — still export one row
+            items = [{"garment_type":"","quantity":1,"rate":0,"measurements":"{}","notes":""}]
+
+        for item in items:
+            try: meas = _json.loads(item["measurements"] or "{}")
+            except: meas = {}
+            fill = alt_fill if oi % 2 == 0 else norm_fill
+            row_data = [
+                o["order_code"], o["name"], o["mobile"] or "", o["address"] or "",
+                fmtd(o["order_date"]), fmtd(o["delivery_date"]),
+                item["garment_type"], item["quantity"], item["rate"],
+            ]
+            for mf in MEAS_FIELDS_EXP:
+                row_data.append(meas.get(mf, ""))
+            row_data += [
+                int(o["payable_amount"] or 0),
+                int(o["advance_paid"] or 0),
+                item["notes"] or "",
+                "delivered" if o["status"]=="delivered" else "new"
+            ]
+            for c_idx, val in enumerate(row_data, 1):
+                cell = ws.cell(row=row_idx, column=c_idx, value=val)
+                cell.alignment = Alignment(horizontal="center")
+                cell.border = border
+                cell.fill = fill
+            row_idx += 1
+
+    conn_exp.close()
 
     # Instructions sheet
     ws2 = wb.create_sheet("Instructions")
@@ -925,7 +956,7 @@ def bulk_import_template():
     buf.seek(0)
     from flask import send_file
     return send_file(buf, as_attachment=True,
-                     download_name="UTMS_Import_Template.xlsx",
+                     download_name=f"UTMS_Orders_{date.today().isoformat()}.xlsx",
                      mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 
