@@ -75,7 +75,42 @@
   <div id="mb-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:20px;">
 
     {% for o in orders %}
-    <div class="mb-card"
+      {% if o.image_only %}
+      <!-- Image-only card: photo uploaded but order not created yet -->
+      <div class="mb-card"
+        data-search="{{ o.code }}"
+        data-status="image_only"
+        data-hasimage="1"
+        style="background:#fff;border-radius:20px;overflow:hidden;
+               box-shadow:0 2px 12px rgba(0,0,0,0.08);border:2px solid #fde68a;transition:all 0.2s;"
+        onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 30px rgba(0,0,0,0.14)'"
+        onmouseout="this.style.transform='';this.style.boxShadow='0 2px 12px rgba(0,0,0,0.08)'">
+        <div style="position:relative;cursor:pointer;" onclick="openImageModal('{{ o.image }}','{{ o.code }}')">
+          <img src="{{ o.image }}" alt="Order #{{ o.code }}"
+            style="width:100%;height:200px;object-fit:cover;display:block;">
+          <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(0,0,0,0.7));"></div>
+          <div style="position:absolute;top:10px;left:12px;background:#f59e0b;color:#fff;
+                      font-size:11px;font-weight:800;padding:4px 12px;border-radius:10px;">
+            ⏳ Image Only — Order not created yet
+          </div>
+          <div style="position:absolute;bottom:10px;left:14px;color:#fff;font-size:20px;font-weight:900;">
+            #{{ o.code }}
+          </div>
+        </div>
+        <div style="padding:16px 18px;">
+          <div style="font-size:13px;color:#92400e;background:#fef9c3;border-radius:8px;padding:10px 14px;margin-bottom:14px;">
+            📷 Photo save hui hai — ab order details bhi bharo
+          </div>
+          <a href="/owner/past-orders?code={{ o.code }}"
+             style="display:block;padding:12px;background:linear-gradient(135deg,#f59e0b,#d97706);
+                    color:#fff;border-radius:12px;text-align:center;text-decoration:none;
+                    font-size:14px;font-weight:800;">
+            ➕ Create Past Order #{{ o.code }}
+          </a>
+        </div>
+      </div>
+
+      {% else %}
       data-search="{{ (o.cname ~ ' ' ~ o.code ~ ' ' ~ o.mobile ~ ' ' ~ o.address ~ ' ' ~
                        o.garments|map(attribute='type')|join(' '))|lower }}"
       data-status="{{ o.status }}"
@@ -227,6 +262,7 @@
         </a>
       </div>
     </div>
+    {% endif %}
     {% else %}
     <div style="grid-column:1/-1;text-align:center;padding:80px 20px;color:#9ca3af;">
       <div style="font-size:48px;margin-bottom:16px;">📐</div>
