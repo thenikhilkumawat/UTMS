@@ -641,7 +641,7 @@ function filterRows() {
     // ALL words must be present somewhere in the search string
     const matchQ = words.length === 0 || words.every(w => srch.includes(w));
     let matchF = true;
-    if      (activeTab === "today")          matchF = row.dataset.createdAt && row.dataset.createdAt.startsWith(TODAY_DATE);
+    if      (activeTab === "today")          matchF = row.dataset.orderDate === TODAY_DATE && status !== "delivered";
     else if (activeTab === "late")           matchF = overdue && status !== "delivered" && status !== "cancelled";
     else if (activeTab === "upcoming")       matchF = upcoming && status !== "cancelled";
     else if (activeTab === "ready")          matchF = status === "ready";
