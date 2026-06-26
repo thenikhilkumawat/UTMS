@@ -596,12 +596,12 @@ def dashboard():
     urgent_count = conn.execute("SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status != 'delivered' AND delivery_date >= ?",(today,)).fetchone()["c"]
 
     # Today's order activity
-    # New orders: created_at today + not delivered at time of creation (live orders)
+    # New orders: order_date = today AND not delivered (same logic as employee dashboard)
     new_orders_today = conn.execute(
-        "SELECT COUNT(*) as c FROM orders WHERE created_at LIKE ? AND status != 'delivered'",
-        (today + "%",)
+        "SELECT COUNT(*) as c FROM orders WHERE order_date=? AND status != 'delivered'",
+        (today,)
     ).fetchone()["c"]
-    # Past orders: created_at today + already delivered + order_date is NOT today
+    # Past orders: created today (entered today) AND already delivered AND old order_date
     past_orders_today = conn.execute(
         "SELECT COUNT(*) as c FROM orders WHERE created_at LIKE ? AND status='delivered' AND order_date != ?",
         (today + "%", today)
@@ -618,8 +618,8 @@ def dashboard():
         for r in conn.execute("""
             SELECT o.order_code,c.name,o.order_date,o.payable_amount,o.advance_paid,o.remaining
             FROM orders o JOIN customers c ON c.id=o.customer_id
-            WHERE o.created_at LIKE ? AND o.status!='delivered' ORDER BY o.id DESC
-        """, (today+"%",)).fetchall()]
+            WHERE o.order_date=? AND o.status!='delivered' ORDER BY o.id DESC
+        """, (today,)).fetchall()]
 
     past_orders_list = [{"code":r["order_code"],"name":r["name"],
         "date":_fmtd(r["order_date"]),"payable":int(r["payable_amount"] or 0),
