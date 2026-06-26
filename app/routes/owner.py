@@ -812,12 +812,13 @@ def save_anthropic_key():
 @owner_required
 def fix_order_code():
     set_setting("last_order_code", "3898")
+    set_setting("recycled_order_codes", "")  # Clear recycled pool too
     try:
         from database import invalidate_settings_cache
         invalidate_settings_cache()
     except Exception:
         pass
-    return "<h2>✅ Fixed! last_order_code = 3898. Next order will be #3899.</h2><a href='/owner/settings'>← Settings</a>"
+    return "<h2>✅ Fixed! last_order_code=3898, recycled pool cleared. Next order = #3899</h2><a href='/owner/settings'>← Settings</a><br><a href='/new-order'>Go to New Order →</a>"
 
 
 @bp.route("/measurement-book")
