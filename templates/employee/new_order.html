@@ -687,7 +687,7 @@ function goNewStep(n) {
   setNewWizard(n);
   const map = {2:"step-n2",3:"step-n4",4:"step-n5",5:"step-n3"};
   showStep(map[n]);
-  if (n===3) { const t=new Date().toISOString().split("T")[0]; if(!document.getElementById("n_odate").value) document.getElementById("n_odate").value=t; document.getElementById("n_ddate").min=t; }
+  if (n===3) { const t=new Date().toLocaleDateString("en-CA"); if(!document.getElementById("n_odate").value) document.getElementById("n_odate").value=t; document.getElementById("n_ddate").min=t; }
   if (n===4) { injectPayment("payment-inner-new"); recalcPayment(); }
   if (n===5) { buildQR("qr-box","qr-link"); startImgPoll("img-preview"); }
 }
@@ -717,7 +717,7 @@ function goExistingStep(n) {
   const map = {2:"step-e2",3:"step-e4",4:"step-e5",5:"step-e3"};
   showStep(map[n]);
   if (n===2) { renderExistingGarments(); }  // Re-render to ensure chips/tiles show
-  if (n===3) { const t=new Date().toISOString().split("T")[0]; if(!document.getElementById("e_odate").value) document.getElementById("e_odate").value=t; document.getElementById("e_ddate").min=t; }
+  if (n===3) { const t=new Date().toLocaleDateString("en-CA"); if(!document.getElementById("e_odate").value) document.getElementById("e_odate").value=t; document.getElementById("e_ddate").min=t; }
   if (n===4) { injectPayment("payment-inner-existing"); recalcPayment(); }
   if (n===5) { buildQR("qr-box-e","qr-link-e"); startImgPoll("img-preview-e"); }
 }
