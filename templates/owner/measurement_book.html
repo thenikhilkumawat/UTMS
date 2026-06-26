@@ -76,37 +76,34 @@
 
     {% for o in orders %}
       {% if o.image_only %}
-      <!-- Image-only card: photo uploaded but order not created yet -->
       <div class="mb-card"
         data-search="{{ o.code }}"
         data-status="image_only"
         data-hasimage="1"
         style="background:#fff;border-radius:20px;overflow:hidden;
                box-shadow:0 2px 12px rgba(0,0,0,0.08);border:2px solid #fde68a;transition:all 0.2s;"
-        onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 30px rgba(0,0,0,0.14)'"
-        onmouseout="this.style.transform='';this.style.boxShadow='0 2px 12px rgba(0,0,0,0.08)'">
+        onmouseover="this.style.transform='translateY(-3px)'"
+        onmouseout="this.style.transform=''">
         <div style="position:relative;cursor:pointer;" onclick="openImageModal('{{ o.image }}','{{ o.code }}')">
           <img src="{{ o.image }}" alt="Order #{{ o.code }}"
             style="width:100%;height:200px;object-fit:cover;display:block;">
           <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(0,0,0,0.7));"></div>
           <div style="position:absolute;top:10px;left:12px;background:#f59e0b;color:#fff;
-                      font-size:11px;font-weight:800;padding:4px 12px;border-radius:10px;">
-            ⏳ Image Only — Order not created yet
-          </div>
+                      font-size:11px;font-weight:800;padding:4px 12px;border-radius:10px;">📱 QR Upload</div>
           <div style="position:absolute;bottom:10px;left:14px;color:#fff;font-size:20px;font-weight:900;">
             #{{ o.code }}
           </div>
         </div>
         <div style="padding:16px 18px;">
-          <div style="font-size:13px;color:#92400e;background:#fef9c3;border-radius:8px;padding:10px 14px;margin-bottom:14px;">
-            📷 Photo save hui hai — ab order details bhi bharo
+          <div style="font-size:13px;color:#92400e;background:#fef9c3;border-radius:8px;
+                      padding:10px 14px;margin-bottom:12px;">
+            Naam aur mobile yahan bharo — order save ho jaayega
           </div>
-          <a href="/owner/past-orders?code={{ o.code }}"
-             style="display:block;padding:12px;background:linear-gradient(135deg,#f59e0b,#d97706);
-                    color:#fff;border-radius:12px;text-align:center;text-decoration:none;
-                    font-size:14px;font-weight:800;">
-            ➕ Create Past Order #{{ o.code }}
-          </a>
+          <button onclick="openFillModal('{{ o.code }}')"
+            style="width:100%;padding:12px;background:linear-gradient(135deg,#f59e0b,#d97706);
+                   color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;">
+            ✏️ Fill Details → Save Order
+          </button>
         </div>
       </div>
 
@@ -296,6 +293,55 @@
   <div style="font-size:13px;color:#64748b;">Tap anywhere to close</div>
 </div>
 
+<!-- Fill Details Modal -->
+<div id="fill-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9998;
+     align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:20px;padding:28px;width:90%;max-width:420px;
+              box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <h3 style="margin:0 0 4px;font-size:18px;color:#1e1b4b;">✏️ Order Details Bharo</h3>
+    <p style="font-size:13px;color:#6b7280;margin:0 0 20px;">
+      Code: <strong>#<span id="fill-code-label"></span></strong> — image already saved hai
+    </p>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div>
+        <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:#6b7280;display:block;margin-bottom:5px;">
+          Customer Name *
+        </label>
+        <input type="text" id="fill-name" placeholder="Ramesh Ji"
+          style="width:100%;padding:12px;border:2px solid #e5e7eb;border-radius:10px;font-size:16px;font-weight:700;box-sizing:border-box;outline:none;"
+          onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#e5e7eb'">
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:#6b7280;display:block;margin-bottom:5px;">
+          Mobile
+        </label>
+        <input type="tel" id="fill-mobile" placeholder="9876543210" maxlength="10"
+          style="width:100%;padding:12px;border:2px solid #e5e7eb;border-radius:10px;font-size:16px;box-sizing:border-box;outline:none;"
+          onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#e5e7eb'">
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:#6b7280;display:block;margin-bottom:5px;">
+          Address / Gaon
+        </label>
+        <input type="text" id="fill-address" placeholder="Sikar / Laxmangarh"
+          style="width:100%;padding:12px;border:2px solid #e5e7eb;border-radius:10px;font-size:15px;box-sizing:border-box;outline:none;"
+          onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#e5e7eb'">
+      </div>
+    </div>
+    <div id="fill-msg" style="font-size:13px;font-weight:700;min-height:20px;margin:12px 0;text-align:center;"></div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="closeFillModal()"
+        style="flex:1;padding:12px;background:#f3f4f6;color:#374151;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">
+        Cancel
+      </button>
+      <button id="fill-save-btn" onclick="saveFillDetails()"
+        style="flex:2;padding:12px;background:linear-gradient(135deg,#059669,#047857);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;">
+        💾 Save Order
+      </button>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
 {% block extra_js %}
 <script>
@@ -360,7 +406,46 @@ function applyFilter() {
     (visible === 0) ? "block" : "none";
 }
 
-function openImageModal(src, code) {
+function openFillModal(code) {
+  document.getElementById("fill-code-label").textContent = code;
+  document.getElementById("fill-name").value = "";
+  document.getElementById("fill-mobile").value = "";
+  document.getElementById("fill-address").value = "";
+  document.getElementById("fill-msg").textContent = "";
+  document.getElementById("fill-modal").style.display = "flex";
+  setTimeout(function(){ document.getElementById("fill-name").focus(); }, 100);
+}
+function closeFillModal() {
+  document.getElementById("fill-modal").style.display = "none";
+}
+async function saveFillDetails() {
+  const code = document.getElementById("fill-code-label").textContent;
+  const name = document.getElementById("fill-name").value.trim();
+  if (!name) { document.getElementById("fill-msg").textContent = "⚠️ Naam required"; return; }
+  const btn = document.getElementById("fill-save-btn");
+  btn.disabled = true; btn.textContent = "Saving...";
+  const res = await fetch("/owner/past-orders/save", {
+    method: "POST", headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({
+      order_code: code, customer_name: name,
+      mobile: document.getElementById("fill-mobile").value.trim(),
+      address: document.getElementById("fill-address").value.trim(),
+      order_date: "", delivery_date: "",
+      total_amount: 0, advance_paid: 0,
+      payment_mode: "cash", is_delivered: true, garments: []
+    })
+  });
+  const d = await res.json().catch(()=>({}));
+  if (d.ok) {
+    document.getElementById("fill-msg").style.color = "#059669";
+    document.getElementById("fill-msg").textContent = "✅ Saved! Refreshing...";
+    setTimeout(function(){ window.location.reload(); }, 1000);
+  } else {
+    document.getElementById("fill-msg").style.color = "#dc2626";
+    document.getElementById("fill-msg").textContent = "❌ " + (d.error||"Error");
+    btn.disabled = false; btn.textContent = "💾 Save Order";
+  }
+}
   document.getElementById("modal-img").src = src;
   document.getElementById("modal-code-label").textContent = "Order #" + code + " — Diary Image";
   document.getElementById("img-modal").style.display = "flex";
