@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+{% block title %}Bulk Import — UTMS{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>📥 Bulk Import Orders</h1>
+    <div class="header-sub">Excel se hazaaron orders ek saath import karo</div>
+  </div>
+  <div style="display:flex;gap:8px;">
+    <a href="/owner/bulk-import/template" class="btn btn-primary btn-sm">⬇️ Download Template</a>
+    <button class="menu-toggle" onclick="openSidebar()">☰</button>
+  </div>
+</div>
+
+<div class="page-body" style="padding:20px 24px;max-width:800px;margin:0 auto;">
+
+  <!-- Step 1: Download template -->
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-header" style="background:linear-gradient(135deg,#dbeafe,#bfdbfe);">
+      <span class="card-title" style="color:#1e40af;">Step 1 — Template Download Karo</span>
+    </div>
+    <div class="card-body" style="padding:20px;">
+      <p style="font-size:14px;color:#374151;margin:0 0 12px;">
+        Pehle yeh Excel template download karo. Isme pehle se columns aur example data hai.
+      </p>
+      <div style="background:#f0f9ff;border-radius:10px;padding:14px 16px;margin-bottom:14px;border:1.5px solid #bae6fd;">
+        <div style="font-size:13px;font-weight:700;color:#0369a1;margin-bottom:8px;">Template mein columns:</div>
+        <div style="font-size:12px;color:#374151;line-height:2;display:grid;grid-template-columns:1fr 1fr;">
+          <span>✓ Order Code (blank = auto)</span><span>✓ Customer Name *</span>
+          <span>✓ Mobile, Address</span><span>✓ Order/Delivery Date</span>
+          <span>✓ Garment Type, Qty, Rate</span><span>✓ Status (new/delivered)</span>
+          <span>✓ Lambai, Seena, Kamar</span><span>✓ Shoulder, Aastin, Collar</span>
+          <span>✓ Cough, Seat, Mori</span><span>✓ Jangh, Goda, Langot</span>
+          <span>✓ Total Amount, Advance</span><span>✓ Notes</span>
+        </div>
+      </div>
+      <a href="/owner/bulk-import/template"
+        style="display:inline-block;padding:12px 24px;background:linear-gradient(135deg,#3b82f6,#2563eb);
+               color:#fff;border-radius:10px;text-decoration:none;font-weight:800;font-size:14px;">
+        ⬇️ Download Excel Template
+      </a>
+    </div>
+  </div>
+
+  <!-- Step 2: Fill data -->
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-header" style="background:linear-gradient(135deg,#d1fae5,#a7f3d0);">
+      <span class="card-title" style="color:#065f46;">Step 2 — Data Bharo</span>
+    </div>
+    <div class="card-body" style="padding:20px;">
+      <div style="font-size:13px;color:#374151;line-height:1.8;">
+        <div style="font-weight:700;margin-bottom:8px;">Important rules:</div>
+        <div>🔹 <b>Ek row = Ek garment</b> — same customer ke 2 kapde = 2 rows (same order code dalo)</div>
+        <div>🔹 <b>Order Code blank</b> = auto-assign next number</div>
+        <div>🔹 <b>Status:</b> "delivered" = past order &nbsp;|&nbsp; "new" = active order</div>
+        <div>🔹 <b>Date format:</b> DD-MM-YYYY (e.g. 25-06-2026)</div>
+        <div>🔹 Measurements sirf woh fields bharo jo apply hote hain, baaki blank chhod do</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 3: Upload -->
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-header" style="background:linear-gradient(135deg,#fef3c7,#fde68a);">
+      <span class="card-title" style="color:#92400e;">Step 3 — Upload Karo</span>
+    </div>
+    <div class="card-body" style="padding:20px;">
+      <div id="upload-zone"
+        onclick="document.getElementById('excel-input').click()"
+        style="border:3px dashed #d1d5db;border-radius:14px;padding:40px 20px;text-align:center;
+               cursor:pointer;background:#f9fafb;transition:all 0.2s;"
+        ondragover="event.preventDefault();this.style.borderColor='#f59e0b';this.style.background='#fffbeb'"
+        ondragleave="this.style.borderColor='#d1d5db';this.style.background='#f9fafb'"
+        ondrop="handleDrop(event)">
+        <div style="font-size:40px;margin-bottom:10px;">📊</div>
+        <div style="font-size:16px;font-weight:700;color:#374151;">Excel file yahan drop karo</div>
+        <div style="font-size:13px;color:#9ca3af;margin-top:4px;">ya click karke select karo (.xlsx)</div>
+      </div>
+      <input type="file" id="excel-input" accept=".xlsx,.xls" style="display:none" onchange="handleFile(this.files[0])">
+
+      <div id="file-info" style="display:none;margin-top:12px;padding:10px 14px;background:#f0fdf4;
+           border-radius:8px;border:1.5px solid #86efac;font-size:13px;font-weight:700;color:#15803d;">
+        📄 <span id="file-name"></span>
+      </div>
+
+      <button id="upload-btn" onclick="uploadFile()" disabled
+        style="width:100%;margin-top:16px;padding:14px;background:linear-gradient(135deg,#f59e0b,#d97706);
+               color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:800;cursor:pointer;opacity:0.5;">
+        🚀 Import Orders
+      </button>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div id="results-card" style="display:none;" class="card">
+    <div class="card-header" id="results-header">
+      <span class="card-title" id="results-title">Results</span>
+    </div>
+    <div class="card-body" style="padding:20px;" id="results-body"></div>
+  </div>
+
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+let selectedFile = null;
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById("upload-zone").style.borderColor = "#d1d5db";
+  document.getElementById("upload-zone").style.background = "#f9fafb";
+  const file = e.dataTransfer.files[0];
+  if (file) handleFile(file);
+}
+
+function handleFile(file) {
+  if (!file) return;
+  if (!file.name.match(/\.xlsx?$/i)) {
+    alert("Sirf .xlsx file upload karo");
+    return;
+  }
+  selectedFile = file;
+  document.getElementById("file-name").textContent = file.name + " (" + (file.size/1024).toFixed(1) + " KB)";
+  document.getElementById("file-info").style.display = "block";
+  document.getElementById("upload-zone").style.display = "none";
+  const btn = document.getElementById("upload-btn");
+  btn.disabled = false; btn.style.opacity = "1";
+}
+
+async function uploadFile() {
+  if (!selectedFile) return;
+  const btn = document.getElementById("upload-btn");
+  btn.disabled = true; btn.textContent = "⏳ Processing...";
+
+  const fd = new FormData();
+  fd.append("excel_file", selectedFile);
+
+  const res = await fetch("/owner/bulk-import/upload", { method:"POST", body:fd });
+  const d = await res.json().catch(() => ({}));
+
+  const card = document.getElementById("results-card");
+  const hdr  = document.getElementById("results-header");
+  const body = document.getElementById("results-body");
+  card.style.display = "block";
+
+  if (d.ok) {
+    hdr.style.background = "linear-gradient(135deg,#d1fae5,#a7f3d0)";
+    document.getElementById("results-title").textContent = "✅ Import Complete!";
+    body.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;">
+        <div style="background:#f0fdf4;border-radius:10px;padding:14px;text-align:center;">
+          <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;">Created</div>
+          <div style="font-size:36px;font-weight:900;color:#16a34a;">${d.created}</div>
+        </div>
+        <div style="background:#fef9c3;border-radius:10px;padding:14px;text-align:center;">
+          <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;">Skipped</div>
+          <div style="font-size:36px;font-weight:900;color:#d97706;">${d.skipped}</div>
+        </div>
+        <div style="background:#f1f5f9;border-radius:10px;padding:14px;text-align:center;">
+          <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;">Total Rows</div>
+          <div style="font-size:36px;font-weight:900;color:#374151;">${d.total_rows}</div>
+        </div>
+      </div>
+      ${d.errors && d.errors.length ? `<div style="background:#fff7ed;border-radius:8px;padding:12px;margin-bottom:12px;">
+        <div style="font-size:12px;font-weight:700;color:#c2410c;margin-bottom:8px;">⚠️ Warnings/Errors:</div>
+        ${d.errors.map(e => `<div style="font-size:12px;color:#7c2d12;padding:3px 0;">• ${e}</div>`).join('')}
+      </div>` : ''}
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <a href="/owner/orders" style="padding:10px 18px;background:#6366f1;color:#fff;border-radius:10px;
+           text-decoration:none;font-weight:700;font-size:13px;">📋 View All Orders</a>
+        <a href="/owner/measurement-book" style="padding:10px 18px;background:#f1f5f9;color:#374151;border-radius:10px;
+           text-decoration:none;font-weight:700;font-size:13px;">📖 Open Diary</a>
+        <button onclick="location.reload()" style="padding:10px 18px;background:#f1f5f9;color:#374151;border:none;
+           border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;">↩ Import More</button>
+      </div>
+    `;
+  } else {
+    hdr.style.background = "linear-gradient(135deg,#fee2e2,#fecaca)";
+    document.getElementById("results-title").textContent = "❌ Import Failed";
+    body.innerHTML = `<div style="color:#dc2626;font-size:14px;font-weight:700;">${d.error || "Unknown error"}</div>`;
+    btn.disabled = false; btn.textContent = "🚀 Import Orders"; btn.style.opacity = "1";
+  }
+
+  card.scrollIntoView({ behavior:"smooth" });
+}
+</script>
+{% endblock %}
