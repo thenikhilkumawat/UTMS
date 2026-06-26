@@ -810,161 +810,73 @@ def save_anthropic_key():
 
 @bp.route("/measurement-book")
 def measurement_book():
-    import os as _os
-    from config import Config as _Config
+    import os as _os, json as _json
     conn = get_db()
-    uc   = conn.execute("SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status!='delivered'").fetchone()["c"]
+    try:
+        uc = conn.execute("SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status!='delivered'").fetchone()["c"]
+        rows = conn.execute("""
+            SELECT o.id, o.order_code, o.order_date, o.delivery_date, o.status,
+                   o.payable_amount, o.advance_paid, o.remaining, o.note, o.is_urgent,
+                   c.name as cname, c.mobile, c.address
+            FROM orders o JOIN customers c ON c.id=o.customer_id
+            ORDER BY o.id DESC
+        """).fetchall()
 
-    rows = conn.execute("""
-        SELECT o.id, o.order_code, o.order_date, o.delivery_date, o.status,
-               o.payable_amount, o.advance_paid, o.remaining, o.note, o.is_urgent,
-               c.name as cname, c.mobile, c.address
-        FROM orders o JOIN customers c ON c.id=o.customer_id
-        ORDER BY o.id DESC
-    """).fetchall()
+        def fmtd(d):
+            if not d: return "—"
+            p = str(d).split("-")
+            return f"{p[2]}-{p[1]}-{p[0]}" if len(p)==3 else d
 
-    def fmtd(d):
-        if not d: return "—"
-        p = str(d).split("-")
-        return f"{p[2]}-{p[1]}-{p[0]}" if len(p)==3 else d
-
-    orders_data = []
-    for o in rows:
-        oid = o["id"]
-
-        # Fetch garments (no GROUP_CONCAT — works on both SQLite + PostgreSQL)
-        garment_rows = conn.execute("""
-            SELECT id, garment_type, quantity, rate, notes
-            FROM order_items WHERE order_id=? ORDER BY id
-        """, (oid,)).fetchall()
-
-        garments_list = []
-        for g in garment_rows:
-            meas_rows = conn.execute(
-                "SELECT field_name, value FROM measurements WHERE order_item_id=? ORDER BY id",
-                (g["id"],)
+        orders_data = []
+        for o in rows:
+            oid = o["id"]
+            garment_rows = conn.execute(
+                "SELECT id, garment_type, quantity, rate, notes, measurements FROM order_items WHERE order_id=? ORDER BY id",
+                (oid,)
             ).fetchall()
-            meas = {r["field_name"]: r["value"] for r in meas_rows}
-            garments_list.append({
-                "type": g["garment_type"], "qty": g["quantity"],
-                "rate": int(g["rate"] or 0),
-                "notes": g["notes"] or "", "meas": meas
+            garments_list = []
+            for g in garment_rows:
+                try:
+                    meas = _json.loads(g["measurements"] or "{}")
+                except Exception:
+                    meas = {}
+                garments_list.append({
+                    "type": g["garment_type"], "qty": g["quantity"],
+                    "rate": int(g["rate"] or 0),
+                    "notes": g["notes"] or "", "meas": meas
+                })
+            img_rows = conn.execute(
+                "SELECT file_path FROM order_images WHERE order_id=? ORDER BY id LIMIT 1", (oid,)
+            ).fetchall()
+            images = [r["file_path"] for r in img_rows
+                      if r["file_path"] and not r["file_path"].startswith("temp:")]
+            if not images:
+                static_folder = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.dirname(__file__))), "static", "order_images", o["order_code"])
+                if _os.path.isdir(static_folder):
+                    imgs = sorted(f for f in _os.listdir(static_folder)
+                                  if f.lower().endswith((".jpg",".jpeg",".png",".webp")))
+                    if imgs:
+                        images = [f"/static/order_images/{o['order_code']}/{imgs[0]}"]
+            orders_data.append({
+                "code": o["order_code"], "odate": fmtd(o["order_date"]),
+                "ddate": fmtd(o["delivery_date"]), "status": o["status"],
+                "urgent": bool(o["is_urgent"]),
+                "payable": int(o["payable_amount"] or 0),
+                "paid":    int(o["advance_paid"]  or 0),
+                "due":     int(o["remaining"]     or 0),
+                "note":    o["note"] or "",
+                "cname":   o["cname"]   or "—",
+                "mobile":  o["mobile"]  or "—",
+                "address": o["address"] or "—",
+                "garments": garments_list,
+                "image": images[0] if images else None,
             })
-
-        # First image
-        img_rows = conn.execute(
-            "SELECT file_path FROM order_images WHERE order_id=? ORDER BY id LIMIT 1", (oid,)
-        ).fetchall()
-        images = [r["file_path"] for r in img_rows
-                  if r["file_path"] and not r["file_path"].startswith("temp:")]
-        if not images:
-            folder = _os.path.join(_Config.UPLOAD_FOLDER, o["order_code"])
-            if _os.path.isdir(folder):
-                imgs = sorted(f for f in _os.listdir(folder)
-                              if f.lower().endswith((".jpg",".jpeg",".png",".webp")))
-                if imgs:
-                    images = [f"/static/order_images/{o['order_code']}/{imgs[0]}"]
-
-        orders_data.append({
-            "code": o["order_code"], "odate": fmtd(o["order_date"]),
-            "ddate": fmtd(o["delivery_date"]), "status": o["status"],
-            "urgent": bool(o["is_urgent"]),
-            "payable": int(o["payable_amount"] or 0),
-            "paid":    int(o["advance_paid"]  or 0),
-            "due":     int(o["remaining"]     or 0),
-            "note":    o["note"] or "",
-            "cname":   o["cname"]   or "—",
-            "mobile":  o["mobile"]  or "—",
-            "address": o["address"] or "—",
-            "garments": garments_list,
-            "image": images[0] if images else None,
-        })
-
-    conn.close()
+    finally:
+        conn.close()
     return render_template("owner/measurement_book.html",
         active_page="measurement_book", show_voice=False,
         urgent_count=uc, orders=orders_data)
-    conn = get_db()
-    today = date.today().isoformat()
-    urgent_count = conn.execute("SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status != 'delivered' AND delivery_date >= ?",(today,)).fetchone()["c"]
-    conn.close()
-    current_settings = {
-        "shop_name":        get_setting("shop_name","Uttam Tailors"),
-        "shop_name_hi":     get_setting("shop_name_hi","उत्तम टेलर्स"),
-        "whatsapp_number":  get_setting("whatsapp_number",""),
-        "default_language": get_setting("default_language","hl"),
-        "order_code_start": get_setting("last_order_code","3600"),
-    }
-    garment_names_std = [
-        "Shirt","Shirt Linen","Pant","Pant Double","Jeans","Suit 2pc","Suit 3pc",
-        "Blazer","Kurta","Kurta Pajama","Pajama","Pathani","Sherwani","Safari",
-        "Waistcoat","Alteration","Cutting Only"
-    ]
-    # Customer rates
-    garment_rates = {}
-    deleted_csv = get_setting("deleted_customer_rates", "")
-    deleted_set = set(x.strip() for x in deleted_csv.split(",") if x.strip())
-    for n in garment_names_std:
-        if n in deleted_set:
-            continue  # user deleted this garment type
-        r = get_setting("customer_rate_"+n,"") or get_setting("rate_"+n,"0")
-        garment_rates[n] = r
-    # Add any custom customer garments
-    from database import get_db as _gdb2
-    _c2 = _gdb2()
-    all_settings = _c2.execute("SELECT key,value FROM settings WHERE key LIKE 'customer_rate_%'").fetchall()
-    _c2.close()
-    for row in all_settings:
-        name = row["key"][14:]
-        if name not in garment_rates:
-            garment_rates[name] = row["value"]
 
-    # Stitching rates
-    stitch_rates = {}
-    for n in garment_names_std:
-        stitch_rates[n] = get_setting("stitch_rate_"+n,"0")
-    work_rates_map = {
-        "work_rate_measurement": get_setting("work_rate_measurement","0"),
-        "work_rate_cutting":     get_setting("work_rate_cutting","25"),
-        "work_rate_alteration":  get_setting("work_rate_alteration","15"),
-    }
-    conn2 = get_db()
-    # Garment type chips — always show all standard garment types
-    ALL_GARMENTS = [
-        "Shirt","Shirt Linen","Pant","Pant Double","Jeans",
-        "Suit 2pc","Suit 3pc","Blazer","Kurta","Kurta Pajama",
-        "Pajama","Pathani","Sherwani","Safari","Waistcoat",
-        "Alteration","Cutting Only"
-    ]
-    existing_chips = {}
-    for row in conn2.execute("SELECT key, value FROM settings WHERE key LIKE 'types_%'").fetchall():
-        existing_chips[row["key"][6:]] = row["value"] or ""
-    # Build ordered dict: standard first, then any custom
-    garment_type_chips = {}
-    for g in ALL_GARMENTS:
-        garment_type_chips[g] = existing_chips.get(g, "")
-    for g, v in existing_chips.items():
-        if g not in garment_type_chips:
-            garment_type_chips[g] = v
-    try:
-        conn2.execute("ALTER TABLE employees ADD COLUMN skills TEXT DEFAULT 'stitch'")
-        conn2.execute("UPDATE employees SET skills='all' WHERE name='Kamal' AND (skills IS NULL OR skills='stitch')")
-        conn2.commit()
-    except Exception:
-        try: conn2._conn.rollback()
-        except Exception: pass
-    all_employees = conn2.execute(
-        "SELECT id, name, COALESCE(skills,'stitch') as skills FROM employees WHERE active=1 ORDER BY name"
-    ).fetchall()
-    conn2.close()
-    return render_template("owner/settings.html",
-        active_page="settings", show_voice=True, urgent_count=urgent_count,
-        settings=current_settings, garment_rates=garment_rates,
-        stitch_rates=stitch_rates, work_rates_map=work_rates_map,
-        all_employees=all_employees,
-        garment_type_chips=garment_type_chips,
-        last_backup=get_setting("last_backup_at","")
-    )
 
 @bp.route("/settings/save", methods=["POST"])
 @owner_required
