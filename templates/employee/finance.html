@@ -1,494 +1,387 @@
 {% extends "base.html" %}
-{% block title %}हिसाब-किताब — Uttam Tailors{% endblock %}
+{% block title %}Finance — Uttam Tailors{% endblock %}
 {% block extra_css %}
 <style>
-@keyframes slideUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
-.fin-card { animation: slideUp 0.2s ease-out; }
-.fin-layout { display: grid; grid-template-columns: 320px 1fr; }
-@media (max-width: 768px) {
-  .fin-layout { grid-template-columns: 1fr !important; }
-  .fin-add-btn {
-    position: fixed; bottom: 82px; right: 16px; z-index: 150;
-    width: 56px; height: 56px; border-radius: 50%;
-    background: linear-gradient(135deg,#059669,#047857);
-    color: #fff; font-size: 26px; border: none;
-    box-shadow: 0 4px 16px rgba(5,150,105,0.5);
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer;
-  }
-  .fin-form-panel { display: none; }
-  .fin-form-panel.open { display: block !important; }
-  .fin-summary-grid { grid-template-columns: 1fr 1fr !important; }
+* { box-sizing: border-box; }
+.fin-page { display:flex; flex-direction:column; height:100vh; background:#f1f5f9; }
+
+/* Header */
+.fin-header {
+  background: linear-gradient(135deg,#1e1b4b,#312e81);
+  padding: 16px 20px 0; flex-shrink:0;
 }
+.fin-header-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+.fin-title { font-size:20px; font-weight:900; color:#fff; }
+.fin-net { text-align:right; }
+.fin-net-label { font-size:10px; color:#a5b4fc; font-weight:700; text-transform:uppercase; }
+.fin-net-val { font-size:26px; font-weight:900; color:#fff; }
+
+/* Stats strip */
+.fin-stats {
+  display:grid; grid-template-columns:1fr 1fr; gap:0;
+  background:rgba(255,255,255,0.08); border-radius:14px 14px 0 0; overflow:hidden;
+}
+.fin-stat { padding:10px 14px; }
+.fin-stat-label { font-size:10px; font-weight:700; text-transform:uppercase; color:#94a3b8; margin-bottom:2px; }
+.fin-stat-val { font-size:22px; font-weight:900; }
+.fin-stat-sub { font-size:10px; color:#94a3b8; margin-top:1px; }
+.fin-stat.inc { border-right:1px solid rgba(255,255,255,0.1); }
+.fin-stat.inc .fin-stat-val { color:#4ade80; }
+.fin-stat.exp .fin-stat-val { color:#f87171; }
+
+/* Body */
+.fin-body { display:grid; grid-template-columns:300px 1fr; flex:1; min-height:0; gap:0; }
+@media(max-width:768px){ .fin-body { grid-template-columns:1fr; } .fin-form-col { display:none; } }
+
+/* Left: form */
+.fin-form-col {
+  background:#fff; border-right:1px solid #e5e7eb;
+  overflow-y:auto; padding:16px;
+}
+.form-label { font-size:10px; font-weight:700; text-transform:uppercase; color:#94a3b8; display:block; margin-bottom:5px; }
+.form-input { width:100%; padding:10px 12px; border:2px solid #e5e7eb; border-radius:10px; font-size:14px; font-weight:600; outline:none; transition:border-color 0.15s; }
+.form-input:focus { border-color:#6366f1; }
+.form-row { margin-bottom:12px; }
+.toggle-group { display:flex; gap:6px; }
+.toggle-btn { flex:1; padding:9px; border-radius:10px; border:2px solid #e5e7eb; background:#f8fafc; font-size:13px; font-weight:800; cursor:pointer; transition:all 0.15s; }
+
+/* Right: transactions */
+.fin-tx-col { display:flex; flex-direction:column; min-height:0; }
+.fin-filters { padding:10px 14px; background:#fff; border-bottom:1px solid #e5e7eb; display:flex; align-items:center; gap:6px; flex-shrink:0; }
+.fil-btn { padding:5px 14px; border-radius:20px; border:none; background:#f1f5f9; color:#64748b; font-size:12px; font-weight:700; cursor:pointer; }
+.fil-btn.active { background:#6366f1; color:#fff; }
+.fil-search { padding:5px 12px; border-radius:20px; border:1.5px solid #e5e7eb; font-size:12px; flex:1; max-width:180px; outline:none; }
+
+/* Transaction rows */
+.tx-list { flex:1; overflow-y:auto; padding:10px 12px; }
+.tx-row { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:10px; margin-bottom:5px; background:#fff; border:1px solid #f1f5f9; transition:background 0.1s; }
+.tx-row:hover { background:#f8fafc; }
+.tx-icon { width:34px; height:34px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0; }
+.tx-icon.inc { background:#dcfce7; }
+.tx-icon.exp { background:#fee2e2; }
+.tx-info { flex:1; min-width:0; }
+.tx-cat { font-size:13px; font-weight:800; color:#1e1b4b; text-transform:capitalize; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.tx-meta { font-size:11px; color:#94a3b8; margin-top:1px; }
+.tx-badge { display:inline-block; padding:1px 6px; border-radius:20px; font-size:10px; font-weight:700; margin-left:4px; }
+.tx-badge.order { background:#ede9fe; color:#6d28d9; }
+.tx-badge.cash { background:#f0fdf4; color:#15803d; }
+.tx-badge.upi { background:#eef2ff; color:#4338ca; }
+.tx-amount { font-size:17px; font-weight:900; flex-shrink:0; }
+.tx-amount.inc { color:#16a34a; }
+.tx-amount.exp { color:#dc2626; }
+.tx-empty { padding:48px 20px; text-align:center; color:#94a3b8; }
+
+/* Mobile FAB */
+.fin-fab { display:none; position:fixed; bottom:80px; right:16px; z-index:200; width:52px; height:52px; border-radius:50%; background:linear-gradient(135deg,#059669,#047857); color:#fff; font-size:24px; border:none; box-shadow:0 4px 16px rgba(5,150,105,0.5); cursor:pointer; align-items:center; justify-content:center; }
+@media(max-width:768px){ .fin-fab{display:flex;} }
 </style>
 {% endblock %}
+
 {% block content %}
+<div class="fin-page">
 
-<!-- Header -->
-<div style="background:#fff;border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;">
-  <div>
-    <h1 style="font-size:18px;font-weight:900;margin:0;">💰 <span class="lang-en">Finance</span><span class="lang-hi" style="display:none;">हिसाब-किताब</span></h1>
-    <div style="font-size:11px;color:var(--text-muted);"><span class="lang-en">Income & Expenses</span><span class="lang-hi" style="display:none;">आमदनी और खर्च</span></div>
-  </div>
-  <div style="display:flex;gap:8px;">
-    <a href="/" class="btn btn-ghost btn-sm">← <span class="lang-en">Back</span><span class="lang-hi" style="display:none;">वापस</span></a>
-    <button class="menu-toggle" onclick="openSidebar()">☰</button>
-  </div>
-</div>
-
-<div style="padding:14px 16px;">
-
-  <!-- Summary cards — compact -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
-    <div class="fin-card" style="background:#fff;border-radius:14px;border:1.5px solid var(--border);overflow:hidden;">
-      <div style="background:linear-gradient(135deg,#4f46e5,#6366f1);padding:7px 14px;">
-        <span style="font-size:12px;font-weight:800;color:#fff;">📅 <span class="lang-en">Today</span><span class="lang-hi" style="display:none;">आज</span></span>
+  <!-- Header -->
+  <div class="fin-header">
+    <div class="fin-header-top">
+      <div>
+        <div class="fin-title">💰 Finance</div>
+        <div style="font-size:11px;color:#a5b4fc;">Income & Expenses</div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;">
-        <div style="padding:10px 12px;border-right:1px solid var(--border);">
-          <div style="font-size:10px;font-weight:700;color:#16a34a;text-transform:uppercase;margin-bottom:2px;"><span class="lang-en">Income</span><span class="lang-hi" style="display:none;">आमदनी</span></div>
-          <div style="font-size:22px;font-weight:900;color:#15803d;">₹{{ today_income }}</div>
-          <div style="font-size:10px;color:var(--text-muted);">💵₹{{ today_cash }} · 📱₹{{ today_upi }}</div>
-        </div>
-        <div style="padding:10px 12px;">
-          <div style="font-size:10px;font-weight:700;color:#dc2626;text-transform:uppercase;margin-bottom:2px;"><span class="lang-en">Expense</span><span class="lang-hi" style="display:none;">खर्च</span></div>
-          <div style="font-size:22px;font-weight:900;color:#b91c1c;">₹{{ today_expense }}</div>
-          <div style="font-size:10px;color:var(--text-muted);">{{ today_expense_count }} entries</div>
+      <div class="fin-net">
+        <div class="fin-net-label">Today's Net</div>
+        {% set net = today_income - today_expense %}
+        <div class="fin-net-val" style="color:{% if net >= 0 %}#4ade80{% else %}#f87171{% endif %};">
+          {% if net >= 0 %}+{% endif %}₹{{ net|int }}
         </div>
       </div>
     </div>
-    <div class="fin-card" style="background:#fff;border-radius:14px;border:1.5px solid var(--border);overflow:hidden;">
-      <div style="background:linear-gradient(135deg,#64748b,#475569);padding:7px 14px;">
-        <span style="font-size:12px;font-weight:800;color:#fff;">📅 <span class="lang-en">Yesterday</span><span class="lang-hi" style="display:none;">कल</span></span>
+
+    <!-- Stats -->
+    <div class="fin-stats">
+      <div class="fin-stat inc">
+        <div class="fin-stat-label">Today Income</div>
+        <div class="fin-stat-val">₹{{ today_income }}</div>
+        <div class="fin-stat-sub">💵 ₹{{ today_cash }} · 📱 ₹{{ today_upi }}</div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;">
-        <div style="padding:10px 12px;border-right:1px solid var(--border);">
-          <div style="font-size:10px;font-weight:700;color:#16a34a;text-transform:uppercase;margin-bottom:2px;"><span class="lang-en">Income</span><span class="lang-hi" style="display:none;">आमदनी</span></div>
-          <div style="font-size:22px;font-weight:900;color:#15803d;">₹{{ yesterday_income }}</div>
-          <div style="font-size:10px;color:var(--text-muted);">💵₹{{ yesterday_cash }} · 📱₹{{ yesterday_upi }}</div>
-        </div>
-        <div style="padding:10px 12px;">
-          <div style="font-size:10px;font-weight:700;color:#dc2626;text-transform:uppercase;margin-bottom:2px;"><span class="lang-en">Expense</span><span class="lang-hi" style="display:none;">खर्च</span></div>
-          <div style="font-size:22px;font-weight:900;color:#b91c1c;">₹{{ yesterday_expense }}</div>
-          <div style="font-size:10px;color:var(--text-muted);">{{ yesterday_expense_count }} entries</div>
-        </div>
+      <div class="fin-stat exp">
+        <div class="fin-stat-label">Today Expense</div>
+        <div class="fin-stat-val">₹{{ today_expense }}</div>
+        <div class="fin-stat-sub">{{ today_expense_count }} entries</div>
       </div>
     </div>
   </div>
 
-  <!-- Two column main: left = add entry, right = transactions -->
-  <div class="fin-layout" style="gap:14px;align-items:start;">
+  <!-- Body -->
+  <div class="fin-body">
 
-    <!-- Mobile FAB — Add Entry -->
-    <button class="fin-add-btn" onclick="toggleFinForm()" title="Add Entry" style="display:none;">➕</button>
+    <!-- LEFT: Add Entry -->
+    <div class="fin-form-col">
+      <div style="font-size:14px;font-weight:900;color:#1e1b4b;margin-bottom:14px;">➕ Add Entry</div>
 
-    <!-- LEFT: Add Entry form -->
-    <div class="fin-card fin-form-panel" style="background:#fff;border-radius:16px;border:1.5px solid var(--border);padding:16px;box-shadow:0 2px 10px rgba(0,0,0,0.05);">
-      <div style="font-size:14px;font-weight:900;margin-bottom:12px;">➕ <span class="lang-en">Add Entry</span><span class="lang-hi" style="display:none;">एंट्री जोड़ें</span></div>
-
-      <!-- Income / Expense toggle — compact -->
-      <div style="display:flex;gap:8px;margin-bottom:12px;">
-        <button id="btn-income" onclick="setType('income')"
-          style="flex:1;padding:9px;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;border:2px solid #16a34a;background:#16a34a;color:#fff;">
-          ↑ <span class="lang-en">Income</span><span class="lang-hi" style="display:none;">आमदनी</span>
-        </button>
-        <button id="btn-expense" onclick="setType('expense')"
-          style="flex:1;padding:9px;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;border:2px solid var(--border);background:#fff;color:var(--text-muted);">
-          ↓ <span class="lang-en">Expense</span><span class="lang-hi" style="display:none;">खर्च</span>
-        </button>
+      <!-- Income / Expense -->
+      <div class="form-row">
+        <div class="toggle-group">
+          <button id="btn-income" class="toggle-btn" onclick="setType('income')"
+            style="background:#16a34a;color:#fff;border-color:#16a34a;">⬆ Income</button>
+          <button id="btn-expense" class="toggle-btn" onclick="setType('expense')">⬇ Expense</button>
+        </div>
       </div>
 
       <!-- Amount -->
-      <div style="margin-bottom:10px;">
-        <label style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:4px;"><span class="lang-en">Amount (₹)</span><span class="lang-hi" style="display:none;">रकम (₹)</span></label>
-        <input type="number" id="f-amount" placeholder="0" min="0"
-          style="width:100%;font-size:32px;font-weight:900;padding:10px 14px;border:2px solid var(--border);border-radius:12px;text-align:center;background:#f8fafc;">
+      <div class="form-row">
+        <label class="form-label">Amount (₹)</label>
+        <input type="number" id="f-amount" class="form-input" placeholder="0" min="0"
+          style="font-size:28px;font-weight:900;text-align:center;">
       </div>
 
-      <!-- Category dropdown -->
-      <div style="margin-bottom:10px;">
-        <label style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:4px;"><span class="lang-en">Category</span><span class="lang-hi" style="display:none;">श्रेणी</span></label>
-        <select id="f-category" onchange="onCategoryChange()"
-          style="width:100%;padding:10px 12px;font-size:14px;font-weight:700;border:2px solid var(--border);border-radius:12px;background:#fff;">
+      <!-- Category -->
+      <div class="form-row">
+        <label class="form-label">Category</label>
+        <select id="f-category" class="form-input" onchange="onCategoryChange()">
           <option value="">-- चुनें --</option>
         </select>
       </div>
 
-      <!-- Order Code (shown for Advance / Payment / Remaining Amount) -->
-      <div id="f-order-code-row" style="display:none;margin-bottom:10px;">
-        <label id="f-order-code-label" style="font-size:10px;font-weight:700;text-transform:uppercase;color:#6366f1;display:block;margin-bottom:4px;">
-          <span class="lang-en">Order Code</span><span class="lang-hi" style="display:none;">ऑर्डर कोड</span>
-        </label>
-        <input type="text" id="f-order-code" placeholder="#3605" oninput="onOrderCodeInput()"
-          style="width:100%;padding:10px 12px;font-size:15px;font-weight:800;border:2px solid #6366f1;border-radius:12px;background:#eef2ff;color:#4338ca;">
-        <!-- Live payment status display -->
-        <div id="f-order-status" style="display:none;margin-top:8px;padding:10px 12px;border-radius:10px;background:#fff;border:1.5px solid #c7d2fe;font-size:13px;">
+      <!-- Order Code -->
+      <div id="f-order-code-row" style="display:none;" class="form-row">
+        <label class="form-label" style="color:#6366f1;">Order Code</label>
+        <input type="text" id="f-order-code" class="form-input" placeholder="#3605"
+          oninput="onOrderCodeInput()" style="border-color:#6366f1;background:#eef2ff;color:#4338ca;font-weight:800;">
+        <div id="f-order-status" style="display:none;margin-top:8px;padding:10px;border-radius:10px;background:#f8fafc;border:1.5px solid #c7d2fe;font-size:12px;">
           <div style="font-weight:800;color:#1e1b4b;margin-bottom:4px;" id="f-order-status-name"></div>
           <div style="display:flex;justify-content:space-between;color:#16a34a;font-weight:700;">
-            <span class="lang-en">Paid so far</span><span class="lang-hi" style="display:none;">अब तक भुगतान</span>
-            <span id="f-order-status-paid"></span>
+            <span>Paid</span><span id="f-order-status-paid"></span>
           </div>
           <div style="display:flex;justify-content:space-between;color:#dc2626;font-weight:700;margin-top:2px;">
-            <span class="lang-en">Remaining</span><span class="lang-hi" style="display:none;">बकाया</span>
-            <span id="f-order-status-remaining"></span>
+            <span>Remaining</span><span id="f-order-status-remaining"></span>
           </div>
         </div>
         <div id="f-order-status-error" style="display:none;margin-top:6px;color:#dc2626;font-size:12px;font-weight:700;"></div>
       </div>
 
-      <!-- Employee picker (shown when expense category is Salary) -->
-      <div id="f-employee-row" style="display:none;margin-bottom:10px;">
-        <label style="font-size:10px;font-weight:700;text-transform:uppercase;color:#dc2626;display:block;margin-bottom:4px;">
-          <span class="lang-en">Employee</span><span class="lang-hi" style="display:none;">कर्मचारी</span>
-        </label>
-        <select id="f-employee" style="width:100%;padding:10px 12px;font-size:14px;font-weight:700;border:2px solid #dc2626;border-radius:12px;background:#fef2f2;color:#7f1d1d;">
+      <!-- Employee -->
+      <div id="f-employee-row" style="display:none;" class="form-row">
+        <label class="form-label" style="color:#dc2626;">Employee</label>
+        <select id="f-employee" class="form-input" style="border-color:#dc2626;">
           <option value="">-- चुनें --</option>
         </select>
       </div>
 
       <!-- Mode -->
-      <div style="margin-bottom:10px;">
-        <label style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:4px;"><span class="lang-en">Mode</span><span class="lang-hi" style="display:none;">तरीका</span></label>
-        <div style="display:flex;gap:8px;">
-          <button id="mode-cash" onclick="setMode('cash')"
-            style="flex:1;padding:9px;border-radius:10px;border:2px solid #16a34a;background:#16a34a;color:#fff;font-size:13px;font-weight:800;cursor:pointer;">
-            💵 <span class="lang-en">Cash</span><span class="lang-hi" style="display:none;">नकद</span>
-          </button>
-          <button id="mode-upi" onclick="setMode('upi')"
-            style="flex:1;padding:9px;border-radius:10px;border:2px solid var(--border);background:#fff;color:var(--text-muted);font-size:13px;font-weight:800;cursor:pointer;">
-            📱 UPI
-          </button>
+      <div class="form-row">
+        <label class="form-label">Payment Mode</label>
+        <div class="toggle-group">
+          <button id="mode-cash" class="toggle-btn" onclick="setMode('cash')"
+            style="background:#16a34a;color:#fff;border-color:#16a34a;">💵 Cash</button>
+          <button id="mode-upi" class="toggle-btn" onclick="setMode('upi')">📱 UPI</button>
         </div>
       </div>
 
       <!-- Note -->
-      <div style="margin-bottom:12px;">
-        <input type="text" id="f-note" placeholder="Note (optional)..."
-          style="width:100%;padding:9px 12px;font-size:13px;border:1.5px solid var(--border);border-radius:10px;">
+      <div class="form-row">
+        <input type="text" id="f-note" class="form-input" placeholder="Note (optional)...">
       </div>
 
+      <!-- Submit -->
       <button onclick="addEntry()" id="f-submit"
         style="width:100%;padding:13px;background:#16a34a;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:900;cursor:pointer;">
-        ✅ <span class="lang-en">Add Entry</span><span class="lang-hi" style="display:none;">जोड़ें</span>
+        ✅ Add Entry
       </button>
+
+      <!-- Yesterday summary -->
+      <div style="margin-top:16px;padding:12px;background:#f8fafc;border-radius:12px;border:1px solid #e5e7eb;">
+        <div style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:8px;">📅 Yesterday</div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;">
+          <span style="color:#16a34a;font-weight:800;">⬆ ₹{{ yesterday_income }}</span>
+          <span style="color:#dc2626;font-weight:800;">⬇ ₹{{ yesterday_expense }}</span>
+        </div>
+      </div>
     </div>
 
-    <!-- RIGHT: Transaction list -->
-    <div class="fin-card" style="background:#fff;border-radius:16px;border:1.5px solid var(--border);overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.05);">
-
-      <!-- Filter tabs — compact pills -->
-      <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-        <button id="filter-today" onclick="setFilter('today')"
-          style="padding:4px 12px;border-radius:20px;border:none;background:#4f46e5;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">
-          <span class="lang-en">Today</span><span class="lang-hi" style="display:none;">आज</span>
-        </button>
-        <button id="filter-yesterday" onclick="setFilter('yesterday')"
-          style="padding:4px 12px;border-radius:20px;border:none;background:#f1f5f9;color:var(--text-muted);font-size:12px;font-weight:700;cursor:pointer;">
-          <span class="lang-en">Yesterday</span><span class="lang-hi" style="display:none;">कल</span>
-        </button>
-        <button id="filter-all" onclick="setFilter('all')"
-          style="padding:4px 12px;border-radius:20px;border:none;background:#f1f5f9;color:var(--text-muted);font-size:12px;font-weight:700;cursor:pointer;">
-          <span class="lang-en">All</span><span class="lang-hi" style="display:none;">सब</span>
-        </button>
-        <input type="text" id="f-search" placeholder="Search..."
-          oninput="filterTx()" style="padding:4px 10px;border-radius:20px;border:1.5px solid var(--border);font-size:12px;flex:1;min-width:80px;max-width:160px;">
+    <!-- RIGHT: Transaction List -->
+    <div class="fin-tx-col">
+      <!-- Filters -->
+      <div class="fin-filters">
+        <button class="fil-btn active" id="filter-today" onclick="setFilter('today')">Today</button>
+        <button class="fil-btn" id="filter-yesterday" onclick="setFilter('yesterday')">Yesterday</button>
+        <button class="fil-btn" id="filter-all" onclick="setFilter('all')">All</button>
+        <input type="text" id="f-search" class="fil-search" placeholder="🔍 Search..." oninput="filterTx()">
       </div>
 
-      <div id="tx-list" style="max-height:calc(100vh - 320px);overflow-y:auto;padding:8px;">
+      <!-- Entries -->
+      <div class="tx-list">
         {% if transactions %}
-        {% for tx in transactions %}
-        <div class="tx-row" data-date="{{ tx.tx_date }}"
-          data-s="{{ tx.category|lower }} {{ tx.note|lower if tx.note else '' }}"
-          style="display:flex;align-items:center;gap:12px;padding:10px 12px;
-                 background:#fff;border-radius:12px;margin-bottom:6px;
-                 border:1.5px solid {% if tx.tx_type=='income' %}#bbf7d0{% else %}#fecaca{% endif %};
-                 border-left:4px solid {% if tx.tx_type=='income' %}#16a34a{% else %}#dc2626{% endif %};">
-
-          <!-- Icon -->
-          <div style="width:38px;height:38px;border-radius:10px;flex-shrink:0;
-                      display:flex;align-items:center;justify-content:center;font-size:18px;
-                      background:{% if tx.tx_type=='income' %}#dcfce7{% else %}#fee2e2{% endif %};">
-            {% if tx.tx_type=='income' %}⬆️{% else %}⬇️{% endif %}
-          </div>
-
-          <!-- Info -->
-          <div style="flex:1;min-width:0;">
-            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-              <span style="font-size:14px;font-weight:900;color:#1e1b4b;text-transform:capitalize;">{{ tx.category }}</span>
-              {% if tx.order_code %}
-              <span style="background:#ede9fe;color:#6d28d9;font-size:10px;font-weight:800;padding:1px 7px;border-radius:20px;">#{{ tx.order_code }}</span>
-              {% endif %}
-              <span style="background:#f1f5f9;color:#64748b;font-size:10px;font-weight:700;padding:1px 6px;border-radius:20px;">
-                {% if tx.mode=='upi' %}📱 UPI{% else %}💵 Cash{% endif %}
-              </span>
+          {% for tx in transactions %}
+          <div class="tx-row" data-date="{{ tx.tx_date }}"
+            data-s="{{ tx.category|lower }} {{ tx.note|lower if tx.note else '' }}">
+            <div class="tx-icon {{ 'inc' if tx.tx_type=='income' else 'exp' }}">
+              {{ "⬆" if tx.tx_type=="income" else "⬇" }}
             </div>
-            <div style="font-size:11px;color:#94a3b8;margin-top:2px;">
-              🕐 {{ tx.tx_time }}{% if tx.note %} · <span style="color:#64748b;">{{ tx.note }}</span>{% endif %}
+            <div class="tx-info">
+              <div class="tx-cat">
+                {{ tx.category }}
+                {% if tx.order_code %}<span class="tx-badge order">#{{ tx.order_code }}</span>{% endif %}
+                <span class="tx-badge {{ 'cash' if tx.mode!='upi' else 'upi' }}">
+                  {{ "💵" if tx.mode!="upi" else "📱" }}
+                </span>
+              </div>
+              <div class="tx-meta">
+                {{ tx.tx_time }}{% if tx.note %} · {{ tx.note }}{% endif %}
+              </div>
+            </div>
+            <div class="tx-amount {{ 'inc' if tx.tx_type=='income' else 'exp' }}">
+              {{ "+" if tx.tx_type=="income" else "−" }}₹{{ tx.amount|int }}
             </div>
           </div>
-
-          <!-- Amount -->
-          <div style="font-size:20px;font-weight:900;flex-shrink:0;
-                      color:{% if tx.tx_type=='income' %}#16a34a{% else %}#dc2626{% endif %};">
-            {{ "+" if tx.tx_type=="income" else "−" }}₹{{ tx.amount|int }}
-          </div>
-        </div>
-        {% endfor %}
+          {% endfor %}
         {% else %}
-        <div style="padding:48px;text-align:center;color:var(--text-muted);">
-          <div style="font-size:36px;margin-bottom:10px;">💸</div>
-          <div style="font-size:14px;font-weight:700;"><span class="lang-en">No transactions yet</span><span class="lang-hi" style="display:none;">कोई लेनदेन नहीं</span></div>
-        </div>
+          <div class="tx-empty">
+            <div style="font-size:40px;margin-bottom:10px;">💸</div>
+            <div style="font-size:14px;font-weight:700;">No transactions yet</div>
+          </div>
         {% endif %}
       </div>
     </div>
 
   </div>
+
+  <!-- Mobile FAB -->
+  <button class="fin-fab" onclick="toggleFinForm()">➕</button>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-var txType  = "income";
+var txType = "income", payMode = "cash", txFilter = "today";
 
-// Mobile: show FAB, hide form initially
 if (window.innerWidth <= 768) {
-  document.querySelector('.fin-add-btn').style.display = 'flex';
+  document.querySelector('.fin-fab').style.display = 'flex';
 }
 function toggleFinForm() {
-  var panel = document.querySelector('.fin-form-panel');
-  var fab   = document.querySelector('.fin-add-btn');
-  panel.classList.toggle('open');
-  fab.textContent = panel.classList.contains('open') ? '✕' : '➕';
-  if (panel.classList.contains('open')) {
-    panel.scrollIntoView({behavior:'smooth', block:'start'});
-  }
+  var col = document.querySelector('.fin-form-col');
+  col.style.display = col.style.display === 'block' ? 'none' : 'block';
 }
-var payMode = "cash";
-var txFilter= "today";
 
-// Load categories live from API
 function loadCats() {
-  fetch("/api/finance-categories")
-    .then(function(r){ return r.json(); })
-    .then(function(d){
-      window._INCOME_CATS  = d.income  || ["Advance","Payment","Alteration","Other Income"];
-      window._EXPENSE_CATS = d.expense || ["Thread","Buttons","Fabric","Electricity","Rent","Salary","Transport","Other Expense"];
-      populateCats();
-    });
-}
-
-// Hindi translations for finance categories
-var FINANCE_CAT_HI = {
-  "advance":           "अग्रिम",
-  "payment":           "भुगतान",
-  "alteration":        "फेरबदल",
-  "other income":      "अन्य आय",
-  "thread":            "धागा",
-  "buttons":           "बटन",
-  "fabric":            "कपड़ा",
-  "electricity":       "बिजली",
-  "rent":              "किराया",
-  "salary":            "तनख्वाह",
-  "transport":         "यातायात",
-  "maintenance":       "रखरखाव",
-  "other expense":     "अन्य खर्च"
-};
-
-function catLabel(c) {
-  var lang = (typeof currentLang !== "undefined") ? currentLang : (localStorage.getItem("utms_lang") || "en");
-  if (lang === "hi") {
-    return FINANCE_CAT_HI[c.toLowerCase()] || c;
-  }
-  return c;
+  fetch("/api/finance-categories").then(r=>r.json()).then(d=>{
+    window._INCOME_CATS  = d.income  || ["Advance","Payment","Alteration","Other Income"];
+    window._EXPENSE_CATS = d.expense || ["Thread","Buttons","Fabric","Electricity","Rent","Salary","Transport","Other Expense"];
+    populateCats();
+  });
 }
 
 function populateCats() {
-  var sel  = document.getElementById("f-category");
-  var cats = (txType === "income") ? (window._INCOME_CATS||[]) : (window._EXPENSE_CATS||[]);
+  var sel = document.getElementById("f-category");
+  var cats = txType==="income" ? (window._INCOME_CATS||[]) : (window._EXPENSE_CATS||[]);
   sel.innerHTML = '<option value="">-- चुनें --</option>';
-  cats.forEach(function(c) {
-    var opt = document.createElement("option");
-    opt.value = c;
-    opt.textContent = catLabel(c);
-    sel.appendChild(opt);
-  });
+  cats.forEach(c => { var o=document.createElement("option"); o.value=c; o.textContent=c; sel.appendChild(o); });
 }
 
 function setType(t) {
   txType = t;
-  var bi = document.getElementById("btn-income");
-  var be = document.getElementById("btn-expense");
-  bi.style.background  = t==="income" ? "#16a34a" : "#fff";
-  bi.style.color       = t==="income" ? "#fff"    : "var(--text-muted)";
-  bi.style.borderColor = t==="income" ? "#16a34a" : "var(--border)";
-  be.style.background  = t==="expense" ? "#dc2626" : "#fff";
-  be.style.color       = t==="expense" ? "#fff"    : "var(--text-muted)";
-  be.style.borderColor = t==="expense" ? "#dc2626" : "var(--border)";
+  var bi=document.getElementById("btn-income"), be=document.getElementById("btn-expense");
+  bi.style.cssText = t==="income" ? "flex:1;padding:9px;border-radius:10px;border:2px solid #16a34a;background:#16a34a;color:#fff;font-size:13px;font-weight:800;cursor:pointer;" : "flex:1;padding:9px;border-radius:10px;border:2px solid #e5e7eb;background:#f8fafc;font-size:13px;font-weight:800;cursor:pointer;";
+  be.style.cssText = t==="expense" ? "flex:1;padding:9px;border-radius:10px;border:2px solid #dc2626;background:#dc2626;color:#fff;font-size:13px;font-weight:800;cursor:pointer;" : "flex:1;padding:9px;border-radius:10px;border:2px solid #e5e7eb;background:#f8fafc;font-size:13px;font-weight:800;cursor:pointer;";
   document.getElementById("f-submit").style.background = t==="income" ? "#16a34a" : "#dc2626";
-  populateCats();
-  onCategoryChange();
+  populateCats(); onCategoryChange();
 }
 
 function setMode(m) {
   payMode = m;
-  var bc = document.getElementById("mode-cash"), bu = document.getElementById("mode-upi");
-  bc.style.background  = m==="cash" ? "#16a34a" : "#fff";
-  bc.style.color       = m==="cash" ? "#fff"    : "var(--text-muted)";
-  bc.style.borderColor = m==="cash" ? "#16a34a" : "var(--border)";
-  bu.style.background  = m==="upi"  ? "#6366f1" : "#fff";
-  bu.style.color       = m==="upi"  ? "#fff"    : "var(--text-muted)";
-  bu.style.borderColor = m==="upi"  ? "#6366f1" : "var(--border)";
+  var bc=document.getElementById("mode-cash"), bu=document.getElementById("mode-upi");
+  bc.style.cssText = m==="cash" ? "flex:1;padding:9px;border-radius:10px;border:2px solid #16a34a;background:#16a34a;color:#fff;font-size:13px;font-weight:800;cursor:pointer;" : "flex:1;padding:9px;border-radius:10px;border:2px solid #e5e7eb;background:#f8fafc;font-size:13px;font-weight:800;cursor:pointer;";
+  bu.style.cssText = m==="upi"  ? "flex:1;padding:9px;border-radius:10px;border:2px solid #6366f1;background:#6366f1;color:#fff;font-size:13px;font-weight:800;cursor:pointer;" : "flex:1;padding:9px;border-radius:10px;border:2px solid #e5e7eb;background:#f8fafc;font-size:13px;font-weight:800;cursor:pointer;";
 }
 
 function setFilter(f) {
   txFilter = f;
-  ["today","yesterday","all"].forEach(function(id){
+  ["today","yesterday","all"].forEach(id => {
     var btn = document.getElementById("filter-"+id);
-    btn.style.background = (f===id) ? "#4f46e5" : "#f1f5f9";
-    btn.style.color      = (f===id) ? "#fff"    : "var(--text-muted)";
+    btn.className = "fil-btn" + (f===id ? " active" : "");
   });
   filterTx();
 }
 
 function filterTx() {
-  var today = new Date().toISOString().slice(0,10);
-  var yest  = new Date(Date.now()-86400000).toISOString().slice(0,10);
-  var q     = (document.getElementById("f-search").value||"").toLowerCase().trim();
-  document.querySelectorAll(".tx-row").forEach(function(row){
+  var today = new Date().toLocaleDateString("en-CA");
+  var yest  = new Date(Date.now()-86400000).toLocaleDateString("en-CA");
+  var q = (document.getElementById("f-search").value||"").toLowerCase().trim();
+  document.querySelectorAll(".tx-row").forEach(row => {
     var d = row.dataset.date;
-    var dateMatch = txFilter==="all" || (txFilter==="today"&&d===today) || (txFilter==="yesterday"&&d===yest);
-    var qMatch    = !q || row.dataset.s.includes(q);
-    row.style.display = (dateMatch && qMatch) ? "" : "none";
+    var dateOk = txFilter==="all"||(txFilter==="today"&&d===today)||(txFilter==="yesterday"&&d===yest);
+    var qOk = !q||row.dataset.s.includes(q);
+    row.style.display = dateOk&&qOk ? "" : "none";
   });
-}
-
-function addEntry() {
-  var amt = parseFloat(document.getElementById("f-amount").value)||0;
-  var cat = document.getElementById("f-category").value;
-  var note= document.getElementById("f-note").value.trim();
-  var orderCode = (document.getElementById("f-order-code").value || "").trim().replace(/^#/,"");
-  var empSel = document.getElementById("f-employee");
-  var employeeName = empSel ? empSel.value : "";
-  var catLower = cat.toLowerCase();
-  var needsOrderCode = ["advance","payment","remaining amount"].indexOf(catLower) !== -1;
-
-  if (amt <= 0) { showToast("रकम दर्ज करें","warning"); return; }
-  if (!cat)     { showToast("श्रेणी चुनें","warning"); return; }
-  if (needsOrderCode && !orderCode) { showToast("ऑर्डर कोड दर्ज करें","warning"); return; }
-  if (txType === "expense" && catLower === "salary" && !employeeName) { showToast("कर्मचारी चुनें","warning"); return; }
-
-  var btn = document.getElementById("f-submit");
-  btn.disabled = true; btn.textContent = "सेव हो रहा है...";
-
-  fetch("/api/finance/add", {
-    method:"POST", headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({tx_type:txType, amount:amt, category:cat, mode:payMode, note:note, order_code:orderCode, employee_name:employeeName})
-  }).then(function(r){ return r.json(); }).then(function(d){
-    btn.disabled = false;
-    btn.innerHTML = '✅ <span class="lang-en">Add Entry</span><span class="lang-hi" style="display:none;">जोड़ें</span>';
-    applyLang();
-    if (d.ok) {
-      showToast((txType==="income"?"✅ आमदनी ₹":"✅ खर्च ₹")+amt+" दर्ज", "success");
-      document.getElementById("f-amount").value = "";
-      document.getElementById("f-note").value   = "";
-      document.getElementById("f-order-code").value = "";
-      onCategoryChange();
-      setTimeout(function(){ location.reload(); }, 700);
-    } else {
-      showToast("Error: "+d.error, "error");
-    }
-  });
-}
-
-// Debounced live lookup of order's paid/remaining when order code is typed
-var _orderStatusTimer = null;
-function onOrderCodeInput() {
-  clearTimeout(_orderStatusTimer);
-  _orderStatusTimer = setTimeout(fetchOrderStatus, 400);
-}
-
-function fetchOrderStatus() {
-  var code = (document.getElementById("f-order-code").value || "").trim().replace(/^#/,"");
-  var statusBox = document.getElementById("f-order-status");
-  var errBox    = document.getElementById("f-order-status-error");
-  statusBox.style.display = "none";
-  errBox.style.display = "none";
-  if (!code) return;
-
-  fetch("/api/orders/payment-status/" + encodeURIComponent(code))
-    .then(function(r){ return r.json(); })
-    .then(function(d){
-      var currentCode = (document.getElementById("f-order-code").value || "").trim().replace(/^#/,"");
-      if (currentCode !== code) return;  // stale response, input changed since
-      if (!d.ok) {
-        errBox.style.display = "block";
-        errBox.textContent = d.error || "Order not found";
-        return;
-      }
-      document.getElementById("f-order-status-name").textContent      = d.customer_name + " · #" + d.order_code;
-      document.getElementById("f-order-status-paid").textContent      = "₹" + d.advance_paid.toFixed(0) + " / ₹" + d.payable_amount.toFixed(0);
-      document.getElementById("f-order-status-remaining").textContent = "₹" + d.remaining.toFixed(0);
-      statusBox.style.display = "block";
-
-      // For "Remaining Amount" category — auto-fill the amount field with
-      // the exact remaining due, so the employee doesn't have to calculate
-      // or retype it manually.
-      var cat = (document.getElementById("f-category").value || "").toLowerCase();
-      if (cat === "remaining amount") {
-        document.getElementById("f-amount").value = d.remaining > 0 ? d.remaining : "";
-      }
-    })
-    .catch(function(){
-      errBox.style.display = "block";
-      errBox.textContent = "Lookup failed, try again";
-    });
-}
-
-function loadEmployeesForFinance() {
-  fetch("/api/employees-list")
-    .then(function(r){ return r.json(); })
-    .then(function(list){
-      var sel = document.getElementById("f-employee");
-      sel.innerHTML = '<option value="">-- चुनें --</option>';
-      (list || []).forEach(function(e){
-        var opt = document.createElement("option");
-        opt.value = e.name;
-        opt.textContent = e.hindi_name ? (e.name + " / " + e.hindi_name) : e.name;
-        sel.appendChild(opt);
-      });
-    });
 }
 
 function onCategoryChange() {
-  var cat = (document.getElementById("f-category").value || "").toLowerCase();
-  var row = document.getElementById("f-order-code-row");
-  var needsOrderCode = (cat === "advance" || cat === "payment" || cat === "remaining amount");
-  row.style.display = needsOrderCode ? "block" : "none";
-  if (!needsOrderCode) {
-    document.getElementById("f-order-code").value = "";
-    document.getElementById("f-order-status").style.display = "none";
-    document.getElementById("f-order-status-error").style.display = "none";
+  var cat = (document.getElementById("f-category").value||"").toLowerCase();
+  var needsOrder = ["advance","payment","remaining amount"].includes(cat);
+  document.getElementById("f-order-code-row").style.display = needsOrder ? "block" : "none";
+  if (!needsOrder) {
+    document.getElementById("f-order-code").value="";
+    document.getElementById("f-order-status").style.display="none";
+    document.getElementById("f-order-status-error").style.display="none";
   }
-
-  // Employee picker only for expense → Salary
-  var empRow = document.getElementById("f-employee-row");
-  var showEmp = (txType === "expense" && cat === "salary");
-  empRow.style.display = showEmp ? "block" : "none";
-  if (showEmp && document.getElementById("f-employee").options.length <= 1) {
-    loadEmployeesForFinance();
-  }
+  var showEmp = txType==="expense" && cat==="salary";
+  document.getElementById("f-employee-row").style.display = showEmp ? "block" : "none";
+  if (showEmp && document.getElementById("f-employee").options.length<=1) loadEmployees();
 }
 
-document.addEventListener("DOMContentLoaded", function(){
-  loadCats();
-  filterTx();
-  // Re-render category labels when language is toggled
-  document.querySelectorAll(".lang-btn").forEach(function(btn){
-    btn.addEventListener("click", function(){
-      setTimeout(populateCats, 50);
-    });
+var _orderTimer=null;
+function onOrderCodeInput(){ clearTimeout(_orderTimer); _orderTimer=setTimeout(fetchOrderStatus,400); }
+function fetchOrderStatus(){
+  var code=(document.getElementById("f-order-code").value||"").trim().replace(/^#/,"");
+  document.getElementById("f-order-status").style.display="none";
+  document.getElementById("f-order-status-error").style.display="none";
+  if(!code) return;
+  fetch("/api/orders/payment-status/"+encodeURIComponent(code)).then(r=>r.json()).then(d=>{
+    if(!d.ok){ document.getElementById("f-order-status-error").textContent=d.error||"Not found"; document.getElementById("f-order-status-error").style.display="block"; return; }
+    document.getElementById("f-order-status-name").textContent=d.customer_name+" · #"+d.order_code;
+    document.getElementById("f-order-status-paid").textContent="₹"+d.advance_paid.toFixed(0)+" / ₹"+d.payable_amount.toFixed(0);
+    document.getElementById("f-order-status-remaining").textContent="₹"+d.remaining.toFixed(0);
+    document.getElementById("f-order-status").style.display="block";
+    if((document.getElementById("f-category").value||"").toLowerCase()==="remaining amount" && d.remaining>0)
+      document.getElementById("f-amount").value=d.remaining;
   });
-});
+}
+
+function loadEmployees(){
+  fetch("/api/employees-list").then(r=>r.json()).then(list=>{
+    var sel=document.getElementById("f-employee");
+    sel.innerHTML='<option value="">-- चुनें --</option>';
+    (list||[]).forEach(e=>{ var o=document.createElement("option"); o.value=e.name; o.textContent=e.hindi_name?e.name+" / "+e.hindi_name:e.name; sel.appendChild(o); });
+  });
+}
+
+function addEntry(){
+  var amt=parseFloat(document.getElementById("f-amount").value)||0;
+  var cat=document.getElementById("f-category").value;
+  var note=document.getElementById("f-note").value.trim();
+  var code=(document.getElementById("f-order-code").value||"").trim().replace(/^#/,"");
+  var emp=(document.getElementById("f-employee").value||"");
+  var catL=cat.toLowerCase();
+  if(amt<=0){showToast("Amount daalo","warning");return;}
+  if(!cat){showToast("Category chunein","warning");return;}
+  if(["advance","payment","remaining amount"].includes(catL)&&!code){showToast("Order code daalo","warning");return;}
+  if(txType==="expense"&&catL==="salary"&&!emp){showToast("Employee chunein","warning");return;}
+  var btn=document.getElementById("f-submit");
+  btn.disabled=true; btn.textContent="Saving...";
+  fetch("/api/finance/add",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({tx_type:txType,amount:amt,category:cat,mode:payMode,note,order_code:code,employee_name:emp})
+  }).then(r=>r.json()).then(d=>{
+    btn.disabled=false; btn.textContent="✅ Add Entry";
+    if(d.ok){
+      showToast((txType==="income"?"✅ Income ₹":"✅ Expense ₹")+amt+" added","success");
+      document.getElementById("f-amount").value="";
+      document.getElementById("f-note").value="";
+      document.getElementById("f-order-code").value="";
+      onCategoryChange();
+      setTimeout(()=>location.reload(),700);
+    } else showToast("Error: "+d.error,"error");
+  });
+}
+
+document.addEventListener("DOMContentLoaded",()=>{ loadCats(); filterTx(); });
 </script>
 {% endblock %}
