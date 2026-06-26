@@ -1,0 +1,361 @@
+{% extends "base.html" %}
+{% block title %}Scan Diary — Smart Import{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>📸 Smart Diary Scan</h1>
+    <div class="header-sub">Diary page photo upload karo — AI khud order details nikal lega</div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <a href="/owner/past-orders" class="btn btn-ghost btn-sm">📋 Manual Past Entry</a>
+    <button class="menu-toggle" onclick="openSidebar()">☰</button>
+  </div>
+</div>
+
+<div class="page-body" style="padding:16px 24px;">
+
+{% if not api_key_set %}
+<!-- API Key setup card -->
+<div style="background:linear-gradient(135deg,#fef3c7,#fde68a);border-radius:14px;padding:24px;margin-bottom:20px;border:2px solid #fcd34d;">
+  <div style="font-size:18px;font-weight:800;color:#92400e;margin-bottom:8px;">🔑 Pehle Anthropic API Key Set Karo</div>
+  <p style="color:#78350f;font-size:14px;margin:0 0 16px;">AI scan feature ke liye Claude API key chahiye. Ek baar set karo, hamesha kaam karega.</p>
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+    <input type="password" id="api-key-input" placeholder="sk-ant-api03-..."
+      style="flex:1;min-width:280px;padding:10px 14px;border:2px solid #fcd34d;border-radius:10px;font-size:14px;font-family:monospace;">
+    <button onclick="saveApiKey()" style="padding:10px 20px;background:#d97706;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer;">Save Key</button>
+    <a href="https://console.anthropic.com" target="_blank" style="font-size:12px;color:#d97706;font-weight:700;">Get API Key ↗</a>
+  </div>
+  <div id="key-msg" style="margin-top:8px;font-size:13px;font-weight:700;"></div>
+</div>
+{% endif %}
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
+
+    <!-- LEFT: Upload -->
+    <div>
+      <div class="card" style="margin-bottom:0;">
+        <div class="card-header"><span class="card-title">📷 Diary Page Upload</span></div>
+        <div class="card-body" style="padding:20px;">
+
+          <!-- Upload zone -->
+          <div id="upload-zone"
+            onclick="document.getElementById('diary-file').click()"
+            style="border:3px dashed #cbd5e1;border-radius:14px;padding:40px 20px;text-align:center;cursor:pointer;transition:all 0.2s;background:#f8fafc;"
+            ondragover="event.preventDefault();this.style.borderColor='#6366f1';this.style.background='#eef2ff'"
+            ondragleave="this.style.borderColor='#cbd5e1';this.style.background='#f8fafc'"
+            ondrop="handleDrop(event)">
+            <div style="font-size:40px;margin-bottom:10px;">📖</div>
+            <div style="font-weight:700;font-size:15px;color:#374151;margin-bottom:4px;">Diary page photo yahan drop karo</div>
+            <div style="font-size:13px;color:#9ca3af;">ya click karke select karo</div>
+            <div style="margin-top:12px;font-size:12px;color:#6366f1;font-weight:700;">Camera bhi use kar sakte ho</div>
+          </div>
+          <input type="file" id="diary-file" accept="image/*" capture="environment" style="display:none" onchange="handleFileSelect(this.files[0])">
+
+          <!-- Preview -->
+          <div id="img-preview-wrap" style="display:none;margin-top:16px;position:relative;">
+            <img id="img-preview" style="width:100%;border-radius:10px;border:2px solid #e5e7eb;max-height:500px;object-fit:contain;">
+            <button onclick="clearImage()" style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.6);color:#fff;border:none;border-radius:8px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer;">✕ Clear</button>
+          </div>
+
+          <!-- Scan button -->
+          <button id="scan-btn" onclick="scanImage()" disabled
+            style="width:100%;margin-top:16px;padding:14px;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;opacity:0.5;">
+            🤖 AI se Scan Karo
+          </button>
+          <div id="scan-status" style="text-align:center;margin-top:10px;font-size:13px;font-weight:700;color:#6366f1;min-height:20px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Extracted form -->
+    <div id="result-panel" style="display:none;">
+      <div class="card" style="margin-bottom:0;">
+        <div class="card-header" style="background:linear-gradient(135deg,#d1fae5,#a7f3d0);">
+          <span class="card-title" style="color:#065f46;">✅ AI ne Nikala — Edit karo aur Save karo</span>
+          <span id="confidence-badge" style="font-size:11px;font-weight:700;background:#059669;color:#fff;padding:3px 10px;border-radius:10px;"></span>
+        </div>
+        <div class="card-body" style="padding:20px;max-height:calc(100vh - 200px);overflow-y:auto;">
+
+          <!-- Order details -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+            <div class="field-wrap">
+              <label>Order Code *</label>
+              <input type="text" id="r-code" style="font-weight:800;font-size:16px;letter-spacing:2px;">
+            </div>
+            <div class="field-wrap">
+              <label>Customer Name *</label>
+              <input type="text" id="r-name">
+            </div>
+            <div class="field-wrap">
+              <label>Mobile</label>
+              <input type="text" id="r-mobile">
+            </div>
+            <div class="field-wrap">
+              <label>Address</label>
+              <input type="text" id="r-address" placeholder="Optional">
+            </div>
+            <div class="field-wrap">
+              <label>Order Date</label>
+              <input type="date" id="r-odate">
+            </div>
+            <div class="field-wrap">
+              <label>Delivery Date</label>
+              <input type="date" id="r-ddate">
+            </div>
+            <div class="field-wrap">
+              <label>Total Amount ₹</label>
+              <input type="number" id="r-total" min="0">
+            </div>
+            <div class="field-wrap">
+              <label>Advance Paid ₹</label>
+              <input type="number" id="r-advance" min="0">
+            </div>
+          </div>
+
+          <!-- Garments -->
+          <div style="margin-bottom:16px;">
+            <div style="font-size:12px;font-weight:700;color:#374151;text-transform:uppercase;margin-bottom:10px;">🧥 Garments & Measurements</div>
+            <div id="r-garments"></div>
+            <button onclick="addGarmentRow()" style="margin-top:8px;padding:7px 16px;background:#f1f5f9;color:#374151;border:1.5px dashed #cbd5e1;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;width:100%;">+ Add Garment</button>
+          </div>
+
+          <!-- Notes -->
+          <div class="field-wrap" style="margin-bottom:20px;">
+            <label>Notes</label>
+            <input type="text" id="r-notes" placeholder="Any special instructions...">
+          </div>
+
+          <!-- Save button -->
+          <button onclick="saveScannedOrder()"
+            style="width:100%;padding:14px;background:linear-gradient(135deg,#059669,#047857);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;">
+            💾 Save as Past Order
+          </button>
+          <div id="save-msg" style="text-align:center;margin-top:10px;font-size:13px;font-weight:700;min-height:20px;"></div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Right panel placeholder when no result yet -->
+    <div id="placeholder-panel">
+      <div style="background:#f8fafc;border:2px dashed #e5e7eb;border-radius:14px;padding:60px 30px;text-align:center;color:#9ca3af;">
+        <div style="font-size:48px;margin-bottom:16px;">🤖</div>
+        <div style="font-weight:700;font-size:16px;margin-bottom:8px;">AI Results yahan dikhenge</div>
+        <div style="font-size:13px;">Pehle left side pe diary photo upload karo, phir "AI se Scan Karo" dabao</div>
+        <div style="margin-top:20px;font-size:12px;background:#fff;border-radius:10px;padding:16px;text-align:left;border:1px solid #e5e7eb;">
+          <div style="font-weight:700;margin-bottom:8px;color:#374151;">AI extract kar sakta hai:</div>
+          <div>✓ Order number / code</div>
+          <div>✓ Customer name & mobile</div>
+          <div>✓ Garment type & quantity</div>
+          <div>✓ Measurements (Lambai, Seena...)</div>
+          <div>✓ Dates & amounts</div>
+          <div style="margin-top:8px;color:#f59e0b;font-weight:700;">⚡ Hindi + English dono padhta hai</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+let currentImageB64 = null;
+let currentImageType = "image/jpeg";
+let garmentCount = 0;
+
+// ── API Key save ──────────────────────────────────────
+async function saveApiKey() {
+  const key = document.getElementById("api-key-input").value.trim();
+  if (!key) return;
+  const res = await fetch("/owner/api/settings/anthropic-key", {
+    method: "POST", headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({key})
+  });
+  const d = await res.json();
+  const msg = document.getElementById("key-msg");
+  if (d.ok) {
+    msg.style.color = "#16a34a";
+    msg.textContent = "✅ API key saved! Refresh the page to start scanning.";
+  } else {
+    msg.style.color = "#dc2626";
+    msg.textContent = "❌ Error saving key";
+  }
+}
+
+// ── File handling ─────────────────────────────────────
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById("upload-zone").style.borderColor = "#cbd5e1";
+  document.getElementById("upload-zone").style.background = "#f8fafc";
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith("image/")) handleFileSelect(file);
+}
+
+function handleFileSelect(file) {
+  if (!file) return;
+  currentImageType = file.type || "image/jpeg";
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const dataUrl = e.target.result;
+    currentImageB64 = dataUrl.split(",")[1];
+    document.getElementById("img-preview").src = dataUrl;
+    document.getElementById("img-preview-wrap").style.display = "block";
+    document.getElementById("upload-zone").style.display = "none";
+    const btn = document.getElementById("scan-btn");
+    btn.disabled = false; btn.style.opacity = "1";
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearImage() {
+  currentImageB64 = null;
+  document.getElementById("img-preview-wrap").style.display = "none";
+  document.getElementById("upload-zone").style.display = "block";
+  document.getElementById("diary-file").value = "";
+  const btn = document.getElementById("scan-btn");
+  btn.disabled = true; btn.style.opacity = "0.5";
+  document.getElementById("scan-status").textContent = "";
+}
+
+// ── AI Scan ───────────────────────────────────────────
+async function scanImage() {
+  if (!currentImageB64) return;
+  const btn   = document.getElementById("scan-btn");
+  const status = document.getElementById("scan-status");
+  btn.disabled = true; btn.textContent = "⏳ AI scan kar raha hai...";
+  status.textContent = "Analyzing handwriting... (10-20 seconds)";
+
+  const res = await fetch("/owner/api/scan-diary/extract", {
+    method: "POST", headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({image_b64: currentImageB64, image_type: currentImageType})
+  });
+  const d = await res.json();
+
+  btn.disabled = false; btn.textContent = "🤖 AI se Scan Karo";
+
+  if (!d.ok) {
+    status.style.color = "#dc2626";
+    status.textContent = "❌ " + (d.error || "Scan failed");
+    return;
+  }
+
+  status.style.color = "#059669";
+  status.textContent = "✅ Scan complete!";
+  populateForm(d.data);
+}
+
+function populateForm(data) {
+  document.getElementById("r-code").value    = data.order_code    || "";
+  document.getElementById("r-name").value    = data.customer_name || "";
+  document.getElementById("r-mobile").value  = data.mobile        || "";
+  document.getElementById("r-notes").value   = data.notes         || "";
+
+  if (data.order_date)    document.getElementById("r-odate").value   = data.order_date;
+  if (data.delivery_date) document.getElementById("r-ddate").value   = data.delivery_date;
+  if (data.total_amount)  document.getElementById("r-total").value   = data.total_amount;
+  if (data.advance_paid)  document.getElementById("r-advance").value = data.advance_paid;
+
+  // Render garments
+  const box = document.getElementById("r-garments");
+  box.innerHTML = "";
+  garmentCount = 0;
+  (data.garments || []).forEach(function(g) { addGarmentRow(g); });
+  if (!data.garments || !data.garments.length) addGarmentRow();
+
+  document.getElementById("result-panel").style.display = "block";
+  document.getElementById("placeholder-panel").style.display = "none";
+  document.getElementById("result-panel").scrollIntoView({behavior:"smooth"});
+}
+
+function addGarmentRow(g) {
+  g = g || {};
+  const idx = garmentCount++;
+  const meas = g.measurements || {};
+  const measStr = Object.entries(meas).map(function(kv){return kv[0]+":"+kv[1];}).join(", ");
+
+  const box = document.getElementById("r-garments");
+  const div = document.createElement("div");
+  div.style.cssText = "background:#f8fafc;border:1.5px solid #e5e7eb;border-radius:10px;padding:14px;margin-bottom:10px;";
+  div.innerHTML = `<div style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:8px;align-items:end;margin-bottom:10px;">
+    <div><label style="font-size:10px;font-weight:700;text-transform:uppercase;color:#6b7280;display:block;margin-bottom:4px;">Garment Type</label>
+      <input value="${g.type||''}" placeholder="Shirt / Pant / Suit..." style="width:100%;padding:8px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;font-weight:700;box-sizing:border-box;" class="r-g-type" data-idx="${idx}"></div>
+    <div><label style="font-size:10px;font-weight:700;text-transform:uppercase;color:#6b7280;display:block;margin-bottom:4px;">Qty</label>
+      <input type="number" value="${g.qty||1}" min="1" style="width:100%;padding:8px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;text-align:center;box-sizing:border-box;" class="r-g-qty" data-idx="${idx}"></div>
+    <div><label style="font-size:10px;font-weight:700;text-transform:uppercase;color:#6b7280;display:block;margin-bottom:4px;">Rate ₹</label>
+      <input type="number" value="${g.rate||''}" placeholder="0" style="width:100%;padding:8px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;box-sizing:border-box;" class="r-g-rate" data-idx="${idx}"></div>
+    <button onclick="this.closest('div[style]').remove()" style="padding:8px 12px;background:#fee2e2;color:#dc2626;border:none;border-radius:8px;font-weight:700;cursor:pointer;height:36px;margin-bottom:0;align-self:end;">✕</button>
+  </div>
+  <div><label style="font-size:10px;font-weight:700;text-transform:uppercase;color:#6b7280;display:block;margin-bottom:4px;">Measurements (field:value, field:value...)</label>
+    <input value="${measStr}" placeholder="Lambai:42, Seena:38, Kamar:36..." style="width:100%;padding:8px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;" class="r-g-meas" data-idx="${idx}"></div>
+  ${g.notes ? `<div style="margin-top:8px;font-size:12px;color:#6b7280;"><b>Note:</b> ${g.notes}</div>` : ''}`;
+  box.appendChild(div);
+}
+
+// ── Save to UTMS ──────────────────────────────────────
+async function saveScannedOrder() {
+  const code = document.getElementById("r-code").value.trim();
+  const name = document.getElementById("r-name").value.trim();
+  if (!code) { alert("Order code required!"); document.getElementById("r-code").focus(); return; }
+  if (!name) { alert("Customer name required!"); document.getElementById("r-name").focus(); return; }
+
+  // Collect garments
+  const garments = [];
+  document.querySelectorAll(".r-g-type").forEach(function(el) {
+    const idx = el.dataset.idx;
+    const type = el.value.trim();
+    if (!type) return;
+    const qty  = parseInt(document.querySelector(".r-g-qty[data-idx='"+idx+"']").value) || 1;
+    const rate = parseFloat(document.querySelector(".r-g-rate[data-idx='"+idx+"']").value) || 0;
+    const measRaw = document.querySelector(".r-g-meas[data-idx='"+idx+"']").value;
+    // Parse "Lambai:42, Seena:38" → {Lambai:"42", Seena:"38"}
+    const meas = {};
+    measRaw.split(",").forEach(function(pair) {
+      const kv = pair.trim().split(":");
+      if (kv.length === 2) meas[kv[0].trim()] = kv[1].trim();
+    });
+    garments.push({type, qty, rate, meas});
+  });
+
+  const payload = {
+    order_code:    code,
+    customer_name: name,
+    mobile:        document.getElementById("r-mobile").value.trim(),
+    address:       document.getElementById("r-address").value.trim(),
+    order_date:    document.getElementById("r-odate").value,
+    delivery_date: document.getElementById("r-ddate").value,
+    total_amount:  parseFloat(document.getElementById("r-total").value) || 0,
+    advance_paid:  parseFloat(document.getElementById("r-advance").value) || 0,
+    payment_mode:  "cash",
+    is_delivered:  true,
+    garments:      garments
+  };
+
+  const msg = document.getElementById("save-msg");
+  msg.style.color = "#6366f1"; msg.textContent = "Saving...";
+
+  const res = await fetch("/owner/past-orders/save", {
+    method: "POST", headers: {"Content-Type":"application/json"},
+    body: JSON.stringify(payload)
+  });
+  const d = await res.json();
+  if (d.ok) {
+    msg.style.color = "#059669";
+    msg.textContent = "✅ Saved as Past Order #" + (d.order_code || code) + "!";
+    setTimeout(function() {
+      if (confirm("Order saved! Ek aur scan karna hai?")) {
+        location.reload();
+      } else {
+        window.location.href = "/owner/orders";
+      }
+    }, 1500);
+  } else {
+    msg.style.color = "#dc2626";
+    msg.textContent = "❌ " + (d.error || "Save failed");
+  }
+}
+
+const SECS=5*60; let last=Date.now();
+["click","keydown","mousemove","touchstart"].forEach(function(ev){document.addEventListener(ev,function(){last=Date.now();},{passive:true});});
+setInterval(function(){if(Math.floor((Date.now()-last)/1000)>=SECS)window.location.href="/owner/login?expired=1";},5000);
+</script>
+{% endblock %}
