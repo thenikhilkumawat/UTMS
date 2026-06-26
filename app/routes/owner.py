@@ -2936,6 +2936,12 @@ def api_meas_field_reorder():
 #  PAST ORDERS (OLD DATA ENTRY)
 # ══════════════════════════════════════════════
 
+@bp.route("/past-upload")
+def past_upload():
+    """Mobile-optimized page for taking diary photos linked to past order codes."""
+    return render_template("owner/past_upload.html")
+
+
 @bp.route("/past-orders")
 def past_orders():
     """Page to enter old/historical delivered orders — mirrors new_order flow."""
