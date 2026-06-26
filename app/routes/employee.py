@@ -2621,10 +2621,19 @@ def finance():
     ).fetchone()["c"]
     conn.close()
 
+    def fmt_12h(t):
+        if not t or len(t) < 5: return t or ""
+        try:
+            h, m = int(t[:2]), t[3:5]
+            ampm = "AM" if h < 12 else "PM"
+            h12 = h % 12 or 12
+            return f"{h12}:{m} {ampm}"
+        except: return t
+
     transactions = [{
         "tx_date":     r["tx_date"],
         "tx_date_fmt": fmt_d(r["tx_date"]),
-        "tx_time":     (r["created_at"] or "")[11:16],
+        "tx_time":     fmt_12h((r["created_at"] or "")[11:16]),
         "tx_type":     r["tx_type"],
         "category":    r["category"] or "",
         "note":        r["note"] or "",
