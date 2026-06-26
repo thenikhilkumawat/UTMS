@@ -80,12 +80,14 @@
 
             <div id="diary-img-zone"
               onclick="document.getElementById('diary-img-input').click()"
-              style="border:2px dashed #e5e7eb;border-radius:12px;padding:20px;text-align:center;cursor:pointer;background:#f9fafb;transition:all 0.2s;"
+              style="border:2px dashed #e5e7eb;border-radius:10px;padding:10px 16px;text-align:center;cursor:pointer;background:#f9fafb;transition:all 0.2s;display:flex;align-items:center;gap:10px;"
               onmouseover="this.style.borderColor='#6366f1';this.style.background='#eef2ff'"
               onmouseout="this.style.borderColor='#e5e7eb';this.style.background='#f9fafb'">
-              <div style="font-size:24px;margin-bottom:6px;">📖</div>
-              <div style="font-size:13px;font-weight:700;color:#374151;">File select karo</div>
-              <div style="font-size:11px;color:#9ca3af;margin-top:3px;">JPG, PNG — max 5MB</div>
+              <span style="font-size:20px;">📖</span>
+              <div style="text-align:left;">
+                <div style="font-size:13px;font-weight:700;color:#374151;">File select karo</div>
+                <div style="font-size:11px;color:#9ca3af;">JPG, PNG — max 5MB</div>
+              </div>
             </div>
             <input type="file" id="diary-img-input" accept="image/*" style="display:none"
               onchange="handleDiaryImage(this.files[0])">
