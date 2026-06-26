@@ -701,9 +701,111 @@ def dashboard():
         past_orders_list=past_orders_list,
     )
 
-@bp.route("/settings")
+@bp.route("/scan-diary")
 @owner_required
-def settings():
+def scan_diary():
+    today = date.today().isoformat()
+    urgent_count = conn_urgent = get_db()
+    uc = conn_urgent.execute("SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status!='delivered'"
+                             ).fetchone()["c"]
+    conn_urgent.close()
+    api_key_set = bool(get_setting("anthropic_api_key", ""))
+    return render_template("owner/scan_diary.html",
+        active_page="scan_diary", show_voice=False,
+        urgent_count=uc, api_key_set=api_key_set)
+
+
+@bp.route("/api/scan-diary/extract", methods=["POST"])
+@owner_required
+def api_scan_diary_extract():
+    """Send diary image to Claude Vision and extract order details."""
+    import base64 as _b64, urllib.request as _ur, json as _js, os as _os
+
+    api_key = get_setting("anthropic_api_key", "") or _os.environ.get("ANTHROPIC_API_KEY", "")
+    if not api_key:
+        return jsonify({"ok": False, "error": "Anthropic API key not set. Go to Admin → Settings to add it."})
+
+    data = request.get_json(silent=True) or {}
+    img_b64   = data.get("image_b64", "")   # base64 encoded image
+    img_type  = data.get("image_type", "image/jpeg")  # MIME type
+
+    if not img_b64:
+        return jsonify({"ok": False, "error": "No image provided"})
+
+    # Prompt for tailor diary extraction
+    prompt = """You are scanning a tailor's diary/order book page (Indian tailoring shop).
+Extract the following details from this image. The writing may be in Hindi, English, or Hinglish.
+
+Return ONLY a JSON object with these fields (use null if not found):
+{
+  "order_code": "the order number/code (just the number, no #)",
+  "customer_name": "customer name",
+  "mobile": "phone number if visible",
+  "order_date": "date in YYYY-MM-DD format if visible",
+  "delivery_date": "delivery date in YYYY-MM-DD format if visible",
+  "total_amount": numeric amount or null,
+  "advance_paid": numeric advance paid or null,
+  "garments": [
+    {
+      "type": "garment type in English (Shirt/Pant/Suit/Kameej/etc)",
+      "qty": numeric quantity,
+      "rate": numeric rate per piece or null,
+      "measurements": {
+        "field_name": "value"
+      },
+      "notes": "any style notes"
+    }
+  ],
+  "notes": "any other notes"
+}
+
+Common measurement fields: Lambai/Length, Seena/Chest, Kamar/Waist, Shoulder, Aastin/Sleeve, Collar, Seat, Jangh, Goda, Mori, Cough/Kaf.
+Return ONLY the JSON, no explanation."""
+
+    payload = {
+        "model": "claude-sonnet-4-6",
+        "max_tokens": 1024,
+        "messages": [{
+            "role": "user",
+            "content": [
+                {"type": "image", "source": {"type": "base64", "media_type": img_type, "data": img_b64}},
+                {"type": "text", "text": prompt}
+            ]
+        }]
+    }
+
+    try:
+        req = _ur.Request(
+            "https://api.anthropic.com/v1/messages",
+            data=_js.dumps(payload).encode(),
+            headers={
+                "Content-Type": "application/json",
+                "x-api-key": api_key,
+                "anthropic-version": "2023-06-01"
+            },
+            method="POST"
+        )
+        with _ur.urlopen(req, timeout=30) as r:
+            resp = _js.loads(r.read())
+
+        text = resp["content"][0]["text"].strip()
+        # Strip markdown fences if present
+        import re as _re
+        text = _re.sub(r'^```json\s*|^```\s*|```$', '', text, flags=_re.MULTILINE).strip()
+        extracted = _js.loads(text)
+        return jsonify({"ok": True, "data": extracted})
+
+    except Exception as e:
+        return jsonify({"ok": False, "error": f"AI extraction failed: {str(e)[:200]}"})
+
+
+@bp.route("/api/settings/anthropic-key", methods=["POST"])
+@owner_required
+def save_anthropic_key():
+    data = request.get_json(silent=True) or {}
+    key  = (data.get("key") or "").strip()
+    set_setting("anthropic_api_key", key)
+    return jsonify({"ok": True})
     conn = get_db()
     today = date.today().isoformat()
     urgent_count = conn.execute("SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status != 'delivered' AND delivery_date >= ?",(today,)).fetchone()["c"]
