@@ -809,7 +809,6 @@ def save_anthropic_key():
 
 
 @bp.route("/measurement-book")
-@owner_required
 def measurement_book():
     import os as _os
     conn = get_db()
