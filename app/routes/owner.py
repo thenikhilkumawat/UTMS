@@ -808,7 +808,313 @@ def save_anthropic_key():
     return jsonify({"ok": True})
 
 
-@bp.route("/api/fix-order-code")
+@bp.route("/bulk-import")
+@owner_required
+def bulk_import():
+    today = date.today().isoformat()
+    conn = get_db()
+    uc = conn.execute("SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status!='delivered'").fetchone()["c"]
+    conn.close()
+    return render_template("owner/bulk_import.html",
+        active_page="bulk_import", show_voice=False, urgent_count=uc)
+
+
+@bp.route("/bulk-import/template")
+@owner_required
+def bulk_import_template():
+    """Download a sample Excel template for bulk order import."""
+    import openpyxl as xl
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    import io
+
+    wb = xl.Workbook()
+    ws = wb.active
+    ws.title = "Orders"
+
+    # Headers
+    headers = [
+        "Order Code", "Customer Name", "Mobile", "Address",
+        "Order Date\n(DD-MM-YYYY)", "Delivery Date\n(DD-MM-YYYY)",
+        "Garment Type", "Quantity", "Rate (₹)",
+        "Lambai", "Seena", "Kamar", "Shoulder", "Aastin",
+        "Collar", "Cough", "Seat", "Mori", "Jangh", "Goda", "Langot",
+        "Total Amount (₹)", "Advance Paid (₹)", "Notes",
+        "Status\n(new/delivered)"
+    ]
+
+    # Style header row
+    hdr_fill = PatternFill("solid", fgColor="3B3EA1")
+    hdr_font = Font(color="FFFFFF", bold=True, size=10)
+    thin = Side(style="thin", color="CCCCCC")
+    border = Border(left=thin, right=thin, top=thin, bottom=thin)
+
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=h)
+        cell.fill = hdr_fill
+        cell.font = hdr_font
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        cell.border = border
+    ws.row_dimensions[1].height = 32
+
+    # Column widths
+    widths = [12, 18, 14, 18, 14, 14, 14, 8, 10,
+              8, 8, 8, 10, 8, 8, 8, 8, 8, 8, 8, 8,
+              16, 16, 20, 12]
+    for i, w in enumerate(widths, 1):
+        ws.column_dimensions[xl.utils.get_column_letter(i)].width = w
+
+    # Sample rows
+    sample = [
+        ["2450", "Ramesh Ji", "9876543210", "Sikar",
+         "01-01-2025", "15-01-2025",
+         "Shirt", 2, 350,
+         42, 38, 34, 16, 25, 15, 9, "", "", "", "", "",
+         700, 300, "Pocket under collar", "delivered"],
+        ["2450", "Ramesh Ji", "9876543210", "Sikar",
+         "01-01-2025", "15-01-2025",
+         "Pant", 1, 450,
+         39, "", 34, "", "", "", "", 16, 14, 26, 20, 25,
+         450, 0, "", "delivered"],
+        ["", "Suresh Kumar", "8765432109", "Laxmangarh",
+         "15-06-2026", "30-06-2026",
+         "Kurta", 3, 400,
+         44, 40, 36, 17, 26, 16, 10, "", "", "", "", "",
+         1200, 500, "", "new"],
+    ]
+    note_fill = PatternFill("solid", fgColor="FFF9C4")
+    for r_idx, row in enumerate(sample, 2):
+        for c_idx, val in enumerate(row, 1):
+            cell = ws.cell(row=r_idx, column=c_idx, value=val)
+            cell.alignment = Alignment(horizontal="center")
+            cell.border = border
+            if r_idx == 2 or r_idx == 3:  # Same order example
+                cell.fill = PatternFill("solid", fgColor="EFF6FF")
+
+    # Instructions sheet
+    ws2 = wb.create_sheet("Instructions")
+    instructions = [
+        ["📋 UTMS BULK IMPORT — INSTRUCTIONS", ""],
+        ["", ""],
+        ["IMPORTANT RULES:", ""],
+        ["1. Same Order Code in multiple rows = SAME ORDER (multiple garments)", ""],
+        ["2. Leave Order Code BLANK = auto-assign next available code", ""],
+        ["3. Status: 'delivered' = past order  |  'new' = active order", ""],
+        ["4. Date format: DD-MM-YYYY  (e.g. 25-06-2026)", ""],
+        ["5. Measurements: fill only the ones that apply — rest leave blank", ""],
+        ["6. One row = One garment. Add multiple rows for multiple garments per order.", ""],
+        ["", ""],
+        ["REQUIRED FIELDS:", ""],
+        ["✅ Customer Name", "Required"],
+        ["✅ Garment Type", "Required (Shirt/Pant/Kurta/Suit/etc.)"],
+        ["⬜ Order Code", "Optional — leave blank for auto"],
+        ["⬜ All measurements", "Optional — fill what you know"],
+        ["", ""],
+        ["GARMENT TYPES SUPPORTED:", ""],
+        ["Shirt, Shirt Linen, Pant, Pant Double, Kurta, Kurta Pajama,", ""],
+        ["Suit 2pc, Suit 3pc, Blazer, Pajama, Pathani, Sherwani,", ""],
+        ["Safari, Waistcoat, Alteration, Cutting Only, or any custom type", ""],
+    ]
+    for r, (a, b) in enumerate(instructions, 1):
+        ws2.cell(row=r, column=1, value=a).font = Font(bold=(r==1 or a.endswith(":")))
+        ws2.cell(row=r, column=2, value=b)
+    ws2.column_dimensions["A"].width = 60
+    ws2.column_dimensions["B"].width = 30
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    from flask import send_file
+    return send_file(buf, as_attachment=True,
+                     download_name="UTMS_Import_Template.xlsx",
+                     mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+
+@bp.route("/bulk-import/upload", methods=["POST"])
+@owner_required
+def bulk_import_upload():
+    """Process uploaded Excel file and create orders."""
+    import openpyxl as xl
+    import io
+
+    f = request.files.get("excel_file")
+    if not f or not f.filename.endswith((".xlsx",".xls")):
+        return jsonify({"ok": False, "error": "Excel file (.xlsx) upload karo"})
+
+    try:
+        wb = xl.load_workbook(io.BytesIO(f.read()), data_only=True)
+        ws = wb.active
+    except Exception as e:
+        return jsonify({"ok": False, "error": f"File read error: {e}"})
+
+    # Parse rows — skip header row 1
+    orders_map = {}  # order_code -> {customer, garments[]}
+    errors = []
+    row_count = 0
+
+    MEAS_FIELDS = ["Lambai","Seena","Kamar","Shoulder","Aastin",
+                   "Collar","Cough","Seat","Mori","Jangh","Goda","Langot"]
+
+    def cell_val(row, idx):
+        v = row[idx-1].value if len(row) >= idx else None
+        return str(v).strip() if v is not None and str(v).strip() else ""
+
+    for r_idx, row in enumerate(ws.iter_rows(min_row=2, values_only=False), 2):
+        if not any(c.value for c in row):
+            continue
+        row_count += 1
+
+        order_code   = cell_val(row, 1)
+        cust_name    = cell_val(row, 2)
+        mobile       = cell_val(row, 3)
+        address      = cell_val(row, 4)
+        order_date   = cell_val(row, 5)
+        delivery_date= cell_val(row, 6)
+        garment_type = cell_val(row, 7)
+        qty_raw      = cell_val(row, 8)
+        rate_raw     = cell_val(row, 9)
+        # Measurements cols 10-21
+        meas = {}
+        for mi, mf in enumerate(MEAS_FIELDS, 10):
+            v = cell_val(row, mi)
+            if v:
+                meas[mf] = v
+        total_raw    = cell_val(row, 22)
+        advance_raw  = cell_val(row, 23)
+        notes        = cell_val(row, 24)
+        status_raw   = cell_val(row, 25).lower()
+
+        if not cust_name:
+            errors.append(f"Row {r_idx}: Customer Name missing — skipped")
+            continue
+        if not garment_type:
+            errors.append(f"Row {r_idx}: Garment Type missing — skipped")
+            continue
+
+        # Convert date DD-MM-YYYY → YYYY-MM-DD
+        def parse_date(d):
+            if not d: return ""
+            for fmt in ["%d-%m-%Y", "%Y-%m-%d", "%d/%m/%Y"]:
+                try:
+                    from datetime import datetime as dt
+                    return dt.strptime(d, fmt).strftime("%Y-%m-%d")
+                except: pass
+            return ""
+
+        key = order_code if order_code else f"__auto__{r_idx}"
+        if key not in orders_map:
+            orders_map[key] = {
+                "order_code":    order_code,
+                "customer_name": cust_name,
+                "mobile":        mobile,
+                "address":       address,
+                "order_date":    parse_date(order_date),
+                "delivery_date": parse_date(delivery_date),
+                "total_amount":  float(total_raw) if total_raw else 0,
+                "advance_paid":  float(advance_raw) if advance_raw else 0,
+                "is_delivered":  status_raw in ("delivered","past","d","yes","1",""),
+                "garments":      [],
+            }
+
+        try: qty = int(float(qty_raw)) if qty_raw else 1
+        except: qty = 1
+        try: rate = float(rate_raw) if rate_raw else 0
+        except: rate = 0
+
+        orders_map[key]["garments"].append({
+            "type": garment_type, "qty": qty, "rate": rate,
+            "meas": meas, "notes": notes
+        })
+
+    if not orders_map:
+        return jsonify({"ok": False, "error": "Koi valid row nahi mili. Template check karo."})
+
+    # Now save each order via past_orders_save logic
+    created = 0
+    skipped = 0
+    conn = get_db()
+
+    for key, od in orders_map.items():
+        try:
+            # Check if order code already exists
+            if od["order_code"]:
+                exists = conn.execute("SELECT id FROM orders WHERE order_code=?",
+                                      (od["order_code"],)).fetchone()
+                if exists:
+                    errors.append(f"Order #{od['order_code']} already exists — skipped")
+                    skipped += 1
+                    continue
+
+            # Find or create customer
+            cust_id = None
+            if od["mobile"]:
+                r = conn.execute("SELECT id FROM customers WHERE mobile=?",
+                                 (od["mobile"],)).fetchone()
+                if r:
+                    cust_id = r["id"]
+                    conn.execute("UPDATE customers SET name=?, address=? WHERE id=?",
+                                 (od["customer_name"], od["address"], cust_id))
+            if not cust_id:
+                r = conn.execute("SELECT id FROM customers WHERE name=? LIMIT 1",
+                                 (od["customer_name"],)).fetchone()
+                if r:
+                    cust_id = r["id"]
+            if not cust_id:
+                now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                conn.execute("INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?)",
+                             (od["customer_name"], od["mobile"], od["address"], now_str))
+                conn.commit()
+                cust_id = conn.execute("SELECT id FROM customers ORDER BY id DESC LIMIT 1").fetchone()["id"]
+
+            # Get order code
+            if od["order_code"]:
+                order_code = od["order_code"]
+            else:
+                from database import next_order_code
+                order_code = next_order_code()
+
+            payable   = od["total_amount"]
+            advance   = od["advance_paid"]
+            remaining = max(0, payable - advance)
+            status    = "delivered" if od["is_delivered"] else "pending"
+            now_str   = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            today_str = date.today().isoformat()
+
+            conn.execute("""
+                INSERT INTO orders(order_code,customer_id,order_date,delivery_date,
+                    status,payable_amount,advance_paid,remaining,created_at)
+                VALUES(?,?,?,?,?,?,?,?,?)
+            """, (order_code, cust_id,
+                  od["order_date"] or today_str,
+                  od["delivery_date"] or today_str,
+                  status, payable, advance, remaining, now_str))
+            conn.commit()
+            order_id = conn.execute("SELECT id FROM orders WHERE order_code=?",
+                                    (order_code,)).fetchone()["id"]
+
+            # Save garments + measurements
+            import json as _json
+            for g in od["garments"]:
+                amount = g["qty"] * g["rate"]
+                meas_json = _json.dumps(g["meas"])
+                conn.execute("""
+                    INSERT INTO order_items(order_id,garment_type,quantity,rate,amount,measurements,notes)
+                    VALUES(?,?,?,?,?,?,?)
+                """, (order_id, g["type"], g["qty"], g["rate"], amount, meas_json, g["notes"]))
+            conn.commit()
+            created += 1
+
+        except Exception as e:
+            errors.append(f"Order {od.get('order_code') or od['customer_name']}: {str(e)[:100]}")
+            skipped += 1
+
+    conn.close()
+    return jsonify({
+        "ok": True,
+        "created": created,
+        "skipped": skipped,
+        "errors": errors[:20],
+        "total_rows": row_count
+    })
 @owner_required
 def fix_order_code():
     set_setting("last_order_code", "3898")
