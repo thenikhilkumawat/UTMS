@@ -901,7 +901,7 @@ function renderOrderHistory(orders) {
           const el = document.createElement("img");
           el.src = src;
           el.title = "Click to zoom";
-          el.style.cssText = "width:70px;height:70px;object-fit:cover;border-radius:8px;border:2px solid var(--border);cursor:zoom-in;";
+          el.style.cssText = "width:70px;height:70px;object-fit:cover;border-radius:8px;border:2px solid var(--border);cursor:zoom-in;"; el.onclick = function(){ openZoomModal(this.src,'Order Image'); };;
           el.onclick = function() {
             const ov = document.getElementById("img-overlay-new");
             if (ov) { ov.querySelector("img").src=src; ov.style.display="flex"; }
@@ -1401,7 +1401,7 @@ function loadImages(previewId) {
     newImgs.forEach(img=>{
       const el=document.createElement("img");
       el.src=img.src||img.getAttribute("src");
-      el.style.cssText="width:100px;height:100px;object-fit:cover;border-radius:10px;border:2px solid var(--border);cursor:zoom-in;transition:transform 0.2s;";
+      el.style.cssText="width:100px;height:100px;object-fit:cover;border-radius:10px;border:2px solid var(--border);cursor:zoom-in;transition:transform 0.2s;"; el.onclick=function(){openZoomModal(this.src,"Order Image");};;
       el.onmouseover=()=>el.style.transform="scale(1.05)";
       el.onmouseout=()=>el.style.transform="scale(1)";
       el.onclick=()=>{
@@ -1601,7 +1601,7 @@ function showSuccess() {
         const box=document.getElementById("success-img-list");
         box.innerHTML=html;
         box.querySelectorAll("img").forEach(img=>{
-          img.style.cssText="width:90px;height:90px;object-fit:cover;border-radius:10px;border:2px solid var(--border);cursor:zoom-in;";
+          img.style.cssText="width:90px;height:90px;object-fit:cover;border-radius:10px;border:2px solid var(--border);cursor:zoom-in;"; img.onclick=function(){openZoomModal(this.src,"Order Image");};;
           img.onclick=()=>{document.getElementById("fullscreen-img").src=img.dataset.src||img.src;document.getElementById("fullscreen-ov").style.display="flex";};
         });
         document.getElementById("success-images").style.display="block";
