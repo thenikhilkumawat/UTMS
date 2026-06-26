@@ -330,5 +330,110 @@ fetch("/api/settings/logo").then(r=>r.json()).then(d=>{
   window.addEventListener("resize", update);
 })();
 </script>
+<!-- ── GLOBAL IMAGE ZOOM MODAL ─────────────────────────────────── -->
+<div id="g-img-modal"
+  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:99999;
+         flex-direction:column;align-items:center;justify-content:center;gap:10px;">
+  <div id="g-img-modal-label" style="font-size:13px;font-weight:700;color:#a5b4fc;"></div>
+  <img id="g-img-modal-img"
+    style="max-width:92vw;max-height:78vh;border-radius:10px;object-fit:contain;
+           transition:transform 0.1s;transform-origin:center center;user-select:none;"
+    draggable="false">
+  <div style="display:flex;gap:10px;align-items:center;" onclick="event.stopPropagation()">
+    <button onclick="gZoom(-0.25)"
+      style="width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.15);
+             color:#fff;border:2px solid rgba(255,255,255,0.3);font-size:22px;font-weight:700;
+             cursor:pointer;display:flex;align-items:center;justify-content:center;">−</button>
+    <span id="g-zoom-label"
+      style="font-size:13px;font-weight:700;color:#a5b4fc;min-width:44px;text-align:center;">100%</span>
+    <button onclick="gZoom(0.25)"
+      style="width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.15);
+             color:#fff;border:2px solid rgba(255,255,255,0.3);font-size:22px;font-weight:700;
+             cursor:pointer;display:flex;align-items:center;justify-content:center;">+</button>
+    <button onclick="gResetZoom()"
+      style="padding:8px 14px;border-radius:20px;background:rgba(255,255,255,0.1);
+             color:#94a3b8;border:1.5px solid rgba(255,255,255,0.2);font-size:12px;font-weight:700;cursor:pointer;">Reset</button>
+    <button onclick="gCloseImg()"
+      style="padding:8px 14px;border-radius:20px;background:rgba(239,68,68,0.3);
+             color:#fca5a5;border:1.5px solid rgba(239,68,68,0.4);font-size:12px;font-weight:700;cursor:pointer;">✕ Close</button>
+  </div>
+  <div style="font-size:11px;color:#475569;">Scroll to zoom · Drag to pan · Tap outside to close</div>
+</div>
+
+<script>
+(function(){
+  var z=1, px=0, py=0, dr=false, dx=0, dy=0, px0=0, py0=0;
+
+  function applyT(){
+    var img=document.getElementById("g-img-modal-img");
+    img.style.transform="scale("+z+") translate("+(px/z)+"px,"+(py/z)+"px)";
+    document.getElementById("g-zoom-label").textContent=Math.round(z*100)+"%";
+    img.style.cursor=z>1?"grab":"default";
+  }
+
+  window.openZoomModal = function(src, label){
+    z=1;px=0;py=0;
+    var img=document.getElementById("g-img-modal-img");
+    img.src=src; applyT();
+    document.getElementById("g-img-modal-label").textContent=label||"";
+    var modal=document.getElementById("g-img-modal");
+    modal.style.display="flex";
+    document.body.style.overflow="hidden";
+  };
+
+  window.gCloseImg = function(){
+    document.getElementById("g-img-modal").style.display="none";
+    document.body.style.overflow="";
+    z=1;px=0;py=0;
+  };
+
+  window.gZoom = function(d){
+    z=Math.max(0.25,Math.min(6,z+d)); applyT();
+  };
+
+  window.gResetZoom = function(){
+    z=1;px=0;py=0; applyT();
+  };
+
+  // Click outside to close
+  document.getElementById("g-img-modal").addEventListener("click",function(e){
+    if(e.target===this) gCloseImg();
+  });
+
+  // Scroll to zoom
+  document.getElementById("g-img-modal-img").addEventListener("wheel",function(e){
+    e.preventDefault(); gZoom(e.deltaY<0?0.2:-0.2);
+  },{passive:false});
+
+  // Mouse drag
+  var img=document.getElementById("g-img-modal-img");
+  img.addEventListener("mousedown",function(e){
+    if(z<=1)return; dr=true; dx=e.clientX; dy=e.clientY; px0=px; py0=py;
+    img.style.cursor="grabbing"; e.preventDefault();
+  });
+  document.addEventListener("mousemove",function(e){
+    if(!dr)return; px=px0+(e.clientX-dx); py=py0+(e.clientY-dy); applyT();
+  });
+  document.addEventListener("mouseup",function(){
+    if(dr){dr=false; document.getElementById("g-img-modal-img").style.cursor=z>1?"grab":"default";}
+  });
+
+  // Touch drag
+  img.addEventListener("touchstart",function(e){
+    if(e.touches.length===1&&z>1){dr=true;dx=e.touches[0].clientX;dy=e.touches[0].clientY;px0=px;py0=py;}
+  },{passive:true});
+  img.addEventListener("touchmove",function(e){
+    if(!dr||e.touches.length!==1)return;
+    px=px0+(e.touches[0].clientX-dx); py=py0+(e.touches[0].clientY-dy); applyT();
+  },{passive:true});
+  img.addEventListener("touchend",function(){dr=false;});
+
+  // Escape key
+  document.addEventListener("keydown",function(e){
+    if(e.key==="Escape") gCloseImg();
+  });
+})();
+</script>
+
 </body>
 </html>
