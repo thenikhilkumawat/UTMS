@@ -979,7 +979,8 @@ def settings():
         garment_type_chips=garment_type_chips,
         garment_rates=garment_rates,
         stitch_rates=stitch_rates,
-        work_rates_map=work_rates_map)
+        work_rates_map=work_rates_map,
+        last_backup=get_setting("last_backup_at",""))
 
 
 @bp.route("/settings/save", methods=["POST"])
