@@ -808,6 +808,18 @@ def save_anthropic_key():
     return jsonify({"ok": True})
 
 
+@bp.route("/api/fix-order-code")
+@owner_required
+def fix_order_code():
+    set_setting("last_order_code", "3898")
+    try:
+        from database import invalidate_settings_cache
+        invalidate_settings_cache()
+    except Exception:
+        pass
+    return "<h2>✅ Fixed! last_order_code = 3898. Next order will be #3899.</h2><a href='/owner/settings'>← Settings</a>"
+
+
 @bp.route("/measurement-book")
 def measurement_book():
     import os as _os, json as _json
@@ -926,6 +938,7 @@ def settings():
         "finance_income_cats":   get_setting("finance_income_cats","advance,payment,alteration,other income"),
         "finance_expense_cats":  get_setting("finance_expense_cats","thread,buttons,fabric,electricity,rent,salary,transport,maintenance,other expense"),
         "shop_logo":             get_setting("shop_logo",""),
+        "order_code_start":      str(int(get_setting("last_order_code","3898")) + 1),
     }
     # Garment chip styles
     garment_type_chips_raw = get_setting("garment_type_chips","")
