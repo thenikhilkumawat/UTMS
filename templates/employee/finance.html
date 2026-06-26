@@ -221,9 +221,11 @@
               <div class="tx-cat">
                 {{ tx.category }}
                 {% if tx.order_code %}<span class="tx-badge order">#{{ tx.order_code }}</span>{% endif %}
-                <span class="tx-badge {{ 'cash' if tx.mode!='upi' else 'upi' }}">
-                  {{ "Cash" if tx.mode!="upi" else "UPI" }}
-              </span>
+                {% if tx.mode=='upi' %}
+              <span style="background:#eef2ff;color:#4338ca;font-size:10px;font-weight:800;padding:2px 8px;border-radius:20px;border:1px solid #c7d2fe;">📱 UPI</span>
+              {% else %}
+              <span style="background:#f0fdf4;color:#15803d;font-size:10px;font-weight:800;padding:2px 8px;border-radius:20px;border:1px solid #bbf7d0;">💵 Cash</span>
+              {% endif %}
               </div>
               <div class="tx-meta">
                 {{ tx.tx_time }}{% if tx.note %} · {{ tx.note }}{% endif %}
