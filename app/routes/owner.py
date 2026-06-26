@@ -875,35 +875,6 @@ def measurement_book():
                 "image_only": False,
             })
 
-        # Also add image-only entries — ONLY numeric order codes (not test/gallery folders)
-        img_base = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.dirname(__file__))), "static", "order_images")
-
-        import time as _time
-        ninety_days_ago = _time.time() - (90 * 24 * 3600)
-        if _os.path.isdir(img_base):
-            for code in sorted(_os.listdir(img_base), reverse=True):
-                # Only numeric codes, not already in DB, modified within last 90 days
-                if code in db_codes or not code.isdigit():
-                    continue
-                folder = _os.path.join(img_base, code)
-                if not _os.path.isdir(folder):
-                    continue
-                # Skip old test folders
-                if _os.path.getmtime(folder) < ninety_days_ago:
-                    continue
-                imgs = sorted(f for f in _os.listdir(folder) if f.lower().endswith((".jpg",".jpeg",".png",".webp")))
-                if not imgs:
-                    continue
-                orders_data.insert(0, {
-                    "code": code, "odate": "—", "ddate": "—",
-                    "status": "image_only", "urgent": False,
-                    "payable": 0, "paid": 0, "due": 0,
-                    "note": "", "cname": "— Not saved yet —",
-                    "mobile": "—", "address": "—",
-                    "garments": [],
-                    "image": f"/static/order_images/{code}/{imgs[0]}",
-                    "image_only": True,
-                })
 
     finally:
         conn.close()
