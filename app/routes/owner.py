@@ -830,14 +830,27 @@ def measurement_book():
     orders_data = []
     for o in rows:
         oid = o["id"]
-        garments = conn.execute("""
-            SELECT oi.garment_type, oi.quantity, oi.rate, oi.notes,
-                   GROUP_CONCAT(m.field_name||':'||m.value, '|') as meas_str
-            FROM order_items oi
-            LEFT JOIN measurements m ON m.order_item_id=oi.id
-            WHERE oi.order_id=? GROUP BY oi.id ORDER BY oi.id
+
+        # Fetch garments (no GROUP_CONCAT — works on both SQLite + PostgreSQL)
+        garment_rows = conn.execute("""
+            SELECT id, garment_type, quantity, rate, notes
+            FROM order_items WHERE order_id=? ORDER BY id
         """, (oid,)).fetchall()
 
+        garments_list = []
+        for g in garment_rows:
+            meas_rows = conn.execute(
+                "SELECT field_name, value FROM measurements WHERE order_item_id=? ORDER BY id",
+                (g["id"],)
+            ).fetchall()
+            meas = {r["field_name"]: r["value"] for r in meas_rows}
+            garments_list.append({
+                "type": g["garment_type"], "qty": g["quantity"],
+                "rate": int(g["rate"] or 0),
+                "notes": g["notes"] or "", "meas": meas
+            })
+
+        # First image
         img_rows = conn.execute(
             "SELECT file_path FROM order_images WHERE order_id=? ORDER BY id LIMIT 1", (oid,)
         ).fetchall()
@@ -851,28 +864,19 @@ def measurement_book():
                 if imgs:
                     images = [f"/static/order_images/{o['order_code']}/{imgs[0]}"]
 
-        garments_list = []
-        for g in garments:
-            meas = {}
-            if g["meas_str"]:
-                for pair in g["meas_str"].split("|"):
-                    if ":" in pair:
-                        k, v = pair.split(":", 1)
-                        meas[k.strip()] = v.strip()
-            garments_list.append({
-                "type": g["garment_type"], "qty": g["quantity"],
-                "rate": int(g["rate"] or 0), "notes": g["notes"] or "", "meas": meas
-            })
-
         orders_data.append({
             "code": o["order_code"], "odate": fmtd(o["order_date"]),
             "ddate": fmtd(o["delivery_date"]), "status": o["status"],
             "urgent": bool(o["is_urgent"]),
-            "payable": int(o["payable_amount"] or 0), "paid": int(o["advance_paid"] or 0),
-            "due": int(o["remaining"] or 0), "note": o["note"] or "",
-            "cname": o["cname"] or "—", "mobile": o["mobile"] or "—",
+            "payable": int(o["payable_amount"] or 0),
+            "paid":    int(o["advance_paid"]  or 0),
+            "due":     int(o["remaining"]     or 0),
+            "note":    o["note"] or "",
+            "cname":   o["cname"]   or "—",
+            "mobile":  o["mobile"]  or "—",
             "address": o["address"] or "—",
-            "garments": garments_list, "image": images[0] if images else None,
+            "garments": garments_list,
+            "image": images[0] if images else None,
         })
 
     conn.close()
