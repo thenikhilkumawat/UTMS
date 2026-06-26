@@ -111,6 +111,7 @@
       </div>
 
       {% else %}
+      <div class="mb-card"
       data-search="{{ (o.cname ~ ' ' ~ o.code ~ ' ' ~ o.mobile ~ ' ' ~ o.address ~ ' ' ~
                        o.garments|map(attribute='type')|join(' '))|lower }}"
       data-status="{{ o.status }}"
