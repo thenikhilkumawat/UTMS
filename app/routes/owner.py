@@ -822,6 +822,9 @@ def measurement_book():
             ORDER BY o.id DESC
         """).fetchall()
 
+        # Get all order codes in DB
+        db_codes = set(r["order_code"] for r in rows)
+
         def fmtd(d):
             if not d: return "—"
             p = str(d).split("-")
@@ -851,10 +854,9 @@ def measurement_book():
             images = [r["file_path"] for r in img_rows
                       if r["file_path"] and not r["file_path"].startswith("temp:")]
             if not images:
-                static_folder = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.dirname(__file__))), "static", "order_images", o["order_code"])
-                if _os.path.isdir(static_folder):
-                    imgs = sorted(f for f in _os.listdir(static_folder)
-                                  if f.lower().endswith((".jpg",".jpeg",".png",".webp")))
+                sf = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.dirname(__file__))), "static", "order_images", o["order_code"])
+                if _os.path.isdir(sf):
+                    imgs = sorted(f for f in _os.listdir(sf) if f.lower().endswith((".jpg",".jpeg",".png",".webp")))
                     if imgs:
                         images = [f"/static/order_images/{o['order_code']}/{imgs[0]}"]
             orders_data.append({
@@ -870,12 +872,40 @@ def measurement_book():
                 "address": o["address"] or "—",
                 "garments": garments_list,
                 "image": images[0] if images else None,
+                "image_only": False,
             })
+
+        # Also add image-only entries (photo uploaded but order not yet created in DB)
+        img_base = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.dirname(__file__))), "static", "order_images")
+        if _os.path.isdir(img_base):
+            for code in sorted(_os.listdir(img_base), reverse=True):
+                if code in db_codes or code == "gallery":
+                    continue
+                folder = _os.path.join(img_base, code)
+                if not _os.path.isdir(folder):
+                    continue
+                imgs = sorted(f for f in _os.listdir(folder) if f.lower().endswith((".jpg",".jpeg",".png",".webp")))
+                if not imgs:
+                    continue
+                # Image exists but no order in DB yet
+                orders_data.insert(0, {
+                    "code": code, "odate": "—", "ddate": "—",
+                    "status": "image_only", "urgent": False,
+                    "payable": 0, "paid": 0, "due": 0,
+                    "note": "", "cname": "— Not saved yet —",
+                    "mobile": "—", "address": "—",
+                    "garments": [],
+                    "image": f"/static/order_images/{code}/{imgs[0]}",
+                    "image_only": True,
+                })
+
     finally:
         conn.close()
     return render_template("owner/measurement_book.html",
         active_page="measurement_book", show_voice=False,
         urgent_count=uc, orders=orders_data)
+
+
 
 
 @bp.route("/settings/save", methods=["POST"])
