@@ -73,7 +73,7 @@
 
       <!-- Image section -->
       {% if o.image %}
-      <div style="position:relative;cursor:pointer;" onclick="openImageModal('{{ o.image }}','{{ o.code }}')">
+      <div style="position:relative;cursor:pointer;" onclick="openZoomModal('{{ o.image }}','Order #{{ o.code }}')">
         <img src="{{ o.image }}" style="width:100%;height:190px;object-fit:cover;display:block;">
         <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 50%,rgba(0,0,0,0.65));"></div>
         {% if o.image_only %}
@@ -179,31 +179,6 @@
   </div>
 </div>
 
-<!-- Image zoom modal -->
-<div id="img-modal" onclick="handleModalClick(event)"
-  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;
-         align-items:center;justify-content:center;flex-direction:column;gap:10px;">
-  <div style="font-size:14px;font-weight:700;color:#a5b4fc;" id="modal-code-label"></div>
-  <div style="position:relative;display:flex;align-items:center;justify-content:center;">
-    <img id="modal-img" style="max-width:92vw;max-height:78vh;border-radius:10px;object-fit:contain;
-         transition:transform 0.2s;transform-origin:center center;" draggable="false">
-  </div>
-  <!-- Zoom controls -->
-  <div style="display:flex;gap:10px;align-items:center;" onclick="event.stopPropagation()">
-    <button onclick="zoomImg(-0.25)" style="width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.15);
-      color:#fff;border:2px solid rgba(255,255,255,0.3);font-size:22px;font-weight:700;cursor:pointer;
-      display:flex;align-items:center;justify-content:center;">−</button>
-    <span id="zoom-label" style="font-size:13px;font-weight:700;color:#a5b4fc;min-width:40px;text-align:center;">100%</span>
-    <button onclick="zoomImg(0.25)" style="width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.15);
-      color:#fff;border:2px solid rgba(255,255,255,0.3);font-size:22px;font-weight:700;cursor:pointer;
-      display:flex;align-items:center;justify-content:center;">+</button>
-    <button onclick="resetZoom()" style="padding:8px 14px;border-radius:20px;background:rgba(255,255,255,0.1);
-      color:#94a3b8;border:1.5px solid rgba(255,255,255,0.2);font-size:12px;font-weight:700;cursor:pointer;">Reset</button>
-    <button onclick="closeImageModal()" style="padding:8px 14px;border-radius:20px;background:rgba(239,68,68,0.3);
-      color:#fca5a5;border:1.5px solid rgba(239,68,68,0.4);font-size:12px;font-weight:700;cursor:pointer;">✕ Close</button>
-  </div>
-  <div style="font-size:11px;color:#475569;">Tap outside to close · Scroll to zoom</div>
-</div>
 
 <!-- Fill Details Modal (for QR-only uploads) -->
 <div id="fill-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9998;align-items:center;justify-content:center;">
@@ -260,91 +235,6 @@ function applyFilter() {
   document.getElementById("mb-empty").style.display = visible === 0 ? "block" : "none";
 }
 
-let _zoomLevel = 1;
-let _panX = 0, _panY = 0;
-let _dragging = false, _dragStartX = 0, _dragStartY = 0, _panStartX = 0, _panStartY = 0;
-
-function openImageModal(src, code) {
-  _zoomLevel = 1; _panX = 0; _panY = 0;
-  const img = document.getElementById("modal-img");
-  img.src = src;
-  img.style.transform = "scale(1) translate(0px,0px)";
-  img.style.cursor = "grab";
-  document.getElementById("modal-code-label").textContent = "Order #" + code;
-  document.getElementById("zoom-label").textContent = "100%";
-  document.getElementById("img-modal").style.display = "flex";
-  document.body.style.overflow = "hidden";
-}
-function closeImageModal() {
-  document.getElementById("img-modal").style.display = "none";
-  document.body.style.overflow = "";
-  _zoomLevel = 1; _panX = 0; _panY = 0;
-}
-function handleModalClick(e) {
-  if (e.target === document.getElementById("img-modal")) closeImageModal();
-}
-function applyTransform() {
-  document.getElementById("modal-img").style.transform =
-    "scale(" + _zoomLevel + ") translate(" + (_panX/_zoomLevel) + "px," + (_panY/_zoomLevel) + "px)";
-  document.getElementById("zoom-label").textContent = Math.round(_zoomLevel * 100) + "%";
-  document.getElementById("modal-img").style.cursor = _zoomLevel > 1 ? "grab" : "default";
-}
-function zoomImg(delta) {
-  _zoomLevel = Math.max(0.25, Math.min(5, _zoomLevel + delta));
-  applyTransform();
-}
-function resetZoom() {
-  _zoomLevel = 1; _panX = 0; _panY = 0;
-  applyTransform();
-}
-
-// Scroll to zoom
-document.addEventListener("DOMContentLoaded", function() {
-  const img = document.getElementById("modal-img");
-
-  img.addEventListener("wheel", function(e) {
-    e.preventDefault();
-    zoomImg(e.deltaY < 0 ? 0.2 : -0.2);
-  }, {passive:false});
-
-  // Drag to pan
-  img.addEventListener("mousedown", function(e) {
-    if (_zoomLevel <= 1) return;
-    _dragging = true;
-    _dragStartX = e.clientX; _dragStartY = e.clientY;
-    _panStartX = _panX; _panStartY = _panY;
-    img.style.cursor = "grabbing";
-    e.preventDefault();
-  });
-  document.addEventListener("mousemove", function(e) {
-    if (!_dragging) return;
-    _panX = _panStartX + (e.clientX - _dragStartX);
-    _panY = _panStartY + (e.clientY - _dragStartY);
-    applyTransform();
-  });
-  document.addEventListener("mouseup", function() {
-    if (_dragging) {
-      _dragging = false;
-      document.getElementById("modal-img").style.cursor = _zoomLevel > 1 ? "grab" : "default";
-    }
-  });
-
-  // Touch drag to pan (mobile)
-  img.addEventListener("touchstart", function(e) {
-    if (e.touches.length === 1 && _zoomLevel > 1) {
-      _dragging = true;
-      _dragStartX = e.touches[0].clientX; _dragStartY = e.touches[0].clientY;
-      _panStartX = _panX; _panStartY = _panY;
-    }
-  }, {passive:true});
-  img.addEventListener("touchmove", function(e) {
-    if (!_dragging || e.touches.length !== 1) return;
-    _panX = _panStartX + (e.touches[0].clientX - _dragStartX);
-    _panY = _panStartY + (e.touches[0].clientY - _dragStartY);
-    applyTransform();
-  }, {passive:true});
-  img.addEventListener("touchend", function() { _dragging = false; });
-});
 
 function openFillModal(code) {
   document.getElementById("fill-code-label").textContent = code;
