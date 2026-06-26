@@ -1,286 +1,181 @@
 {% extends "base.html" %}
-{% block title %}Measurement Book{% endblock %}
+{% block title %}Diary — Order Search{% endblock %}
 {% block content %}
 
-<!-- Premium top bar -->
-<div style="background:linear-gradient(135deg,#1e1b4b,#312e81);padding:20px 28px;margin-bottom:0;">
+<!-- Premium header -->
+<div style="background:linear-gradient(135deg,#1e1b4b,#312e81);padding:20px 28px;">
   <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
     <div>
-      <div style="font-size:24px;font-weight:900;color:#fff;letter-spacing:-0.5px;">
-        📐 Measurement Book
-      </div>
-      <div style="font-size:13px;color:#a5b4fc;margin-top:3px;">
-        नाप बही — All customer measurements & order details
-      </div>
+      <div style="font-size:24px;font-weight:900;color:#fff;">📖 Diary</div>
+      <div style="font-size:13px;color:#a5b4fc;margin-top:2px;">नाप बही — Search by name, code or mobile</div>
     </div>
     <div style="display:flex;gap:10px;align-items:center;">
-      <span style="background:rgba(255,255,255,0.1);color:#c7d2fe;padding:6px 14px;
-                   border-radius:20px;font-size:13px;font-weight:700;">
-        {{ orders|length }} orders
+      <span style="background:rgba(255,255,255,0.1);color:#c7d2fe;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:700;">
+        {{ orders|length }} total orders
       </span>
-      <a href="/owner/dashboard" class="btn btn-ghost btn-sm"
-         style="color:#a5b4fc;border-color:#4338ca;">← Back</a>
-      <button class="menu-toggle" onclick="openSidebar()"
-              style="color:#fff;border-color:#4338ca;">☰</button>
+      <button class="menu-toggle" onclick="openSidebar()" style="color:#fff;border-color:#4338ca;">☰</button>
     </div>
   </div>
 
   <!-- Search bar -->
-  <div style="margin-top:18px;position:relative;">
-    <span style="position:absolute;left:16px;top:50%;transform:translateY(-50%);
-                 font-size:18px;pointer-events:none;">🔍</span>
+  <div style="margin-top:16px;position:relative;">
+    <span style="position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:18px;pointer-events:none;">🔍</span>
     <input type="text" id="mb-search"
-      placeholder="Search by name, order code, mobile, garment type..."
+      placeholder="Naam, order code, mobile number, garment type..."
       oninput="filterOrders()"
       style="width:100%;padding:14px 16px 14px 48px;font-size:16px;font-weight:600;
              background:rgba(255,255,255,0.12);border:2px solid rgba(255,255,255,0.2);
-             border-radius:14px;color:#fff;outline:none;backdrop-filter:blur(10px);"
-      onfocus="this.style.borderColor='#818cf8';this.style.background='rgba(255,255,255,0.18)'"
-      onblur="this.style.borderColor='rgba(255,255,255,0.2)';this.style.background='rgba(255,255,255,0.12)'">
-  </div>
-
-  <!-- Filter tabs -->
-  <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
-    <button class="mb-tab active" data-filter="all" onclick="setTab('all',this)"
-      style="padding:7px 18px;border-radius:20px;border:1.5px solid #818cf8;
-             background:#6366f1;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">
-      All
-    </button>
-    <button class="mb-tab" data-filter="pending" onclick="setTab('pending',this)"
-      style="padding:7px 18px;border-radius:20px;border:1.5px solid rgba(255,255,255,0.2);
-             background:transparent;color:#a5b4fc;font-size:13px;font-weight:700;cursor:pointer;">
-      Pending
-    </button>
-    <button class="mb-tab" data-filter="ready" onclick="setTab('ready',this)"
-      style="padding:7px 18px;border-radius:20px;border:1.5px solid rgba(255,255,255,0.2);
-             background:transparent;color:#a5b4fc;font-size:13px;font-weight:700;cursor:pointer;">
-      Ready
-    </button>
-    <button class="mb-tab" data-filter="delivered" onclick="setTab('delivered',this)"
-      style="padding:7px 18px;border-radius:20px;border:1.5px solid rgba(255,255,255,0.2);
-             background:transparent;color:#a5b4fc;font-size:13px;font-weight:700;cursor:pointer;">
-      Delivered
-    </button>
-    <button class="mb-tab" data-filter="image" onclick="setTab('image',this)"
-      style="padding:7px 18px;border-radius:20px;border:1.5px solid rgba(255,255,255,0.2);
-             background:transparent;color:#a5b4fc;font-size:13px;font-weight:700;cursor:pointer;">
-      📷 With Image
-    </button>
+             border-radius:14px;color:#fff;outline:none;"
+      onfocus="this.style.borderColor='#818cf8'" onblur="this.style.borderColor='rgba(255,255,255,0.2)'">
   </div>
 </div>
 
-<!-- Orders grid -->
+<!-- Results area -->
 <div style="background:#f1f5f9;min-height:100vh;padding:20px 20px 40px;">
   <div id="mb-count" style="font-size:12px;font-weight:700;color:#6b7280;margin-bottom:16px;"></div>
+
+  <!-- Default: Search prompt -->
+  <div id="mb-prompt" style="text-align:center;padding:60px 20px;color:#9ca3af;">
+    <div style="font-size:56px;margin-bottom:16px;">📖</div>
+    <div style="font-size:20px;font-weight:800;color:#6366f1;margin-bottom:8px;">Kuch search karo</div>
+    <div style="font-size:14px;margin-bottom:20px;">Customer ka naam, code, mobile, ya garment type likho</div>
+    <div style="background:#fff;border-radius:12px;padding:16px 24px;display:inline-block;border:1.5px solid #e5e7eb;text-align:left;">
+      <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:8px;">💡 Examples:</div>
+      <div style="font-size:13px;color:#6b7280;line-height:2;">
+        <b>Ramesh</b> → naam se search<br>
+        <b>3892</b> → order code se<br>
+        <b>9876543210</b> → mobile se<br>
+        <b>Shirt</b> → kapde ke type se
+      </div>
+    </div>
+  </div>
+
+  <!-- No results -->
+  <div id="mb-empty" style="display:none;text-align:center;padding:60px;color:#9ca3af;">
+    <div style="font-size:40px;margin-bottom:12px;">😕</div>
+    <div style="font-size:16px;font-weight:700;">Koi order nahi mila</div>
+    <div style="font-size:13px;margin-top:6px;">Alag naam ya code try karo</div>
+  </div>
+
+  <!-- Results grid -->
   <div id="mb-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:20px;">
 
     {% for o in orders %}
-      {% if o.image_only %}
-      <div class="mb-card"
-        data-search="{{ o.code }}"
-        data-status="image_only"
-        data-hasimage="1"
-        style="background:#fff;border-radius:20px;overflow:hidden;
-               box-shadow:0 2px 12px rgba(0,0,0,0.08);border:2px solid #fde68a;transition:all 0.2s;"
-        onmouseover="this.style.transform='translateY(-3px)'"
-        onmouseout="this.style.transform=''">
-        <div style="position:relative;cursor:pointer;" onclick="openImageModal('{{ o.image }}','{{ o.code }}')">
-          <img src="{{ o.image }}" alt="Order #{{ o.code }}"
-            style="width:100%;height:200px;object-fit:cover;display:block;">
-          <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(0,0,0,0.7));"></div>
-          <div style="position:absolute;top:10px;left:12px;background:#f59e0b;color:#fff;
-                      font-size:11px;font-weight:800;padding:4px 12px;border-radius:10px;">📱 QR Upload</div>
-          <div style="position:absolute;bottom:10px;left:14px;color:#fff;font-size:20px;font-weight:900;">
-            #{{ o.code }}
-          </div>
-        </div>
-        <div style="padding:16px 18px;">
-          <div style="font-size:13px;color:#92400e;background:#fef9c3;border-radius:8px;
-                      padding:10px 14px;margin-bottom:12px;">
-            Naam aur mobile yahan bharo — order save ho jaayega
-          </div>
-          <button onclick="openFillModal('{{ o.code }}')"
-            style="width:100%;padding:12px;background:linear-gradient(135deg,#f59e0b,#d97706);
-                   color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;">
-            ✏️ Fill Details → Save Order
-          </button>
-        </div>
-      </div>
-
-      {% else %}
-      <div class="mb-card"
+    <div class="mb-card" style="display:none;"
       data-search="{{ (o.cname ~ ' ' ~ o.code ~ ' ' ~ o.mobile ~ ' ' ~ o.address ~ ' ' ~
                        o.garments|map(attribute='type')|join(' '))|lower }}"
-      data-status="{{ o.status }}"
       data-hasimage="{{ '1' if o.image else '0' }}"
+      data-image-only="{{ '1' if o.image_only else '0' }}"
       style="background:#fff;border-radius:20px;overflow:hidden;
-             box-shadow:0 2px 12px rgba(0,0,0,0.08);transition:all 0.2s;"
+             box-shadow:0 2px 12px rgba(0,0,0,0.08);transition:transform 0.2s,box-shadow 0.2s;"
       onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 30px rgba(0,0,0,0.14)'"
       onmouseout="this.style.transform='';this.style.boxShadow='0 2px 12px rgba(0,0,0,0.08)'">
 
-      <!-- Image / placeholder -->
+      <!-- Image section -->
       {% if o.image %}
       <div style="position:relative;cursor:pointer;" onclick="openImageModal('{{ o.image }}','{{ o.code }}')">
-        <img src="{{ o.image }}" alt="Order #{{ o.code }}"
-          style="width:100%;height:200px;object-fit:cover;display:block;">
-        <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 50%,rgba(0,0,0,0.6));"></div>
-        <div style="position:absolute;bottom:10px;left:14px;color:#fff;font-size:12px;font-weight:700;
-                    background:rgba(0,0,0,0.4);padding:3px 10px;border-radius:10px;backdrop-filter:blur(4px);">
-          📷 Diary Image — tap to zoom
-        </div>
-        {% if o.urgent %}
-        <div style="position:absolute;top:10px;right:10px;background:#ef4444;color:#fff;
-                    font-size:11px;font-weight:800;padding:3px 10px;border-radius:10px;">🔥 URGENT</div>
+        <img src="{{ o.image }}" style="width:100%;height:190px;object-fit:cover;display:block;">
+        <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 50%,rgba(0,0,0,0.65));"></div>
+        {% if o.image_only %}
+        <div style="position:absolute;top:10px;left:12px;background:#f59e0b;color:#fff;font-size:11px;font-weight:800;padding:3px 10px;border-radius:10px;">📱 QR Upload</div>
         {% endif %}
+        <div style="position:absolute;bottom:10px;left:14px;color:#fff;font-size:18px;font-weight:900;">#{{ o.code }}</div>
+        <div style="position:absolute;bottom:10px;right:10px;background:rgba(0,0,0,0.4);color:#fff;font-size:10px;padding:3px 8px;border-radius:8px;backdrop-filter:blur(4px);">🔍 tap to zoom</div>
       </div>
       {% else %}
-      <div style="height:80px;background:linear-gradient(135deg,#e0e7ff,#c7d2fe);
-                  display:flex;align-items:center;padding:16px 20px;gap:12px;position:relative;">
-        <div style="width:48px;height:48px;background:#6366f1;border-radius:14px;
-                    display:flex;align-items:center;justify-content:center;
-                    font-size:20px;font-weight:900;color:#fff;flex-shrink:0;">
+      <div style="height:70px;background:linear-gradient(135deg,#e0e7ff,#c7d2fe);display:flex;align-items:center;padding:14px 18px;gap:12px;">
+        <div style="width:44px;height:44px;background:#6366f1;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#fff;flex-shrink:0;">
           {{ o.cname[0]|upper if o.cname != '—' else '?' }}
         </div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:18px;font-weight:900;color:#1e1b4b;
-                      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ o.cname }}</div>
-          <div style="font-size:12px;color:#4338ca;font-weight:700;">No image attached</div>
+        <div>
+          <div style="font-size:16px;font-weight:900;color:#1e1b4b;">{{ o.cname }}</div>
+          <div style="font-size:12px;color:#4338ca;font-weight:700;">#{{ o.code }}</div>
         </div>
-        {% if o.urgent %}
-        <div style="position:absolute;top:8px;right:10px;background:#ef4444;color:#fff;
-                    font-size:11px;font-weight:800;padding:3px 10px;border-radius:10px;">🔥 URGENT</div>
-        {% endif %}
       </div>
       {% endif %}
 
       <!-- Card body -->
-      <div style="padding:16px 18px;">
+      <div style="padding:14px 16px;">
 
-        <!-- Customer + code row -->
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;">
-          <div style="flex:1;min-width:0;">
-            {% if o.image %}
-            <div style="font-size:20px;font-weight:900;color:#1e1b4b;
-                        white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ o.cname }}</div>
-            {% endif %}
-            <div style="font-size:13px;color:#6b7280;margin-top:2px;">
-              {% if o.mobile != '—' %}📱 {{ o.mobile }}{% endif %}
-              {% if o.address != '—' %} · 📍 {{ o.address }}{% endif %}
-            </div>
-          </div>
-          <div style="text-align:right;flex-shrink:0;margin-left:10px;">
-            <a href="/owner/orders/edit/{{ o.code }}"
-               style="font-size:15px;font-weight:900;color:#6366f1;text-decoration:none;">
-              #{{ o.code }}
-            </a>
-            <div style="margin-top:4px;">
-              <span style="font-size:11px;font-weight:800;padding:3px 9px;border-radius:8px;
-                {% if o.status=='delivered' %}background:#d1fae5;color:#065f46;
-                {% elif o.status=='ready' %}background:#dbeafe;color:#1e40af;
-                {% else %}background:#fef9c3;color:#92400e;{% endif %}">
-                {{ o.status|title }}
-              </span>
-            </div>
-          </div>
+        <!-- Customer info (if image shows name was above, show here without repeat) -->
+        {% if o.image %}
+        <div style="margin-bottom:10px;">
+          <div style="font-size:17px;font-weight:900;color:#1e1b4b;">{{ o.cname }}</div>
+          {% if o.mobile != '—' %}<div style="font-size:12px;color:#6b7280;margin-top:2px;">📱 {{ o.mobile }}{% if o.address != '—' %} · 📍 {{ o.address }}{% endif %}</div>{% endif %}
         </div>
+        {% else %}
+        {% if o.mobile != '—' %}<div style="font-size:12px;color:#6b7280;margin-bottom:10px;">📱 {{ o.mobile }}{% if o.address != '—' %} · 📍 {{ o.address }}{% endif %}</div>{% endif %}
+        {% endif %}
 
-        <!-- Dates + payment row -->
-        <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
-          <div style="flex:1;min-width:100px;background:#f8fafc;border-radius:10px;padding:8px 12px;">
-            <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;margin-bottom:3px;">Order Date</div>
-            <div style="font-size:13px;font-weight:700;color:#374151;">{{ o.odate }}</div>
+        <!-- If image_only: show fill button prominently -->
+        {% if o.image_only %}
+        <div style="background:#fef9c3;border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:13px;color:#92400e;">
+          📸 Photo uploaded — naam/details bharo
+        </div>
+        <button onclick="openFillModal('{{ o.code }}')"
+          style="width:100%;padding:11px;background:linear-gradient(135deg,#f59e0b,#d97706);
+                 color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:8px;">
+          ✏️ Fill Details → Save Order
+        </button>
+        {% else %}
+
+        <!-- Dates + due -->
+        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:80px;background:#f8fafc;border-radius:8px;padding:7px 10px;">
+            <div style="font-size:9px;font-weight:700;color:#9ca3af;text-transform:uppercase;">Order</div>
+            <div style="font-size:12px;font-weight:700;color:#374151;">{{ o.odate }}</div>
           </div>
-          <div style="flex:1;min-width:100px;background:#f8fafc;border-radius:10px;padding:8px 12px;">
-            <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;margin-bottom:3px;">Delivery</div>
-            <div style="font-size:13px;font-weight:700;color:#374151;">{{ o.ddate }}</div>
+          <div style="flex:1;min-width:80px;background:#f8fafc;border-radius:8px;padding:7px 10px;">
+            <div style="font-size:9px;font-weight:700;color:#9ca3af;text-transform:uppercase;">Delivery</div>
+            <div style="font-size:12px;font-weight:700;color:#374151;">{{ o.ddate }}</div>
           </div>
-          <div style="flex:1;min-width:100px;background:{% if o.due > 0 %}#fef2f2{% else %}#f0fdf4{% endif %};border-radius:10px;padding:8px 12px;">
-            <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;margin-bottom:3px;">Due</div>
-            <div style="font-size:15px;font-weight:900;color:{% if o.due > 0 %}#dc2626{% else %}#16a34a{% endif %};">
-              ₹{{ o.due }}
-            </div>
+          <div style="flex:1;min-width:80px;background:{% if o.due > 0 %}#fef2f2{% else %}#f0fdf4{% endif %};border-radius:8px;padding:7px 10px;">
+            <div style="font-size:9px;font-weight:700;color:#9ca3af;text-transform:uppercase;">Due</div>
+            <div style="font-size:14px;font-weight:900;color:{% if o.due > 0 %}#dc2626{% else %}#16a34a{% endif %};">₹{{ o.due }}</div>
           </div>
         </div>
 
         <!-- Garments + measurements -->
         {% for g in o.garments %}
-        <div style="background:#fafafa;border:1.5px solid #e5e7eb;border-radius:12px;
-                    padding:12px 14px;margin-bottom:10px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-            <div style="font-size:15px;font-weight:800;color:#1e1b4b;">
-              🧥 {{ g.type }}
-              <span style="font-size:12px;font-weight:600;color:#6b7280;">×{{ g.qty }}</span>
+        <div style="background:#fafafa;border:1.5px solid #e5e7eb;border-radius:10px;padding:10px 12px;margin-bottom:8px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <div style="font-size:14px;font-weight:800;color:#1e1b4b;">
+              🧥 {{ g.type }} <span style="font-size:12px;font-weight:600;color:#6b7280;">×{{ g.qty }}</span>
             </div>
-            {% if g.rate > 0 %}
-            <span style="font-size:13px;font-weight:700;color:#059669;">₹{{ g.rate }}/pc</span>
-            {% endif %}
+            {% if g.rate > 0 %}<span style="font-size:12px;font-weight:700;color:#059669;">₹{{ g.rate }}/pc</span>{% endif %}
           </div>
           {% if g.meas %}
-          <!-- Measurement grid — big and clear -->
-          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:6px;">
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:5px;">
             {% for field, val in g.meas.items() %}
-            <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;
-                        padding:6px 8px;text-align:center;">
-              <div style="font-size:9px;font-weight:700;color:#9ca3af;text-transform:uppercase;
-                          letter-spacing:0.5px;margin-bottom:2px;">{{ field }}</div>
-              <div style="font-size:18px;font-weight:900;color:#1e1b4b;line-height:1;">{{ val }}</div>
+            <div style="background:#fff;border:1px solid #e5e7eb;border-radius:7px;padding:5px 6px;text-align:center;">
+              <div style="font-size:8px;font-weight:700;color:#9ca3af;text-transform:uppercase;">{{ field }}</div>
+              <div style="font-size:17px;font-weight:900;color:#1e1b4b;line-height:1.1;">{{ val }}</div>
             </div>
             {% endfor %}
           </div>
           {% else %}
-          <div style="font-size:12px;color:#9ca3af;font-style:italic;">No measurements saved</div>
+          <div style="font-size:12px;color:#9ca3af;font-style:italic;">No measurements</div>
           {% endif %}
-          {% if g.notes %}
-          <div style="margin-top:8px;font-size:12px;color:#6b7280;background:#fff;
-                      border-radius:8px;padding:6px 10px;border:1px solid #e5e7eb;">
-            📝 {{ g.notes }}
-          </div>
-          {% endif %}
+          {% if g.notes %}<div style="margin-top:6px;font-size:11px;color:#6b7280;">📝 {{ g.notes }}</div>{% endif %}
         </div>
         {% else %}
-        <div style="font-size:13px;color:#9ca3af;text-align:center;padding:12px;
-                    background:#fafafa;border-radius:10px;">No garments added</div>
+        <div style="font-size:13px;color:#9ca3af;text-align:center;padding:10px;background:#fafafa;border-radius:8px;margin-bottom:10px;">No garments added yet</div>
         {% endfor %}
 
-        {% if o.note %}
-        <div style="margin-top:8px;font-size:12px;color:#6b7280;background:#fef9c3;
-                    border-radius:8px;padding:8px 12px;border:1px solid #fde68a;">
-          💬 {{ o.note }}
-        </div>
-        {% endif %}
-
-        <!-- Edit button -->
+        <!-- Edit -->
         <a href="/owner/orders/edit/{{ o.code }}"
-           style="display:block;margin-top:14px;padding:10px;background:#f1f5f9;color:#374151;
-                  border-radius:10px;text-align:center;text-decoration:none;
-                  font-size:13px;font-weight:700;transition:background 0.15s;"
+           style="display:block;padding:10px;background:#f1f5f9;color:#374151;border-radius:10px;
+                  text-align:center;text-decoration:none;font-size:13px;font-weight:700;transition:background 0.15s;"
            onmouseover="this.style.background='#e0e7ff';this.style.color='#4338ca'"
            onmouseout="this.style.background='#f1f5f9';this.style.color='#374151'">
           ✏️ Edit Order
         </a>
+        {% endif %}
+
       </div>
     </div>
-    {% endif %}
-    {% else %}
-    <div style="grid-column:1/-1;text-align:center;padding:80px 20px;color:#9ca3af;">
-      <div style="font-size:48px;margin-bottom:16px;">📐</div>
-      <div style="font-size:20px;font-weight:700;">No orders found</div>
-    </div>
     {% endfor %}
-  </div>
 
-  <div id="mb-empty" style="display:none;text-align:center;padding:80px;color:#9ca3af;">
-    <div style="font-size:48px;margin-bottom:12px;">🔍</div>
-    <div style="font-size:18px;font-weight:700;">No matching orders</div>
-  </div>
-
-  <div id="mb-prompt" style="text-align:center;padding:80px 20px;color:#9ca3af;">
-    <div style="font-size:56px;margin-bottom:16px;">🔍</div>
-    <div style="font-size:20px;font-weight:800;color:#6366f1;margin-bottom:8px;">Search karo</div>
-    <div style="font-size:14px;">Customer ka naam, order code, mobile number ya garment type likho</div>
-    <div style="margin-top:16px;font-size:13px;background:#fff;border-radius:12px;padding:16px 24px;display:inline-block;border:1.5px solid #e5e7eb;">
-      💡 Examples: <b>Ramesh</b> · <b>3892</b> · <b>9876543210</b> · <b>Shirt</b>
-    </div>
   </div>
 </div>
 
@@ -290,54 +185,26 @@
          align-items:center;justify-content:center;flex-direction:column;gap:12px;">
   <div style="font-size:14px;font-weight:700;color:#a5b4fc;" id="modal-code-label"></div>
   <img id="modal-img" style="max-width:95vw;max-height:85vh;border-radius:12px;object-fit:contain;">
-  <div style="font-size:13px;color:#64748b;">Tap anywhere to close</div>
+  <div style="font-size:13px;color:#64748b;">Tap to close</div>
 </div>
 
-<!-- Fill Details Modal -->
-<div id="fill-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9998;
-     align-items:center;justify-content:center;">
-  <div style="background:#fff;border-radius:20px;padding:28px;width:90%;max-width:420px;
-              box-shadow:0 20px 60px rgba(0,0,0,0.3);">
-    <h3 style="margin:0 0 4px;font-size:18px;color:#1e1b4b;">✏️ Order Details Bharo</h3>
-    <p style="font-size:13px;color:#6b7280;margin:0 0 20px;">
-      Code: <strong>#<span id="fill-code-label"></span></strong> — image already saved hai
-    </p>
+<!-- Fill Details Modal (for QR-only uploads) -->
+<div id="fill-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9998;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:20px;padding:28px;width:90%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <h3 style="margin:0 0 4px;font-size:18px;color:#1e1b4b;">✏️ Fill Details</h3>
+    <p style="font-size:13px;color:#6b7280;margin:0 0 18px;">Code: <strong>#<span id="fill-code-label"></span></strong></p>
     <div style="display:flex;flex-direction:column;gap:12px;">
-      <div>
-        <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:#6b7280;display:block;margin-bottom:5px;">
-          Customer Name *
-        </label>
-        <input type="text" id="fill-name" placeholder="Ramesh Ji"
-          style="width:100%;padding:12px;border:2px solid #e5e7eb;border-radius:10px;font-size:16px;font-weight:700;box-sizing:border-box;outline:none;"
-          onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#e5e7eb'">
-      </div>
-      <div>
-        <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:#6b7280;display:block;margin-bottom:5px;">
-          Mobile
-        </label>
-        <input type="tel" id="fill-mobile" placeholder="9876543210" maxlength="10"
-          style="width:100%;padding:12px;border:2px solid #e5e7eb;border-radius:10px;font-size:16px;box-sizing:border-box;outline:none;"
-          onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#e5e7eb'">
-      </div>
-      <div>
-        <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:#6b7280;display:block;margin-bottom:5px;">
-          Address / Gaon
-        </label>
-        <input type="text" id="fill-address" placeholder="Sikar / Laxmangarh"
-          style="width:100%;padding:12px;border:2px solid #e5e7eb;border-radius:10px;font-size:15px;box-sizing:border-box;outline:none;"
-          onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#e5e7eb'">
-      </div>
+      <div><label style="font-size:11px;font-weight:700;text-transform:uppercase;color:#6b7280;display:block;margin-bottom:5px;">Customer Name *</label>
+        <input type="text" id="fill-name" placeholder="Ramesh Ji" style="width:100%;padding:12px;border:2px solid #e5e7eb;border-radius:10px;font-size:16px;font-weight:700;box-sizing:border-box;outline:none;" onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#e5e7eb'"></div>
+      <div><label style="font-size:11px;font-weight:700;text-transform:uppercase;color:#6b7280;display:block;margin-bottom:5px;">Mobile</label>
+        <input type="tel" id="fill-mobile" placeholder="9876543210" maxlength="10" style="width:100%;padding:12px;border:2px solid #e5e7eb;border-radius:10px;font-size:16px;box-sizing:border-box;outline:none;" onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#e5e7eb'"></div>
+      <div><label style="font-size:11px;font-weight:700;text-transform:uppercase;color:#6b7280;display:block;margin-bottom:5px;">Address / Gaon</label>
+        <input type="text" id="fill-address" placeholder="Sikar..." style="width:100%;padding:12px;border:2px solid #e5e7eb;border-radius:10px;font-size:15px;box-sizing:border-box;outline:none;" onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#e5e7eb'"></div>
     </div>
     <div id="fill-msg" style="font-size:13px;font-weight:700;min-height:20px;margin:12px 0;text-align:center;"></div>
     <div style="display:flex;gap:10px;">
-      <button onclick="closeFillModal()"
-        style="flex:1;padding:12px;background:#f3f4f6;color:#374151;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">
-        Cancel
-      </button>
-      <button id="fill-save-btn" onclick="saveFillDetails()"
-        style="flex:2;padding:12px;background:linear-gradient(135deg,#059669,#047857);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;">
-        💾 Save Order
-      </button>
+      <button onclick="closeFillModal()" style="flex:1;padding:12px;background:#f3f4f6;color:#374151;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">Cancel</button>
+      <button id="fill-save-btn" onclick="saveFillDetails()" style="flex:2;padding:12px;background:linear-gradient(135deg,#059669,#047857);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;">💾 Save Order</button>
     </div>
   </div>
 </div>
@@ -345,109 +212,40 @@
 {% endblock %}
 {% block extra_js %}
 <script>
-const ORDERS = {{ orders | tojson }};
-let currentTab = "all";
 let currentSearch = "";
-
-function updateCount(n) {
-  if (!currentSearch && currentTab === "all") {
-    document.getElementById("mb-count").textContent = "";
-  } else {
-    document.getElementById("mb-count").textContent = n + " order" + (n!==1?"s":"") + " found";
-  }
-}
 
 function filterOrders() {
   currentSearch = (document.getElementById("mb-search").value || "").toLowerCase().trim();
   applyFilter();
 }
 
-function setTab(filter, btn) {
-  currentTab = filter;
-  document.querySelectorAll(".mb-tab").forEach(function(b) {
-    b.style.background = "transparent";
-    b.style.borderColor = "rgba(255,255,255,0.2)";
-    b.style.color = "#a5b4fc";
-  });
-  btn.style.background = "#6366f1";
-  btn.style.borderColor = "#818cf8";
-  btn.style.color = "#fff";
-  applyFilter();
-}
-
 function applyFilter() {
-  var cards = document.querySelectorAll(".mb-card");
-  var words = currentSearch.split(/\s+/).filter(Boolean);
+  const cards = document.querySelectorAll(".mb-card");
+  const words = currentSearch.split(/\s+/).filter(Boolean);
 
-  // If no search and tab is "all" → hide everything, show prompt
-  if (!currentSearch && currentTab === "all") {
-    cards.forEach(function(c){ c.style.display = "none"; });
-    document.getElementById("mb-empty").style.display = "none";
+  if (!currentSearch) {
+    cards.forEach(c => c.style.display = "none");
     document.getElementById("mb-prompt").style.display = "block";
-    updateCount(0);
+    document.getElementById("mb-empty").style.display = "none";
+    document.getElementById("mb-count").textContent = "";
     return;
   }
 
   document.getElementById("mb-prompt").style.display = "none";
-  var visible = 0;
-  cards.forEach(function(card) {
-    var srch  = card.dataset.search || "";
-    var stat  = card.dataset.status || "";
-    var hasImg= card.dataset.hasimage === "1";
-    var matchQ = words.length === 0 || words.every(function(w){ return srch.includes(w); });
-    var matchT = currentTab === "all" ||
-                 (currentTab === "image" ? hasImg : stat === currentTab);
-    var show = matchQ && matchT;
-    card.style.display = show ? "" : "none";
-    if (show) visible++;
+  let visible = 0;
+  cards.forEach(card => {
+    const srch = card.dataset.search || "";
+    const match = words.every(w => srch.includes(w));
+    card.style.display = match ? "" : "none";
+    if (match) visible++;
   });
-  updateCount(visible);
-  document.getElementById("mb-empty").style.display =
-    (visible === 0) ? "block" : "none";
+  document.getElementById("mb-count").textContent = visible + " order" + (visible !== 1 ? "s" : "") + " found";
+  document.getElementById("mb-empty").style.display = visible === 0 ? "block" : "none";
 }
 
-function openFillModal(code) {
-  document.getElementById("fill-code-label").textContent = code;
-  document.getElementById("fill-name").value = "";
-  document.getElementById("fill-mobile").value = "";
-  document.getElementById("fill-address").value = "";
-  document.getElementById("fill-msg").textContent = "";
-  document.getElementById("fill-modal").style.display = "flex";
-  setTimeout(function(){ document.getElementById("fill-name").focus(); }, 100);
-}
-function closeFillModal() {
-  document.getElementById("fill-modal").style.display = "none";
-}
-async function saveFillDetails() {
-  const code = document.getElementById("fill-code-label").textContent;
-  const name = document.getElementById("fill-name").value.trim();
-  if (!name) { document.getElementById("fill-msg").textContent = "⚠️ Naam required"; return; }
-  const btn = document.getElementById("fill-save-btn");
-  btn.disabled = true; btn.textContent = "Saving...";
-  const res = await fetch("/owner/past-orders/save", {
-    method: "POST", headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({
-      order_code: code, customer_name: name,
-      mobile: document.getElementById("fill-mobile").value.trim(),
-      address: document.getElementById("fill-address").value.trim(),
-      order_date: "", delivery_date: "",
-      total_amount: 0, advance_paid: 0,
-      payment_mode: "cash", is_delivered: true, garments: []
-    })
-  });
-  const d = await res.json().catch(()=>({}));
-  if (d.ok) {
-    document.getElementById("fill-msg").style.color = "#059669";
-    document.getElementById("fill-msg").textContent = "✅ Saved! Refreshing...";
-    setTimeout(function(){ window.location.reload(); }, 1000);
-  } else {
-    document.getElementById("fill-msg").style.color = "#dc2626";
-    document.getElementById("fill-msg").textContent = "❌ " + (d.error||"Error");
-    btn.disabled = false; btn.textContent = "💾 Save Order";
-  }
-}
+function openImageModal(src, code) {
   document.getElementById("modal-img").src = src;
-  document.getElementById("modal-code-label").textContent = "Order #" + code + " — Diary Image";
+  document.getElementById("modal-code-label").textContent = "Order #" + code;
   document.getElementById("img-modal").style.display = "flex";
   document.body.style.overflow = "hidden";
 }
@@ -455,23 +253,53 @@ function closeImageModal() {
   document.getElementById("img-modal").style.display = "none";
   document.body.style.overflow = "";
 }
-document.addEventListener("keydown", function(e) {
-  if (e.key === "Escape") closeImageModal();
-});
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeImageModal(); });
 
-// Init — hide all cards, show search prompt
-document.addEventListener("DOMContentLoaded", function() {
-  document.querySelectorAll(".mb-card").forEach(function(c){ c.style.display="none"; });
-  document.getElementById("mb-prompt").style.display = "block";
+function openFillModal(code) {
+  document.getElementById("fill-code-label").textContent = code;
+  ["fill-name","fill-mobile","fill-address"].forEach(id => document.getElementById(id).value = "");
+  document.getElementById("fill-msg").textContent = "";
+  document.getElementById("fill-modal").style.display = "flex";
+  setTimeout(() => document.getElementById("fill-name").focus(), 100);
+}
+function closeFillModal() { document.getElementById("fill-modal").style.display = "none"; }
+async function saveFillDetails() {
+  const code = document.getElementById("fill-code-label").textContent;
+  const name = document.getElementById("fill-name").value.trim();
+  if (!name) { document.getElementById("fill-msg").textContent = "⚠️ Naam required"; return; }
+  const btn = document.getElementById("fill-save-btn");
+  btn.disabled = true; btn.textContent = "Saving...";
+  const res = await fetch("/owner/past-orders/save", {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ order_code:code, customer_name:name,
+      mobile:document.getElementById("fill-mobile").value.trim(),
+      address:document.getElementById("fill-address").value.trim(),
+      order_date:"", delivery_date:"", total_amount:0, advance_paid:0,
+      payment_mode:"cash", is_delivered:true, garments:[] })
+  });
+  const d = await res.json().catch(() => ({}));
+  if (d.ok) {
+    document.getElementById("fill-msg").style.color = "#059669";
+    document.getElementById("fill-msg").textContent = "✅ Saved! Reloading...";
+    setTimeout(() => window.location.reload(), 1000);
+  } else {
+    document.getElementById("fill-msg").style.color = "#dc2626";
+    document.getElementById("fill-msg").textContent = "❌ " + (d.error || "Error");
+    btn.disabled = false; btn.textContent = "💾 Save Order";
+  }
+}
+
+// Init: hide all, show search prompt
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll(".mb-card").forEach(c => c.style.display = "none");
   document.getElementById("mb-search").focus();
 });
 
 const SECS=5*60; let last=Date.now();
-["click","keydown","mousemove","touchstart"].forEach(function(ev){
-  document.addEventListener(ev,function(){last=Date.now();},{passive:true});
-});
-setInterval(function(){
-  if(Math.floor((Date.now()-last)/1000)>=SECS) window.location.href="/owner/login?expired=1";
-},5000);
+["click","keydown","mousemove","touchstart"].forEach(ev =>
+  document.addEventListener(ev, () => { last = Date.now(); }, {passive:true}));
+setInterval(() => {
+  if (Math.floor((Date.now()-last)/1000) >= SECS) window.location.href="/owner/login?expired=1";
+}, 5000);
 </script>
 {% endblock %}
