@@ -3,189 +3,230 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>📸 Diary Photo — Uttam Tailors</title>
+<title>📸 Diary — Uttam Tailors</title>
 <style>
 * { box-sizing:border-box; margin:0; padding:0; }
 body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-       background:#0f172a; color:#fff; height:100dvh;
-       display:flex; flex-direction:column; overflow:hidden; }
+       background:#0f172a; color:#fff; height:100dvh; display:flex; flex-direction:column; overflow:hidden; }
 .topbar { padding:12px 16px; background:#1e293b; border-bottom:1px solid #334155;
           display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
 .topbar h1 { font-size:17px; font-weight:800; }
 .badge { background:#6366f1; color:#fff; padding:4px 12px; border-radius:20px; font-size:13px; font-weight:800; }
 
-#screen-code { flex:1; display:flex; flex-direction:column;
-               align-items:center; justify-content:center; padding:24px; gap:16px; }
+/* Code screen */
+#sc-code { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; gap:16px; }
 #code-inp { width:100%; max-width:320px; padding:18px; font-size:40px; font-weight:900;
             background:#1e293b; border:2px solid #334155; border-radius:14px;
             color:#fff; text-align:center; letter-spacing:6px; outline:none; }
 #code-inp:focus { border-color:#6366f1; }
 .hint { font-size:13px; color:#64748b; text-align:center; }
-.btn-cam { width:100%; max-width:320px; padding:16px;
-           background:linear-gradient(135deg,#6366f1,#4f46e5);
-           color:#fff; border:none; border-radius:14px;
-           font-size:17px; font-weight:800; cursor:pointer; opacity:0.4; }
-.btn-cam:not(:disabled) { opacity:1; }
 
-#screen-cam { flex:1; display:none; flex-direction:column; position:relative; background:#000; }
+/* Camera screen */
+#sc-cam { flex:1; display:none; flex-direction:column; position:relative; background:#000; }
 #cam-video { width:100%; height:100%; object-fit:cover; display:block; }
 .shutter-wrap { position:absolute; bottom:0; left:0; right:0; padding:20px;
                 display:flex; flex-direction:column; align-items:center; gap:10px;
                 background:linear-gradient(transparent,rgba(0,0,0,0.7)); }
 .cam-lbl { font-size:14px; font-weight:800; background:rgba(0,0,0,0.5); padding:4px 16px; border-radius:20px; }
 .shutter { width:72px; height:72px; border-radius:50%; border:4px solid #fff;
-           background:rgba(255,255,255,0.2); cursor:pointer; }
+           background:rgba(255,255,255,0.2); cursor:pointer; flex-shrink:0; }
 .shutter:active { background:rgba(255,255,255,0.7); }
 
-#screen-preview { flex:1; display:none; flex-direction:column; position:relative; background:#000; }
-#prev-img { width:100%; height:100%; object-fit:contain; display:block; }
-.preview-btns { position:absolute; bottom:0; left:0; right:0; padding:16px; display:flex; gap:10px;
-                background:linear-gradient(transparent,rgba(0,0,0,0.8)); }
-.btn-retake { flex:1; padding:14px; background:rgba(255,255,255,0.15); color:#fff;
-              border:2px solid rgba(255,255,255,0.3); border-radius:12px;
-              font-size:14px; font-weight:800; cursor:pointer; }
-.btn-save { flex:2; padding:14px; background:linear-gradient(135deg,#059669,#047857);
+/* Preview screen */
+#sc-preview { flex:1; display:none; flex-direction:column; position:relative; background:#000; }
+#prev-img { width:100%; height:55%; object-fit:cover; display:block; }
+.form-section { flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:10px; background:#0f172a; }
+.field label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#64748b; display:block; margin-bottom:5px; }
+.field input { width:100%; padding:12px; font-size:16px; font-weight:700;
+               background:#1e293b; border:2px solid #334155; border-radius:10px;
+               color:#fff; outline:none; }
+.field input:focus { border-color:#6366f1; }
+.field input::placeholder { color:#475569; font-weight:400; }
+.btn-save { padding:14px; background:linear-gradient(135deg,#059669,#047857);
             color:#fff; border:none; border-radius:12px; font-size:15px; font-weight:800; cursor:pointer; }
 .btn-save:disabled { opacity:0.5; }
+.btn-retake { padding:10px; background:rgba(255,255,255,0.07); color:#94a3b8;
+              border:1.5px solid #334155; border-radius:10px; font-size:13px; font-weight:700; cursor:pointer; }
 
-#screen-saved { flex:1; display:none; flex-direction:column;
-                align-items:center; justify-content:center; padding:24px; gap:16px; text-align:center; }
-.btn-next { width:100%; max-width:320px; padding:16px;
-            background:linear-gradient(135deg,#f59e0b,#d97706);
+/* Saved screen */
+#sc-saved { flex:1; display:none; flex-direction:column; align-items:center; justify-content:center; padding:24px; gap:16px; text-align:center; }
+.btn-next { width:100%; max-width:320px; padding:16px; background:linear-gradient(135deg,#f59e0b,#d97706);
             color:#fff; border:none; border-radius:14px; font-size:17px; font-weight:800; cursor:pointer; }
-.status { font-size:13px; color:#94a3b8; min-height:18px; }
+
+.btn-primary { width:100%; max-width:320px; padding:16px; background:linear-gradient(135deg,#6366f1,#4f46e5);
+               color:#fff; border:none; border-radius:14px; font-size:17px; font-weight:800; cursor:pointer; }
+.btn-primary:disabled { opacity:0.4; }
+.status-msg { font-size:13px; color:#94a3b8; text-align:center; min-height:18px; }
 </style>
 </head>
 <body>
 
 <div class="topbar">
-  <h1>📸 Diary Photo</h1>
+  <h1>📖 Diary Upload</h1>
   <div class="badge" id="top-badge" style="display:none;">#<span id="top-code"></span></div>
 </div>
 
-<!-- Code screen -->
-<div id="screen-code">
+<!-- Screen 1: Code -->
+<div id="sc-code">
   <label style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#64748b;">Order Code</label>
-  <input type="text" id="code-inp" inputmode="numeric" placeholder="2001"
-         autocomplete="off" autofocus oninput="onCode()"
-         onkeydown="if(event.key==='Enter'&&this.value.trim()) go()">
-  <div class="hint">Diary se order number daalo → photo lo → done!</div>
-  <button class="btn-cam" id="cam-btn" disabled onclick="go()">📷 Camera Kholo</button>
-  <div class="status" id="s1"></div>
+  <input type="text" id="code-inp" inputmode="numeric" placeholder="2001" autocomplete="off" autofocus
+         oninput="onCode()" onkeydown="if(event.key==='Enter'&&this.value.trim()) go()">
+  <div class="hint">Diary number daalo → photo lo → naam bharo</div>
+  <button class="btn-primary" id="cam-btn" disabled onclick="go()">📷 Camera Kholo</button>
+  <div class="status-msg" id="s1"></div>
 </div>
 
-<!-- Camera screen -->
-<div id="screen-cam">
+<!-- Screen 2: Camera -->
+<div id="sc-cam">
   <video id="cam-video" autoplay playsinline muted></video>
   <div class="shutter-wrap">
     <div class="cam-lbl">Order #<span id="cam-lbl"></span></div>
     <button class="shutter" onclick="capture()"></button>
-    <div style="font-size:12px;color:rgba(255,255,255,0.6);">Diary page frame karo → Tap</div>
+    <div style="font-size:12px;color:rgba(255,255,255,0.6);">Diary page ko frame karo → Tap</div>
   </div>
 </div>
 
-<!-- Preview screen -->
-<div id="screen-preview">
+<!-- Screen 3: Preview + Details Form -->
+<div id="sc-preview">
   <img id="prev-img" alt="">
-  <div class="preview-btns">
-    <button class="btn-retake" onclick="retake()">↩ Retake</button>
-    <button class="btn-save" id="save-btn" onclick="save()">💾 Save Photo</button>
+  <div class="form-section">
+    <div style="font-size:14px;font-weight:800;color:#a5b4fc;">✅ Photo li! Ab details bharo:</div>
+    <div class="field">
+      <label>Customer Name *</label>
+      <input type="text" id="f-name" placeholder="Ramesh Ji" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>Mobile</label>
+      <input type="tel" id="f-mobile" placeholder="9876543210" inputmode="numeric" maxlength="10">
+    </div>
+    <div class="field">
+      <label>Address / Gaon</label>
+      <input type="text" id="f-address" placeholder="Sikar...">
+    </div>
+    <button class="btn-save" id="save-btn" onclick="saveOrder()">💾 Save Order + Photo</button>
+    <button class="btn-retake" onclick="retake()">↩ Retake Photo</button>
+    <div class="status-msg" id="s3"></div>
   </div>
 </div>
 
-<!-- Saved screen -->
-<div id="screen-saved">
-  <div style="font-size:64px;">✅</div>
-  <div style="font-size:22px;font-weight:900;">Photo Saved!</div>
-  <div style="font-size:14px;color:#94a3b8;" id="saved-msg"></div>
+<!-- Screen 4: Saved -->
+<div id="sc-saved">
+  <div style="font-size:60px;">✅</div>
+  <div style="font-size:22px;font-weight:900;" id="saved-title">Saved!</div>
+  <div style="font-size:14px;color:#94a3b8;" id="saved-sub"></div>
   <div style="font-size:12px;color:#64748b;background:#1e293b;padding:12px 16px;border-radius:12px;max-width:320px;">
-    💡 Desktop pe Search Orders mein code type karo → naam/mobile bharo → order complete ho jaayega
+    💡 Desktop pe Diary page mein naam search karo → measurements edit karo
   </div>
-  <button class="btn-next" onclick="next()">➕ Next Order</button>
+  <button class="btn-next" onclick="nextOrder()">➕ Next Order</button>
 </div>
 
 <script>
 let stream=null, blob=null, code="";
 
 function onCode() {
-  const v=document.getElementById("code-inp").value.trim();
-  document.getElementById("cam-btn").disabled=!v;
+  const v = document.getElementById("code-inp").value.trim();
+  document.getElementById("cam-btn").disabled = !v;
 }
 
 async function go() {
-  code=document.getElementById("code-inp").value.trim();
-  if(!code) return;
-  document.getElementById("top-badge").style.display="flex";
-  document.getElementById("top-code").textContent=code;
-  document.getElementById("cam-lbl").textContent=code;
+  code = document.getElementById("code-inp").value.trim();
+  if (!code) return;
+  document.getElementById("top-badge").style.display = "flex";
+  document.getElementById("top-code").textContent = code;
+  document.getElementById("cam-lbl").textContent = code;
   show("cam");
   try {
-    stream=await navigator.mediaDevices.getUserMedia({
-      video:{facingMode:{ideal:"environment"},width:{ideal:1920},height:{ideal:1440}},audio:false
+    stream = await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:{ideal:"environment"},width:{ideal:1920},height:{ideal:1440}}, audio:false
     });
-    document.getElementById("cam-video").srcObject=stream;
+    document.getElementById("cam-video").srcObject = stream;
   } catch(e) {
     show("code");
-    const inp=document.createElement("input");
-    inp.type="file";inp.accept="image/*";inp.capture="environment";
-    inp.onchange=function(){if(inp.files[0])preview(inp.files[0]);};
+    const inp = document.createElement("input");
+    inp.type="file"; inp.accept="image/*"; inp.capture="environment";
+    inp.onchange = () => { if (inp.files[0]) prep(inp.files[0]); };
     inp.click();
   }
 }
 
 function capture() {
-  const v=document.getElementById("cam-video");
-  const c=document.createElement("canvas");
-  c.width=v.videoWidth||1280; c.height=v.videoHeight||960;
-  c.getContext("2d").drawImage(v,0,0);
-  c.toBlob(function(b){ blob=b; stopCam(); preview(b); },"image/jpeg",0.88);
+  const v = document.getElementById("cam-video");
+  const c = document.createElement("canvas");
+  c.width = v.videoWidth||1280; c.height = v.videoHeight||960;
+  c.getContext("2d").drawImage(v, 0, 0);
+  c.toBlob(b => { blob=b; stopCam(); prep(b); }, "image/jpeg", 0.88);
 }
 
-function preview(b) {
-  blob=b;
-  document.getElementById("prev-img").src=URL.createObjectURL(b);
-  const btn=document.getElementById("save-btn");
-  btn.disabled=false; btn.textContent="💾 Save Photo";
+function prep(b) {
+  blob = b;
+  document.getElementById("prev-img").src = URL.createObjectURL(b);
+  document.getElementById("f-name").value = "";
+  document.getElementById("f-mobile").value = "";
+  document.getElementById("f-address").value = "";
+  document.getElementById("s3").textContent = "";
+  const btn = document.getElementById("save-btn");
+  btn.disabled = false; btn.textContent = "💾 Save Order + Photo";
   show("preview");
+  setTimeout(() => document.getElementById("f-name").focus(), 200);
 }
 
 function retake() { blob=null; go(); }
 function stopCam() { if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;} }
 
-async function save() {
-  if(!blob||!code) return;
-  const btn=document.getElementById("save-btn");
+async function saveOrder() {
+  const name = document.getElementById("f-name").value.trim();
+  if (!name) { document.getElementById("s3").textContent="⚠️ Naam required"; return; }
+  const btn = document.getElementById("save-btn");
   btn.disabled=true; btn.textContent="Saving...";
-  const fd=new FormData();
-  fd.append("photos",blob,"diary_"+code+".jpg");
-  const res=await fetch("/upload/"+code,{method:"POST",body:fd}).catch(()=>({ok:false}));
-  if(res.ok||res.status===200) {
-    document.getElementById("saved-msg").textContent="Order #"+code+" — photo save ho gayi";
-    show("saved");
-  } else {
-    btn.disabled=false; btn.textContent="💾 Save Photo";
-    alert("Upload failed — retry karo");
+  document.getElementById("s3").textContent="Order save ho raha hai...";
+
+  // 1. Save order to DB
+  const res = await fetch("/owner/past-orders/save", {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({
+      order_code:code, customer_name:name,
+      mobile:document.getElementById("f-mobile").value.trim(),
+      address:document.getElementById("f-address").value.trim(),
+      order_date:"", delivery_date:"", total_amount:0,
+      advance_paid:0, payment_mode:"cash", is_delivered:true, garments:[]
+    })
+  });
+  const d = await res.json().catch(()=>({}));
+  if (!d.ok) {
+    btn.disabled=false; btn.textContent="💾 Save Order + Photo";
+    document.getElementById("s3").textContent = "❌ " + (d.error||"Error");
+    return;
   }
+
+  const savedCode = d.order_code || code;
+  document.getElementById("s3").textContent="✅ Photo upload ho rahi hai...";
+
+  // 2. Upload image
+  if (blob) {
+    const fd = new FormData();
+    fd.append("photos", blob, "diary_"+savedCode+".jpg");
+    await fetch("/upload/"+savedCode, {method:"POST", body:fd}).catch(()=>{});
+  }
+
+  document.getElementById("saved-title").textContent = "Order #"+savedCode+" Saved!";
+  document.getElementById("saved-sub").textContent = name+" — Diary mein search karo";
+  show("saved");
 }
 
-function next() {
+function nextOrder() {
   blob=null; code="";
   document.getElementById("code-inp").value="";
   document.getElementById("top-badge").style.display="none";
   document.getElementById("cam-btn").disabled=true;
-  document.getElementById("s1").textContent="";
-  const btn=document.getElementById("save-btn");
-  btn.disabled=false; btn.textContent="💾 Save Photo";
   show("code");
   setTimeout(()=>document.getElementById("code-inp").focus(),100);
 }
 
 function show(name) {
   stopCam();
-  ["code","cam","preview","saved"].forEach(s=>{
-    document.getElementById("screen-"+s).style.display="none";
-  });
-  document.getElementById("screen-"+name).style.display="flex";
+  ["code","cam","preview","saved"].forEach(s =>
+    document.getElementById("sc-"+s).style.display="none");
+  document.getElementById("sc-"+name).style.display="flex";
 }
 </script>
 </body>
