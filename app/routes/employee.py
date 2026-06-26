@@ -1362,6 +1362,7 @@ def order_status():
         SELECT o.id, o.order_code, o.status, o.is_urgent, o.note,
                o.order_date, o.delivery_date, o.delivered_at, o.repeat_of,
                o.payable_amount, o.advance_paid, o.remaining, o.customer_id,
+               o.created_at,
                c.name as cname, c.mobile, c.address as caddress
         FROM orders o
         LEFT JOIN customers c ON c.id = o.customer_id
@@ -1601,7 +1602,7 @@ def order_status():
         "cancelled": sum(1 for o in orders if o["status"]=="cancelled"),
         "urgent":    sum(1 for o in orders if o["is_urgent"] and o["status"]!="delivered"),
         "pickup_pending": sum(1 for o in orders if o.get("pickup_pending")),
-        "today":     sum(1 for o in orders if o.get("order_date") == date.today().isoformat()),
+        "today":     sum(1 for o in orders if str(o.get("created_at","")).startswith(date.today().isoformat())),
     }
     conn.close()
     HINDI_MAP = {
