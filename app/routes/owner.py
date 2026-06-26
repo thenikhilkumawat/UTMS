@@ -875,6 +875,29 @@ def measurement_book():
                 "image_only": False,
             })
 
+        # Image-only: folders with .diary_upload marker (mobile QR uploads not yet converted to orders)
+        img_base = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.dirname(__file__))), "static", "order_images")
+        if _os.path.isdir(img_base):
+            for code in sorted(_os.listdir(img_base), reverse=True):
+                if code in db_codes or not code.isdigit():
+                    continue
+                folder = _os.path.join(img_base, code)
+                if not _os.path.isfile(_os.path.join(folder, ".diary_upload")):
+                    continue
+                imgs = sorted(f for f in _os.listdir(folder)
+                              if f.lower().endswith((".jpg",".jpeg",".png",".webp")))
+                if not imgs:
+                    continue
+                orders_data.insert(0, {
+                    "code": code, "odate": "—", "ddate": "—",
+                    "status": "image_only", "urgent": False,
+                    "payable": 0, "paid": 0, "due": 0,
+                    "note": "", "cname": "— Tap to fill details —",
+                    "mobile": "—", "address": "—",
+                    "garments": [],
+                    "image": f"/static/order_images/{code}/{imgs[0]}",
+                    "image_only": True,
+                })
 
     finally:
         conn.close()
