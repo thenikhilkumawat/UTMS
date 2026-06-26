@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>📸 Past Order Photo — Uttam Tailors</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+         background: #0f172a; color: #fff; min-height: 100vh; padding: 20px 16px; }
+  h1  { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
+  .sub { font-size: 13px; color: #94a3b8; margin-bottom: 24px; }
+  .card { background: #1e293b; border-radius: 16px; padding: 20px; margin-bottom: 16px; }
+  label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase;
+          letter-spacing: 1px; color: #64748b; margin-bottom: 8px; }
+  input[type=text] { width: 100%; padding: 16px; font-size: 28px; font-weight: 900;
+                     background: #0f172a; border: 2px solid #334155; border-radius: 12px;
+                     color: #fff; text-align: center; letter-spacing: 4px; outline: none; }
+  input[type=text]:focus { border-color: #6366f1; }
+  .btn { display: block; width: 100%; padding: 16px; border: none; border-radius: 14px;
+         font-size: 16px; font-weight: 800; cursor: pointer; margin-bottom: 12px; }
+  .btn-cam  { background: linear-gradient(135deg,#6366f1,#4f46e5); color: #fff; }
+  .btn-save { background: linear-gradient(135deg,#059669,#047857); color: #fff; }
+  .btn-next { background: linear-gradient(135deg,#f59e0b,#d97706); color: #fff; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Camera */
+  #cam-wrap { display:none; border-radius:14px; overflow:hidden; margin-bottom:12px;
+              background:#000; position:relative; aspect-ratio:4/3; }
+  #cam-video { width:100%; height:100%; object-fit:cover; display:block; }
+  #shutter-btn { position:absolute; bottom:16px; left:50%; transform:translateX(-50%);
+                 width:70px; height:70px; border-radius:50%; border:4px solid #fff;
+                 background:rgba(255,255,255,0.25); cursor:pointer; backdrop-filter:blur(4px); }
+  #shutter-btn:active { background:rgba(255,255,255,0.6); }
+
+  /* Preview */
+  #preview-wrap { display:none; border-radius:14px; overflow:hidden; margin-bottom:12px;
+                  position:relative; }
+  #preview-img  { width:100%; border-radius:14px; display:block; }
+  #retake-btn   { position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.7);
+                  color:#fff; border:none; border-radius:8px; padding:6px 14px;
+                  font-size:13px; font-weight:700; cursor:pointer; }
+
+  .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+           background:#059669; color:#fff; padding:12px 24px; border-radius:12px;
+           font-weight:700; font-size:14px; display:none; z-index:999;
+           box-shadow: 0 4px 20px rgba(0,0,0,0.4); white-space:nowrap; }
+  .status { text-align:center; font-size:13px; color:#94a3b8; min-height:20px; margin-bottom:8px; }
+  .saved-badge { background:#064e3b; border:1.5px solid #059669; border-radius:12px;
+                 padding:12px 16px; text-align:center; margin-bottom:12px; display:none; }
+</style>
+</head>
+<body>
+
+<h1>📸 Past Order Photo</h1>
+<div class="sub">Order code daalo → Photo lo → Save</div>
+
+<!-- Step 1: Code input -->
+<div class="card" id="code-card">
+  <label>Order Code *</label>
+  <input type="text" id="order-code" inputmode="numeric" placeholder="2450"
+         oninput="onCodeInput()" autocomplete="off" autofocus>
+  <div style="font-size:12px;color:#64748b;margin-top:8px;text-align:center;">
+    Diary ya register se order number daalo
+  </div>
+</div>
+
+<!-- Camera / Preview -->
+<div id="cam-wrap">
+  <video id="cam-video" autoplay playsinline></video>
+  <button id="shutter-btn" onclick="capturePhoto()"></button>
+</div>
+
+<div id="preview-wrap">
+  <img id="preview-img" alt="Captured photo">
+  <button id="retake-btn" onclick="retake()">↩ Retake</button>
+</div>
+
+<!-- Saved badge -->
+<div class="saved-badge" id="saved-badge">
+  <div style="font-size:22px;margin-bottom:4px;">✅</div>
+  <div style="font-weight:800;font-size:16px;" id="saved-msg">Saved!</div>
+</div>
+
+<div class="status" id="status-msg"></div>
+
+<!-- Buttons -->
+<button class="btn btn-cam" id="open-cam-btn" onclick="openCamera()" disabled>
+  📷 Camera Kholo
+</button>
+<button class="btn btn-save" id="save-btn" onclick="savePhoto()" style="display:none;">
+  💾 Save Photo
+</button>
+<button class="btn btn-next" id="next-btn" onclick="nextOrder()" style="display:none;">
+  ➕ Next Order (Same session)
+</button>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let stream = null;
+let capturedBlob = null;
+let capturedCanvas = null;
+
+function onCodeInput() {
+  const val = document.getElementById("order-code").value.trim();
+  document.getElementById("open-cam-btn").disabled = !val;
+}
+
+async function openCamera() {
+  const code = document.getElementById("order-code").value.trim();
+  if (!code) return;
+
+  setStatus("Camera shuru ho raha hai...");
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 960 } }
+    });
+    document.getElementById("cam-video").srcObject = stream;
+    document.getElementById("cam-wrap").style.display = "block";
+    document.getElementById("open-cam-btn").style.display = "none";
+    document.getElementById("preview-wrap").style.display = "none";
+    document.getElementById("save-btn").style.display = "none";
+    document.getElementById("saved-badge").style.display = "none";
+    capturedBlob = null;
+    setStatus("📸 Shutter button dabao photo lene ke liye");
+  } catch(e) {
+    setStatus("❌ Camera nahi khula — file select karo");
+    // Fallback to file input
+    const inp = document.createElement("input");
+    inp.type = "file"; inp.accept = "image/*"; inp.capture = "environment";
+    inp.onchange = function() {
+      if (inp.files[0]) showPreviewFromFile(inp.files[0]);
+    };
+    inp.click();
+  }
+}
+
+function capturePhoto() {
+  const video = document.getElementById("cam-video");
+  capturedCanvas = document.createElement("canvas");
+  capturedCanvas.width  = video.videoWidth  || 1280;
+  capturedCanvas.height = video.videoHeight || 960;
+  capturedCanvas.getContext("2d").drawImage(video, 0, 0);
+
+  capturedCanvas.toBlob(function(blob) {
+    capturedBlob = blob;
+    const url = URL.createObjectURL(blob);
+    document.getElementById("preview-img").src = url;
+    document.getElementById("preview-wrap").style.display = "block";
+    document.getElementById("cam-wrap").style.display = "none";
+    document.getElementById("save-btn").style.display = "block";
+    stopCamera();
+    setStatus("Photo ready — save karo ya retake karo");
+  }, "image/jpeg", 0.85);
+}
+
+function showPreviewFromFile(file) {
+  capturedBlob = file;
+  const url = URL.createObjectURL(file);
+  document.getElementById("preview-img").src = url;
+  document.getElementById("preview-wrap").style.display = "block";
+  document.getElementById("cam-wrap").style.display = "none";
+  document.getElementById("save-btn").style.display = "block";
+  document.getElementById("open-cam-btn").style.display = "none";
+  setStatus("Photo ready — save karo");
+}
+
+function retake() {
+  capturedBlob = null;
+  document.getElementById("preview-wrap").style.display = "none";
+  document.getElementById("save-btn").style.display = "none";
+  openCamera();
+}
+
+function stopCamera() {
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+}
+
+async function savePhoto() {
+  if (!capturedBlob) return;
+  const code = document.getElementById("order-code").value.trim();
+  if (!code) { setStatus("⚠️ Order code required"); return; }
+
+  const btn = document.getElementById("save-btn");
+  btn.disabled = true; btn.textContent = "Saving...";
+  setStatus("Upload ho raha hai...");
+
+  const formData = new FormData();
+  formData.append("file", capturedBlob, "diary_" + code + ".jpg");
+
+  try {
+    const res  = await fetch("/upload/" + code, { method: "POST", body: formData });
+    const data = await res.json().catch(() => ({}));
+
+    if (res.ok || data.success || data.ok) {
+      // Show saved badge
+      document.getElementById("saved-msg").textContent = "Order #" + code + " — Photo saved! ✅";
+      document.getElementById("saved-badge").style.display = "block";
+      document.getElementById("preview-wrap").style.display = "none";
+      document.getElementById("save-btn").style.display = "none";
+      document.getElementById("next-btn").style.display = "block";
+      setStatus("");
+      showToast("✅ #" + code + " saved!");
+    } else {
+      btn.disabled = false; btn.textContent = "💾 Save Photo";
+      setStatus("❌ Save failed — retry karo");
+    }
+  } catch(e) {
+    btn.disabled = false; btn.textContent = "💾 Save Photo";
+    setStatus("❌ Network error — retry karo");
+  }
+}
+
+function nextOrder() {
+  // Clear for next order — keep camera session active
+  capturedBlob = null;
+  document.getElementById("order-code").value = "";
+  document.getElementById("saved-badge").style.display = "none";
+  document.getElementById("next-btn").style.display = "none";
+  document.getElementById("preview-wrap").style.display = "none";
+  document.getElementById("open-cam-btn").style.display = "block";
+  document.getElementById("open-cam-btn").disabled = true;
+  document.getElementById("open-cam-btn").textContent = "📷 Camera Kholo";
+  setStatus("Next order ka code daalo");
+  document.getElementById("order-code").focus();
+}
+
+function setStatus(msg) { document.getElementById("status-msg").textContent = msg; }
+
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.style.display = "block";
+  setTimeout(() => { t.style.display = "none"; }, 2500);
+}
+
+// Auto-open camera when code entered and Enter pressed
+document.getElementById("order-code").addEventListener("keydown", function(e) {
+  if (e.key === "Enter" && this.value.trim()) openCamera();
+});
+</script>
+</body>
+</html>
