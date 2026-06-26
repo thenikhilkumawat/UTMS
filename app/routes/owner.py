@@ -1158,6 +1158,35 @@ def fix_order_code():
     return "<h2>✅ Fixed! last_order_code=3898, recycled pool cleared. Next order = #3899</h2><a href='/owner/settings'>← Settings</a><br><a href='/new-order'>Go to New Order →</a>"
 
 
+@bp.route("/api/sync-order-images")
+@owner_required
+def sync_order_images():
+    """Backfill order_images table from filesystem for all existing orders."""
+    import os as _os
+    img_base = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.dirname(__file__))), "static", "order_images")
+    conn = get_db()
+    synced = 0
+    if _os.path.isdir(img_base):
+        for code in _os.listdir(img_base):
+            folder = _os.path.join(img_base, code)
+            if not _os.path.isdir(folder): continue
+            order_row = conn.execute("SELECT id FROM orders WHERE order_code=?", (code,)).fetchone()
+            if not order_row: continue
+            order_id = order_row["id"]
+            imgs = sorted(f for f in _os.listdir(folder)
+                          if f.lower().endswith((".jpg",".jpeg",".png",".webp")) and not f.startswith("."))
+            for img in imgs:
+                fp = f"/static/order_images/{code}/{img}"
+                exists = conn.execute("SELECT id FROM order_images WHERE order_id=? AND file_path=?",
+                                      (order_id, fp)).fetchone()
+                if not exists:
+                    conn.execute("INSERT INTO order_images(order_id, file_path) VALUES(?,?)", (order_id, fp))
+                    synced += 1
+        conn.commit()
+    conn.close()
+    return f"<h2>✅ {synced} images synced to DB!</h2><p>Ab Diary mein images dikhenge.</p><a href='/owner/measurement-book'>Open Diary →</a>"
+
+
 @bp.route("/measurement-book")
 def measurement_book():
     import os as _os, json as _json
