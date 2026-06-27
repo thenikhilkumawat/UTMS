@@ -624,7 +624,10 @@ def dashboard():
     def fmt_12h(ts):
         if not ts or len(ts) < 16: return "—"
         try:
-            h, m = int(ts[11:13]), ts[14:16]
+            from datetime import datetime as _dt, timedelta as _td
+            utc = _dt.strptime(str(ts)[:16], "%Y-%m-%d %H:%M")
+            ist = utc + _td(hours=5, minutes=30)
+            h, m = ist.hour, ist.strftime("%M")
             return f"{h%12 or 12}:{m} {'AM' if h<12 else 'PM'}"
         except: return "—"
 
