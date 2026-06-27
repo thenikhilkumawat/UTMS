@@ -2082,7 +2082,11 @@ def whatsapp():
         {"name":"Order Ready",      "icon":"🟢"},
         {"name":"Payment Due",      "icon":"💰"},
         {"name":"Festival Wishes",  "icon":"🎉"},
+        {"name":"Eid Mubarak",      "icon":"🌙"},
+        {"name":"New Collection",   "icon":"✨"},
+        {"name":"Shop Closed",      "icon":"🚪"},
         {"name":"General Reminder", "icon":"📢"},
+        {"name":"Diwali Wishes",    "icon":"🪔"},
     ]
 
     return render_template("owner/whatsapp.html",
