@@ -32,7 +32,7 @@
   <!-- STEP 1: Order Code + Dates -->
   <div id="step-p1">
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:14px;">
+    <div style="display:grid;grid-template-columns:1fr 2fr;gap:16px;margin-bottom:14px;">
 
       <!-- LEFT: Diary Details (purple) -->
       <div style="background:#fff;border-radius:14px;border:1.5px solid #e0e7ff;overflow:hidden;">
@@ -386,22 +386,6 @@ var pastGarmentsPhase = 'select';
 var pastPayMode   = "cash";
 var pastOrderCode = "";
 var diaryImageFile = null;  // holds the diary photo file for upload after save
-
-// ── Generate QR for mobile upload page ────────────────
-document.addEventListener("DOMContentLoaded", function() {
-  var qrBox = document.getElementById("past-upload-qr");
-  if (!qrBox) return;
-  var url = window.location.origin + "/owner/past-upload";
-  document.getElementById("past-upload-link").href = url;
-  if (typeof QRCode !== "undefined") {
-    try {
-      new QRCode(qrBox, { text: url, width: 150, height: 150,
-        colorDark: "#1e293b", colorLight: "#ffffff" });
-    } catch(e) { qrBox.innerHTML = "<small>" + url + "</small>"; }
-  } else {
-    qrBox.innerHTML = '<a href="' + url + '" style="font-size:11px;">' + url + '</a>';
-  }
-});
 
 // ── Diary image handlers ───────────────────────────────
 function handleDiaryImage(file) {
