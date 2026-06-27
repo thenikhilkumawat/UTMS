@@ -219,6 +219,62 @@
   </div>
 </div>
 
+<!-- ── MESSAGE TEMPLATES EDITOR ──────────────────────── -->
+<div class="page-body" style="padding:0 24px 32px;max-width:1100px;margin:0 auto;">
+  <div style="margin-bottom:16px;">
+    <div style="font-size:18px;font-weight:900;color:#1e1b4b;margin-bottom:4px;">✏️ Message Templates</div>
+    <div style="font-size:13px;color:#6b7280;">Edit karo aur save karo — agla message yahi format mein jayega</div>
+  </div>
+
+  {% set templates = [
+    ("confirm",   "✅ Order Confirmed",  "Order confirm hone par bheja jaata hai"),
+    ("ready",     "🔔 Order Ready",      "Order ready hone par bheja jaata hai"),
+    ("delivered", "📦 Delivered",        "Delivery ke baad bheja jaata hai"),
+  ] %}
+
+  {% for tmpl_key, tmpl_name, tmpl_desc in templates %}
+  <div class="card mb-16" id="tmpl-card-{{ tmpl_key }}">
+    <div class="card-header" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);">
+      <div>
+        <div class="card-title" style="color:#166534;">{{ tmpl_name }}</div>
+        <div style="font-size:12px;color:#6b7280;margin-top:2px;">{{ tmpl_desc }}</div>
+      </div>
+      <button onclick="saveTemplate('{{ tmpl_key }}')"
+        style="padding:8px 18px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-weight:800;font-size:13px;cursor:pointer;">
+        💾 Save
+      </button>
+    </div>
+    <div class="card-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div>
+          <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:#6b7280;display:block;margin-bottom:6px;">🇮🇳 Hindi Template</label>
+          <textarea id="tmpl-hi-{{ tmpl_key }}"
+            style="width:100%;min-height:280px;padding:12px;border:1.5px solid #e5e7eb;border-radius:10px;
+                   font-size:13px;font-family:monospace;line-height:1.7;resize:vertical;outline:none;box-sizing:border-box;"
+            onfocus="this.style.borderColor='#16a34a'" onblur="this.style.borderColor='#e5e7eb'"
+            placeholder="Hindi template...">{{ wa_templates[tmpl_key]['hi'] }}</textarea>
+          <div style="font-size:11px;color:#9ca3af;margin-top:4px;">
+            Variables: {name} {code} {items} {odate} {ddate} {total} {advance} {due} {mode}
+          </div>
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:#6b7280;display:block;margin-bottom:6px;">🇬🇧 English Template</label>
+          <textarea id="tmpl-en-{{ tmpl_key }}"
+            style="width:100%;min-height:280px;padding:12px;border:1.5px solid #e5e7eb;border-radius:10px;
+                   font-size:13px;font-family:monospace;line-height:1.7;resize:vertical;outline:none;box-sizing:border-box;"
+            onfocus="this.style.borderColor='#16a34a'" onblur="this.style.borderColor='#e5e7eb'"
+            placeholder="English template...">{{ wa_templates[tmpl_key]['en'] }}</textarea>
+          <div style="font-size:11px;color:#9ca3af;margin-top:4px;">
+            Variables: {name} {code} {items} {odate} {ddate} {total} {advance} {due} {mode}
+          </div>
+        </div>
+      </div>
+      <div id="tmpl-msg-{{ tmpl_key }}" style="display:none;margin-top:10px;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:700;text-align:center;"></div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
 {% endblock %}
 {% block extra_js %}
 <script>
@@ -452,5 +508,26 @@ const SECS=5*60; let last=Date.now();
 ["click","keydown","mousemove","touchstart"].forEach(ev=>document.addEventListener(ev,()=>{last=Date.now();},{passive:true}));
 setInterval(()=>{if(Math.floor((Date.now()-last)/1000)>=SECS)window.location.href="/owner/login?expired=1";},5000);
 window.addEventListener("pageshow",function(e){if(e.persisted){fetch("/owner/logout",{method:"POST",keepalive:true}).finally(()=>{window.location.href="/owner/login";})}});
+
+async function saveTemplate(key) {
+  var hi = document.getElementById("tmpl-hi-"+key).value;
+  var en = document.getElementById("tmpl-en-"+key).value;
+  var msgEl = document.getElementById("tmpl-msg-"+key);
+  msgEl.style.display="block"; msgEl.style.background="#f1f5f9"; msgEl.style.color="#374151";
+  msgEl.textContent = "Saving...";
+  var res = await fetch("/owner/api/save-wa-template", {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({template: key, hi: hi, en: en})
+  });
+  var d = await res.json().catch(()=>({}));
+  if (d.ok) {
+    msgEl.style.background="#f0fdf4"; msgEl.style.color="#16a34a";
+    msgEl.textContent = "✅ Saved!";
+    setTimeout(()=>{ msgEl.style.display="none"; }, 2000);
+  } else {
+    msgEl.style.background="#fee2e2"; msgEl.style.color="#dc2626";
+    msgEl.textContent = "❌ Error saving";
+  }
+}
 </script>
 {% endblock %}
