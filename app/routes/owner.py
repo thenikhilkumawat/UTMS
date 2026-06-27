@@ -2079,14 +2079,16 @@ def whatsapp():
     conn.close()
 
     templates = [
-        {"name":"Order Ready",      "icon":"🟢"},
-        {"name":"Payment Due",      "icon":"💰"},
-        {"name":"Festival Wishes",  "icon":"🎉"},
-        {"name":"Eid Mubarak",      "icon":"🌙"},
-        {"name":"New Collection",   "icon":"✨"},
-        {"name":"Shop Closed",      "icon":"🚪"},
-        {"name":"General Reminder", "icon":"📢"},
-        {"name":"Diwali Wishes",    "icon":"🪔"},
+        {"name":"Order Confirmed", "icon":"✅", "key":"confirm"},
+        {"name":"Order Ready",     "icon":"🔔", "key":"ready"},
+        {"name":"Delivered",       "icon":"📦", "key":"delivered"},
+        {"name":"Payment Due",     "icon":"💰", "key":""},
+        {"name":"Festival Wishes", "icon":"🎉", "key":""},
+        {"name":"Eid Mubarak",     "icon":"🌙", "key":""},
+        {"name":"New Collection",  "icon":"✨", "key":""},
+        {"name":"Shop Closed",     "icon":"🚪", "key":""},
+        {"name":"General Reminder","icon":"📢", "key":""},
+        {"name":"Diwali Wishes",   "icon":"🪔", "key":""},
     ]
 
     return render_template("owner/whatsapp.html",
@@ -2098,6 +2100,7 @@ def whatsapp():
         templates=templates,
         broadcast_log=broadcast_log,
         wa_templates=wa_templates,
+        wa_templates_json=json.dumps({k: v for k, v in wa_templates.items()}),
     )
 
 
