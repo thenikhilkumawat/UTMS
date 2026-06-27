@@ -680,14 +680,39 @@ function openNotify(code) {
   fetch("/api/work-log/order-info?code=" + code).then(r => r.json()).then(d => { notifyD = d; });
 }
 
-function sendWA(lang) {
+async function sendWA(lang) {
   document.getElementById("notify-modal").style.display = "none";
   const d = notifyD;
   if (!d || !d.mobile) { showToast("No mobile number", "warning"); return; }
   const items = (d.items || []).map(i => i.garment_type + " x" + i.required).join(", ");
-  const msg = lang === "hi"
-    ? "*उत्तम टेलर्स*\n\nनमस्ते " + d.customer_name + " जी!\n\nआपके कपड़े तैयार हैं। कृपया लेने आएं।\n\nऑर्डर: *#" + notifyCode + "*\nकपड़े: " + items + (d.remaining > 0 ? "\nबकाया: ₹" + d.remaining : "") + "\n\nधन्यवाद!"
-    : "*Uttam Tailors*\n\nHello " + d.customer_name + "!\n\nYour clothes are ready for pickup.\n\nOrder: *#" + notifyCode + "*\nItems: " + items + (d.remaining > 0 ? "\nAmount Due: ₹" + d.remaining : "") + "\n\nThank you for choosing Uttam Tailors!";
+
+  // Fetch saved template from admin settings
+  let tmpl = "";
+  try {
+    const tr = await fetch("/owner/api/wa-templates");
+    const td = await tr.json();
+    tmpl = (td.ready && td.ready[lang]) || "";
+  } catch(e) {}
+
+  let msg = "";
+  if (tmpl) {
+    msg = tmpl
+      .replace(/{name}/g, d.customer_name)
+      .replace(/{code}/g, notifyCode)
+      .replace(/{items}/g, items)
+      .replace(/{total}/g, d.payable || 0)
+      .replace(/{due}/g, d.remaining || 0)
+      .replace(/{advance}/g, (d.payable - d.remaining) || 0)
+      .replace(/{odate}/g, d.order_date || "")
+      .replace(/{ddate}/g, d.delivery_date || "")
+      .replace(/{mode}/g, lang === "hi" ? "नकद" : "Cash");
+  } else {
+    // Fallback
+    msg = lang === "hi"
+      ? "*उत्तम टेलर्स*\n\nनमस्ते *" + d.customer_name + "*,\nआपका ऑर्डर तैयार है।\n\n- ऑर्डर नंबर: *#" + notifyCode + "*\n- कपड़े: " + items + (d.remaining > 0 ? "\n- बकाया: ₹" + d.remaining : "") + "\n\nधन्यवाद! 🙏🏻\nउत्तम टेलर्स"
+      : "*Uttam Tailors*\n\nHello *" + d.customer_name + "*,\nYour order is ready for pickup.\n\n- Order: *#" + notifyCode + "*\n- Items: " + items + (d.remaining > 0 ? "\n- Due: ₹" + d.remaining : "") + "\n\nThank you! 🙏🏻\nUttam Tailors";
+  }
+
   window.open("https://wa.me/" + d.mobile.replace(/\D/g, "") + "?text=" + encodeURIComponent(msg), "_blank");
   fetch("/api/log-notify",{method:"POST",headers:{"Content-Type":"application/json"},
     body:JSON.stringify({order_code:notifyCode,customer:d.customer_name,mobile:d.mobile,lang:lang})}).catch(()=>{});
