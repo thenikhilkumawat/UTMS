@@ -621,11 +621,19 @@ def dashboard():
             WHERE o.order_date=? AND o.status!='delivered' ORDER BY o.id DESC
         """, (today,)).fetchall()]
 
+    def fmt_12h(ts):
+        if not ts or len(ts) < 16: return "—"
+        try:
+            h, m = int(ts[11:13]), ts[14:16]
+            return f"{h%12 or 12}:{m} {'AM' if h<12 else 'PM'}"
+        except: return "—"
+
     past_orders_list = [{"code":r["order_code"],"name":r["name"],
         "date":_fmtd(r["order_date"]),"payable":int(r["payable_amount"] or 0),
-        "paid":int(r["advance_paid"] or 0),"due":int(r["remaining"] or 0)}
+        "paid":int(r["advance_paid"] or 0),"due":int(r["remaining"] or 0),
+        "time": fmt_12h(r["created_at"])}
         for r in conn.execute("""
-            SELECT o.order_code,c.name,o.order_date,o.payable_amount,o.advance_paid,o.remaining
+            SELECT o.order_code,c.name,o.order_date,o.payable_amount,o.advance_paid,o.remaining,o.created_at
             FROM orders o JOIN customers c ON c.id=o.customer_id
             WHERE o.created_at LIKE ? AND o.status='delivered' AND o.order_date!=? ORDER BY o.id DESC
         """, (today+"%", today)).fetchall()]
