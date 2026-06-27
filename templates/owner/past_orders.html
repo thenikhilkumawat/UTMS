@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Past Orders Entry — Uttam Tailors{% endblock %}
 {% block content %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 <div class="order-code-sticky">
   Past Order &nbsp;<span class="oc-num" id="sticky-code">#<span id="sticky-num">{{ next_code }}</span></span>
@@ -381,7 +380,7 @@
 {% endblock %}
 
 {% block extra_js %}
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 const MEAS_FIELDS   = {{ meas_fields_json | safe }};
 const GARMENT_TYPES = {{ garment_types_json | safe }};
@@ -429,10 +428,6 @@ document.addEventListener("DOMContentLoaded", function() {
   var diary = document.getElementById("p-code-input-diary");
   if (main && diary) {
     main.addEventListener("input", function(){ diary.value = this.value; });
-  }
-});
-  } else {
-    qrBox.innerHTML = '<a href="' + url + '" style="font-size:11px;">' + url + '</a>';
   }
 });
 
