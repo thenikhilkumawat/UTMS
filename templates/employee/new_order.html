@@ -1626,37 +1626,38 @@ function sendWA(lang){
   const mode  = p.payment_mode === "cash" ? (lang==="hi"?"नकद":"Cash") : "UPI";
   const displayCode = ecPermanentCode || currentCode; // Show customer code, not entry code
   let msg = "";
+  const adv = parseFloat(p.advance_paid) || 0;
 
   if (lang === "hi") {
-    msg = "*उत्तम टेलर्स*\n"
-      + "नमस्ते *" + p.customer_name + "* जी,\n"
+    msg = "*उत्तम टेलर्स*\n\n"
+      + "नमस्ते *" + p.customer_name + "*,\n\n"
       + "आपका ऑर्डर सफलतापूर्वक दर्ज हो गया है।\n"
       + "------------------------------------------\n\n"
-      + "• ऑर्डर नंबर: *#" + displayCode + "*\n\n"
-      + "• ऑर्डर तारीख: " + oFmt + "\n\n"
-      + "• डिलीवरी तारीख: *" + dFmt + "*\n\n"
-      + "• कपड़े: " + items + "\n\n"
-      + "• कुल राशि: *₹" + p.payable_amount + "*\n\n"
-      + "• अग्रिम भुगतान: ₹" + p.advance_paid + "\n\n"
-      + "• बकाया राशि: *₹" + p.remaining + "*\n\n"
-      + "• भुगतान माध्यम: " + mode + "\n"
-      + "-----------------------------------------------\n"
-      + "आपका विश्वास ही हमारी सबसे बड़ी पूंजी है। 🙏\n"
+      + "- ऑर्डर नंबर: *#" + displayCode + "*\n"
+      + "- ऑर्डर तारीख: " + oFmt + "\n"
+      + "- डिलीवरी तारीख: *" + dFmt + "*\n\n"
+      + "- कपड़े: " + items + "\n\n"
+      + "- कुल राशि: *₹" + p.payable_amount + "*\n"
+      + (adv > 0 ? "- अग्रिम भुगतान: ₹" + p.advance_paid + "\n" : "")
+      + "- बकाया राशि: *₹" + p.remaining + "*\n"
+      + (adv > 0 ? "- भुगतान माध्यम: " + mode + "\n" : "")
+      + "\n-----------------------------------------------\n"
+      + "आपके विश्वास के लिए धन्यवाद। 🙏🏻\n"
       + "उत्तम टेलर्स";
   } else {
-    msg = "*Uttam Tailors*\n"
+    msg = "*Uttam Tailors*\n\n"
       + "Hello *" + p.customer_name + "*,\n"
       + "Your order has been confirmed successfully.\n"
       + "------------------------------------------\n\n"
-      + "• Order No: *#" + displayCode + "*\n\n"
-      + "• Order Date: " + oFmt + "\n\n"
-      + "• Delivery Date: *" + dFmt + "*\n\n"
-      + "• Garments: " + items + "\n\n"
-      + "• Total Amount: *₹" + p.payable_amount + "*\n\n"
-      + "• Advance Paid: ₹" + p.advance_paid + "\n\n"
-      + "• Balance Due: *₹" + p.remaining + "*\n\n"
-      + "• Payment Mode: " + mode + "\n"
-      + "-----------------------------------------------\n"
+      + "- Order No: *#" + displayCode + "*\n"
+      + "- Order Date: " + oFmt + "\n"
+      + "- Delivery Date: *" + dFmt + "*\n\n"
+      + "- Garments: " + items + "\n\n"
+      + "- Total Amount: *₹" + p.payable_amount + "*\n"
+      + (adv > 0 ? "- Advance Paid: ₹" + p.advance_paid + "\n" : "")
+      + "- Balance Due: *₹" + p.remaining + "*\n"
+      + (adv > 0 ? "- Payment Mode: " + mode + "\n" : "")
+      + "\n-----------------------------------------------\n"
       + "Thank you for your trust. 🙏🏻\n"
       + "Uttam Tailors";
   }
