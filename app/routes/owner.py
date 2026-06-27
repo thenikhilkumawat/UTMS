@@ -2058,24 +2058,31 @@ def whatsapp():
         "SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status!='delivered'"
     ).fetchone()["c"]
     shop_name = get_setting("shop_name","Uttam Tailors")
-    conn.close()
 
-    # Template definitions (names only for Jinja, messages in JS)
-    # Load saved custom order confirmation message templates from settings
-    order_confirm_tpl_en = get_setting("wa_order_confirm_en",
-        "*{shop}* - Order Confirmed\n\nHello {name}!\n\n---\nOrder No: *#{code}*\nCustomer: {name}\nMobile: {mobile}\nOrder Date: {order_date}\nDelivery Date: *{delivery_date}*\n\nGarments: {items}\n---\nTotal: Rs. {total}\nAdvance Paid: Rs. {advance}\nRemaining Due: Rs. {remaining}\nMode: {mode}\n\nThank you for choosing {shop}!")
-    order_confirm_tpl_hi = get_setting("wa_order_confirm_hi",
-        "*{shop}* - ऑर्डर पक्का हो गया\n\nनमस्ते {name} जी!\n\n---\nऑर्डर नंबर: *#{code}*\nग्राहक: {name}\nमोबाइल: {mobile}\nऑर्डर दिनांक: {order_date}\nडिलीवरी दिनांक: *{delivery_date}*\n\nकपड़े: {items}\n---\nकुल राशि: Rs. {total}\nअग्रिम: Rs. {advance}\nबकाया: Rs. {remaining}\nभुगतान: {mode}\n\n{shop} में आने का धन्यवाद!")
+    # Default templates (user's exact format)
+    _D_CONFIRM_HI = "*उत्तम टेलर्स*\n\nनमस्ते *{name}*,\n\nआपका ऑर्डर सफलतापूर्वक दर्ज हो गया है।\n------------------------------------------\n\n- ऑर्डर नंबर: *#{code}*\n- ऑर्डर तारीख: {odate}\n- डिलीवरी तारीख: *{ddate}*\n\n- कपड़े: {items}\n\n- कुल राशि: *₹{total}*\n- अग्रिम भुगतान: ₹{advance}\n- बकाया राशि: *₹{due}*\n- भुगतान माध्यम: {mode}\n\n-----------------------------------------------\nआपके विश्वास के लिए धन्यवाद। 🙏🏻\nउत्तम टेलर्स"
+    _D_CONFIRM_EN = "*Uttam Tailors*\n\nHello *{name}*,\nYour order has been confirmed successfully.\n------------------------------------------\n\n- Order No: *#{code}*\n- Order Date: {odate}\n- Delivery Date: *{ddate}*\n\n- Garments: {items}\n\n- Total Amount: *₹{total}*\n- Advance Paid: ₹{advance}\n- Balance Due: *₹{due}*\n- Payment Mode: {mode}\n\n-----------------------------------------------\nThank you for your trust. 🙏🏻\nUttam Tailors"
+    _D_READY_HI   = "*उत्तम टेलर्स*\n\nनमस्ते *{name}*,\nआपका ऑर्डर तैयार है। कृपया अपनी सुविधानुसार आकर अपने कपड़े प्राप्त कर लें।\n------------------------------------------\n\n- ऑर्डर नंबर: *#{code}*\n- कपड़े: {items}\n- कुल राशि: *₹{total}*\n- बकाया राशि: *₹{due}*\n\n-----------------------------------------------\nआपके विश्वास के लिए धन्यवाद। 🙏🏻\nउत्तम टेलर्स"
+    _D_READY_EN   = "*Uttam Tailors*\n\nHello *{name}*,\nYour order is ready. Please collect your clothes at your convenience. Thank you!\n------------------------------------------\n\n- Order No: *#{code}*\n- Garments: {items}\n- Total: *₹{total}*\n- Balance Due: *₹{due}*\n\n-----------------------------------------------\nThank you for your trust. 🙏🏻\nUttam Tailors"
+    _D_DELIV_HI   = "*उत्तम टेलर्स*\n\nनमस्ते *{name}*,\nआपके कपड़े सफलतापूर्वक डिलीवर कर दिए गए हैं।\n------------------------------------------\n\n- ऑर्डर नंबर: *#{code}*\n- ऑर्डर तारीख: {odate}\n- डिलीवरी तारीख: {ddate}\n\n- कपड़े: {items}\n\n- कुल भुगतान: *₹{total}*\n- भुगतान माध्यम: {mode}\n\n-----------------------------------------------\nआपके विश्वास के लिए धन्यवाद। 🙏🏻\nआगे भी सेवा का अवसर दें, यही हमारी शुभकामना है।\n\nधन्यवाद!\nउत्तम टेलर्स"
+    _D_DELIV_EN   = "*Uttam Tailors*\n\nHello *{name}*,\nYour garments have been delivered successfully.\n------------------------------------------\n\n- Order No: *#{code}*\n- Order Date: {odate}\n- Delivery Date: {ddate}\n\n- Garments: {items}\n\n- Total Paid: *₹{total}*\n- Payment Mode: {mode}\n\n-----------------------------------------------\nThank you for your trust. 🙏🏻\nWe look forward to serving you again.\n\nThank you!\nUttam Tailors"
+
+    wa_templates = {
+        "confirm":   {"hi": get_setting("wa_order_confirm_hi",   _D_CONFIRM_HI),
+                      "en": get_setting("wa_order_confirm_en",   _D_CONFIRM_EN)},
+        "ready":     {"hi": get_setting("wa_order_ready_hi",     _D_READY_HI),
+                      "en": get_setting("wa_order_ready_en",     _D_READY_EN)},
+        "delivered": {"hi": get_setting("wa_order_delivered_hi", _D_DELIV_HI),
+                      "en": get_setting("wa_order_delivered_en", _D_DELIV_EN)},
+    }
+
+    conn.close()
 
     templates = [
         {"name":"Order Ready",      "icon":"🟢"},
         {"name":"Payment Due",      "icon":"💰"},
         {"name":"Festival Wishes",  "icon":"🎉"},
-        {"name":"Eid Mubarak",      "icon":"🌙"},
-        {"name":"New Collection",   "icon":"✨"},
-        {"name":"Shop Closed",      "icon":"🚪"},
         {"name":"General Reminder", "icon":"📢"},
-        {"name":"Diwali Wishes",    "icon":"🪔"},
     ]
 
     return render_template("owner/whatsapp.html",
@@ -2086,8 +2093,7 @@ def whatsapp():
         shop_name=shop_name,
         templates=templates,
         broadcast_log=broadcast_log,
-        order_confirm_tpl_en=order_confirm_tpl_en,
-        order_confirm_tpl_hi=order_confirm_tpl_hi,
+        wa_templates=wa_templates,
     )
 
 
@@ -2663,11 +2669,15 @@ def cancel_order(order_code):
 @owner_required
 def save_wa_template():
     data = request.get_json(silent=True) or {}
-    from database import set_setting
-    if "en" in data:
-        set_setting("wa_order_confirm_en", data["en"])
-    if "hi" in data:
-        set_setting("wa_order_confirm_hi", data["hi"])
+    tmpl = data.get("template", "confirm")
+    key_map = {
+        "confirm":   ("wa_order_confirm_en",   "wa_order_confirm_hi"),
+        "ready":     ("wa_order_ready_en",     "wa_order_ready_hi"),
+        "delivered": ("wa_order_delivered_en", "wa_order_delivered_hi"),
+    }
+    keys = key_map.get(tmpl, key_map["confirm"])
+    if "en" in data: set_setting(keys[0], data["en"])
+    if "hi" in data: set_setting(keys[1], data["hi"])
     return jsonify({"ok": True})
 
 
