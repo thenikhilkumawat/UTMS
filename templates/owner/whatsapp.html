@@ -75,10 +75,10 @@
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
               {% for tpl in templates %}
-              <button onclick="loadTemplate('{{ loop.index0 }}')"
-                style="padding:9px 10px;border:1.5px solid var(--border);border-radius:10px;background:#fff;cursor:pointer;font-size:12px;font-weight:700;text-align:left;display:flex;align-items:center;gap:6px;transition:all 0.15s;"
+              <button onclick="loadTemplate('{{ loop.index0 }}','{{ tpl.key }}')"
+                style="padding:9px 10px;border:1.5px solid {% if tpl.key %}#d1fae5{% else %}var(--border){% endif %};border-radius:10px;background:{% if tpl.key %}#f0fdf4{% else %}#fff{% endif %};cursor:pointer;font-size:12px;font-weight:700;text-align:left;display:flex;align-items:center;gap:6px;transition:all 0.15s;"
                 onmouseover="this.style.borderColor='var(--accent)';this.style.background='var(--accent-light)'"
-                onmouseout="this.style.borderColor='var(--border)';this.style.background='#fff'">
+                onmouseout="this.style.borderColor='{% if tpl.key %}#d1fae5{% else %}var(--border){% endif %}';this.style.background='{% if tpl.key %}#f0fdf4{% else %}#fff{% endif %}'">
                 <span style="font-size:16px;">{{ tpl.icon }}</span>
                 <span>{{ tpl.name }}</span>
               </button>
@@ -265,7 +265,7 @@
 <script>
 const SHOP_NAME = "{{ shop_name }}";
 const CUSTOMERS = {{ customers_json | safe }};
-
+const WA_TEMPLATES = {{ wa_templates_json | safe }};
 // ── TEMPLATES ──────────────────────────────
 const TEMPLATES = [
   {
@@ -336,10 +336,16 @@ function setMsgLang(lang) {
   else updatePreview();
 }
 
-function loadTemplate(idx) {
+function loadTemplate(idx, orderKey) {
   currentTemplateIdx = idx;
-  const tpl = TEMPLATES[idx];
-  const msg = tpl[msgLang] || tpl["en"];
+  var msg = "";
+  if (orderKey && WA_TEMPLATES[orderKey]) {
+    // Order template — load from saved WA_TEMPLATES
+    msg = WA_TEMPLATES[orderKey][msgLang === "en" ? "en" : "hi"] || WA_TEMPLATES[orderKey]["en"];
+  } else {
+    const tpl = TEMPLATES[idx];
+    msg = tpl[msgLang] || tpl["en"];
+  }
   document.getElementById("msg-text").value = msg;
   // Show festival field if template uses {festival}
   const needsFestival = msg.includes("{festival}");
