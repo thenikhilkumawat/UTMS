@@ -1,382 +1,300 @@
 {% extends "base.html" %}
 {% block title %}Past Orders Entry — Uttam Tailors{% endblock %}
+
 {% block content %}
-
-<div class="order-code-sticky">
-  Past Order &nbsp;<span class="oc-num" id="sticky-code">#<span id="sticky-num">{{ next_code }}</span></span>
-</div>
-
-<div class="page-header">
-  <div>
-    <h1>📝 Past Orders Entry</h1>
-    <div class="header-sub">Enter your old delivered orders — same flow as new order</div>
-  </div>
-  <div style="display:flex;gap:8px;align-items:center;">
-    <a href="/owner/backup/excel" class="btn btn-sm" style="background:#fbbf24;color:#1f2937;font-weight:800;">💾 Backup</a>
-    <a href="/owner/orders" class="btn btn-ghost btn-sm">All Orders</a>
-    <button class="menu-toggle" onclick="openSidebar()">☰</button>
-  </div>
-</div>
-
-<div class="page-body" style="padding:16px 20px;min-height:unset;">
-
-  <!-- TWO-SECTION LAYOUT -->
-  <div style="display:grid;grid-template-columns:240px 1fr;gap:16px;align-items:start;height:fit-content;">
-
-    <!-- ─── SECTION 1: DIARY (QR + Code) ─── -->
-    <div style="background:#1e293b;border-radius:16px;padding:16px;position:sticky;top:16px;">
-      <div style="font-size:12px;font-weight:900;color:#f8fafc;margin-bottom:2px;">📖 Diary Upload</div>
-      <div style="font-size:10px;color:#64748b;margin-bottom:12px;">Mobile se diary photo lo</div>
-
-      <!-- QR Code -->
-      <div style="background:#fff;border-radius:10px;padding:8px;margin-bottom:10px;text-align:center;display:flex;align-items:center;justify-content:center;">
-        <div id="past-upload-qr"></div>
-      </div>
-
-      <div style="font-size:10px;color:#64748b;text-align:center;margin-bottom:10px;line-height:1.7;">
-        QR scan → Code daalo<br>Photo → Done!
-      </div>
-
-      <a id="past-upload-link" href="/owner/past-upload" target="_blank"
-        style="display:block;text-align:center;padding:8px;background:linear-gradient(135deg,#6366f1,#4f46e5);
-               color:#fff;border-radius:8px;text-decoration:none;font-size:11px;font-weight:800;margin-bottom:12px;">
-        🔗 Mobile Link Kholo
-      </a>
-
-      <div style="border-top:1px solid #334155;padding-top:12px;">
-        <div style="font-size:9px;font-weight:700;color:#64748b;text-align:center;margin-bottom:6px;letter-spacing:1px;">PEHLE CODE DAALO</div>
-        <input id="p-code-input-diary" type="text" inputmode="numeric" placeholder="2450"
-          oninput="syncDiaryCode(this.value)"
-          style="width:100%;padding:8px;font-size:22px;font-weight:900;border:2px solid #334155;border-radius:8px;
-                 text-align:center;letter-spacing:3px;background:#0f172a;color:#f8fafc;outline:none;box-sizing:border-box;">
-        <div style="font-size:9px;color:#475569;text-align:center;margin-top:5px;">QR link mein auto-fill hoga</div>
-      </div>
+<div class="sticky-header" style="background:linear-gradient(135deg,#4f46e5,#6d28d9);">
+  <div style="padding:10px 20px;display:flex;align-items:center;justify-content:space-between;">
+    <span style="color:#fff;font-weight:900;font-size:14px;">
+      📝 Past Order &nbsp;<span class="oc-num">#<span id="sticky-num">{{ next_code }}</span></span>
+    </span>
+    <div style="display:flex;gap:8px;">
+      <a href="/owner/orders" class="btn btn-ghost btn-sm" style="color:#c4b5fd;border-color:#6d28d9;">All Orders</a>
+      <button class="menu-toggle" onclick="openSidebar()" style="color:#fff;">☰</button>
     </div>
+  </div>
+</div>
 
-    <!-- ─── SECTION 2: PAST ORDER FORM ─── -->
-    <div>
+<div style="padding:16px 20px;max-width:900px;margin:0 auto;">
 
-  <!-- WIZARD BAR -->
-  <div class="wizard-steps" id="wizard-past" style="margin-bottom:20px;display:flex;">
-    <div class="wizard-step active" id="pw1"><span class="step-num">1</span><span>Order Code</span></div>
-    <div class="wizard-step" id="pw2"><span class="step-num">2</span><span>Customer</span></div>
-    <div class="wizard-step" id="pw3"><span class="step-num">3</span><span>Garments</span></div>
-    <div class="wizard-step" id="pw4"><span class="step-num">4</span><span>Images</span></div>
-    <div class="wizard-step" id="pw5"><span class="step-num">5</span><span>Payment</span></div>
+  <!-- ── TAB SWITCHER ───────────────────────── -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;background:#f1f5f9;border-radius:14px;padding:4px;margin-bottom:20px;">
+    <button id="tab-diary-btn" onclick="switchTab('diary')"
+      style="padding:12px;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;
+             background:linear-gradient(135deg,#1e293b,#334155);color:#fff;transition:all 0.2s;">
+      📖 Diary / QR Upload
+      <div style="font-size:10px;font-weight:600;opacity:0.75;margin-top:2px;">Sirf photo save karo</div>
+    </button>
+    <button id="tab-manual-btn" onclick="switchTab('manual')"
+      style="padding:12px;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;
+             background:transparent;color:#64748b;transition:all 0.2s;">
+      ✏️ Manual Entry
+      <div style="font-size:10px;font-weight:600;opacity:0.75;margin-top:2px;">Poora order fill karo</div>
+    </button>
   </div>
 
-  <!-- STEP 1: Order Code + Dates -->
-  <div id="step-p1">
-    <div class="card mb-16">
-      <div class="card-header" style="background:linear-gradient(135deg,#fef3c7,#fde68a);">
+  <!-- ══════════════════════════════════════════
+       FLOW 1: DIARY / QR UPLOAD
+  ══════════════════════════════════════════ -->
+  <div id="tab-diary">
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+
+      <!-- Left: QR Code -->
+      <div style="background:#1e293b;border-radius:16px;padding:20px;text-align:center;">
+        <div style="font-size:13px;font-weight:800;color:#f8fafc;margin-bottom:4px;">📱 Mobile Se Photo Lo</div>
+        <div style="font-size:11px;color:#64748b;margin-bottom:14px;">QR scan karo → code daalo → photo lo → done!</div>
+        <div style="background:#fff;border-radius:12px;padding:10px;display:inline-block;margin-bottom:12px;">
+          <div id="diary-qr-box"></div>
+        </div>
         <div>
+          <a id="diary-mobile-link" href="/owner/past-upload" target="_blank"
+            style="display:inline-block;padding:8px 20px;background:#6366f1;color:#fff;border-radius:8px;
+                   text-decoration:none;font-size:12px;font-weight:800;">🔗 Link Kholo</a>
+        </div>
+      </div>
+
+      <!-- Right: Code + Photo upload -->
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div>
+          <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:#64748b;display:block;margin-bottom:6px;">
+            Order / Diary Code *
+          </label>
+          <input type="text" id="diary-code-input" inputmode="numeric" placeholder="e.g. 2450"
+            style="width:100%;padding:14px;font-size:28px;font-weight:900;border:2px solid #e5e7eb;border-radius:12px;
+                   text-align:center;letter-spacing:4px;outline:none;box-sizing:border-box;"
+            onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#e5e7eb'">
+          <div style="font-size:11px;color:#9ca3af;text-align:center;margin-top:4px;">Diary se number copy karo</div>
+        </div>
+
+        <div>
+          <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:#64748b;display:block;margin-bottom:6px;">
+            📷 Diary Page Photo (optional)
+          </label>
+          <div id="diary-drop-zone"
+            onclick="document.getElementById('diary-file-input').click()"
+            ondragover="event.preventDefault();this.style.borderColor='#6366f1'"
+            ondragleave="this.style.borderColor='#d1d5db'"
+            ondrop="event.preventDefault();handleDiaryFileDrop(event)"
+            style="border:2px dashed #d1d5db;border-radius:12px;padding:24px;text-align:center;
+                   cursor:pointer;transition:border-color 0.2s;background:#fafafa;">
+            <div id="diary-drop-preview" style="display:none;position:relative;">
+              <img id="diary-thumb" style="width:100%;max-height:160px;object-fit:contain;border-radius:8px;" alt="">
+              <button onclick="event.stopPropagation();clearDiaryFile()"
+                style="position:absolute;top:-8px;right:-8px;width:24px;height:24px;border-radius:50%;
+                       background:#dc2626;color:#fff;border:none;cursor:pointer;font-size:14px;">✕</button>
+            </div>
+            <div id="diary-drop-empty">
+              <div style="font-size:28px;margin-bottom:6px;">📄</div>
+              <div style="font-size:13px;font-weight:700;color:#374151;">File select karo</div>
+              <div style="font-size:11px;color:#9ca3af;">JPG, PNG — max 5MB</div>
+            </div>
+          </div>
+          <input type="file" id="diary-file-input" accept="image/*" style="display:none"
+            onchange="handleDiaryFileSelect(this.files[0])">
+        </div>
+
+        <div id="diary-save-msg" style="display:none;padding:10px;border-radius:8px;font-size:13px;font-weight:700;text-align:center;"></div>
+
+        <button onclick="saveDiaryEntry()"
+          style="width:100%;padding:14px;background:linear-gradient(135deg,#059669,#047857);
+                 color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;">
+          💾 Save Diary Entry
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       FLOW 2: MANUAL ENTRY
+  ══════════════════════════════════════════ -->
+  <div id="tab-manual" style="display:none;">
+
+    <!-- WIZARD BAR -->
+    <div class="wizard-steps" id="wizard-past" style="margin-bottom:20px;display:flex;">
+      <div class="wizard-step active" id="pw1"><span class="step-num">1</span><span>Order Code</span></div>
+      <div class="wizard-step" id="pw2"><span class="step-num">2</span><span>Customer</span></div>
+      <div class="wizard-step" id="pw3"><span class="step-num">3</span><span>Garments</span></div>
+      <div class="wizard-step" id="pw4"><span class="step-num">4</span><span>Images</span></div>
+      <div class="wizard-step" id="pw5"><span class="step-num">5</span><span>Payment</span></div>
+    </div>
+
+    <!-- STEP 1 -->
+    <div id="step-p1">
+      <div class="card mb-16">
+        <div class="card-header" style="background:linear-gradient(135deg,#fef3c7,#fde68a);">
           <div class="card-title" style="color:#92400e;">🔢 Purana Order Number Daalo</div>
-          <div style="font-size:12px;color:#b45309;margin-top:2px;">Apna purana order number daalo — yahi number UTMS mein save hoga</div>
         </div>
-      </div>
-      <div class="card-body">
-        <div style="display:flex;flex-direction:column;align-items:center;gap:24px;padding:10px 0;">
-
-          <div style="width:100%;max-width:420px;">
-            <label style="font-size:13px;font-weight:700;color:#92400e;display:block;margin-bottom:8px;">
-              Past Order Code <span style="color:#dc2626;">*</span>
+        <div class="card-body" style="padding:28px;">
+          <div style="max-width:400px;margin:0 auto;">
+            <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:#6b7280;display:block;margin-bottom:8px;">
+              Past Order Code *
             </label>
-            <input id="p-code-input" type="text" inputmode="numeric"
-              placeholder="e.g. 2450"
+            <input id="p-code-input" type="text" inputmode="numeric" placeholder="e.g. 2450"
               oninput="updateCodeDisplay(this.value)"
-              style="width:100%;padding:16px 18px;font-size:32px;font-weight:900;border:2px solid #fde68a;border-radius:14px;text-align:center;letter-spacing:4px;background:#fffbeb;outline:none;box-sizing:border-box;"
+              style="width:100%;padding:16px;font-size:32px;font-weight:900;border:2px solid #fde68a;
+                     border-radius:14px;text-align:center;letter-spacing:4px;background:#fffbeb;
+                     outline:none;box-sizing:border-box;"
               onfocus="this.style.borderColor='#f59e0b'" onblur="this.style.borderColor='#fde68a'">
-            <div style="font-size:12px;color:var(--text-muted);margin-top:6px;text-align:center;">Pehle wali diary ya register se number copy karo</div>
-            <div id="code-clash-msg" style="display:none;margin-top:8px;padding:10px 14px;background:#fee2e2;border-radius:8px;font-size:13px;font-weight:700;color:#dc2626;">
-              ⚠️ Order #<span id="clash-code-val"></span> already exists. Please use a different number.
+            <div style="font-size:12px;color:#6b7280;margin-top:6px;text-align:center;">Pehle wali diary ya register se number copy karo</div>
+            <div id="code-clash-msg" style="display:none;margin-top:10px;padding:10px;background:#fee2e2;border-radius:8px;font-size:13px;font-weight:700;color:#dc2626;">
+              ⚠️ Order #<span id="clash-code-val"></span> already exists.
             </div>
           </div>
-
-          <div style="width:100%;max-width:420px;">
-            <div style="font-size:13px;font-weight:700;color:#6b7280;margin-bottom:8px;">📷 Diary Page Photo <span style="font-size:11px;font-weight:500;">(optional — baad mein bhi add ho sakti hai)</span></div>
-
-            <div id="diary-img-zone"
-              onclick="document.getElementById('diary-img-input').click()"
-              style="border:2px dashed #e5e7eb;border-radius:10px;padding:10px 16px;text-align:center;cursor:pointer;background:#f9fafb;transition:all 0.2s;display:flex;align-items:center;gap:10px;"
-              onmouseover="this.style.borderColor='#6366f1';this.style.background='#eef2ff'"
-              onmouseout="this.style.borderColor='#e5e7eb';this.style.background='#f9fafb'">
-              <span style="font-size:20px;">📖</span>
-              <div style="text-align:left;">
-                <div style="font-size:13px;font-weight:700;color:#374151;">File select karo</div>
-                <div style="font-size:11px;color:#9ca3af;">JPG, PNG — max 5MB</div>
-              </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px;max-width:400px;margin-left:auto;margin-right:auto;">
+            <div>
+              <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:#6b7280;display:block;margin-bottom:5px;">Order Date</label>
+              <input type="date" id="p-odate" class="form-input">
             </div>
-            <input type="file" id="diary-img-input" accept="image/*" style="display:none"
-              onchange="handleDiaryImage(this.files[0])">
-            <div id="diary-img-preview" style="display:none;margin-top:10px;position:relative;">
-              <img id="diary-img-thumb" style="width:100%;border-radius:10px;border:2px solid #e5e7eb;max-height:250px;object-fit:contain;">
-              <button onclick="clearDiaryImage()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.6);color:#fff;border:none;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">✕ Hatao</button>
-              <div style="margin-top:6px;font-size:12px;color:#16a34a;font-weight:700;text-align:center;">✅ Image ready — order save hone par automatically link ho jayegi</div>
+            <div>
+              <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:#6b7280;display:block;margin-bottom:5px;">Delivery Date</label>
+              <input type="date" id="p-ddate" class="form-input">
             </div>
           </div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;">
+        <button class="btn btn-primary" onclick="validateStep1()">Next: Customer →</button>
+      </div>
+    </div>
 
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;width:100%;max-width:420px;">
+    <!-- STEP 2: Customer -->
+    <div id="step-p2" style="display:none;">
+      <div class="card mb-16">
+        <div class="card-header"><span class="card-title">👤 Customer Details</span></div>
+        <div class="card-body">
+          <div class="form-grid">
             <div class="field-wrap">
-              <label>Order Date</label>
-              <input type="date" id="p-odate">
+              <label>Customer Name <span style="color:var(--danger);">*</span></label>
+              <input type="text" id="p-name" placeholder="Customer ka naam" autofocus data-autocorrect-name autocomplete="off">
             </div>
             <div class="field-wrap">
-              <label>Delivery Date</label>
-              <input type="date" id="p-ddate">
+              <label>Mobile Number</label>
+              <input type="tel" id="p-mobile" inputmode="numeric" maxlength="10"
+                oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)">
             </div>
-          </div>
-
-        </div>
-      </div>
-    </div>
-    <div style="display:flex;justify-content:flex-end;">
-      <button class="btn btn-primary" onclick="validateStep1()">Next: Customer →</button>
-    </div>
-  </div>
-
-  <!-- STEP 2: Customer -->
-  <div id="step-p2" style="display:none;">
-    <div class="card mb-16">
-      <div class="card-header"><span class="card-title">👤 Customer Details</span></div>
-      <div class="card-body">
-        <div class="form-grid">
-          <div class="field-wrap">
-            <label>Customer Name <span style="color:var(--danger);">*</span></label>
-            <input type="text" id="p-name" placeholder="Customer ka naam" autofocus data-autocorrect-name autocomplete="off">
-          </div>
-          <div class="field-wrap">
-            <label>Mobile Number</label>
-            <input type="tel" id="p-mobile" inputmode="numeric" maxlength="10"
-              oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)">
-          </div>
-          <div class="field-wrap full">
-            <label>Address</label>
-            <input type="text" id="p-address">
-          </div>
-          <div class="field-wrap full">
-            <label>Special Note</label>
-            <input type="text" id="p-note" placeholder="Any note...">
-          </div>
-        </div>
-      </div>
-    </div>
-    <div style="display:flex;justify-content:space-between;">
-      <button class="btn btn-ghost" onclick="goStep(1)">← Order Code</button>
-      <button class="btn btn-primary" onclick="validateStep2()">Next: Garments →</button>
-    </div>
-  </div>
-
-  <!-- STEP 3: Garments + Measurements -->
-  <div id="step-p3" style="display:none;">
-    <div class="card mb-16">
-      <div class="card-header">
-        <span class="card-title">✂️ Garments & Measurements</span>
-        <span id="p-garment-count-label" style="font-size:12px;color:var(--accent);font-weight:700;"></span>
-      </div>
-      <div class="card-body">
-        <div style="display:grid;grid-template-columns:1fr 110px auto;gap:10px;align-items:end;background:#f9fafb;padding:16px;border-radius:10px;margin-bottom:12px;">
-          <div class="field-wrap">
-            <label>Garment Type</label>
-            <select id="p-g-type">
-              <option value="">-- Select --</option>
-              {% for name in garment_rates.keys() %}
-              <option value="{{ name }}">{{ name }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="field-wrap">
-            <label>Qty</label>
-            <input type="number" id="p-g-qty" value="1" min="1" style="text-align:center;">
-          </div>
-          <button class="btn btn-primary" onclick="addPastGarment()" style="height:46px;margin-top:2px;padding:0 22px;">+ Add</button>
-        </div>
-        <div id="past-garments-list"></div>
-        <div id="past-garment-count-row" style="display:none;margin-top:10px;padding:10px 14px;background:#f0f9ff;border-radius:8px;font-size:13px;font-weight:600;color:var(--accent);">
-          <span id="p-g-count-text"></span>
-        </div>
-        <button id="pg-continue-btn" onclick="switchPastGarmentPhase('measure')"
-          style="display:none;width:100%;margin-top:14px;padding:14px;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;">
-          ✅ Sab kapde add ho gaye — Ab Measurement bharo →
-        </button>
-      </div>
-    </div>
-    <div style="display:flex;justify-content:space-between;">
-      <button class="btn btn-ghost" onclick="goStep(2)">← Customer</button>
-      <button class="btn btn-primary" onclick="validateStep3()">Next: Payment →</button>
-    </div>
-  </div>
-
-  <!-- STEP 4: Images -->
-  <div id="step-p4" style="display:none;">
-    <div class="card mb-16">
-      <div class="card-header">
-        <span class="card-title">📷 Cloth Images</span>
-        <span style="font-size:12px;color:var(--text-muted);">Optional — upload old photos</span>
-      </div>
-      <div class="card-body">
-        <div style="display:grid;grid-template-columns:220px 1fr;gap:28px;align-items:start;">
-          <div style="text-align:center;">
-            <div style="border:1.5px solid var(--border);border-radius:12px;padding:14px;background:#fff;display:inline-block;">
-              <div id="past-qr-box"></div>
+            <div class="field-wrap full">
+              <label>Address</label>
+              <input type="text" id="p-address" data-autocorrect-address autocomplete="off">
             </div>
-            <div style="font-size:12px;color:var(--text-muted);margin-top:8px;font-weight:600;">Scan to upload from phone</div>
-            <button onclick="openPastUploadPopup()" class="btn btn-ghost btn-sm" style="margin-top:8px;width:100%;">📷 Open Upload Page</button>
-          </div>
-          <div>
-            <div style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;">Photos appear automatically. Up to 5 images per order.</div>
-            <div id="past-img-preview" style="display:flex;flex-wrap:wrap;gap:10px;min-height:80px;align-items:flex-start;">
-              <div style="color:var(--text-muted);font-size:13px;padding:24px 0;">No images yet</div>
+            <div class="field-wrap full">
+              <label>Special Note</label>
+              <input type="text" id="p-note" placeholder="Any note...">
             </div>
           </div>
         </div>
       </div>
-    </div>
-    <div style="display:flex;justify-content:space-between;">
-      <button class="btn btn-ghost" onclick="goStep(3)">← Garments</button>
-      <button class="btn btn-primary" onclick="goStep(5);injectPastPayment();pastRecalcPayment();">Next: Payment →</button>
-    </div>
-  </div>
-
-  <!-- STEP 5: Payment -->
-  <div id="step-p5" style="display:none;">
-    <div id="past-payment-inner"></div>
-    <!-- Delivered checkbox -->
-    <div style="margin-top:16px;padding:14px 18px;background:#f0fdf4;border:2px solid #bbf7d0;border-radius:14px;">
-      <div style="display:flex;align-items:center;gap:12px;">
-        <input type="checkbox" id="p-is-delivered" checked
-          style="width:22px;height:22px;accent-color:#16a34a;cursor:pointer;">
-        <label for="p-is-delivered" style="font-size:15px;font-weight:800;cursor:pointer;color:#065f46;">
-          ✅ यह ऑर्डर डिलीवर हो चुका है / This order is already delivered
-        </label>
-      </div>
-      <div style="font-size:12px;color:#047857;margin-top:6px;padding-left:34px;">
-        Uncheck if this order is still pending — it will appear in pickup & delivery page
+      <div style="display:flex;justify-content:space-between;">
+        <button class="btn btn-ghost" onclick="goStep(1)">← Order Code</button>
+        <button class="btn btn-primary" onclick="validateStep2()">Next: Garments →</button>
       </div>
     </div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;">
-      <button class="btn btn-ghost" onclick="goStep(4)">← Images</button>
-      <button class="btn btn-success btn-lg" id="p-confirm-btn" onclick="confirmPastOrder()">✅ Save Past Order</button>
-    </div>
-  </div>
 
-  <!-- SUCCESS SCREEN -->
-  <div id="step-p-success" style="display:none;">
-    <style>@keyframes poPop{0%{transform:scale(0.9);opacity:0}100%{transform:scale(1);opacity:1}}#step-p-success{animation:poPop 0.35s ease both}</style>
-    <div style="background:linear-gradient(160deg,#1e1b4b,#312e81);border-radius:24px;padding:28px 24px 0;box-shadow:0 12px 40px rgba(21,128,61,0.4);overflow:hidden;">
-      <div style="text-align:center;color:#fff;padding-bottom:20px;">
-        <div style="font-size:44px;margin-bottom:6px;">✅</div>
-        <div style="font-size:11px;font-weight:800;letter-spacing:3px;opacity:0.65;text-transform:uppercase;margin-bottom:4px;">ORDER SAVED</div>
-        <div style="font-size:52px;font-weight:900;letter-spacing:2px;line-height:1;">#<span id="p-sc-code"></span></div>
+    <!-- STEP 3: Garments -->
+    <div id="step-p3" style="display:none;">
+      <div class="card mb-16">
+        <div class="card-header">
+          <span class="card-title">✂️ Garments & Measurements</span>
+          <span id="p-garment-count-label" style="font-size:12px;color:var(--accent);font-weight:700;"></span>
+        </div>
+        <div class="card-body">
+          <div id="p-garments-container"></div>
+          <button onclick="addPastGarmentChip()" class="btn btn-ghost btn-sm" style="margin-top:8px;">+ Add Garment</button>
+        </div>
       </div>
-      <div style="display:flex;justify-content:space-around;color:#fff;padding:14px 0;border-top:1px solid rgba(255,255,255,0.15);border-bottom:1px solid rgba(255,255,255,0.15);">
-        <div style="text-align:center;"><div style="font-size:9px;font-weight:800;letter-spacing:1.5px;opacity:0.6;text-transform:uppercase;margin-bottom:4px;">Customer</div><div id="p-sc-name" style="font-size:14px;font-weight:900;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div></div>
-        <div style="width:1px;background:rgba(255,255,255,0.2);"></div>
-        <div style="text-align:center;"><div style="font-size:9px;font-weight:800;letter-spacing:1.5px;opacity:0.6;text-transform:uppercase;margin-bottom:4px;">Mobile</div><div id="p-sc-mobile" style="font-size:13px;font-weight:800;color:#e0e7ff;"></div></div>
-        <div style="width:1px;background:rgba(255,255,255,0.2);"></div>
-        <div style="text-align:center;"><div style="font-size:9px;font-weight:800;letter-spacing:1.5px;opacity:0.6;text-transform:uppercase;margin-bottom:4px;">Delivery</div><div id="p-sc-delivery" style="font-size:14px;font-weight:900;color:#bbf7d0;"></div></div>
-        <div style="width:1px;background:rgba(255,255,255,0.2);"></div>
-        <div style="text-align:center;"><div style="font-size:9px;font-weight:800;letter-spacing:1.5px;opacity:0.6;text-transform:uppercase;margin-bottom:4px;">Total</div><div id="p-sc-total" style="font-size:14px;font-weight:900;color:#bbf7d0;"></div></div>
-      </div>
-
-      <!-- Status badge -->
-      <div style="text-align:center;padding:10px 0;" id="p-sc-status"></div>
-
-      <!-- Action buttons — always show all WhatsApp options -->
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;">
-        <button onclick="openPastWAModal('confirm')"
-          style="padding:14px 4px;background:transparent;color:#fff;border:none;border-right:1px solid rgba(255,255,255,0.12);font-size:10px;font-weight:800;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;">
-          <span style="font-size:20px;">💬</span>ऑर्डर पक्का
-        </button>
-        <button onclick="openPastWAModal('ready')"
-          style="padding:14px 4px;background:transparent;color:#fff;border:none;border-right:1px solid rgba(255,255,255,0.12);font-size:10px;font-weight:800;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;">
-          <span style="font-size:20px;">👔</span>तैयार मैसेज
-        </button>
-        <button onclick="openPastWAModal('delivered')"
-          style="padding:14px 4px;background:transparent;color:#fff;border:none;border-right:1px solid rgba(255,255,255,0.12);font-size:10px;font-weight:800;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;">
-          <span style="font-size:20px;">✅</span>डिलीवर मैसेज
-        </button>
-        <button onclick="resetPastOrderForm()"
-          style="padding:14px 4px;background:transparent;color:#fff;border:none;border-right:1px solid rgba(255,255,255,0.12);font-size:10px;font-weight:800;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;">
-          <span style="font-size:20px;">➕</span>New Order
-        </button>
-        <a href="/owner/orders"
-          style="padding:14px 4px;background:transparent;color:#fff;text-decoration:none;font-size:10px;font-weight:800;display:flex;flex-direction:column;align-items:center;gap:4px;">
-          <span style="font-size:20px;">📋</span>All Orders
-        </a>
+      <div style="display:flex;justify-content:space-between;">
+        <button class="btn btn-ghost" onclick="goStep(2)">← Customer</button>
+        <button class="btn btn-primary" onclick="goStep(4)">Next: Images →</button>
       </div>
     </div>
-  </div>
 
-  <!-- WhatsApp Modal for past orders -->
-  <div id="past-wa-modal-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
-    <div style="background:#fff;border-radius:20px;padding:24px;max-width:360px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
-      <div style="text-align:center;margin-bottom:16px;">
-        <div style="font-size:32px;margin-bottom:6px;">💬</div>
-        <div style="font-size:16px;font-weight:900;" id="past-wa-modal-title">WhatsApp भेजें</div>
+    <!-- STEP 4: Images -->
+    <div id="step-p4" style="display:none;">
+      <div class="card mb-16">
+        <div class="card-header"><span class="card-title">📷 Order Images</span></div>
+        <div class="card-body">
+          <div id="p-img-upload-area"></div>
+          <div id="p-img-thumb-row" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;"></div>
+        </div>
       </div>
-      <div style="display:flex;flex-direction:column;gap:10px;">
-        <button onclick="sendPastWA('hi')"
-          style="padding:14px;border:2px solid #4f46e5;border-radius:12px;background:#eef2ff;color:#4f46e5;font-size:15px;font-weight:800;cursor:pointer;">
-          🇮🇳 हिंदी में भेजें
-        </button>
-        <button onclick="sendPastWA('en')"
-          style="padding:14px;border:2px solid var(--border);border-radius:12px;background:#fff;color:#374151;font-size:15px;font-weight:800;cursor:pointer;">
-          🇬🇧 Send in English
-        </button>
+      <div style="display:flex;justify-content:space-between;">
+        <button class="btn btn-ghost" onclick="goStep(3)">← Garments</button>
+        <button class="btn btn-primary" onclick="goStep(5);injectPastPayment();pastRecalcPayment();">Next: Payment →</button>
       </div>
-      <button onclick="document.getElementById('past-wa-modal-bg').style.display='none'"
-        style="width:100%;margin-top:10px;padding:10px;background:none;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;color:var(--text-muted);">
-        ✕ Cancel
-      </button>
     </div>
-  </div>
 
-  <!-- Payment Template -->
-  <template id="past-payment-template">
-    <div class="card mb-16">
-      <div class="card-header"><span class="card-title">💰 Payment Details</span></div>
-      <div class="card-body">
-        <div class="payment-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:28px;">
-          <div>
-            <div style="background:#f9fafb;border-radius:10px;overflow:hidden;margin-bottom:20px;">
-              <div style="display:flex;justify-content:space-between;padding:13px 16px;border-bottom:1px solid var(--border);"><span style="color:var(--text-secondary);font-size:14px;">Total Bill</span><strong>₹<span class="pay-total">0</span></strong></div>
-              <div style="padding:10px 16px;border-bottom:1px solid var(--border);">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <span style="color:var(--text-secondary);font-size:14px;">Extra Charges</span>
-                  <input type="number" class="pay-extra" value="0" min="0" style="width:90px;text-align:right;padding:6px 8px;border:1.5px solid var(--border);border-radius:6px;font-size:14px;font-weight:600;">
-                </div>
-              </div>
-              <div style="display:flex;justify-content:space-between;padding:13px 16px;border-bottom:1px solid var(--border);background:var(--accent-light);"><span style="font-weight:700;font-size:14px;">Net Payable</span><strong style="color:var(--accent);font-size:16px;">₹<span class="pay-payable">0</span></strong></div>
-              <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border);">
-                <span style="color:var(--success);font-weight:700;font-size:14px;">Amount Received</span>
-                <input type="number" class="pay-advance" value="0" min="0" style="width:110px;text-align:right;padding:6px 8px;border:1.5px solid var(--success);border-radius:6px;font-size:14px;font-weight:700;color:var(--success);">
-              </div>
-              <div style="display:flex;justify-content:space-between;padding:13px 16px;"><span style="color:var(--danger);font-weight:700;font-size:14px;">Remaining Due</span><strong style="color:var(--danger);font-size:16px;">₹<span class="pay-remaining">0</span></strong></div>
-            </div>
-            <div class="field-wrap">
-              <label>Payment Mode</label>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;">
-                <div class="mode-cash" style="padding:12px;border:2px solid var(--success);border-radius:10px;text-align:center;cursor:pointer;font-weight:700;font-size:13px;background:var(--success-light);color:var(--success);">💵 Cash</div>
-                <div class="mode-upi" style="padding:12px;border:2px solid var(--border);border-radius:10px;text-align:center;cursor:pointer;font-weight:700;font-size:13px;color:var(--text-secondary);">📱 UPI</div>
-              </div>
-            </div>
-          </div>
-          <div style="display:flex;align-items:center;justify-content:center;background:#f9fafb;border-radius:12px;border:1.5px solid var(--border);">
-            <div style="text-align:center;padding:28px;">
-              <div style="font-size:52px;margin-bottom:12px;">📝</div>
-              <div style="font-weight:700;color:var(--accent);font-size:16px;">Past Order</div>
-              <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">Saved as ✅ Delivered</div>
-            </div>
-          </div>
+    <!-- STEP 5: Payment -->
+    <div id="step-p5" style="display:none;">
+      <div class="card mb-16">
+        <div class="card-header"><span class="card-title">💰 Payment</span></div>
+        <div id="p-payment-body" class="card-body"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;">
+        <button class="btn btn-ghost" onclick="goStep(4)">← Images</button>
+        <button class="btn btn-success btn-lg" id="p-confirm-btn" onclick="confirmPastOrder()">✅ Save Past Order</button>
+      </div>
+    </div>
+
+    <!-- SUCCESS -->
+    <div id="step-p-success" style="display:none;">
+      <style>@keyframes poPop{0%{transform:scale(0.9);opacity:0}100%{transform:scale(1);opacity:1}}#step-p-success{animation:poPop 0.35s ease both}</style>
+      <div style="background:linear-gradient(160deg,#1e1b4b,#312e81);border-radius:24px;padding:28px 24px 0;box-shadow:0 12px 40px rgba(21,128,61,0.4);overflow:hidden;">
+        <div style="text-align:center;color:#fff;padding-bottom:20px;">
+          <div style="font-size:44px;margin-bottom:6px;">✅</div>
+          <div style="font-size:11px;font-weight:800;letter-spacing:3px;opacity:0.65;text-transform:uppercase;margin-bottom:4px;">ORDER SAVED</div>
+          <div style="font-size:52px;font-weight:900;letter-spacing:2px;line-height:1;">#<span id="p-sc-code"></span></div>
+          <div style="font-size:18px;font-weight:700;margin-top:8px;opacity:0.85;" id="p-sc-name"></div>
+          <div style="font-size:24px;font-weight:900;color:#4ade80;margin-top:6px;" id="p-sc-total"></div>
+        </div>
+        <div style="background:rgba(255,255,255,0.06);border-radius:16px 16px 0 0;padding:20px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+          <button onclick="location.href='/owner/orders'" class="btn btn-primary">📋 All Orders</button>
+          <button onclick="location.reload()" class="btn btn-ghost" style="color:#a5b4fc;border-color:#4338ca;">➕ Add Another</button>
         </div>
       </div>
     </div>
-  </template>
 
-    </div><!-- end section 2 -->
-  </div><!-- end grid -->
+  </div><!-- end tab-manual -->
 
-</div>
+</div><!-- end page container -->
+
+<template id="past-payment-template">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+    <div>
+      <div style="background:#f9fafb;border-radius:12px;overflow:hidden;border:1.5px solid var(--border);">
+        <div style="display:flex;justify-content:space-between;padding:13px 16px;border-bottom:1px solid var(--border);">
+          <span style="font-weight:700;font-size:14px;">Total Bill</span>
+          <strong style="font-size:16px;">₹<span class="pay-total">0</span></strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:13px 16px;border-bottom:1px solid var(--border);">
+          <div><div style="font-weight:700;font-size:14px;">Advance Paid</div>
+            <input type="number" class="pay-advance-inp" min="0" placeholder="0"
+              style="width:120px;padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-weight:700;margin-top:4px;"/>
+          </div>
+          <strong style="color:var(--success);font-size:16px;">₹<span class="pay-advance">0</span></strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:13px 16px;">
+          <span style="color:var(--danger);font-weight:700;font-size:14px;">Remaining Due</span>
+          <strong style="color:var(--danger);font-size:16px;">₹<span class="pay-remaining">0</span></strong>
+        </div>
+      </div>
+      <div class="field-wrap" style="margin-top:12px;">
+        <label>Payment Mode</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;">
+          <div class="mode-cash" style="padding:12px;border:2px solid var(--success);border-radius:10px;text-align:center;cursor:pointer;font-weight:700;font-size:13px;background:var(--success-light);color:var(--success);">💵 Cash</div>
+          <div class="mode-upi" style="padding:12px;border:2px solid var(--border);border-radius:10px;text-align:center;cursor:pointer;font-weight:700;font-size:13px;color:var(--text-secondary);">📱 UPI</div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:center;background:#f9fafb;border-radius:12px;border:1.5px solid var(--border);">
+      <div style="text-align:center;padding:28px;">
+        <div style="font-size:52px;margin-bottom:12px;">📝</div>
+        <div style="font-weight:700;color:var(--accent);font-size:16px;">Past Order</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">Saved as ✅ Delivered</div>
+      </div>
+    </div>
+  </div>
+</template>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -390,7 +308,103 @@ var pastGarments  = [];
 var pastGarmentsPhase = 'select';
 var pastPayMode   = "cash";
 var pastOrderCode = "";
-var diaryImageFile = null;  // holds the diary photo file for upload after save
+var diaryImageFile = null;
+var pastOrderCode = "";
+
+// ── TAB SWITCHING ─────────────────────────────────────
+function switchTab(tab) {
+  var isDiary = tab === 'diary';
+  document.getElementById('tab-diary').style.display = isDiary ? 'block' : 'none';
+  document.getElementById('tab-manual').style.display = isDiary ? 'none' : 'block';
+  var db = document.getElementById('tab-diary-btn');
+  var mb = document.getElementById('tab-manual-btn');
+  db.style.background = isDiary ? 'linear-gradient(135deg,#1e293b,#334155)' : 'transparent';
+  db.style.color = isDiary ? '#fff' : '#64748b';
+  mb.style.background = isDiary ? 'transparent' : 'linear-gradient(135deg,#4f46e5,#6d28d9)';
+  mb.style.color = isDiary ? '#64748b' : '#fff';
+}
+
+// ── DIARY QR ──────────────────────────────────────────
+window.addEventListener('load', function() {
+  var qrBox = document.getElementById('diary-qr-box');
+  if (!qrBox) return;
+  var url = window.location.origin + '/owner/past-upload';
+  document.getElementById('diary-mobile-link').href = url;
+  function tryQR() {
+    if (typeof QRCode !== 'undefined') {
+      new QRCode(qrBox, {text:url, width:160, height:160, colorDark:'#1e293b', colorLight:'#ffffff'});
+    } else { setTimeout(tryQR, 150); }
+  }
+  tryQR();
+});
+
+// ── DIARY FILE HANDLERS ───────────────────────────────
+function handleDiaryFileDrop(e) {
+  var f = e.dataTransfer.files[0];
+  if (f) handleDiaryFileInput(f);
+}
+function handleDiaryFileSelect(f) { if (f) handleDiaryFileInput(f); }
+function handleDiaryFileInput(f) {
+  if (f.size > 5*1024*1024) { alert('Image too large — max 5MB'); return; }
+  diaryImageFile = f;
+  var r = new FileReader();
+  r.onload = function(e) {
+    document.getElementById('diary-thumb').src = e.target.result;
+    document.getElementById('diary-drop-empty').style.display = 'none';
+    document.getElementById('diary-drop-preview').style.display = 'block';
+  };
+  r.readAsDataURL(f);
+}
+function clearDiaryFile() {
+  diaryImageFile = null;
+  document.getElementById('diary-thumb').src = '';
+  document.getElementById('diary-drop-empty').style.display = 'block';
+  document.getElementById('diary-drop-preview').style.display = 'none';
+}
+
+// ── DIARY SAVE ────────────────────────────────────────
+async function saveDiaryEntry() {
+  var code = document.getElementById('diary-code-input').value.trim();
+  if (!code) { showToast('⚠️ Order code daalo', 'warning'); return; }
+  var msg = document.getElementById('diary-save-msg');
+  msg.style.display = 'block';
+  msg.style.background = '#f1f5f9';
+  msg.style.color = '#374151';
+  msg.textContent = 'Saving...';
+
+  // Save order to DB
+  var res = await fetch('/owner/past-orders/save', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      order_code: code, customer_name: '', mobile: '', address: '',
+      order_date: '', delivery_date: '', total_amount: 0, advance_paid: 0,
+      payment_mode: 'cash', is_delivered: true, garments: []
+    })
+  });
+  var d = await res.json().catch(() => ({}));
+  var savedCode = d.order_code || code;
+
+  // Upload image if selected
+  if (diaryImageFile) {
+    msg.textContent = 'Uploading photo...';
+    var fd = new FormData();
+    fd.append('photos', diaryImageFile, 'diary_' + savedCode + '.jpg');
+    await fetch('/upload/' + savedCode, {method: 'POST', body: fd}).catch(() => {});
+  }
+
+  if (d.ok || d.order_code) {
+    msg.style.background = '#f0fdf4';
+    msg.style.color = '#16a34a';
+    msg.textContent = '✅ Saved! Order #' + savedCode + ' — Diary mein search karo';
+    document.getElementById('diary-code-input').value = '';
+    clearDiaryFile();
+    setTimeout(() => { msg.style.display = 'none'; }, 4000);
+  } else {
+    msg.style.background = '#fee2e2';
+    msg.style.color = '#dc2626';
+    msg.textContent = '❌ ' + (d.error || 'Error saving');
+  }
+}
 
 // ── Generate QR for mobile upload page ────────────────
 window.addEventListener("load", function() {
@@ -411,24 +425,6 @@ window.addEventListener("load", function() {
     }
   }
   renderQR();
-});
-
-// ── Sync diary code input to main code input ──────────
-function syncDiaryCode(val) {
-  var mainInput = document.getElementById("p-code-input");
-  if (mainInput) {
-    mainInput.value = val;
-    updateCodeDisplay(val);
-  }
-}
-
-// Also sync main code → diary code input
-document.addEventListener("DOMContentLoaded", function() {
-  var main = document.getElementById("p-code-input");
-  var diary = document.getElementById("p-code-input-diary");
-  if (main && diary) {
-    main.addEventListener("input", function(){ diary.value = this.value; });
-  }
 });
 
 // ── Diary image handlers ───────────────────────────────
@@ -988,25 +984,6 @@ function sendPastWA(lang) {
     } else {
       msg = "*Uttam Tailors*\n"
         + "Hello *" + p.customer_name + "*,\n"
-        + "Your order has been confirmed successfully.\n"
-        + "------------------------------------------\n\n"
-        + "• Order No: *#" + code + "*\n\n"
-        + (odate ? "• Order Date: " + odate + "\n\n" : "")
-        + (ddate ? "• Delivery Date: *" + ddate + "*\n\n" : "")
-        + "• Garments: " + items + "\n\n"
-        + "• Total Amount: *₹" + payable + "*\n\n"
-        + "• Advance Paid: ₹" + advance + "\n\n"
-        + "• Balance Due: *₹" + remaining + "*\n\n"
-        + "• Payment Mode: " + mode + "\n"
-        + "-----------------------------------------------\n"
-        + "Thank you for your trust. 🙏🏻\n"
-        + "Uttam Tailors";
-    }
-  }
 
-  var phone = p.mobile.replace(/\D/g, "");
-  if (phone.length === 10) phone = "91" + phone;
-  window.open("https://wa.me/" + phone + "?text=" + encodeURIComponent(msg), "_blank");
-}
 </script>
 {% endblock %}
