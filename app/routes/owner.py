@@ -2672,6 +2672,25 @@ def cancel_order(order_code):
 #  WHATSAPP ORDER TEMPLATE SAVE
 # ══════════════════════════════════════════════
 
+@bp.route("/api/wa-templates")
+def api_wa_templates():
+    """Return saved WA templates (public — no auth needed for employee pages)."""
+    _D_CONFIRM_HI = "*उत्तम टेलर्स*\n\nनमस्ते *{name}*,\n\nआपका ऑर्डर सफलतापूर्वक दर्ज हो गया है।\n------------------------------------------\n\n- ऑर्डर नंबर: *#{code}*\n- ऑर्डर तारीख: {odate}\n- डिलीवरी तारीख: *{ddate}*\n\n- कपड़े: {items}\n\n- कुल राशि: *₹{total}*\n- अग्रिम भुगतान: ₹{advance}\n- बकाया राशि: *₹{due}*\n- भुगतान माध्यम: {mode}\n\n-----------------------------------------------\nआपके विश्वास के लिए धन्यवाद। 🙏🏻\nउत्तम टेलर्स"
+    _D_CONFIRM_EN = "*Uttam Tailors*\n\nHello *{name}*,\nYour order has been confirmed successfully.\n------------------------------------------\n\n- Order No: *#{code}*\n- Order Date: {odate}\n- Delivery Date: *{ddate}*\n\n- Garments: {items}\n\n- Total Amount: *₹{total}*\n- Advance Paid: ₹{advance}\n- Balance Due: *₹{due}*\n- Payment Mode: {mode}\n\n-----------------------------------------------\nThank you for your trust. 🙏🏻\nUttam Tailors"
+    _D_READY_HI   = "*उत्तम टेलर्स*\n\nनमस्ते *{name}*,\nआपका ऑर्डर तैयार है। कृपया अपनी सुविधानुसार आकर अपने कपड़े प्राप्त कर लें।\n------------------------------------------\n\n- ऑर्डर नंबर: *#{code}*\n- कपड़े: {items}\n- कुल राशि: *₹{total}*\n- बकाया राशि: *₹{due}*\n\n-----------------------------------------------\nआपके विश्वास के लिए धन्यवाद। 🙏🏻\nउत्तम टेलर्स"
+    _D_READY_EN   = "*Uttam Tailors*\n\nHello *{name}*,\nYour order is ready. Please collect your clothes at your convenience. Thank you!\n------------------------------------------\n\n- Order No: *#{code}*\n- Garments: {items}\n- Total: *₹{total}*\n- Balance Due: *₹{due}*\n\n-----------------------------------------------\nThank you for your trust. 🙏🏻\nUttam Tailors"
+    _D_DELIV_HI   = "*उत्तम टेलर्स*\n\nनमस्ते *{name}*,\nआपके कपड़े सफलतापूर्वक डिलीवर कर दिए गए हैं।\n------------------------------------------\n\n- ऑर्डर नंबर: *#{code}*\n- ऑर्डर तारीख: {odate}\n- डिलीवरी तारीख: {ddate}\n\n- कपड़े: {items}\n\n- कुल भुगतान: *₹{total}*\n- भुगतान माध्यम: {mode}\n\n-----------------------------------------------\nआपके विश्वास के लिए धन्यवाद। 🙏🏻\nआगे भी सेवा का अवसर दें, यही हमारी शुभकामना है।\n\nधन्यवाद!\nउत्तम टेलर्स"
+    _D_DELIV_EN   = "*Uttam Tailors*\n\nHello *{name}*,\nYour garments have been delivered successfully.\n------------------------------------------\n\n- Order No: *#{code}*\n- Order Date: {odate}\n- Delivery Date: {ddate}\n\n- Garments: {items}\n\n- Total Paid: *₹{total}*\n- Payment Mode: {mode}\n\n-----------------------------------------------\nThank you for your trust. 🙏🏻\nWe look forward to serving you again.\n\nThank you!\nUttam Tailors"
+    return jsonify({
+        "confirm":   {"hi": get_setting("wa_order_confirm_hi",   _D_CONFIRM_HI),
+                      "en": get_setting("wa_order_confirm_en",   _D_CONFIRM_EN)},
+        "ready":     {"hi": get_setting("wa_order_ready_hi",     _D_READY_HI),
+                      "en": get_setting("wa_order_ready_en",     _D_READY_EN)},
+        "delivered": {"hi": get_setting("wa_order_delivered_hi", _D_DELIV_HI),
+                      "en": get_setting("wa_order_delivered_en", _D_DELIV_EN)},
+    })
+
+
 @bp.route("/api/save-wa-template", methods=["POST"])
 @owner_required
 def save_wa_template():
