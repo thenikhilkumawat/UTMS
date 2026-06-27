@@ -66,7 +66,13 @@
 
           <!-- Template picker -->
           <div class="field-wrap" style="margin:0;">
-            <label style="font-weight:700;">Quick Templates</label>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+              <label style="font-weight:700;margin:0;">Quick Templates</label>
+              <button onclick="openTmplEditor()"
+                style="font-size:11px;font-weight:700;color:#6366f1;background:#eef2ff;border:1px solid #c7d2fe;border-radius:6px;padding:3px 10px;cursor:pointer;">
+                ✏️ Edit Templates
+              </button>
+            </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
               {% for tpl in templates %}
               <button onclick="loadTemplate('{{ loop.index0 }}')"
@@ -219,60 +225,39 @@
   </div>
 </div>
 
-<!-- ── MESSAGE TEMPLATES EDITOR ──────────────────────── -->
-<div class="page-body" style="padding:0 24px 32px;max-width:1100px;margin:0 auto;">
-  <div style="margin-bottom:16px;">
-    <div style="font-size:18px;font-weight:900;color:#1e1b4b;margin-bottom:4px;">✏️ Message Templates</div>
-    <div style="font-size:13px;color:#6b7280;">Edit karo aur save karo — agla message yahi format mein jayega</div>
-  </div>
-
-  {% set templates = [
-    ("confirm",   "✅ Order Confirmed",  "Order confirm hone par bheja jaata hai"),
-    ("ready",     "🔔 Order Ready",      "Order ready hone par bheja jaata hai"),
-    ("delivered", "📦 Delivered",        "Delivery ke baad bheja jaata hai"),
-  ] %}
-
-  {% for tmpl_key, tmpl_name, tmpl_desc in templates %}
-  <div class="card mb-16" id="tmpl-card-{{ tmpl_key }}">
-    <div class="card-header" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);">
+<!-- ── ORDER MESSAGE TEMPLATES MODAL ─── -->
+<div id="tmpl-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:flex-start;justify-content:center;overflow-y:auto;padding:20px;">
+  <div style="background:#fff;border-radius:20px;width:100%;max-width:900px;margin:0 auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <div style="padding:18px 22px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff;border-radius:20px 20px 0 0;z-index:1;">
       <div>
-        <div class="card-title" style="color:#166534;">{{ tmpl_name }}</div>
-        <div style="font-size:12px;color:#6b7280;margin-top:2px;">{{ tmpl_desc }}</div>
+        <div style="font-size:17px;font-weight:900;color:#1e1b4b;">✏️ Order Message Templates</div>
+        <div style="font-size:12px;color:#6b7280;margin-top:2px;">Edit karo → Save karo — agli baar yahi format use hoga</div>
       </div>
-      <button onclick="saveTemplate('{{ tmpl_key }}')"
-        style="padding:8px 18px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-weight:800;font-size:13px;cursor:pointer;">
-        💾 Save
-      </button>
+      <button onclick="closeTmplEditor()" style="width:34px;height:34px;border-radius:50%;border:none;background:#f1f5f9;cursor:pointer;font-size:16px;">✕</button>
     </div>
-    <div class="card-body">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-        <div>
-          <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:#6b7280;display:block;margin-bottom:6px;">🇮🇳 Hindi Template</label>
-          <textarea id="tmpl-hi-{{ tmpl_key }}"
-            style="width:100%;min-height:280px;padding:12px;border:1.5px solid #e5e7eb;border-radius:10px;
-                   font-size:13px;font-family:monospace;line-height:1.7;resize:vertical;outline:none;box-sizing:border-box;"
-            onfocus="this.style.borderColor='#16a34a'" onblur="this.style.borderColor='#e5e7eb'"
-            placeholder="Hindi template...">{{ wa_templates[tmpl_key]['hi'] }}</textarea>
-          <div style="font-size:11px;color:#9ca3af;margin-top:4px;">
-            Variables: {name} {code} {items} {odate} {ddate} {total} {advance} {due} {mode}
+    <div style="padding:18px 22px;display:flex;flex-direction:column;gap:16px;">
+      {% for tmpl_key, tmpl_name in [("confirm","✅ Order Confirmed"), ("ready","🔔 Order Ready"), ("delivered","📦 Delivered")] %}
+      <div style="border:1.5px solid #e5e7eb;border-radius:12px;overflow:hidden;">
+        <div style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-size:14px;font-weight:900;color:#166534;">{{ tmpl_name }}</span>
+          <button onclick="saveTemplate('{{ tmpl_key }}')" style="padding:5px 14px;background:#16a34a;color:#fff;border:none;border-radius:7px;font-weight:800;font-size:12px;cursor:pointer;">💾 Save</button>
+        </div>
+        <div style="padding:12px 16px;display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div>
+            <label style="font-size:10px;font-weight:700;text-transform:uppercase;color:#6b7280;display:block;margin-bottom:4px;">🇮🇳 Hindi</label>
+            <textarea id="tmpl-hi-{{ tmpl_key }}" style="width:100%;min-height:200px;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:12px;font-family:monospace;line-height:1.7;resize:vertical;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#16a34a'" onblur="this.style.borderColor='#e5e7eb'">{{ wa_templates[tmpl_key]['hi'] }}</textarea>
+          </div>
+          <div>
+            <label style="font-size:10px;font-weight:700;text-transform:uppercase;color:#6b7280;display:block;margin-bottom:4px;">🇬🇧 English</label>
+            <textarea id="tmpl-en-{{ tmpl_key }}" style="width:100%;min-height:200px;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:12px;font-family:monospace;line-height:1.7;resize:vertical;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#16a34a'" onblur="this.style.borderColor='#e5e7eb'">{{ wa_templates[tmpl_key]['en'] }}</textarea>
           </div>
         </div>
-        <div>
-          <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:#6b7280;display:block;margin-bottom:6px;">🇬🇧 English Template</label>
-          <textarea id="tmpl-en-{{ tmpl_key }}"
-            style="width:100%;min-height:280px;padding:12px;border:1.5px solid #e5e7eb;border-radius:10px;
-                   font-size:13px;font-family:monospace;line-height:1.7;resize:vertical;outline:none;box-sizing:border-box;"
-            onfocus="this.style.borderColor='#16a34a'" onblur="this.style.borderColor='#e5e7eb'"
-            placeholder="English template...">{{ wa_templates[tmpl_key]['en'] }}</textarea>
-          <div style="font-size:11px;color:#9ca3af;margin-top:4px;">
-            Variables: {name} {code} {items} {odate} {ddate} {total} {advance} {due} {mode}
-          </div>
-        </div>
+        <div style="padding:0 16px 8px;font-size:10px;color:#9ca3af;">Variables: {name} {code} {items} {odate} {ddate} {total} {advance} {due} {mode}</div>
+        <div id="tmpl-msg-{{ tmpl_key }}" style="display:none;margin:0 16px 10px;padding:6px;border-radius:6px;font-size:12px;font-weight:700;text-align:center;"></div>
       </div>
-      <div id="tmpl-msg-{{ tmpl_key }}" style="display:none;margin-top:10px;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:700;text-align:center;"></div>
+      {% endfor %}
     </div>
   </div>
-  {% endfor %}
 </div>
 
 {% endblock %}
@@ -508,6 +493,15 @@ const SECS=5*60; let last=Date.now();
 ["click","keydown","mousemove","touchstart"].forEach(ev=>document.addEventListener(ev,()=>{last=Date.now();},{passive:true}));
 setInterval(()=>{if(Math.floor((Date.now()-last)/1000)>=SECS)window.location.href="/owner/login?expired=1";},5000);
 window.addEventListener("pageshow",function(e){if(e.persisted){fetch("/owner/logout",{method:"POST",keepalive:true}).finally(()=>{window.location.href="/owner/login";})}});
+
+function openTmplEditor() {
+  document.getElementById("tmpl-modal").style.display = "flex";
+  document.body.style.overflow = "hidden";
+}
+function closeTmplEditor() {
+  document.getElementById("tmpl-modal").style.display = "none";
+  document.body.style.overflow = "";
+}
 
 async function saveTemplate(key) {
   var hi = document.getElementById("tmpl-hi-"+key).value;
