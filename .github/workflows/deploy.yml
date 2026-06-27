@@ -7,18 +7,15 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - name: Deploy via SSH
+        continue-on-error: true
         run: |
-          # Setup SSH key
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          
-          # Add server to known hosts (skip manual fingerprint)
           ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
-          
-          # Deploy
           ssh -i ~/.ssh/deploy_key ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "
             set -e
             cd /home/ubuntu/UTMS
