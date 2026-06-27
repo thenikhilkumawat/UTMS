@@ -889,97 +889,97 @@ function sendPastWA(lang) {
   if (_pastWAType === "delivered") {
     // ═══ DELIVERED MESSAGE ═══
     if (lang === "hi") {
-      msg = "*उत्तम टेलर्स*\n"
-        + "नमस्ते *" + p.customer_name + "* जी,\n"
+      msg = "*उत्तम टेलर्स*\n\n"
+        + "नमस्ते *" + p.customer_name + "*,\n"
         + "आपके कपड़े सफलतापूर्वक डिलीवर कर दिए गए हैं।\n"
         + "------------------------------------------\n\n"
-        + "• ऑर्डर नंबर: *#" + code + "*\n\n"
-        + (odate ? "• ऑर्डर तारीख: " + odate + "\n\n" : "")
-        + (ddate ? "• डिलीवरी तारीख: " + ddate + "\n\n" : "")
-        + "• कपड़े: " + items + "\n\n"
-        + "• कुल भुगतान: *₹" + payable + "*\n\n"
-        + "• भुगतान माध्यम: " + mode + "\n"
-        + "-----------------------------------------------\n"
+        + "- ऑर्डर नंबर: *#" + code + "*\n"
+        + (odate ? "- ऑर्डर तारीख: " + odate + "\n" : "")
+        + (ddate ? "- डिलीवरी तारीख: " + ddate + "\n" : "")
+        + "\n- कपड़े: " + items + "\n\n"
+        + "- कुल भुगतान: *₹" + payable + "*\n"
+        + "- भुगतान माध्यम: " + mode + "\n"
+        + "\n-----------------------------------------------\n"
         + "आपके विश्वास के लिए धन्यवाद। 🙏🏻\n"
-        + "आगे भी सेवा का अवसर दें, यही हमारी शुभकामना है।\n"
+        + "आगे भी सेवा का अवसर दें, यही हमारी शुभकामना है।\n\n"
         + "धन्यवाद!\n"
         + "उत्तम टेलर्स";
     } else {
-      msg = "*Uttam Tailors*\n"
+      msg = "*Uttam Tailors*\n\n"
         + "Hello *" + p.customer_name + "*,\n"
         + "Your garments have been delivered successfully.\n"
         + "------------------------------------------\n\n"
-        + "• Order No: *#" + code + "*\n\n"
-        + (odate ? "• Order Date: " + odate + "\n\n" : "")
-        + (ddate ? "• Delivery Date: " + ddate + "\n\n" : "")
-        + "• Garments: " + items + "\n\n"
-        + "• Total Paid: *₹" + payable + "*\n\n"
-        + "• Payment Mode: " + mode + "\n"
-        + "-----------------------------------------------\n"
+        + "- Order No: *#" + code + "*\n"
+        + (odate ? "- Order Date: " + odate + "\n" : "")
+        + (ddate ? "- Delivery Date: " + ddate + "\n" : "")
+        + "\n- Garments: " + items + "\n\n"
+        + "- Total Paid: *₹" + payable + "*\n"
+        + "- Payment Mode: " + mode + "\n"
+        + "\n-----------------------------------------------\n"
         + "Thank you for your trust. 🙏🏻\n"
-        + "We look forward to serving you again.\n"
+        + "We look forward to serving you again.\n\n"
         + "Thank you!\n"
         + "Uttam Tailors";
     }
   } else if (_pastWAType === "ready") {
     // ═══ ORDER READY MESSAGE ═══
     if (lang === "hi") {
-      msg = "*उत्तम टेलर्स*\n"
-        + "नमस्ते *" + p.customer_name + "* जी,\n"
-        + "आपका ऑर्डर तैयार हो गया है। कृपया अपने कपड़े ले जाएं।\n"
+      msg = "*उत्तम टेलर्स*\n\n"
+        + "नमस्ते *" + p.customer_name + "*,\n"
+        + "आपका ऑर्डर तैयार है। कृपया अपनी सुविधानुसार आकर अपने कपड़े प्राप्त कर लें।\n"
         + "------------------------------------------\n\n"
-        + "• ऑर्डर नंबर: *#" + code + "*\n\n"
-        + "• कपड़े: " + items + "\n\n"
-        + "• कुल राशि: *₹" + payable + "*\n\n"
-        + (remaining > 0 ? "• बकाया राशि: *₹" + remaining + "*\n\n" : "• भुगतान: पूरा हो गया ✅\n\n")
-        + "-----------------------------------------------\n"
+        + "- ऑर्डर नंबर: *#" + code + "*\n"
+        + "- कपड़े: " + items + "\n"
+        + "- कुल राशि: *₹" + payable + "*\n"
+        + (remaining > 0 ? "- बकाया राशि: *₹" + remaining + "*\n" : "")
+        + "\n-----------------------------------------------\n"
         + "आपके विश्वास के लिए धन्यवाद। 🙏🏻\n"
         + "उत्तम टेलर्स";
     } else {
-      msg = "*Uttam Tailors*\n"
+      msg = "*Uttam Tailors*\n\n"
         + "Hello *" + p.customer_name + "*,\n"
-        + "Your order is ready. Please collect your garments.\n"
+        + "Your order is ready. Please collect your clothes at your convenience. Thank you!\n"
         + "------------------------------------------\n\n"
-        + "• Order No: *#" + code + "*\n\n"
-        + "• Garments: " + items + "\n\n"
-        + "• Total: *₹" + payable + "*\n\n"
-        + (remaining > 0 ? "• Balance Due: *₹" + remaining + "*\n\n" : "• Payment: Fully Paid ✅\n\n")
-        + "-----------------------------------------------\n"
+        + "- Order No: *#" + code + "*\n"
+        + "- Garments: " + items + "\n"
+        + "- Total: *₹" + payable + "*\n"
+        + (remaining > 0 ? "- Balance Due: *₹" + remaining + "*\n" : "")
+        + "\n-----------------------------------------------\n"
         + "Thank you for your trust. 🙏🏻\n"
         + "Uttam Tailors";
     }
   } else {
     // ═══ ORDER CONFIRMED MESSAGE ═══
     if (lang === "hi") {
-      msg = "*उत्तम टेलर्स*\n"
-        + "नमस्ते *" + p.customer_name + "* जी,\n"
+      msg = "*उत्तम टेलर्स*\n\n"
+        + "नमस्ते *" + p.customer_name + "*,\n\n"
         + "आपका ऑर्डर सफलतापूर्वक दर्ज हो गया है।\n"
         + "------------------------------------------\n\n"
-        + "• ऑर्डर नंबर: *#" + code + "*\n\n"
-        + (odate ? "• ऑर्डर तारीख: " + odate + "\n\n" : "")
-        + (ddate ? "• डिलीवरी तारीख: *" + ddate + "*\n\n" : "")
-        + "• कपड़े: " + items + "\n\n"
-        + "• कुल राशि: *₹" + payable + "*\n\n"
-        + "• अग्रिम भुगतान: ₹" + advance + "\n\n"
-        + "• बकाया राशि: *₹" + remaining + "*\n\n"
-        + "• भुगतान माध्यम: " + mode + "\n"
-        + "-----------------------------------------------\n"
+        + "- ऑर्डर नंबर: *#" + code + "*\n"
+        + (odate ? "- ऑर्डर तारीख: " + odate + "\n" : "")
+        + (ddate ? "- डिलीवरी तारीख: *" + ddate + "*\n" : "")
+        + "\n- कपड़े: " + items + "\n\n"
+        + "- कुल राशि: *₹" + payable + "*\n"
+        + (advance > 0 ? "- अग्रिम भुगतान: ₹" + advance + "\n" : "")
+        + "- बकाया राशि: *₹" + remaining + "*\n"
+        + (advance > 0 ? "- भुगतान माध्यम: " + mode + "\n" : "")
+        + "\n-----------------------------------------------\n"
         + "आपके विश्वास के लिए धन्यवाद। 🙏🏻\n"
         + "उत्तम टेलर्स";
     } else {
-      msg = "*Uttam Tailors*\n"
+      msg = "*Uttam Tailors*\n\n"
         + "Hello *" + p.customer_name + "*,\n"
         + "Your order has been confirmed successfully.\n"
         + "------------------------------------------\n\n"
-        + "• Order No: *#" + code + "*\n\n"
-        + (odate ? "• Order Date: " + odate + "\n\n" : "")
-        + (ddate ? "• Delivery Date: *" + ddate + "*\n\n" : "")
-        + "• Garments: " + items + "\n\n"
-        + "• Total Amount: *₹" + payable + "*\n\n"
-        + "• Advance Paid: ₹" + advance + "\n\n"
-        + "• Balance Due: *₹" + remaining + "*\n\n"
-        + "• Payment Mode: " + mode + "\n"
-        + "-----------------------------------------------\n"
+        + "- Order No: *#" + code + "*\n"
+        + (odate ? "- Order Date: " + odate + "\n" : "")
+        + (ddate ? "- Delivery Date: *" + ddate + "*\n" : "")
+        + "\n- Garments: " + items + "\n\n"
+        + "- Total Amount: *₹" + payable + "*\n"
+        + (advance > 0 ? "- Advance Paid: ₹" + advance + "\n" : "")
+        + "- Balance Due: *₹" + remaining + "*\n"
+        + (advance > 0 ? "- Payment Mode: " + mode + "\n" : "")
+        + "\n-----------------------------------------------\n"
         + "Thank you for your trust. 🙏🏻\n"
         + "Uttam Tailors";
     }
