@@ -1157,16 +1157,24 @@ def bulk_import_upload():
         "errors": errors[:20],
         "total_rows": row_count
     })
+@bp.route("/api/fix-order-code")
 @owner_required
 def fix_order_code():
-    set_setting("last_order_code", "3898")
-    set_setting("recycled_order_codes", "")  # Clear recycled pool too
+    conn = get_db()
+    # Find the actual highest numeric order code in the database
+    rows = conn.execute("SELECT order_code FROM orders").fetchall()
+    nums = [int(r["order_code"]) for r in rows if str(r["order_code"]).isdigit()]
+    max_code = max(nums) if nums else 3599
+    conn.close()
+
+    set_setting("last_order_code", str(max_code))
+    set_setting("recycled_order_codes", "")  # Clear recycled pool too — prevents stale/used codes resurfacing
     try:
         from database import invalidate_settings_cache
         invalidate_settings_cache()
     except Exception:
         pass
-    return "<h2>✅ Fixed! last_order_code=3898, recycled pool cleared. Next order = #3899</h2><a href='/owner/settings'>← Settings</a><br><a href='/new-order'>Go to New Order →</a>"
+    return f"<h2>✅ Fixed! Highest existing order = #{max_code}. last_order_code={max_code}, recycled pool cleared. Next order = #{max_code+1}</h2><a href='/owner/settings'>← Settings</a><br><a href='/new-order'>Go to New Order →</a>"
 
 
 @bp.route("/api/sync-order-images")
