@@ -436,6 +436,32 @@ def add_recycled_code(code_str):
     return
 
 
+def release_order_code_if_latest(code_str):
+    """Call after deleting an order. Only releases the number back to the counter
+    if the deleted code IS the most recently issued one (last_order_code) — this
+    gives a clean 'undo' for the order you just created, WITHOUT ever recycling
+    old/unrelated codes from deep in the past (e.g. deleting order #3900 right
+    after creating it gives you #3900 back; deleting old order #1001 does NOT
+    make #1001 reappear as the next code)."""
+    if not str(code_str).isdigit():
+        return
+    conn = get_db()
+    try:
+        c = int(code_str)
+        row = conn.execute("SELECT value FROM settings WHERE key='last_order_code'").fetchone()
+        current_last = int(row["value"]) if row else None
+        if current_last is not None and c == current_last:
+            conn.execute(
+                "INSERT OR REPLACE INTO settings(key,value) VALUES('last_order_code',?)",
+                (str(c - 1),)
+            )
+            conn.commit()
+    except Exception:
+        pass
+    finally:
+        conn.close()
+
+
 def peek_order_code():
     """Return next available order code without incrementing.
     Always continues forward from last_order_code — never reuses old/deleted codes."""
