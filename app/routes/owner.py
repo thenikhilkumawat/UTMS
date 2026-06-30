@@ -1158,7 +1158,6 @@ def bulk_import_upload():
         "total_rows": row_count
     })
 @owner_required
-@bp.route("/api/fix-order-code")
 def fix_order_code():
     set_setting("last_order_code", "3898")
     set_setting("recycled_order_codes", "")  # Clear recycled pool too
@@ -1318,7 +1317,7 @@ def settings():
         "finance_expense_cats":  get_setting("finance_expense_cats","thread,buttons,fabric,electricity,rent,salary,transport,maintenance,other expense"),
         "shop_logo":             get_setting("shop_logo",""),
         "order_code_start":      str(int(get_setting("last_order_code","3898")) + 1),
-      set_setting("recycled_order_codes", "")
+     
     }
     # Garment chip styles
     garment_type_chips_raw = get_setting("garment_type_chips","")
