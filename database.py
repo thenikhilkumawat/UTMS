@@ -451,13 +451,14 @@ def peek_order_code():
     Recycles deleted codes first, then advances the counter."""
     conn = get_db()
     try:
-        # Check recycled pool first
+        existing = _get_existing_codes(conn)
+        # Check recycled pool first — but skip any that are actually still in use
         recycled = _get_recycled_codes(conn)
-        if recycled:
-            return str(min(recycled))
+        usable_recycled = [c for c in recycled if c not in existing]
+        if usable_recycled:
+            return str(min(usable_recycled))
         row = conn.execute("SELECT value FROM settings WHERE key='last_order_code'").fetchone()
         setting_last = int(row["value"]) if row else 3599
-        existing = _get_existing_codes(conn)
         candidate = setting_last + 1
         # Skip any codes that already exist
         while candidate in existing:
@@ -474,17 +475,24 @@ def next_order_code():
     Recycles deleted codes first, then advances the counter."""
     conn = get_db()
     try:
-        # Use a recycled code if available
+        existing = _get_existing_codes(conn)
+        # Use a recycled code if available — but only if it's not actually still in use
         recycled = _get_recycled_codes(conn)
-        if recycled:
-            code = min(recycled)
+        usable_recycled = [c for c in recycled if c not in existing]
+        if usable_recycled:
+            code = min(usable_recycled)
             recycled.remove(code)
             _save_recycled_codes(conn, recycled)
             conn.commit()
             return str(code)
+        # Clean up: drop any recycled entries that are stale (already in use)
+        stale = [c for c in recycled if c in existing]
+        if stale:
+            recycled = [c for c in recycled if c not in existing]
+            _save_recycled_codes(conn, recycled)
+            conn.commit()
         row = conn.execute("SELECT value FROM settings WHERE key='last_order_code'").fetchone()
         setting_last = int(row["value"]) if row else 3599
-        existing = _get_existing_codes(conn)
         candidate = setting_last + 1
         # Skip any codes that already exist
         while candidate in existing:
