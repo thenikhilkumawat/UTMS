@@ -9,6 +9,44 @@ from database import init_db, get_setting
 app = Flask(__name__, template_folder="templates", static_folder="static", static_url_path="/static")
 app.secret_key = Config.SECRET_KEY
 
+# ── Auto cache-busting for static assets ───────────────────────────────────
+# Appends ?v=<file-mtime> to /static/... URLs so every deploy automatically
+# invalidates browser cache — no more manual Ctrl+Shift+R needed, ever.
+_STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
+
+def asset_v(rel_path):
+    """e.g. asset_v('css/main.css') -> '/static/css/main.css?v=1735642200'"""
+    clean = rel_path.lstrip("/")
+    if clean.startswith("static/"):
+        clean = clean[len("static/"):]
+    full_path = os.path.join(_STATIC_DIR, clean)
+    try:
+        v = int(os.path.getmtime(full_path))
+    except OSError:
+        v = 1
+    return f"/static/{clean}?v={v}"
+
+app.jinja_env.globals["asset_v"] = asset_v
+
+# Belt-and-braces: tell browsers/proxies never to cache HTML/JS/CSS responses
+# beyond a very short window, so even without the version query string,
+# stale copies don't linger across different devices/locations.
+@app.after_request
+def set_no_cache_headers(response):
+    try:
+        path = request.path or ""
+        if path.startswith("/static/"):
+            # Static files ARE versioned via asset_v() — safe to cache hard
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        else:
+            # Dynamic pages (HTML) — always revalidate, never serve stale
+            response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
+    except Exception:
+        pass
+    return response
+
 # ── Logging ───────────────────────────────────────────────────────────────────
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
