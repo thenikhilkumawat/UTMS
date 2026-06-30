@@ -429,38 +429,23 @@ def _save_recycled_codes(conn, codes):
 
 
 def add_recycled_code(code_str):
-    """Call after deleting an order — puts the code back in the reuse pool."""
-    if not str(code_str).isdigit():
-        return
-    conn = get_db()
-    try:
-        existing = _get_recycled_codes(conn)
-        c = int(code_str)
-        if c not in existing:
-            existing.append(c)
-            _save_recycled_codes(conn, existing)
-            conn.commit()
-    except Exception:
-        pass
-    finally:
-        conn.close()
+    """DISABLED: Order codes are never recycled — deleted order numbers stay retired.
+    The New Order flow must always continue forward from last_order_code, never reuse
+    an old/deleted code (caused confusion when #1001/#2002 resurfaced unexpectedly).
+    This function is now a no-op, kept so existing call sites don't break."""
+    return
 
 
 def peek_order_code():
     """Return next available order code without incrementing.
-    Recycles deleted codes first, then advances the counter."""
+    Always continues forward from last_order_code — never reuses old/deleted codes."""
     conn = get_db()
     try:
         existing = _get_existing_codes(conn)
-        # Check recycled pool first — but skip any that are actually still in use
-        recycled = _get_recycled_codes(conn)
-        usable_recycled = [c for c in recycled if c not in existing]
-        if usable_recycled:
-            return str(min(usable_recycled))
         row = conn.execute("SELECT value FROM settings WHERE key='last_order_code'").fetchone()
         setting_last = int(row["value"]) if row else 3599
         candidate = setting_last + 1
-        # Skip any codes that already exist
+        # Skip any codes that already exist (safety net only)
         while candidate in existing:
             candidate += 1
         return str(candidate)
@@ -472,29 +457,14 @@ def peek_order_code():
 
 def next_order_code():
     """Increment and return next available order code.
-    Recycles deleted codes first, then advances the counter."""
+    Always continues forward from last_order_code — never reuses old/deleted codes."""
     conn = get_db()
     try:
         existing = _get_existing_codes(conn)
-        # Use a recycled code if available — but only if it's not actually still in use
-        recycled = _get_recycled_codes(conn)
-        usable_recycled = [c for c in recycled if c not in existing]
-        if usable_recycled:
-            code = min(usable_recycled)
-            recycled.remove(code)
-            _save_recycled_codes(conn, recycled)
-            conn.commit()
-            return str(code)
-        # Clean up: drop any recycled entries that are stale (already in use)
-        stale = [c for c in recycled if c in existing]
-        if stale:
-            recycled = [c for c in recycled if c not in existing]
-            _save_recycled_codes(conn, recycled)
-            conn.commit()
         row = conn.execute("SELECT value FROM settings WHERE key='last_order_code'").fetchone()
         setting_last = int(row["value"]) if row else 3599
         candidate = setting_last + 1
-        # Skip any codes that already exist
+        # Skip any codes that already exist (safety net only)
         while candidate in existing:
             candidate += 1
         conn.execute("INSERT OR REPLACE INTO settings(key,value) VALUES('last_order_code',?)", (str(candidate),))
