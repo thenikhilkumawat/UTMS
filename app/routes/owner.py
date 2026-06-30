@@ -2838,10 +2838,10 @@ def delete_order(order_code):
         conn.execute("DELETE FROM orders WHERE id=?", (order["id"],))
         conn.commit()
         conn.close()
-        # Recycle the code so it can be reused for a new order
-        from database import add_recycled_code
-        add_recycled_code(order_code)
-        flash(f"Order #{order_code} deleted. Code #{order_code} is now available for new orders.", "success")
+        # Release the number ONLY if it's the most recently issued code (undo-style)
+        from database import release_order_code_if_latest
+        release_order_code_if_latest(order_code)
+        flash(f"Order #{order_code} deleted.", "success")
     else:
         conn.close()
         flash(f"Order #{order_code} not found.", "error")
@@ -2873,10 +2873,10 @@ def delete_customer(customer_id):
     conn.execute("DELETE FROM customers WHERE id=?", (customer_id,))
     conn.commit()
     conn.close()
-    # Recycle all numeric order codes from deleted orders
-    from database import add_recycled_code
+    # Release order codes that were the latest issued (undo-style) — never recycle old ones
+    from database import release_order_code_if_latest
     for o in orders:
-        add_recycled_code(o["order_code"])
+        release_order_code_if_latest(o["order_code"])
     flash(f"Customer '{cust_name}' and {len(orders)} order(s) deleted permanently.", "success")
     return redirect(url_for("owner.owner_customers"))
 
