@@ -43,7 +43,7 @@ def set_no_cache_headers(response):
             response.headers["Expires"] = "0"
     except Exception:
         pass
-    return responseesponse
+    return response
 
 # ── Logging ───────────────────────────────────────────────────────────────────
 logging.basicConfig(level=logging.INFO)
