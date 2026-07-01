@@ -36,14 +36,16 @@ def set_no_cache_headers(response):
     try:
         path = request.path or ""
         if path.startswith("/static/"):
+            # Static files are versioned via asset_v() — safe to cache
             response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
         else:
-            response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            # no-cache = revalidate with server, but DO allow credential caching
+            # (no-store was preventing browser from caching Basic Auth credentials)
+            response.headers["Cache-Control"] = "no-cache, must-revalidate"
             response.headers["Pragma"] = "no-cache"
-            response.headers["Expires"] = "0"
     except Exception:
         pass
-    return response
+    return responseesponse
 
 # ── Logging ───────────────────────────────────────────────────────────────────
 logging.basicConfig(level=logging.INFO)
