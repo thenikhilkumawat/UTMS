@@ -36,16 +36,14 @@ def set_no_cache_headers(response):
     try:
         path = request.path or ""
         if path.startswith("/static/"):
-            # Static files ARE versioned via asset_v() — safe to cache hard
             response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
         else:
-            # Dynamic pages (HTML) — always revalidate, never serve stale
             response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
             response.headers["Pragma"] = "no-cache"
             response.headers["Expires"] = "0"
     except Exception:
         pass
-    return response
+    return responseesponse
 
 # ── Logging ───────────────────────────────────────────────────────────────────
 logging.basicConfig(level=logging.INFO)
