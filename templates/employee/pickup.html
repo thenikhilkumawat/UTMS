@@ -33,7 +33,7 @@
       <div style="flex:1;position:relative;">
         <span style="position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:16px;pointer-events:none;">🔍</span>
         <input type="text" id="pickup-search"
-          placeholder="Order code, name or mobile..."
+          placeholder="Code, naam, mobile ya address..."
           oninput="debounceSearch()" onkeydown="if(event.key==='Enter')doSearch()"
           style="width:100%;font-size:16px;font-weight:700;padding:13px 16px 13px 46px;border:none;border-radius:14px;outline:none;box-shadow:0 6px 24px rgba(0,0,0,0.25);background:#fff;box-sizing:border-box;"
           autofocus>
@@ -255,6 +255,7 @@ function doSearch() {
           +'<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+statusBg+';flex-shrink:0;"></span>'
           +codeLine+' — '+o.customer_name
           +'</div>'
+          +(o.address?'<div style="font-size:11px;opacity:0.65;margin-top:2px;">📍 '+o.address+'</div>':'')
           +'<div style="font-size:11px;opacity:0.55;margin-top:3px;">📅 '+o.order_date_fmt+' → '+(o.delivery_date_fmt||"—")
           +' · <span style="color:'+statusBg+';font-weight:800;text-transform:uppercase;">'+o.status+'</span>'
           +(o.remaining>0?' · ₹'+o.remaining+' due':'')
