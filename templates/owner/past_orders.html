@@ -3,7 +3,7 @@
 {% block content %}
 
 <div class="order-code-sticky">
-  Past Order &nbsp;<span class="oc-num" id="sticky-code">#<span id="sticky-num">{{ next_code }}</span></span>
+  Past Order &nbsp;<span class="oc-num" id="sticky-code" style="opacity:0.5">—</span><span class="oc-num" id="sticky-code-filled" style="display:none;">#<span id="sticky-num"></span></span>
 </div>
 
 <div class="page-header">
@@ -466,8 +466,10 @@ window.addEventListener("load", function() {
 });
 function updateCodeDisplay(val) {
   var v = val.trim();
-  document.getElementById("code-display").textContent = v || "{{ next_code }}";
-  document.getElementById("sticky-num").textContent   = v || "{{ next_code }}";
+  document.getElementById("code-display").textContent = v || "";
+  document.getElementById("sticky-num").textContent   = v;
+  document.getElementById("sticky-code").style.display = v ? "none" : "inline";
+  document.getElementById("sticky-code-filled").style.display = v ? "inline" : "none";
   document.getElementById("code-clash-msg").style.display = "none";
 }
 
