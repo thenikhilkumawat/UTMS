@@ -569,7 +569,11 @@ function sortRows() {
       case "oldest":
         return (a.dataset.orderDate || "9999").localeCompare(b.dataset.orderDate || "9999");
       case "newest":
-        return (b.dataset.orderDate || "0000").localeCompare(a.dataset.orderDate || "0000");
+        // Past orders (delivered) always go to the bottom — only active orders sorted newest first
+        const aDelivered = a.dataset.status === "delivered" ? 1 : 0;
+        const bDelivered = b.dataset.status === "delivered" ? 1 : 0;
+        if (aDelivered !== bDelivered) return aDelivered - bDelivered;
+        return (b.dataset.createdAt || b.dataset.orderDate || "0000").localeCompare(a.dataset.orderDate || "0000");
       default:
         return 0;
     }
