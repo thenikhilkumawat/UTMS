@@ -174,10 +174,80 @@
 </nav>
 
 {% if show_voice %}
-<div class="voice-fab-container">
+<div class="voice-fab-container" id="voice-fab-container">
   <div id="voice-hint">Tap a field first</div>
-  <button id="voice-fab" onclick="toggleVoice()" title="Voice Input">🎤</button>
+  <button id="voice-fab" onclick="toggleVoice()" title="Voice Input — drag to move">🎤</button>
 </div>
+
+<script>
+(function() {
+  var fab = document.getElementById("voice-fab-container");
+  if (!fab) return;
+
+  // Restore saved position
+  var saved = localStorage.getItem("voice_fab_pos");
+  if (saved) {
+    try {
+      var p = JSON.parse(saved);
+      fab.style.bottom = p.bottom + "px";
+      fab.style.right  = p.right  + "px";
+      fab.style.top    = "auto";
+      fab.style.left   = "auto";
+    } catch(e) {}
+  }
+
+  // Drag state
+  var dragging = false, startY, startBottom;
+
+  fab.addEventListener("mousedown", function(e) {
+    if (e.target.id === "voice-fab" || e.target.closest("#voice-fab")) {
+      dragging = true;
+      startY      = e.clientY;
+      startBottom = parseInt(fab.style.bottom) || 22;
+      fab.style.transition = "none";
+      fab.style.userSelect = "none";
+      e.preventDefault();
+    }
+  });
+
+  // Touch support
+  fab.addEventListener("touchstart", function(e) {
+    dragging = true;
+    startY      = e.touches[0].clientY;
+    startBottom = parseInt(fab.style.bottom) || 22;
+    fab.style.transition = "none";
+  }, {passive: true});
+
+  document.addEventListener("mousemove", function(e) {
+    if (!dragging) return;
+    var delta   = startY - e.clientY;
+    var newBot  = Math.max(8, Math.min(window.innerHeight - 80, startBottom + delta));
+    fab.style.bottom = newBot + "px";
+  });
+
+  document.addEventListener("touchmove", function(e) {
+    if (!dragging) return;
+    var delta  = startY - e.touches[0].clientY;
+    var newBot = Math.max(8, Math.min(window.innerHeight - 80, startBottom + delta));
+    fab.style.bottom = newBot + "px";
+  }, {passive: true});
+
+  function stopDrag() {
+    if (!dragging) return;
+    dragging = false;
+    fab.style.transition = "";
+    fab.style.userSelect = "";
+    // Save position
+    localStorage.setItem("voice_fab_pos", JSON.stringify({
+      bottom: parseInt(fab.style.bottom) || 22,
+      right:  parseInt(fab.style.right)  || 22
+    }));
+  }
+
+  document.addEventListener("mouseup",   stopDrag);
+  document.addEventListener("touchend",  stopDrag);
+})();
+</script>
 {% endif %}
 
 <div class="toast-container" id="toastContainer"></div>
