@@ -21,5 +21,11 @@ jobs:
             cd /home/ubuntu/UTMS
             git pull origin main
             sudo systemctl restart utms
+            # Remove Nginx Basic Auth if still present
+            if grep -q 'auth_basic' /etc/nginx/sites-available/uttamtailors 2>/dev/null; then
+              sudo sed -i '/auth_basic/d' /etc/nginx/sites-available/uttamtailors
+              sudo nginx -t && sudo systemctl reload nginx
+              echo Nginx auth removed!
+            fi
             echo Deploy done!
           "
