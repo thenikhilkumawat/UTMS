@@ -3510,7 +3510,8 @@ def past_orders():
 
     # Peek next order code for display
     from database import peek_order_code
-    next_code = peek_order_code()
+    # Past orders: user enters their OWN code — don't prefill with next new-order code
+    next_code = ""
 
     conn.close()
     return render_template("owner/past_orders.html",
