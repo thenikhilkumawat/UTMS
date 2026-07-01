@@ -246,7 +246,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 ════════════════════════════════════ */
 .voice-fab-container{position:fixed;bottom:22px;right:22px;z-index:200;display:flex;flex-direction:column;align-items:flex-end;gap:7px;}
 #voice-hint{background:rgba(17,24,39,0.9);color:#e0e8ff;font-size:11px;font-weight:500;padding:5px 10px;border-radius:18px;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-#voice-fab{width:50px;height:50px;border-radius:50%;background:var(--accent);border:none;color:white;font-size:20px;box-shadow:0 4px 16px rgba(99,102,241,0.45);display:flex;align-items:center;justify-content:center;transition:all var(--transition);}
+#voice-fab{width:50px;height:50px;border-radius:50%;background:var(--accent);border:none;color:white;font-size:20px;box-shadow:0 4px 16px rgba(99,102,241,0.45);display:flex;align-items:center;justify-content:center;transition:all var(--transition);cursor:grab;}#voice-fab:active{cursor:grabbing;}
 #voice-fab:hover{transform:scale(1.08);}
 #voice-fab.listening{background:var(--danger);animation:micPulse 1.2s ease-in-out infinite;}
 @keyframes micPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.1);}}
