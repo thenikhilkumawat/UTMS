@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Uttam UTMS">
 <link rel="apple-touch-icon" href="/static/img/pwa-icon-192.png">
 <title>{% block title %}Uttam Tailors{% endblock %}</title>
-<link rel="stylesheet" href="{{ asset_v('css/main.css') }}">
+<link rel="stylesheet" href="/static/css/main.css?v=1782918998">
 {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -262,7 +262,7 @@
   {% endif %}
 {% endwith %}
 
-<script src="{{ asset_v('js/lang.js') }}"></script>
+<script src="/static/js/lang.js?v=1782918998"></script>
 <script src="/static/js/name-autocorrect.js?v=20260618c"></script>
 
 <!-- ── DARK MODE ── -->
@@ -336,7 +336,7 @@ function setFontSize(size) {
   location.reload();
 }
 </script>
-{% if show_voice %}<script src="{{ asset_v('js/voice.js') }}"></script>{% endif %}
+{% if show_voice %}<script src="/static/js/voice.js?v=1782918998"></script>{% endif %}
 <script>
 function openSidebar()  { document.getElementById("sidebar").classList.add("open");    document.getElementById("sidebarOverlay").classList.add("show"); }
 function closeSidebar() { document.getElementById("sidebar").classList.remove("open"); document.getElementById("sidebarOverlay").classList.remove("show"); }
