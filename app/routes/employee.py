@@ -2212,7 +2212,7 @@ def api_pickup_search():
         # Exact order_code match
         r = conn.execute("""
             SELECT o.order_code, o.status, o.delivery_date, o.order_date, o.remaining, o.is_urgent,
-                   o.repeat_of, c.name as customer_name, c.mobile
+                   o.repeat_of, c.name as customer_name, c.mobile, c.address
             FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
             WHERE o.order_code=?
         """, (code,)).fetchall()
@@ -2224,7 +2224,7 @@ def api_pickup_search():
         # All orders with repeat_of matching this code (repeat customer's entries)
         r2 = conn.execute("""
             SELECT o.order_code, o.status, o.delivery_date, o.order_date, o.remaining, o.is_urgent,
-                   o.repeat_of, c.name as customer_name, c.mobile
+                   o.repeat_of, c.name as customer_name, c.mobile, c.address
             FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
             WHERE o.repeat_of=?
             ORDER BY o.id DESC
@@ -2234,25 +2234,33 @@ def api_pickup_search():
                 rows.append(row)
                 seen_codes.add(row["order_code"])
 
-    # Search by name or mobile — multi-word AND logic
-    # "Kumar Ram" will find "Ram Kumar", "rames" finds "Ramesh" etc.
+    # Search by name, mobile, address, garment type — multi-word AND logic
+    # Each word must match at least one of: name, mobile, address, garment
+    # "Ram Sikar" finds orders for Ram from Sikar
+    # "Kameej" finds all shirt orders
     words = [w.lower() for w in q.split() if w]
     if words:
         word_clauses = " AND ".join(
-            "(LOWER(c.name) LIKE ? OR c.mobile LIKE ?)"
+            """(LOWER(c.name) LIKE ?
+               OR c.mobile LIKE ?
+               OR LOWER(c.address) LIKE ?
+               OR EXISTS (
+                   SELECT 1 FROM order_items oi
+                   WHERE oi.order_id=o.id AND LOWER(oi.garment_type) LIKE ?
+               ))"""
             for _ in words
         )
         word_params = []
         for w in words:
             lk = f"%{w}%"
-            word_params.extend([lk, lk])
+            word_params.extend([lk, lk, lk, lk])
 
         r3 = conn.execute(f"""
             SELECT o.order_code, o.status, o.delivery_date, o.order_date, o.remaining, o.is_urgent,
-                   o.repeat_of, c.name as customer_name, c.mobile
+                   o.repeat_of, c.name as customer_name, c.mobile, c.address
             FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
             WHERE {word_clauses}
-            ORDER BY o.id DESC LIMIT 30
+            ORDER BY o.id DESC LIMIT 40
         """, word_params).fetchall()
         for row in r3:
             if row["order_code"] not in seen_codes:
@@ -2268,6 +2276,7 @@ def api_pickup_search():
         "status":           r["status"],
         "customer_name":    r["customer_name"] or "—",
         "mobile":           r["mobile"] or "",
+        "address":          r["address"] or "" if "address" in r.keys() else "",
         "order_date_fmt":   fmtd(r["order_date"]),
         "delivery_date_fmt":fmtd(r["delivery_date"]),
         "remaining":        r["remaining"] or 0,
