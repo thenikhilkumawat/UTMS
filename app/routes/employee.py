@@ -790,10 +790,20 @@ def save_order():
             if mobile:
                 dup = conn.execute("SELECT id, name FROM customers WHERE mobile=?", (mobile,)).fetchone()
                 if dup:
-                    # Link to existing customer and update their details
-                    customer_id = dup["id"]
-                    conn.execute("UPDATE customers SET name=?,mobile=?,address=? WHERE id=?",
-                                 (customer_name, mobile, address, customer_id))
+                    same_name = dup["name"].strip().lower() == customer_name.strip().lower()
+                    if same_name:
+                        # Same person — reuse, only update address
+                        customer_id = dup["id"]
+                        conn.execute("UPDATE customers SET address=? WHERE id=?",
+                                     (address, customer_id))
+                    else:
+                        # Different person, same mobile (shared phone) — NEW customer record
+                        conn.execute("INSERT INTO customers(name,mobile,address) VALUES(?,?,?)",
+                                     (customer_name, mobile, address))
+                        new_row = conn.execute(
+                            "SELECT id FROM customers WHERE name=? AND mobile=? ORDER BY id DESC LIMIT 1",
+                            (customer_name, mobile)).fetchone()
+                        customer_id = new_row["id"] if new_row else dup["id"]
                 else:
                     conn.execute("INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?)",
                                  (customer_name, mobile, address, now))
