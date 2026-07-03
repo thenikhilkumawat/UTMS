@@ -83,6 +83,27 @@ def _urgent_count():
     return c
 
 
+
+@bp.route("/api/order-ref-lookup")
+def api_order_ref_lookup():
+    """Lookup customer info from a reference order code."""
+    code = request.args.get("code", "").strip().lstrip("#")
+    if not code:
+        return jsonify({"found": False})
+    conn = get_db()
+    row = conn.execute("""
+        SELECT c.id, c.name, c.mobile, c.address
+        FROM orders o JOIN customers c ON c.id = o.customer_id
+        WHERE o.order_code = ? LIMIT 1
+    """, (code,)).fetchone()
+    conn.close()
+    if row:
+        return jsonify({"found": True, "customer_id": row["id"],
+                        "name": row["name"], "mobile": row["mobile"] or "",
+                        "address": row["address"] or ""})
+    return jsonify({"found": False})
+
+
 @bp.route("/")
 def dashboard():
     conn = get_db()
