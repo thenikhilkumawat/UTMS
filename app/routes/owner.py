@@ -1158,6 +1158,127 @@ def bulk_import_upload():
         "total_rows": row_count
     })
 
+
+@bp.route("/api/fix-shared-mobile")
+@owner_required
+def fix_shared_mobile():
+    """Show all orders grouped by mobile where multiple orders exist — bulk name fix tool."""
+    conn = get_db()
+
+    # Find all mobiles that have 2+ orders
+    rows = conn.execute("""
+        SELECT c.mobile, c.name, c.id as cust_id,
+               o.order_code, o.order_date, o.created_at,
+               GROUP_CONCAT(oi.garment_type, ', ') as garments
+        FROM customers c
+        JOIN orders o ON o.customer_id = c.id
+        LEFT JOIN order_items oi ON oi.order_id = o.id
+        WHERE c.mobile IS NOT NULL AND c.mobile != ''
+          AND c.mobile IN (
+              SELECT mobile FROM customers
+              WHERE mobile IS NOT NULL AND mobile != ''
+              GROUP BY mobile HAVING COUNT(*) >= 1
+          )
+          AND (SELECT COUNT(*) FROM orders o2 WHERE o2.customer_id = c.id) >= 2
+        GROUP BY o.order_code
+        ORDER BY c.mobile, o.id DESC
+    """).fetchall()
+
+    conn.close()
+
+    # Group by mobile
+    from collections import OrderedDict
+    groups = OrderedDict()
+    for r in rows:
+        m = r["mobile"]
+        if m not in groups:
+            groups[m] = []
+        groups[m].append(dict(r))
+
+    if not groups:
+        return """<div style='font-family:sans-serif;padding:30px;'>
+        <h2>✅ Koi shared mobile orders nahi mile!</h2>
+        <a href='/owner/orders'>← Back to Orders</a></div>"""
+
+    html = """<!DOCTYPE html><html><head>
+    <meta charset='utf-8'>
+    <title>Fix Shared Mobile Names</title>
+    <style>
+      body{font-family:-apple-system,sans-serif;background:#f8fafc;margin:0;padding:20px;}
+      h1{color:#1e293b;font-size:22px;margin-bottom:4px;}
+      .subtitle{color:#64748b;font-size:13px;margin-bottom:24px;}
+      .group{background:#fff;border-radius:12px;border:1.5px solid #e2e8f0;margin-bottom:20px;overflow:hidden;}
+      .group-header{background:#1e293b;color:#fff;padding:12px 16px;font-size:13px;font-weight:700;}
+      .mobile-tag{background:#6366f1;color:#fff;padding:2px 10px;border-radius:20px;font-size:12px;}
+      table{width:100%;border-collapse:collapse;}
+      th{background:#f8fafc;padding:10px 14px;font-size:11px;text-transform:uppercase;color:#64748b;text-align:left;border-bottom:1px solid #e2e8f0;}
+      td{padding:10px 14px;border-bottom:1px solid #f1f5f9;font-size:13px;vertical-align:middle;}
+      tr:last-child td{border-bottom:none;}
+      input.name-inp{padding:6px 10px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:13px;font-weight:600;width:160px;}
+      input.name-inp:focus{border-color:#6366f1;outline:none;}
+      .fix-btn{padding:6px 14px;background:#16a34a;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;}
+      .fix-btn:hover{background:#15803d;}
+      .done-tag{color:#16a34a;font-size:12px;font-weight:700;display:none;}
+      .code-tag{font-weight:800;color:#4f46e5;}
+      .garment-tag{font-size:11px;color:#64748b;}
+    </style>
+    </head><body>
+    <h1>🔧 Fix Shared Mobile Names</h1>
+    <div class='subtitle'>Yahan wo orders hain jisme same mobile se multiple orders hain. Har order ke sahi naam fix karo.</div>
+    """
+
+    for mobile, orders in groups.items():
+        html += f"""<div class='group'>
+        <div class='group-header'>
+          📱 <span class='mobile-tag'>{mobile}</span>
+          &nbsp; {len(orders)} orders — same mobile number
+        </div>
+        <table>
+        <tr><th>Order</th><th>Date</th><th>Garments</th><th>Current Name</th><th>Correct Name</th><th></th></tr>
+        """
+        for o in orders:
+            odate = (o.get('order_date') or o.get('created_at') or '')[:10]
+            garments = o.get('garments') or '—'
+            html += f"""<tr id='row-{o["order_code"]}'>
+            <td class='code-tag'>#{o["order_code"]}</td>
+            <td>{odate}</td>
+            <td class='garment-tag'>{garments[:40]}</td>
+            <td>{o["name"]}</td>
+            <td><input class='name-inp' id='name-{o["order_code"]}' value='{o["name"]}' placeholder='Sahi naam'></td>
+            <td>
+              <button class='fix-btn' onclick='fixName("{o["order_code"]}")'>Save</button>
+              <span class='done-tag' id='done-{o["order_code"]}'>✅ Done</span>
+            </td>
+            </tr>"""
+        html += "</table></div>"
+
+    html += """
+    <script>
+    async function fixName(code) {
+      var name = document.getElementById('name-' + code).value.trim();
+      if (!name) return;
+      var btn = event.target;
+      btn.disabled = true; btn.textContent = '...';
+      var r = await fetch('/owner/api/fix-order-customer', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'code=' + encodeURIComponent(code) + '&name=' + encodeURIComponent(name)
+      });
+      var text = await r.text();
+      if (text.includes('Fixed') || text.includes('✅')) {
+        btn.style.display = 'none';
+        document.getElementById('done-' + code).style.display = 'inline';
+        document.getElementById('row-' + code).style.background = '#f0fdf4';
+      } else {
+        btn.textContent = 'Save'; btn.disabled = false;
+        alert('Error fixing #' + code);
+      }
+    }
+    </script>
+    </body></html>"""
+
+    return html
+
 @bp.route("/api/fix-order-customer", methods=["GET", "POST"])
 @owner_required
 def fix_order_customer():
