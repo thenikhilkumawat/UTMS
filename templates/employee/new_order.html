@@ -181,45 +181,30 @@
         <div class="form-grid">
           <div class="field-wrap"><label>Customer Name <span style="color:var(--danger);">*</span></label><input type="text" id="n_name" data-tp="customer_name" data-autocorrect-name autocomplete="off"></div>
           <div class="field-wrap">
-            <!-- Toggle: Mobile vs Reference Code -->
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-              <label style="margin:0;">Mobile / Reference</label>
-              <div style="display:flex;background:#f1f5f9;border-radius:8px;padding:2px;gap:2px;">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+              <label style="margin:0;flex:1;">Mobile No.</label>
+              <div style="display:flex;background:#f1f5f9;border-radius:6px;padding:2px;gap:1px;">
                 <button type="button" id="toggle-mobile-btn" onclick="switchMobileMode('mobile')"
-                  style="padding:4px 12px;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;background:var(--accent);color:#fff;">
-                  📱 Mobile
-                </button>
+                  style="padding:2px 8px;border:none;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer;background:var(--accent);color:#fff;">📱</button>
                 <button type="button" id="toggle-ref-btn" onclick="switchMobileMode('ref')"
-                  style="padding:4px 12px;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;background:transparent;color:#64748b;">
-                  🔗 Ref Code
-                </button>
+                  style="padding:2px 8px;border:none;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer;background:transparent;color:#64748b;">🔗 Ref</button>
               </div>
             </div>
-
-            <!-- Mobile input -->
             <div id="mobile-input-wrap">
               <input type="tel" id="n_mobile" inputmode="numeric" maxlength="10" pattern="[0-9]{10}"
                 oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10);checkMobileExists(this.value)"
-                placeholder="Mobile number"
-                style="width:100%;box-sizing:border-box;">
-              <div id="mobile-exists-warn" style="display:none;background:#fffbeb;border:1.5px solid #fbbf24;border-radius:8px;padding:8px 12px;margin-top:6px;">
-                <div style="font-size:12px;font-weight:800;color:#92400e;">⚠️ Already registered</div>
-                <div style="font-size:11px;color:#78350f;margin-top:2px;">Pehle <strong id="mobile-exists-name"></strong> ka order tha (<span id="mobile-exists-code"></span>).<br>Alag naam type karo — alag save hoga.</div>
+                placeholder="Mobile number">
+              <div id="mobile-exists-warn" style="display:none;background:#fffbeb;border:1px solid #fbbf24;border-radius:7px;padding:6px 10px;margin-top:4px;font-size:11px;color:#92400e;">
+                ⚠️ <strong id="mobile-exists-name"></strong> ka order tha (<span id="mobile-exists-code"></span>) — alag naam type karo
               </div>
             </div>
-
-            <!-- Reference Code input -->
             <div id="ref-input-wrap" style="display:none;">
-              <div style="display:flex;gap:8px;">
-                <input type="text" id="n_ref_code" inputmode="numeric" placeholder="Pehle wala order code, e.g. 3910"
-                  oninput="lookupRefCode(this.value)"
-                  style="flex:1;box-sizing:border-box;">
+              <input type="text" id="n_ref_code" inputmode="numeric" placeholder="Order code e.g. 3910"
+                oninput="lookupRefCode(this.value)">
+              <div id="ref-lookup-result" style="display:none;margin-top:4px;padding:6px 10px;background:#f0fdf4;border:1px solid #86efac;border-radius:7px;font-size:11px;color:#166534;">
+                ✅ <span id="ref-lookup-info"></span>
               </div>
-              <div id="ref-lookup-result" style="display:none;margin-top:6px;padding:8px 12px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:8px;">
-                <div style="font-size:12px;font-weight:800;color:#166534;">✅ Order found:</div>
-                <div style="font-size:12px;color:#15803d;margin-top:2px;" id="ref-lookup-info"></div>
-              </div>
-              <div id="ref-lookup-error" style="display:none;margin-top:6px;padding:6px 10px;background:#fee2e2;border-radius:8px;font-size:12px;color:#dc2626;">
+              <div id="ref-lookup-error" style="display:none;margin-top:4px;padding:5px 10px;background:#fee2e2;border-radius:7px;font-size:11px;color:#dc2626;">
                 ❌ Order nahi mila
               </div>
             </div>
