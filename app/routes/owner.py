@@ -3554,12 +3554,26 @@ def past_orders_save():
         conn = get_db()
 
         # 1. Customer — find or create
+        # IMPORTANT: Same mobile + DIFFERENT name = two different people sharing a phone.
+        # Never overwrite existing customer's name. Create a new customer record instead.
         customer_id = None
         if customer_mobile:
-            r = conn.execute("SELECT id FROM customers WHERE mobile=?", (customer_mobile,)).fetchone()
+            r = conn.execute("SELECT id, name FROM customers WHERE mobile=?", (customer_mobile,)).fetchone()
             if r:
-                customer_id = r["id"]
-                conn.execute("UPDATE customers SET name=?, address=? WHERE id=?", (customer_name, customer_address, customer_id))
+                same_name = r["name"].strip().lower() == customer_name.strip().lower()
+                if same_name:
+                    # Same person — reuse, just update address
+                    customer_id = r["id"]
+                    conn.execute("UPDATE customers SET address=? WHERE id=?",
+                                 (customer_address, customer_id))
+                else:
+                    # Different person sharing same phone — create NEW customer
+                    conn.execute("INSERT INTO customers(name, mobile, address) VALUES(?,?,?)",
+                                 (customer_name, customer_mobile, customer_address))
+                    new_r = conn.execute(
+                        "SELECT id FROM customers WHERE name=? AND mobile=? ORDER BY id DESC LIMIT 1",
+                        (customer_name, customer_mobile)).fetchone()
+                    customer_id = new_r["id"] if new_r else r["id"]
         if not customer_id:
             r = conn.execute("SELECT id FROM customers WHERE name=? ORDER BY id DESC LIMIT 1", (customer_name,)).fetchone()
             if r:
