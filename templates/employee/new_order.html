@@ -180,7 +180,16 @@
       <div class="card-body">
         <div class="form-grid">
           <div class="field-wrap"><label>Customer Name <span style="color:var(--danger);">*</span></label><input type="text" id="n_name" data-tp="customer_name" data-autocorrect-name autocomplete="off"></div>
-          <div class="field-wrap"><label>Mobile Number <span style="color:var(--danger);">*</span></label><input type="tel" id="n_mobile" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" required oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)"></div>
+          <div class="field-wrap"><label>Mobile Number <span style="color:var(--danger);">*</span></label><input type="tel" id="n_mobile" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" required oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10);checkMobileExists(this.value)"></div>
+          <!-- Same mobile warning + reference field -->
+          <div id="mobile-exists-warn" style="display:none;background:#fffbeb;border:1.5px solid #fbbf24;border-radius:10px;padding:10px 14px;margin-top:-4px;">
+            <div style="font-size:12px;font-weight:800;color:#92400e;">⚠️ Yeh mobile already registered hai</div>
+            <div style="font-size:12px;color:#78350f;margin-top:3px;">Pehle <strong id="mobile-exists-name"></strong> ka order tha (<span id="mobile-exists-code"></span>). Agar alag insaan hai toh sahi naam likhein — dono alag save honge.</div>
+            <div style="margin-top:8px;">
+              <label style="font-size:11px;font-weight:700;color:#92400e;display:block;margin-bottom:3px;">🔗 Reference Code (optional)</label>
+              <input type="text" id="n_reference_code" placeholder="e.g. 3910 — link karne ke liye" style="width:100%;padding:7px 10px;border:1.5px solid #fcd34d;border-radius:7px;font-size:12px;background:#fffbeb;box-sizing:border-box;">
+            </div>
+          </div>
           <div class="field-wrap full"><label data-t="address">Address</label><input type="text" id="n_address"></div>
           <div class="field-wrap"><label>Order Date</label><input type="date" id="n_odate"></div>
           <div class="field-wrap">
@@ -690,6 +699,26 @@ function goNewStep(n) {
   if (n===3) { const t=new Date().toLocaleDateString("en-CA"); if(!document.getElementById("n_odate").value) document.getElementById("n_odate").value=t; document.getElementById("n_odate").min=t; document.getElementById("n_ddate").min=t; }
   if (n===4) { injectPayment("payment-inner-new"); recalcPayment(); }
   if (n===5) { buildQR("qr-box","qr-link"); startImgPoll("img-preview"); }
+}
+
+// ── MOBILE EXISTS CHECK ──────────────────────────────────────────
+var _mobileCheckTimer = null;
+function checkMobileExists(val) {
+  clearTimeout(_mobileCheckTimer);
+  var warn = document.getElementById("mobile-exists-warn");
+  if (!warn) return;
+  if (val.length !== 10) { warn.style.display = "none"; return; }
+  _mobileCheckTimer = setTimeout(function() {
+    fetch("/api/check-mobile?m=" + encodeURIComponent(val))
+      .then(function(r){ return r.json(); })
+      .then(function(d) {
+        if (d.found) {
+          document.getElementById("mobile-exists-name").textContent = d.name;
+          document.getElementById("mobile-exists-code").textContent = d.last_code ? "#" + d.last_code : "order found";
+          warn.style.display = "block";
+        } else { warn.style.display = "none"; }
+      }).catch(function(){ warn.style.display = "none"; });
+  }, 500);
 }
 
 function validateGarments(flow) {
