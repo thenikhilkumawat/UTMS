@@ -819,7 +819,10 @@ def save_order():
                         # Different name → new person, create separate customer record
                         conn.execute("INSERT INTO customers(name,mobile,address) VALUES(?,?,?)",
                                      (customer_name, mobile, address))
-                        customer_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+                        row = conn.execute(
+                            "SELECT id FROM customers WHERE name=? AND mobile=? ORDER BY id DESC LIMIT 1",
+                            (customer_name, mobile)).fetchone()
+                        customer_id = row["id"] if row else None
                 else:
                     conn.execute("INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?)",
                                  (customer_name, mobile, address, now))
