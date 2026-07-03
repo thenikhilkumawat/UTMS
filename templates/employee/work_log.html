@@ -703,28 +703,31 @@ async function confirmPinDelete() {
   if (!pin) { document.getElementById("pin-error-wl").textContent = "⚠️ PIN daalo"; return; }
 
   var btn = document.getElementById("pin-confirm-btn-wl");
+  var errEl = document.getElementById("pin-error-wl");
   btn.disabled = true; btn.textContent = "Checking...";
 
-  var res = await fetch("/api/check-pin", {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({pin: pin})
-  });
-  var d = await res.json().catch(function(){ return {}; });
+  try {
+    var res = await fetch("/api/check-pin", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({pin: pin})
+    });
+    var d = await res.json();
 
-  if (d.ok) {
-    // PIN correct — proceed with delete
-    closePinModal();
-    fetch("/api/work-log/delete/" + _pendingDeleteId, {method: "POST"})
-      .then(function(r){ return r.json(); })
-      .then(function(d){
-        if (d.ok) { showToast("🗑️ Entry deleted", "success"); setTimeout(loadStats, 300); }
-        else showToast(d.error || "Error", "error");
-      });
-  } else {
-    document.getElementById("pin-error-wl").textContent = "❌ Galat PIN — dobara try karo";
-    document.getElementById("pin-input-wl").value = "";
-    document.getElementById("pin-input-wl").focus();
+    if (d.ok) {
+      closePinModal();
+      var r2 = await fetch("/api/work-log/delete/" + _pendingDeleteId, {method: "POST"});
+      var d2 = await r2.json();
+      if (d2.ok) { showToast("🗑️ Entry deleted", "success"); setTimeout(loadStats, 300); }
+      else { showToast(d2.error || "Delete failed", "error"); }
+    } else {
+      errEl.textContent = "❌ Galat PIN — dobara try karo";
+      document.getElementById("pin-input-wl").value = "";
+      document.getElementById("pin-input-wl").focus();
+      btn.disabled = false; btn.textContent = "Confirm Delete";
+    }
+  } catch(e) {
+    errEl.textContent = "❌ Network error — dobara try karo";
     btn.disabled = false; btn.textContent = "Confirm Delete";
   }
 }
