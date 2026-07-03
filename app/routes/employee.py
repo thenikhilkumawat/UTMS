@@ -83,6 +83,25 @@ def _urgent_count():
     return c
 
 
+
+@bp.route("/api/check-mobile")
+def api_check_mobile():
+    """Check if a mobile number already has a customer — for frontend warning."""
+    mobile = request.args.get("m", "").strip()
+    if len(mobile) != 10:
+        return jsonify({"found": False})
+    conn = get_db()
+    row = conn.execute(
+        """SELECT c.name, c.id,
+           (SELECT o.order_code FROM orders o WHERE o.customer_id=c.id ORDER BY o.id DESC LIMIT 1) as last_code
+           FROM customers c WHERE c.mobile=? LIMIT 1""",
+        (mobile,)).fetchone()
+    conn.close()
+    if row:
+        return jsonify({"found": True, "name": row["name"], "last_code": row["last_code"] or ""})
+    return jsonify({"found": False})
+
+
 @bp.route("/")
 def dashboard():
     conn = get_db()
@@ -790,10 +809,17 @@ def save_order():
             if mobile:
                 dup = conn.execute("SELECT id, name FROM customers WHERE mobile=?", (mobile,)).fetchone()
                 if dup:
-                    # Link to existing customer and update their details
-                    customer_id = dup["id"]
-                    conn.execute("UPDATE customers SET name=?,mobile=?,address=? WHERE id=?",
-                                 (customer_name, mobile, address, customer_id))
+                    # Same mobile — create a NEW customer with the typed name
+                    # (don't overwrite existing person's name — two people can share a phone)
+                    if dup["name"].strip().lower() == customer_name.strip().lower():
+                        # Same name → reuse existing customer, just update address
+                        customer_id = dup["id"]
+                        conn.execute("UPDATE customers SET address=? WHERE id=?", (address, customer_id))
+                    else:
+                        # Different name → new person, create separate customer record
+                        conn.execute("INSERT INTO customers(name,mobile,address) VALUES(?,?,?)",
+                                     (customer_name, mobile, address))
+                        customer_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
                 else:
                     conn.execute("INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?)",
                                  (customer_name, mobile, address, now))
