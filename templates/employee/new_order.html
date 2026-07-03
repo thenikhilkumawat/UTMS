@@ -181,32 +181,25 @@
         <div class="form-grid">
           <div class="field-wrap"><label>Customer Name <span style="color:var(--danger);">*</span></label><input type="text" id="n_name" data-tp="customer_name" data-autocorrect-name autocomplete="off"></div>
           <div class="field-wrap">
-            <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
-              <label style="margin:0;flex:1;">Mobile No.</label>
-              <div style="display:flex;background:#f1f5f9;border-radius:6px;padding:2px;gap:1px;">
-                <button type="button" id="toggle-mobile-btn" onclick="switchMobileMode('mobile')"
-                  style="padding:2px 8px;border:none;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer;background:var(--accent);color:#fff;">📱</button>
-                <button type="button" id="toggle-ref-btn" onclick="switchMobileMode('ref')"
-                  style="padding:2px 8px;border:none;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer;background:transparent;color:#64748b;">🔗 Ref</button>
-              </div>
+            <label>Mobile No. &nbsp;
+              <span style="float:right;display:inline-flex;background:#f1f5f9;border-radius:6px;padding:1px;gap:1px;vertical-align:middle;">
+                <button type="button" id="toggle-mobile-btn" onclick="switchMobileMode('mobile')" style="padding:1px 7px;border:none;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer;background:var(--accent);color:#fff;line-height:1.6;">📱</button>
+                <button type="button" id="toggle-ref-btn" onclick="switchMobileMode('ref')" style="padding:1px 7px;border:none;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer;background:transparent;color:#64748b;line-height:1.6;">🔗 Ref</button>
+              </span>
+            </label>
+            <input type="tel" id="n_mobile" inputmode="numeric" maxlength="10"
+              oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10);checkMobileExists(this.value)"
+              placeholder="Mobile number">
+            <input type="text" id="n_ref_code" inputmode="numeric" placeholder="Order code e.g. 3910"
+              oninput="lookupRefCode(this.value)" style="display:none;">
+            <div id="mobile-exists-warn" style="display:none;background:#fffbeb;border:1px solid #fbbf24;border-radius:6px;padding:5px 8px;font-size:11px;color:#92400e;">
+              ⚠️ <strong id="mobile-exists-name"></strong> ka order (<span id="mobile-exists-code"></span>) — alag naam likho
             </div>
-            <div id="mobile-input-wrap">
-              <input type="tel" id="n_mobile" inputmode="numeric" maxlength="10" pattern="[0-9]{10}"
-                oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10);checkMobileExists(this.value)"
-                placeholder="Mobile number">
-              <div id="mobile-exists-warn" style="display:none;background:#fffbeb;border:1px solid #fbbf24;border-radius:7px;padding:6px 10px;margin-top:4px;font-size:11px;color:#92400e;">
-                ⚠️ <strong id="mobile-exists-name"></strong> ka order tha (<span id="mobile-exists-code"></span>) — alag naam type karo
-              </div>
+            <div id="ref-lookup-result" style="display:none;background:#f0fdf4;border:1px solid #86efac;border-radius:6px;padding:5px 8px;font-size:11px;color:#166534;">
+              ✅ <span id="ref-lookup-info"></span>
             </div>
-            <div id="ref-input-wrap" style="display:none;">
-              <input type="text" id="n_ref_code" inputmode="numeric" placeholder="Order code e.g. 3910"
-                oninput="lookupRefCode(this.value)">
-              <div id="ref-lookup-result" style="display:none;margin-top:4px;padding:6px 10px;background:#f0fdf4;border:1px solid #86efac;border-radius:7px;font-size:11px;color:#166534;">
-                ✅ <span id="ref-lookup-info"></span>
-              </div>
-              <div id="ref-lookup-error" style="display:none;margin-top:4px;padding:5px 10px;background:#fee2e2;border-radius:7px;font-size:11px;color:#dc2626;">
-                ❌ Order nahi mila
-              </div>
+            <div id="ref-lookup-error" style="display:none;background:#fee2e2;border-radius:6px;padding:5px 8px;font-size:11px;color:#dc2626;">
+              ❌ Order nahi mila
             </div>
           </div>
           <div class="field-wrap full"><label data-t="address">Address</label><input type="text" id="n_address"></div>
@@ -726,24 +719,27 @@ var _mobileMode = 'mobile'; // 'mobile' or 'ref'
 
 function switchMobileMode(mode) {
   _mobileMode = mode;
-  var mWrap = document.getElementById('mobile-input-wrap');
-  var rWrap = document.getElementById('ref-input-wrap');
+  var mWrap = document.getElementById('n_mobile');
+  var rWrap = document.getElementById('n_ref_code');
   var mBtn  = document.getElementById('toggle-mobile-btn');
   var rBtn  = document.getElementById('toggle-ref-btn');
 
   if (mode === 'mobile') {
-    mWrap.style.display = 'block';
+    mWrap.style.display = '';
     rWrap.style.display = 'none';
     mBtn.style.background = 'var(--accent)'; mBtn.style.color = '#fff';
     rBtn.style.background = 'transparent';   rBtn.style.color = '#64748b';
     document.getElementById('n_mobile').required = true;
+    document.getElementById('ref-lookup-result').style.display='none';
+    document.getElementById('ref-lookup-error').style.display='none';
   } else {
     mWrap.style.display = 'none';
-    rWrap.style.display = 'block';
+    rWrap.style.display = '';
     rBtn.style.background = 'var(--accent)'; rBtn.style.color = '#fff';
     mBtn.style.background = 'transparent';   mBtn.style.color = '#64748b';
     document.getElementById('n_mobile').required = false;
     document.getElementById('n_mobile').value = '';
+    document.getElementById('mobile-exists-warn').style.display='none';
     document.getElementById('mobile-exists-warn').style.display = 'none';
   }
 }
