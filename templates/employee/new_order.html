@@ -180,14 +180,48 @@
       <div class="card-body">
         <div class="form-grid">
           <div class="field-wrap"><label>Customer Name <span style="color:var(--danger);">*</span></label><input type="text" id="n_name" data-tp="customer_name" data-autocorrect-name autocomplete="off"></div>
-          <div class="field-wrap"><label>Mobile Number <span style="color:var(--danger);">*</span></label><input type="tel" id="n_mobile" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" required oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10);checkMobileExists(this.value)"></div>
-          <!-- Same mobile warning + reference field -->
-          <div id="mobile-exists-warn" style="display:none;background:#fffbeb;border:1.5px solid #fbbf24;border-radius:10px;padding:10px 14px;margin-top:-4px;">
-            <div style="font-size:12px;font-weight:800;color:#92400e;">⚠️ Yeh mobile already registered hai</div>
-            <div style="font-size:12px;color:#78350f;margin-top:3px;">Pehle <strong id="mobile-exists-name"></strong> ka order tha (<span id="mobile-exists-code"></span>). Agar alag insaan hai toh sahi naam likhein — dono alag save honge.</div>
-            <div style="margin-top:8px;">
-              <label style="font-size:11px;font-weight:700;color:#92400e;display:block;margin-bottom:3px;">🔗 Reference Code (optional)</label>
-              <input type="text" id="n_reference_code" placeholder="e.g. 3910 — link karne ke liye" style="width:100%;padding:7px 10px;border:1.5px solid #fcd34d;border-radius:7px;font-size:12px;background:#fffbeb;box-sizing:border-box;">
+          <div class="field-wrap">
+            <!-- Toggle: Mobile vs Reference Code -->
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+              <label style="margin:0;">Mobile / Reference</label>
+              <div style="display:flex;background:#f1f5f9;border-radius:8px;padding:2px;gap:2px;">
+                <button type="button" id="toggle-mobile-btn" onclick="switchMobileMode('mobile')"
+                  style="padding:4px 12px;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;background:var(--accent);color:#fff;">
+                  📱 Mobile
+                </button>
+                <button type="button" id="toggle-ref-btn" onclick="switchMobileMode('ref')"
+                  style="padding:4px 12px;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;background:transparent;color:#64748b;">
+                  🔗 Ref Code
+                </button>
+              </div>
+            </div>
+
+            <!-- Mobile input -->
+            <div id="mobile-input-wrap">
+              <input type="tel" id="n_mobile" inputmode="numeric" maxlength="10" pattern="[0-9]{10}"
+                oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10);checkMobileExists(this.value)"
+                placeholder="Mobile number"
+                style="width:100%;box-sizing:border-box;">
+              <div id="mobile-exists-warn" style="display:none;background:#fffbeb;border:1.5px solid #fbbf24;border-radius:8px;padding:8px 12px;margin-top:6px;">
+                <div style="font-size:12px;font-weight:800;color:#92400e;">⚠️ Already registered</div>
+                <div style="font-size:11px;color:#78350f;margin-top:2px;">Pehle <strong id="mobile-exists-name"></strong> ka order tha (<span id="mobile-exists-code"></span>).<br>Alag naam type karo — alag save hoga.</div>
+              </div>
+            </div>
+
+            <!-- Reference Code input -->
+            <div id="ref-input-wrap" style="display:none;">
+              <div style="display:flex;gap:8px;">
+                <input type="text" id="n_ref_code" inputmode="numeric" placeholder="Pehle wala order code, e.g. 3910"
+                  oninput="lookupRefCode(this.value)"
+                  style="flex:1;box-sizing:border-box;">
+              </div>
+              <div id="ref-lookup-result" style="display:none;margin-top:6px;padding:8px 12px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:8px;">
+                <div style="font-size:12px;font-weight:800;color:#166534;">✅ Order found:</div>
+                <div style="font-size:12px;color:#15803d;margin-top:2px;" id="ref-lookup-info"></div>
+              </div>
+              <div id="ref-lookup-error" style="display:none;margin-top:6px;padding:6px 10px;background:#fee2e2;border-radius:8px;font-size:12px;color:#dc2626;">
+                ❌ Order nahi mila
+              </div>
             </div>
           </div>
           <div class="field-wrap full"><label data-t="address">Address</label><input type="text" id="n_address"></div>
@@ -699,6 +733,67 @@ function goNewStep(n) {
   if (n===3) { const t=new Date().toLocaleDateString("en-CA"); if(!document.getElementById("n_odate").value) document.getElementById("n_odate").value=t; document.getElementById("n_odate").min=t; document.getElementById("n_ddate").min=t; }
   if (n===4) { injectPayment("payment-inner-new"); recalcPayment(); }
   if (n===5) { buildQR("qr-box","qr-link"); startImgPoll("img-preview"); }
+}
+
+
+// ── MOBILE / REFERENCE CODE TOGGLE ───────────────────────────────
+var _mobileMode = 'mobile'; // 'mobile' or 'ref'
+
+function switchMobileMode(mode) {
+  _mobileMode = mode;
+  var mWrap = document.getElementById('mobile-input-wrap');
+  var rWrap = document.getElementById('ref-input-wrap');
+  var mBtn  = document.getElementById('toggle-mobile-btn');
+  var rBtn  = document.getElementById('toggle-ref-btn');
+
+  if (mode === 'mobile') {
+    mWrap.style.display = 'block';
+    rWrap.style.display = 'none';
+    mBtn.style.background = 'var(--accent)'; mBtn.style.color = '#fff';
+    rBtn.style.background = 'transparent';   rBtn.style.color = '#64748b';
+    document.getElementById('n_mobile').required = true;
+  } else {
+    mWrap.style.display = 'none';
+    rWrap.style.display = 'block';
+    rBtn.style.background = 'var(--accent)'; rBtn.style.color = '#fff';
+    mBtn.style.background = 'transparent';   mBtn.style.color = '#64748b';
+    document.getElementById('n_mobile').required = false;
+    document.getElementById('n_mobile').value = '';
+    document.getElementById('mobile-exists-warn').style.display = 'none';
+  }
+}
+
+var _refLookupTimer = null;
+var _refCustomer = null;
+
+function lookupRefCode(val) {
+  clearTimeout(_refLookupTimer);
+  var res  = document.getElementById('ref-lookup-result');
+  var err  = document.getElementById('ref-lookup-error');
+  var info = document.getElementById('ref-lookup-info');
+  res.style.display = 'none'; err.style.display = 'none';
+  _refCustomer = null;
+  if (!val.trim()) return;
+
+  _refLookupTimer = setTimeout(function() {
+    fetch('/api/order-ref-lookup?code=' + encodeURIComponent(val.trim()))
+      .then(function(r){ return r.json(); })
+      .then(function(d) {
+        if (d.found) {
+          _refCustomer = d;
+          info.innerHTML = '<b>' + d.name + '</b>' +
+            (d.mobile ? ' · 📱 ' + d.mobile : '') +
+            (d.address ? '<br>📍 ' + d.address : '');
+          res.style.display = 'block';
+          err.style.display = 'none';
+          // Auto-fill mobile silently
+          if (d.mobile) document.getElementById('n_mobile').value = d.mobile;
+        } else {
+          err.style.display = 'block';
+          res.style.display = 'none';
+        }
+      }).catch(function(){ err.style.display = 'block'; });
+  }, 400);
 }
 
 // ── MOBILE EXISTS CHECK ──────────────────────────────────────────
