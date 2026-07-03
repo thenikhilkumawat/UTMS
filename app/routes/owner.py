@@ -1157,6 +1157,71 @@ def bulk_import_upload():
         "errors": errors[:20],
         "total_rows": row_count
     })
+
+@bp.route("/api/fix-order-customer", methods=["GET", "POST"])
+@owner_required
+def fix_order_customer():
+    """Fix customer name for a specific order — useful when same-mobile overwrote a name."""
+    if request.method == "GET":
+        code = request.args.get("code", "")
+        new_name = request.args.get("name", "")
+        if not code or not new_name:
+            return """<h2>Fix Order Customer Name</h2>
+            <form method='GET'>
+              Order Code: <input name='code' placeholder='e.g. 3917'><br><br>
+              Correct Name: <input name='name' placeholder='e.g. Ronak'><br><br>
+              <button type='submit'>Preview</button>
+            </form>"""
+        conn = get_db()
+        order = conn.execute(
+            "SELECT o.id, o.order_code, o.customer_id, c.name, c.mobile FROM orders o JOIN customers c ON c.id=o.customer_id WHERE o.order_code=?",
+            (code,)).fetchone()
+        if not order:
+            conn.close()
+            return f"<h2>❌ Order #{code} not found</h2><a href='/owner/api/fix-order-customer'>← Back</a>"
+        conn.close()
+        return f"""<h2>Fix Customer for Order #{code}</h2>
+        <p>Current name: <b>{order['name']}</b> (Mobile: {order['mobile']})</p>
+        <p>New name: <b>{new_name}</b></p>
+        <form method='POST'>
+          <input type='hidden' name='code' value='{code}'>
+          <input type='hidden' name='name' value='{new_name}'>
+          <button type='submit' style='background:#16a34a;color:#fff;padding:10px 20px;border:none;border-radius:8px;font-size:15px;cursor:pointer;'>
+            ✅ Confirm Fix
+          </button>
+          &nbsp;<a href='/owner/api/fix-order-customer'>← Cancel</a>
+        </form>"""
+
+    # POST — apply fix
+    code = request.form.get("code", "").strip()
+    new_name = request.form.get("name", "").strip()
+    if not code or not new_name:
+        return "<h2>❌ Missing fields</h2>"
+
+    conn = get_db()
+    order = conn.execute(
+        "SELECT o.id, o.order_code, o.customer_id, c.name, c.mobile, c.address FROM orders o JOIN customers c ON c.id=o.customer_id WHERE o.order_code=?",
+        (code,)).fetchone()
+    if not order:
+        conn.close()
+        return f"<h2>❌ Order #{code} not found</h2>"
+
+    # Create new customer with correct name (don't touch existing record)
+    conn.execute("INSERT INTO customers(name, mobile, address) VALUES(?,?,?)",
+                 (new_name, order["mobile"] or "", order["address"] or ""))
+    new_cust = conn.execute(
+        "SELECT id FROM customers WHERE name=? ORDER BY id DESC LIMIT 1", (new_name,)).fetchone()
+    if new_cust:
+        conn.execute("UPDATE orders SET customer_id=? WHERE order_code=?",
+                     (new_cust["id"], code))
+        conn.commit()
+        conn.close()
+        return f"""<h2>✅ Fixed!</h2>
+        <p>Order #{code} is now linked to <b>{new_name}</b></p>
+        <a href='/owner/orders'>← All Orders</a>"""
+    conn.close()
+    return "<h2>❌ Could not create customer</h2>"
+
 @bp.route("/api/fix-order-code")
 @owner_required
 def fix_order_code():
