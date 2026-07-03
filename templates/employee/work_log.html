@@ -682,53 +682,15 @@ function renderStats(data) {
   }).join("");
 }
 
-var _pendingDeleteId = null;
-
-function deleteWorkLog(logId) {
-  _pendingDeleteId = logId;
-  // Show PIN modal
-  document.getElementById("pin-modal-wl").style.display = "flex";
-  document.getElementById("pin-input-wl").value = "";
-  document.getElementById("pin-error-wl").textContent = "";
-  setTimeout(function(){ document.getElementById("pin-input-wl").focus(); }, 100);
-}
-
-function closePinModal() {
-  document.getElementById("pin-modal-wl").style.display = "none";
-  _pendingDeleteId = null;
-}
-
-async function confirmPinDelete() {
-  var pin = document.getElementById("pin-input-wl").value.trim();
-  if (!pin) { document.getElementById("pin-error-wl").textContent = "⚠️ PIN daalo"; return; }
-
-  var btn = document.getElementById("pin-confirm-btn-wl");
-  var errEl = document.getElementById("pin-error-wl");
-  btn.disabled = true; btn.textContent = "Checking...";
-
+async function deleteWorkLog(logId) {
+  if (!confirm("Yeh work log entry delete karein?")) return;
   try {
-    var res = await fetch("/api/check-pin", {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({pin: pin})
-    });
-    var d = await res.json();
-
-    if (d.ok) {
-      closePinModal();
-      var r2 = await fetch("/api/work-log/delete/" + _pendingDeleteId, {method: "POST"});
-      var d2 = await r2.json();
-      if (d2.ok) { showToast("🗑️ Entry deleted", "success"); setTimeout(loadStats, 300); }
-      else { showToast(d2.error || "Delete failed", "error"); }
-    } else {
-      errEl.textContent = "❌ Galat PIN — dobara try karo";
-      document.getElementById("pin-input-wl").value = "";
-      document.getElementById("pin-input-wl").focus();
-      btn.disabled = false; btn.textContent = "Confirm Delete";
-    }
+    var r = await fetch("/api/work-log/delete/" + logId, {method: "POST"});
+    var d = await r.json();
+    if (d.ok) { showToast("🗑️ Entry deleted", "success"); setTimeout(loadStats, 300); }
+    else { showToast(d.error || "Delete failed", "error"); }
   } catch(e) {
-    errEl.textContent = "❌ Network error — dobara try karo";
-    btn.disabled = false; btn.textContent = "Confirm Delete";
+    showToast("Network error — dobara try karo", "error");
   }
 }
 
