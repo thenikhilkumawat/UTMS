@@ -754,6 +754,37 @@ def list_images(order_code):
     )
 
 
+
+@bp.route("/api/apply-current-rates")
+def apply_current_rates():
+    """Update work_log making_rate for today and yesterday entries to current admin stitching rates."""
+    from database import invalidate_settings_cache
+    invalidate_settings_cache()
+    conn = get_db()
+    from datetime import date, timedelta
+    today = date.today().isoformat()
+    yesterday = (date.today() - timedelta(days=1)).isoformat()
+
+    # Get all work logs from today and yesterday
+    logs = conn.execute("""
+        SELECT id, garment_type FROM work_logs
+        WHERE log_date IN (?, ?)
+    """, (today, yesterday)).fetchall()
+
+    updated = 0
+    for log in logs:
+        gt = log["garment_type"]
+        new_rate = get_setting(f"stitch_rate_{gt}", None)
+        if new_rate is not None:
+            conn.execute("UPDATE work_logs SET making_rate=? WHERE id=?",
+                        (float(new_rate), log["id"]))
+            updated += 1
+
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True, "updated": updated,
+                    "message": f"✅ {updated} work log entries updated with current rates (today & yesterday)"})
+
 @bp.route("/save-order", methods=["POST"])
 def save_order():
     data = request.get_json(silent=True) or {}
@@ -2128,6 +2159,8 @@ def api_worklog_add():
         conn.close()
         return jsonify({"ok": False, "error": f"Only {remaining_to_log} piece(s) left to stitch for {gt}."})
 
+    from database import invalidate_settings_cache
+    invalidate_settings_cache()  # Always get fresh stitching rates
     making_rate = float(rate_override) if rate_override is not None else float(get_setting(f"stitch_rate_{gt}", "0"))
     today = date.today().isoformat()
     now   = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
