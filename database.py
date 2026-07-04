@@ -42,7 +42,16 @@ if USE_PG:
             if "INTO settings" in sql and "ON CONFLICT" not in sql:
                 sql = sql.rstrip().rstrip(";") + " ON CONFLICT(key) DO UPDATE SET value=EXCLUDED.value"
             elif "INSERT INTO" in sql and "ON CONFLICT" not in sql and "DO NOTHING" not in sql:
-                sql = sql.rstrip().rstrip(";") + " ON CONFLICT DO NOTHING"
+                # ON CONFLICT must appear BEFORE any RETURNING clause in PostgreSQL.
+                # Blindly appending at the end broke every "INSERT ... RETURNING id"
+                # query (e.g. new-customer creation) with a syntax error like:
+                #   syntax error at or near "ON" — LINE 1: ...RETURNING id ON CONFLICT DO NOTHING
+                stripped = sql.rstrip().rstrip(";")
+                m = re.search(r"\bRETURNING\b", stripped, flags=re.IGNORECASE)
+                if m:
+                    sql = stripped[:m.start()].rstrip() + " ON CONFLICT DO NOTHING " + stripped[m.start():]
+                else:
+                    sql = stripped + " ON CONFLICT DO NOTHING"
             return sql, params or []
 
         def execute(self, sql, params=None):
