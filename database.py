@@ -241,6 +241,7 @@ def _init_pg():
     # abort the whole transaction (PostgreSQL requires this pattern).
     migrations = [
         "ALTER TABLE finance ADD COLUMN IF NOT EXISTS employee_name TEXT DEFAULT NULL",
+        "ALTER TABLE customers ADD COLUMN IF NOT EXISTS alt_mobile TEXT DEFAULT NULL",
     ]
     for m in migrations:
         try:
