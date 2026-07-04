@@ -800,6 +800,7 @@ def save_order():
         # - Custom override → use provided code (owner privilege)
         custom_code = (data.get("custom_order_code") or "").strip()
         use_repeat  = data.get("use_repeat_code", False)
+        order_code_issued = False  # tracks whether next_order_code() was called this request
 
         if custom_code:
             clash = conn.execute("SELECT id FROM orders WHERE order_code=?", (custom_code,)).fetchone()
@@ -811,6 +812,7 @@ def save_order():
             order_code = next_repeat_code()
         else:
             order_code = next_order_code()
+            order_code_issued = True
         customer_name   = (data.get("customer_name") or "").strip()
         mobile          = (data.get("mobile") or "").strip()
         address         = (data.get("address") or "").strip()
@@ -947,6 +949,14 @@ def save_order():
     except Exception as e:
         try: conn.rollback(); conn.close()
         except: pass
+        # If we had issued a fresh order code for this attempt, give it back —
+        # otherwise every failed save permanently skips a number.
+        try:
+            if order_code_issued:
+                from database import release_order_code_if_latest
+                release_order_code_if_latest(order_code)
+        except Exception:
+            pass
         return jsonify({"status":"error","message":str(e)}), 500
 
 
