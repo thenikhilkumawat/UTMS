@@ -128,7 +128,13 @@ if USE_PG:
             url = url.replace("postgres://", "postgresql://", 1)
         for attempt in range(3):
             try:
-                conn = psycopg2.connect(url, connect_timeout=10)
+                # statement_timeout / lock_timeout: without these, a query stuck waiting
+                # on a lock (e.g. two requests touching the same settings row) hangs the
+                # request — and the Gunicorn thread handling it — forever, with no error
+                # ever reaching the browser. Now it fails fast with a real Postgres error
+                # that flows into the existing except-block handling instead.
+                conn = psycopg2.connect(url, connect_timeout=10,
+                                         options="-c statement_timeout=15000 -c lock_timeout=8000")
                 conn.autocommit = False
                 # Test the connection is alive
                 cur = conn.cursor()
