@@ -1363,6 +1363,46 @@ def fix_order_code():
     return f"<h2>✅ Fixed! Highest existing order = #{max_code}. last_order_code={max_code}, recycled pool cleared. Next order = #{max_code+1}</h2><a href='/owner/settings'>← Settings</a><br><a href='/new-order'>Go to New Order →</a>"
 
 
+@bp.route("/api/force-order-code/<int:value>")
+@owner_required
+def force_order_code(value):
+    """Directly set last_order_code to an exact value, bypassing the max-of-all-orders
+    auto-detect used by /api/fix-order-code — that logic gets thrown off by a single
+    one-off/custom order code sitting far outside the normal sequential range.
+    Also lists any orders that exist ABOVE the given value, so you can see what caused
+    the auto-detect to jump ahead in the first place."""
+    conn = get_db()
+    rows = conn.execute("""
+        SELECT o.order_code, o.order_date, o.created_at, c.name, c.mobile
+        FROM orders o LEFT JOIN customers c ON c.id = o.customer_id
+    """).fetchall()
+    conn.close()
+
+    outliers = [r for r in rows if str(r["order_code"]).isdigit() and int(r["order_code"]) > value]
+    outliers.sort(key=lambda r: int(r["order_code"]), reverse=True)
+
+    set_setting("last_order_code", str(value))
+    try:
+        from database import invalidate_settings_cache
+        invalidate_settings_cache()
+    except Exception:
+        pass
+
+    rows_html = "".join(
+        f"<tr><td>#{r['order_code']}</td><td>{r['name'] or '—'}</td><td>{r['mobile'] or '—'}</td>"
+        f"<td>{r['order_date'] or '—'}</td><td>{r['created_at'] or '—'}</td></tr>"
+        for r in outliers
+    ) or "<tr><td colspan='5' style='text-align:center;color:#888;'>None — no orders above this value.</td></tr>"
+
+    return f"""<h2>✅ last_order_code forcibly set to {value}. Next order = #{value+1}</h2>
+    <p>Orders that exist <b>above</b> {value} (this is what was confusing the auto-detect endpoint — check if these are real orders or old test/junk data):</p>
+    <table border="1" cellpadding="6" style="border-collapse:collapse;">
+    <tr><th>Order Code</th><th>Customer</th><th>Mobile</th><th>Order Date</th><th>Created At</th></tr>
+    {rows_html}
+    </table>
+    <br><a href='/owner/settings'>← Settings</a> | <a href='/new-order'>Go to New Order →</a>"""
+
+
 @bp.route("/api/sync-order-images")
 @owner_required
 def sync_order_images():
