@@ -1403,6 +1403,55 @@ def force_order_code(value):
     <br><a href='/owner/settings'>← Settings</a> | <a href='/new-order'>Go to New Order →</a>"""
 
 
+@bp.route("/api/db-diagnostics")
+@owner_required
+def db_diagnostics():
+    """Read-only: shows current DB connections/queries and what (if anything) is
+    blocking what. Use this if a save/request ever seems to hang indefinitely
+    (button stuck on 'Saving...' with no success or error) — it'll show which
+    connection is stuck and which other connection is holding it up."""
+    conn = get_db()
+    try:
+        rows = conn.execute("""
+            SELECT pid, state,
+                   COALESCE(wait_event_type,'-') AS wait_event_type,
+                   COALESCE(wait_event,'-') AS wait_event,
+                   EXTRACT(EPOCH FROM (NOW() - query_start))::int AS secs_running,
+                   pg_blocking_pids(pid) AS blocked_by,
+                   LEFT(query, 150) AS query
+            FROM pg_stat_activity
+            WHERE datname = current_database() AND pid <> pg_backend_pid()
+            ORDER BY query_start ASC NULLS LAST
+        """).fetchall()
+        err = None
+    except Exception as e:
+        rows, err = [], str(e)
+    conn.close()
+
+    if err:
+        return f"<h2>DB Diagnostics — query failed</h2><p>{err}</p>"
+
+    def row_html(r):
+        blocked = r["blocked_by"]
+        is_blocked = blocked not in (None, "", "{}")
+        style = "color:#dc2626;font-weight:800;" if is_blocked else ""
+        return (f"<tr><td>{r['pid']}</td><td>{r['state']}</td><td>{r['wait_event_type']}</td>"
+                f"<td>{r['wait_event']}</td><td>{r['secs_running']}</td>"
+                f"<td style='{style}'>{blocked if is_blocked else '-'}</td>"
+                f"<td style='font-family:monospace;font-size:11px;'>{r['query']}</td></tr>")
+
+    rows_html = "".join(row_html(r) for r in rows) or \
+        "<tr><td colspan='7' style='text-align:center;color:#888;'>No active connections</td></tr>"
+
+    return f"""<h2>DB Diagnostics</h2>
+    <p>Rows with a red "Blocked By" PID are stuck waiting on another connection — that PID is the one holding things up.</p>
+    <table border="1" cellpadding="6" style="border-collapse:collapse;font-size:13px;">
+    <tr><th>PID</th><th>State</th><th>Wait Type</th><th>Wait Event</th><th>Secs Running</th><th>Blocked By</th><th>Query</th></tr>
+    {rows_html}
+    </table>
+    <br><a href='/owner/settings'>← Settings</a>"""
+
+
 @bp.route("/api/sync-order-images")
 @owner_required
 def sync_order_images():
