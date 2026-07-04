@@ -815,8 +815,8 @@ def save_order():
                     if same_name:
                         # Same person — reuse, only update address
                         customer_id = dup["id"]
-                        conn.execute("UPDATE customers SET address=? WHERE id=?",
-                                     (address, customer_id))
+                        conn.execute("UPDATE customers SET address=?,alt_mobile=? WHERE id=?",
+                                     (address, alt_mobile, customer_id))
                     else:
                         # Different person, same mobile (shared phone) — NEW customer record
                         conn.execute("INSERT INTO customers(name,mobile,address) VALUES(?,?,?)",
