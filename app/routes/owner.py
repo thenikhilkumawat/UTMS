@@ -3750,8 +3750,8 @@ def past_orders_save():
                 if same_name:
                     # Same person — reuse, just update address
                     customer_id = r["id"]
-                    conn.execute("UPDATE customers SET address=? WHERE id=?",
-                                 (customer_address, customer_id))
+                    conn.execute("UPDATE customers SET address=?,alt_mobile=? WHERE id=?",
+                                 (customer_address, customer_alt_mob, customer_id))
                 else:
                     # Different person sharing same phone — create NEW customer
                     conn.execute("INSERT INTO customers(name, mobile, address) VALUES(?,?,?)",
