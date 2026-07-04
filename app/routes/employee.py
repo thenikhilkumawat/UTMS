@@ -803,9 +803,19 @@ def save_order():
 
         # Customer
         if existing_id:
-            customer_id = int(existing_id)
-            conn.execute("UPDATE customers SET name=?,mobile=?,address=? WHERE id=?",
-                         (customer_name, mobile, address, customer_id))
+            existing_id = int(existing_id)
+            ex_row = conn.execute("SELECT id, name FROM customers WHERE id=?", (existing_id,)).fetchone()
+            if ex_row and ex_row["name"].strip().lower() != customer_name.strip().lower():
+                # Different name → new customer (shared phone scenario)
+                new_r = conn.execute(
+                    "INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?) RETURNING id",
+                    (customer_name, mobile, address, now)).fetchone()
+                customer_id = new_r["id"] if new_r else existing_id
+            else:
+                # Same person — update address only, keep name
+                customer_id = existing_id
+                conn.execute("UPDATE customers SET mobile=?,address=? WHERE id=?",
+                             (mobile, address, customer_id))
         else:
             # Check if mobile already exists — auto-link instead of blocking
             if mobile:
@@ -819,16 +829,14 @@ def save_order():
                                      (address, customer_id))
                     else:
                         # Different person, same mobile (shared phone) — NEW customer record
-                        conn.execute("INSERT INTO customers(name,mobile,address) VALUES(?,?,?)",
-                                     (customer_name, mobile, address))
                         new_row = conn.execute(
-                            "SELECT id FROM customers WHERE name=? AND mobile=? ORDER BY id DESC LIMIT 1",
-                            (customer_name, mobile)).fetchone()
+                            "INSERT INTO customers(name,mobile,address) VALUES(?,?,?) RETURNING id",
+                            (customer_name, mobile, address)).fetchone()
                         customer_id = new_row["id"] if new_row else dup["id"]
                 else:
-                    conn.execute("INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?)",
-                                 (customer_name, mobile, address, now))
-                    row = conn.execute("SELECT id FROM customers WHERE name=? AND mobile=? ORDER BY id DESC LIMIT 1", (customer_name, mobile)).fetchone()
+                    row = conn.execute(
+                                "INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?) RETURNING id",
+                                (customer_name, mobile, address, now)).fetchone()
                     customer_id = row["id"] if row else None
             else:
                 conn.execute("INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?)",
