@@ -394,10 +394,22 @@ def upload_images(order_code):
                                      (order_row["id"], file_path))
                     conn.commit()
                 elif not order_row and saved > 0:
-                    # No order in DB yet — mark as diary-only upload
+                    # No order in DB yet (uploaded via QR during the New Order wizard,
+                    # before Confirm) — mark as diary-only upload so the Diary page can
+                    # surface it if the order is never completed, AND register each file
+                    # as a temp order_images row (order_id=0) so save_order()'s existing
+                    # claim logic can link it to the real order_id once actually saved.
+                    # Previously only the Cloudinary branch did this temp-row registration,
+                    # so local-storage photos taken before Confirm never got linked to
+                    # the order in the DB (they'd only ever show via the folder fallback).
                     marker = os.path.join(folder, ".diary_upload")
                     with open(marker, "w") as mf:
                         mf.write(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                    for fname in saved_files:
+                        file_path = f"/static/order_images/{order_code}/{fname}"
+                        conn.execute("INSERT INTO order_images(order_id, file_path) VALUES(?,?)",
+                                     (0, f"temp:{order_code}:{file_path}"))
+                    conn.commit()
                 conn.close()
 
             msg = f"Uploaded {saved} image(s). Max 5 per order." if saved else ("Max 5 images reached." if slots==0 else "No image selected.")
