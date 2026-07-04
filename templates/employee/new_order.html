@@ -547,6 +547,14 @@
         </div>
       </div>
 
+      <!-- Garments summary -->
+      <div style="text-align:center;color:#fff;padding:12px 20px;border-bottom:1px solid rgba(255,255,255,0.15);">
+        <div style="font-size:9px;font-weight:800;letter-spacing:1.5px;opacity:0.6;text-transform:uppercase;margin-bottom:5px;">
+          <span class="lang-en">Garments</span><span class="lang-hi" style="display:none;">कपड़े</span>
+        </div>
+        <div id="sc_garments_pill" style="font-size:14px;font-weight:800;line-height:1.6;"></div>
+      </div>
+
       <!-- Cloth photos (if any) -->
       <div id="success-images" style="display:none;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.15);">
         <div id="success-img-list" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;"></div>
@@ -1699,6 +1707,15 @@ function showSuccess() {
   document.getElementById("sc_delivery_pill").textContent = fmtDate(p.delivery_date);
   document.getElementById("sc_paid_pill").textContent     = "₹"+p.advance_paid;
   document.getElementById("sc_due_pill").textContent      = "₹"+p.remaining;
+
+  // Garments summary — e.g. "Shirt ×1, Pant ×2"
+  const gCounts = {};
+  (p.items||[]).forEach(it=>{
+    const t = it.type || "Item";
+    gCounts[t] = (gCounts[t]||0) + (parseInt(it.qty)||1);
+  });
+  const gSummary = Object.keys(gCounts).map(t=>`${t} ×${gCounts[t]}`).join(", ");
+  document.getElementById("sc_garments_pill").textContent = gSummary || "—";
 
   const repeatOf = p.repeat_of||"";
   if (repeatOf && !isRepeat) {
