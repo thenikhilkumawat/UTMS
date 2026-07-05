@@ -863,6 +863,12 @@ tbody tr:hover{background:#f9fafb;}
   .sidebar .shop-sub { color: #9ca3af !important; }
   .sidebar .nav-section-label { color: #9ca3af !important; }
   .sidebar .owner-btn { color: #c7d2fe !important; }
+  /* ══ FIX: Sidebar text labels must always be visible on true mobile — the
+     icon-only collapse (.nav-link span:not(.nav-icon):not(.nav-badge){display:none})
+     is only meant for the 769-1024px tablet rail, never for phone-width screens. ══ */
+  .sidebar .nav-link span:not(.nav-icon):not(.nav-badge) { display: inline !important; }
+  .sidebar .owner-btn span { display: inline !important; }
+  .sidebar { width: 250px !important; }
   .sidebar #dark-toggle { color: #e5e7eb !important; }
   .sidebar-overlay.show { background: rgba(0,0,0,0.65) !important; }
 
