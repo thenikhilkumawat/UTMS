@@ -24,7 +24,7 @@
 </div>
 
 <!-- Filter tabs -->
-<div style="background:#fff;border-bottom:1px solid var(--border);padding:0 28px;display:flex;gap:0;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;">
+<div class="sched-tabs" style="background:#fff;border-bottom:1px solid var(--border);padding:0 28px;display:flex;gap:0;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;">
   {% set tabs = [('all','All Orders',total),('today','Today',today_count),('late','Late',late_count),('upcoming','Upcoming',upcoming_count),('ready','Ready',ready_count),('pickup_pending','Pickup Pending',pickup_pending_count),('delivered','Delivered',delivered_count),('cancelled','Cancelled',cancelled_count)] %}
   {% for key,label,count in tabs %}
   <button class="sched-tab {% if loop.first %}active{% endif %}" data-f="{{ key }}" onclick="setTab('{{ key }}',this)"
