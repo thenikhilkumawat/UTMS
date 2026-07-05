@@ -16,6 +16,20 @@ from app.routes.owner import bp as owner_bp
 app.register_blueprint(employee_bp)
 app.register_blueprint(owner_bp)
 
+# ── Cache-Control: prevent stale pages in the installed PWA ─────────────────
+# No header was being set on dynamic pages before this, so mobile browsers —
+# especially in installed/standalone PWA mode — could keep serving an old
+# cached copy of a page even after a fresh deploy (this is why UI fixes weren't
+# showing up on the phone). Static assets are left untouched: asset_v() already
+# cache-busts those via a version query string, so long-lived caching there is fine.
+@app.after_request
+def _add_cache_headers(response):
+    if not request.path.startswith("/static/"):
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+    return response
+
 # ── DB init on startup ───────────────────────────────────────────────────────
 os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)
 init_db()
