@@ -27,21 +27,22 @@ jobs:
         run: |
           ssh -i ~/.ssh/deploy_key ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} '
             set -e
+            exec > >(tee /home/ubuntu/last_deploy.log) 2>&1
+            echo "=== Deploy started: $(date) ==="
             cd /home/ubuntu/UTMS
             echo "BEFORE: $(git rev-parse HEAD)"
             git fetch origin main
             git reset --hard origin/main
             echo "AFTER:  $(git rev-parse HEAD)"
             sudo systemctl reset-failed utms || true
-            # Scope pkill to THIS app only — a bare "pkill -f gunicorn" also killed
-            # the separate website service (port 5001) on every UTMS deploy.
-            sudo pkill -9 -f "/home/ubuntu/UTMS" || true
+            # systemctl kill is scoped to the utms unit cgroup only — safe.
+            # (pkill -f with a path/name pattern matched this deploy script own
+            # SSH session cmdline and killed the deploy mid-run; bare pkill -f
+            # gunicorn killed the separate website service too.)
+            sudo systemctl kill -s SIGKILL utms || true
             sleep 2
             sudo systemctl restart utms
-            # Service can legitimately take >5s to become active on this 1GB box
-            # (preload_app + DB init). Retry up to 30s instead of failing at 5s —
-            # the old fixed 5s check made every deploy "fail" and triggered an
-            # unnecessary full server reboot each time.
+            # Service can take >5s to become active on this 1GB box — retry up to 30s.
             for i in $(seq 1 15); do
               if sudo systemctl is-active --quiet utms; then
                 echo "UTMS_OK after ${i}x2s"
