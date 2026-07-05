@@ -1454,6 +1454,56 @@ def db_diagnostics():
     <br><a href='/owner/settings'>← Settings</a>"""
 
 
+@bp.route("/api/deploy-info")
+@owner_required
+def deploy_info():
+    """Read-only: shows exactly what commit/code is actually running on THIS
+    server right now, plus file modification times for key static assets.
+    Use this to verify a deploy actually landed instead of trusting GitHub
+    Actions' reported status alone (the workflow currently swallows real
+    failures with continue-on-error / || true, so 'success' there does not
+    guarantee the server actually updated)."""
+    import subprocess, os as _os, datetime as _dt
+    app_root = _os.path.dirname(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+
+    def run(cmd):
+        try:
+            return subprocess.check_output(cmd, cwd=app_root, stderr=subprocess.STDOUT, timeout=10).decode().strip()
+        except Exception as e:
+            return f"ERROR: {e}"
+
+    commit_hash = run(["git", "rev-parse", "HEAD"])
+    commit_msg  = run(["git", "log", "-1", "--format=%s"])
+    commit_date = run(["git", "log", "-1", "--format=%ci"])
+    git_status  = run(["git", "status", "--short"])
+
+    def mtime_of(rel_path):
+        try:
+            full = _os.path.join(app_root, rel_path)
+            ts = _os.path.getmtime(full)
+            return _dt.datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M:%S")
+        except Exception as e:
+            return f"ERROR: {e}"
+
+    files_html = "".join(
+        f"<tr><td>{f}</td><td>{mtime_of(f)}</td></tr>"
+        for f in ["static/css/main.css", "templates/base.html", "templates/employee/order_status.html", "run.py"]
+    )
+
+    return f"""<h2>Deploy Info — what's ACTUALLY running right now</h2>
+    <p><b>Server time:</b> {_dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</p>
+    <p><b>Git commit:</b> {commit_hash}</p>
+    <p><b>Commit message:</b> {commit_msg}</p>
+    <p><b>Commit date:</b> {commit_date}</p>
+    <p><b>Uncommitted local changes (should be empty):</b> <pre>{git_status or '(none)'}</pre></p>
+    <h3>File modification times on disk</h3>
+    <table border="1" cellpadding="6" style="border-collapse:collapse;">
+    <tr><th>File</th><th>Last Modified</th></tr>
+    {files_html}
+    </table>
+    <br><a href='/owner/settings'>← Settings</a>"""
+
+
 @bp.route("/api/sync-order-images")
 @owner_required
 def sync_order_images():
