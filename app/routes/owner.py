@@ -1468,6 +1468,9 @@ def deploy_info():
 
     def run(cmd):
         try:
+            # Service environment has a restricted PATH without git — use full path
+            if cmd[0] == "git":
+                cmd = ["/usr/bin/git"] + cmd[1:]
             return subprocess.check_output(cmd, cwd=app_root, stderr=subprocess.STDOUT, timeout=10).decode().strip()
         except Exception as e:
             return f"ERROR: {e}"
