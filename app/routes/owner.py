@@ -114,6 +114,7 @@ ORDERS_PAGE = """{% extends 'base.html' %}
         style="padding:7px 14px;border-radius:10px;border:2px solid {% if key=='all' %}var(--accent){% else %}var(--border){% endif %};background:{% if key=='all' %}var(--accent){% else %}#fff{% endif %};color:{% if key=='all' %}#fff{% else %}var(--text-muted){% endif %};font-size:12px;font-weight:800;cursor:pointer;">{{ label }}</button>
       {% endfor %}
     </div>
+    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
     <table style="width:100%;border-collapse:collapse;font-size:13px;">
       <thead><tr style="background:#f8fafc;border-bottom:2px solid var(--border);">
         <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Order</th>
@@ -163,6 +164,7 @@ ORDERS_PAGE = """{% extends 'base.html' %}
         {% endfor %}
       </tbody>
     </table>
+    </div>
   </div>
 </div>
 
