@@ -1,7 +1,7 @@
 // Uttam UTMS — Service Worker
 // During active development: NO caching of CSS/JS — always fetch fresh from network.
 // This prevents stale styles from showing in the installed PWA app.
-const CACHE = 'utms-v2-nocache';
+const CACHE = 'utms-v3-nocache';
 
 self.addEventListener('install', e => {
   self.skipWaiting();
