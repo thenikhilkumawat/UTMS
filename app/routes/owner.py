@@ -1493,6 +1493,13 @@ def deploy_info():
         for f in ["static/css/main.css", "templates/base.html", "templates/employee/order_status.html", "run.py"]
     )
 
+    # Last deploy log written by the GitHub Actions workflow (tee on the server)
+    try:
+        with open("/home/ubuntu/last_deploy.log") as lf:
+            deploy_log = lf.read()[-4000:]
+    except Exception as e:
+        deploy_log = f"(no deploy log yet: {e})"
+
     return f"""<h2>Deploy Info — what's ACTUALLY running right now</h2>
     <p><b>Server time:</b> {_dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</p>
     <p><b>Git commit:</b> {commit_hash}</p>
@@ -1504,6 +1511,8 @@ def deploy_info():
     <tr><th>File</th><th>Last Modified</th></tr>
     {files_html}
     </table>
+    <h3>Last deploy log</h3>
+    <pre style="background:#111;color:#0f0;padding:12px;border-radius:8px;font-size:12px;overflow-x:auto;">{deploy_log}</pre>
     <br><a href='/owner/settings'>← Settings</a>"""
 
 
