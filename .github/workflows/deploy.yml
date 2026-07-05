@@ -33,12 +33,25 @@ jobs:
             git reset --hard origin/main
             echo "AFTER:  $(git rev-parse HEAD)"
             sudo systemctl reset-failed utms || true
-            sudo pkill -9 -f gunicorn || true
+            # Scope pkill to THIS app only — a bare "pkill -f gunicorn" also killed
+            # the separate website service (port 5001) on every UTMS deploy.
+            sudo pkill -9 -f "/home/ubuntu/UTMS" || true
             sleep 2
             sudo systemctl restart utms
-            sleep 5
-            sudo systemctl is-active --quiet utms
-            echo "UTMS_OK"
+            # Service can legitimately take >5s to become active on this 1GB box
+            # (preload_app + DB init). Retry up to 30s instead of failing at 5s —
+            # the old fixed 5s check made every deploy "fail" and triggered an
+            # unnecessary full server reboot each time.
+            for i in $(seq 1 15); do
+              if sudo systemctl is-active --quiet utms; then
+                echo "UTMS_OK after ${i}x2s"
+                exit 0
+              fi
+              sleep 2
+            done
+            echo "UTMS did not become active within 30s"
+            sudo systemctl status utms --no-pager -l | tail -30
+            exit 1
           '
 
       # Only runs if the deploy step above genuinely failed.
