@@ -7,41 +7,57 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
-      - name: Deploy via SSH
-        continue-on-error: true
+      - name: Set up SSH
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
-          ssh -i ~/.ssh/deploy_key ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "
+
+      # NOTE: this step intentionally has NO continue-on-error and the remote
+      # script uses `set -e` — if git fetch/reset or the service restart fails,
+      # this step (and therefore the whole run) will genuinely show red.
+      # Previously every command here was wrapped in `|| true` and the job had
+      # continue-on-error: true, so this workflow reported "success" in the
+      # GitHub API no matter what actually happened on the server (including
+      # git pull failing outright, or the SSH connection never landing) —
+      # that is why deployed fixes sometimes silently never reached the server.
+      - name: Deploy (fetch + hard reset + restart)
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} '
+            set -e
             cd /home/ubuntu/UTMS
-            git pull origin main || true
+            echo "BEFORE: $(git rev-parse HEAD)"
+            git fetch origin main
+            git reset --hard origin/main
+            echo "AFTER:  $(git rev-parse HEAD)"
             sudo systemctl reset-failed utms || true
             sudo pkill -9 -f gunicorn || true
             sleep 2
             sudo systemctl restart utms
             sleep 5
-            if sudo systemctl is-active --quiet utms; then
-              echo UTMS_OK
-            else
-              echo UTMS_FAILED - attempting reboot
-              sudo reboot
-            fi
-          " || true
-      - name: Wait after possible reboot
-        run: sleep 30
-      - name: Re-deploy after reboot
+            sudo systemctl is-active --quiet utms
+            echo "UTMS_OK"
+          '
+
+      # Only runs if the deploy step above genuinely failed.
+      - name: Recovery — reboot server if deploy step failed
+        if: failure()
         continue-on-error: true
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
-          ssh -i ~/.ssh/deploy_key ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "
+          ssh -i ~/.ssh/deploy_key ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} 'sudo reboot' || true
+
+      - name: Wait after recovery reboot
+        if: failure()
+        run: sleep 30
+
+      - name: Re-verify after reboot
+        if: failure()
+        continue-on-error: true
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} '
             sudo systemctl start utms || true
             sleep 3
             sudo systemctl is-active utms && echo FINAL_OK || echo FINAL_FAIL
-          " || true
+          '
