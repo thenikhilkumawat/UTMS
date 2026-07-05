@@ -24,11 +24,11 @@
 </div>
 
 <!-- Filter tabs -->
-<div style="background:#fff;border-bottom:1px solid var(--border);padding:0 28px;display:flex;gap:0;">
+<div style="background:#fff;border-bottom:1px solid var(--border);padding:0 28px;display:flex;gap:0;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;">
   {% set tabs = [('all','All Orders',total),('today','Today',today_count),('late','Late',late_count),('upcoming','Upcoming',upcoming_count),('ready','Ready',ready_count),('pickup_pending','Pickup Pending',pickup_pending_count),('delivered','Delivered',delivered_count),('cancelled','Cancelled',cancelled_count)] %}
   {% for key,label,count in tabs %}
   <button class="sched-tab {% if loop.first %}active{% endif %}" data-f="{{ key }}" onclick="setTab('{{ key }}',this)"
-    style="padding:12px 18px;font-size:13px;font-weight:700;border:none;border-bottom:3px solid {% if loop.first %}var(--accent){% else %}transparent{% endif %};background:transparent;cursor:pointer;color:{% if loop.first %}var(--accent){% else %}var(--text-muted){% endif %};">
+    style="padding:12px 18px;font-size:13px;font-weight:700;border:none;border-bottom:3px solid {% if loop.first %}var(--accent){% else %}transparent{% endif %};background:transparent;cursor:pointer;color:{% if loop.first %}var(--accent){% else %}var(--text-muted){% endif %};white-space:nowrap;flex-shrink:0;">
     {{ label }} <span style="background:{% if loop.first %}var(--accent-light){% else %}#f1f5f9{% endif %};color:{% if loop.first %}var(--accent){% else %}var(--text-muted){% endif %};border-radius:10px;padding:1px 8px;font-size:11px;margin-left:4px;">{{ count }}</span>
   </button>
   {% endfor %}
