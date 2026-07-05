@@ -1,5 +1,5 @@
 # restart-trigger 1781961500
-import os, sys, logging
+import os, sys, logging, time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from flask import Flask, jsonify, session, redirect, url_for, request, g, render_template_string
@@ -8,6 +8,26 @@ from database import init_db, get_setting
 
 app = Flask(__name__, template_folder="templates", static_folder="static", static_url_path="/static")
 app.secret_key = Config.SECRET_KEY
+
+# ── asset_v(): real cache-busting for static files ──────────────────────────
+# Static files are served with a 1-year "immutable" Cache-Control header, which
+# tells the browser to never even revalidate a given URL again once cached.
+# That's fine ONLY if the URL itself changes whenever the file's content
+# changes. This was previously done with a hand-typed "?v=1782918998" hardcoded
+# directly in base.html — a number that never actually updated, so every
+# browser that had ever loaded the page stayed stuck on that exact CSS/JS
+# snapshot forever, no matter how many times the file was updated on the
+# server (this is why mobile CSS fixes weren't showing up on already-visited
+# devices). asset_v() now computes the version from the file's real
+# last-modified time, so it changes automatically on every deploy that
+# actually touches the file.
+@app.template_global()
+def asset_v(path):
+    try:
+        v = int(os.path.getmtime(os.path.join(app.static_folder, path)))
+    except OSError:
+        v = int(time.time())
+    return f"/static/{path}?v={v}"
 
 
 # ── Register blueprints ──────────────────────────────────────────────────────
