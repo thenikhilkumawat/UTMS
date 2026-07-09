@@ -1109,12 +1109,11 @@ def bulk_import_upload():
                 conn.commit()
                 cust_id = conn.execute("SELECT id FROM customers ORDER BY id DESC LIMIT 1").fetchone()["id"]
 
-            # Get order code
-            if od["order_code"]:
-                order_code = od["order_code"]
-            else:
-                from database import next_order_code
-                order_code = next_order_code()
+            # Get order code — bulk import must have explicit code, never auto-generate
+            order_code = od.get("order_code", "").strip()
+            if not order_code:
+                errors.append(f"Row skipped — no order code provided")
+                continue
 
             payable   = od["total_amount"]
             advance   = od["advance_paid"]
