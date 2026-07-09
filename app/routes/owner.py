@@ -3926,27 +3926,19 @@ def past_orders_save():
             r = conn.execute("SELECT id FROM customers ORDER BY id DESC LIMIT 1").fetchone()
             customer_id = r["id"] if r else 1
 
-        # 2. Order code — use override or auto-generate
+        # 2. Order code — ONLY use the user-provided code, NEVER auto-generate
+        # Past orders must NEVER touch the last_order_code counter — that is
+        # exclusively for new orders created through the new-order flow.
         order_code = order_code_override or ""
-        if order_code:
-            clash = conn.execute("SELECT id FROM orders WHERE order_code=?", (order_code,)).fetchone()
-            if clash:
-                order_code = ""
-
         if not order_code:
-            r = conn.execute("SELECT value FROM settings WHERE key='last_order_code'").fetchone()
-            last = int(r["value"]) if r else 3599
-            existing = set()
-            for row in conn.execute("SELECT order_code FROM orders").fetchall():
-                c = row["order_code"]
-                if c and c.isdigit():
-                    existing.add(int(c))
-            candidate = last + 1
-            while candidate in existing:
-                candidate += 1
-            order_code = str(candidate)
-            conn.execute("DELETE FROM settings WHERE key='last_order_code'")
-            conn.execute("INSERT INTO settings(key,value) VALUES('last_order_code',?)", (str(candidate),))
+            conn.close()
+            return jsonify({"ok": False, "error": "Order code required for past orders"})
+
+        # Check for clash — if already exists, return error (do NOT generate a new code)
+        clash = conn.execute("SELECT id FROM orders WHERE order_code=?", (order_code,)).fetchone()
+        if clash:
+            conn.close()
+            return jsonify({"ok": False, "error": f"Order #{order_code} already exists. Please use a different code."})
 
         # 3. Insert order
         delivered_at = delivery_date if is_delivered else None
