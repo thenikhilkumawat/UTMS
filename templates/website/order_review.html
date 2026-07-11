@@ -563,7 +563,7 @@ function revDoSignup(){
 {% endif %}
 
 
-/* Scroll-sync: panel scrolls with page, sticks when reaching nav */
+/* Scroll-sync: sticks at top, slides off when left col ends (no footer overlap) */
 var _STICK_TOP=130;
 function _manageSummary(){
   var sp=document.getElementById('rv-spacer');
@@ -571,8 +571,11 @@ function _manageSummary(){
   if(!sp||!rc)return;
   if(window.innerWidth<=740){rc.style.cssText='';return;}
   var sr=sp.getBoundingClientRect();
+  var rcH=rc.offsetHeight;
+  /* clamp top: never above _STICK_TOP, never let bottom exceed spacer bottom */
+  var top=Math.min(Math.max(_STICK_TOP,sr.top), sr.bottom-rcH);
   rc.style.position='fixed';
-  rc.style.top=Math.max(_STICK_TOP,sr.top)+'px';
+  rc.style.top=top+'px';
   rc.style.left=sr.left+'px';
   rc.style.width=sr.width+'px';
   rc.style.zIndex='10';
