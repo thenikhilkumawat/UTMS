@@ -430,7 +430,7 @@ function toggleExpand(rowEl, expId) {
 
 function markReady(code) {
   if(!confirm("Mark #"+code+" as Ready?")) return;
-  fetch("/api/order/update-status",{method:"POST",headers:{"Content-Type":"application/json"},
+  fetch("/manage/api/order/update-status",{method:"POST",headers:{"Content-Type":"application/json"},
     body:JSON.stringify({order_code:code,status:"ready"})}).then(r=>r.json()).then(d=>{
     if(d.ok) location.reload(); else showToast("Error: "+d.error,"error");
   });
@@ -440,7 +440,7 @@ function openNotify(code) {
   notifyCode = code;
   document.getElementById("nc").textContent = "#" + code;
   document.getElementById("notify-modal").style.display = "flex";
-  fetch("/api/work-log/order-info?code=" + code).then(r => r.json()).then(d => { notifyD = d; });
+  fetch("/manage/api/work-log/order-info?code=" + code).then(r => r.json()).then(d => { notifyD = d; });
 }
 
 function sendWA(lang) {
@@ -453,7 +453,7 @@ function sendWA(lang) {
     ? "*उत्तम टेलर्स*\n\nनमस्ते " + d.customer_name + " जी!\n\nआपके कपड़े तैयार हैं। कृपया लेने आएं।\n\nऑर्डर: *#" + notifyCode + "*\nकपड़े: " + items + (d.remaining > 0 ? "\nबकाया: ₹" + d.remaining : "") + "\n\n📦 ट्रैक करें: " + trackUrl + "\n\nधन्यवाद!"
     : "*Uttam Tailors*\n\nHello " + d.customer_name + "!\n\nYour clothes are ready for pickup.\n\nOrder: *#" + notifyCode + "*\nItems: " + items + (d.remaining > 0 ? "\nAmount Due: ₹" + d.remaining : "") + "\n\n📦 Track your order: " + trackUrl + "\n\nThank you for choosing Uttam Tailors!";
   window.open("https://wa.me/" + d.mobile.replace(/\D/g, "") + "?text=" + encodeURIComponent(msg), "_blank");
-  fetch("/api/log-notify",{method:"POST",headers:{"Content-Type":"application/json"},
+  fetch("/manage/api/log-notify",{method:"POST",headers:{"Content-Type":"application/json"},
     body:JSON.stringify({order_code:notifyCode,customer:d.customer_name,mobile:d.mobile,lang:lang})}).catch(()=>{});
 }
 </script>

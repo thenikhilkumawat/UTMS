@@ -235,8 +235,8 @@
       <div id="tab-code">
         <div class="track-input-row">
           <div style="flex:1;display:flex;align-items:center;border:1.5px solid #e0d5c8;border-radius:10px;background:#faf7f3;overflow:hidden;transition:border .15s;" id="codeInputWrap">
-            <span style="padding:0 0 0 1rem;font-size:14px;font-weight:700;color:var(--dark);white-space:nowrap;user-select:none;">UT-</span>
-            <input class="track-input" id="inputCode" type="text" placeholder="3600"
+            <span style="padding:0 0 0 1rem;font-size:14px;font-weight:700;color:rgba(28,15,6,0.32);white-space:nowrap;user-select:none;">UT-</span>
+            <input class="track-input" id="inputCode" type="text" placeholder=""
                    autocomplete="off" autocapitalize="characters" maxlength="6"
                    style="border:none;background:transparent;padding-left:2px;flex:1;"
                    onkeydown="if(event.key==='Enter')doTrack()"
@@ -532,6 +532,8 @@ function renderResult(o) {
   var p = new URLSearchParams(window.location.search);
   var c = p.get('code');
   if (c) {
+    c = c.replace(/^UT-/i, '').trim();
+    c = c.replace(/^UT-/i, '').trim();
     document.getElementById('inputCode').value = c;
     doTrack();
   }

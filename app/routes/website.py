@@ -702,6 +702,18 @@ def commission():
         "robots": "index,follow",
         "og_image": cs.get("header_image", ""),
     }
+    _current_user = None
+    _web_acc_id = session.get("web_account_id")
+    if _web_acc_id:
+        try:
+            _row = get_db().execute(
+                "SELECT name, mobile, email FROM web_accounts WHERE id=? LIMIT 1", (_web_acc_id,)
+            ).fetchone()
+            if _row:
+                _current_user = {"name": _row["name"] or "", "mobile": _row["mobile"] or "", "email": _row["email"] or ""}
+        except Exception:
+            pass
+
     return render_template(
         "website/commission.html",
         cs=cs,
@@ -713,6 +725,7 @@ def commission():
         fabrics=fabrics,
         item_media=item_media,
         page_meta=page_meta,
+        current_user=_current_user,
     )
 
 @website_bp.route("/track-order")
@@ -2414,11 +2427,24 @@ def cart():
 
 @website_bp.route("/order-review")
 def order_review():
-    return render_template("website/order_review.html", active="order_review", page_meta={
-        "title": "Order Review — Uttam Tailors",
-        "desc": "Review your order before confirming.",
-        "robots": "noindex,nofollow", "og_image": "", "canonical": ""
-    })
+    _current_user = None
+    _web_acc_id = session.get("web_account_id")
+    if _web_acc_id:
+        try:
+            _row = get_db().execute(
+                "SELECT name, mobile, email FROM web_accounts WHERE id=? LIMIT 1", (_web_acc_id,)
+            ).fetchone()
+            if _row:
+                _current_user = {"name": _row["name"] or "", "mobile": _row["mobile"] or "", "email": _row["email"] or ""}
+        except Exception:
+            pass
+    return render_template("website/order_review.html", active="order_review",
+        current_user=_current_user,
+        page_meta={
+            "title": "Order Review — Uttam Tailors",
+            "desc": "Review your order before confirming.",
+            "robots": "noindex,nofollow", "og_image": "", "canonical": ""
+        })
 
 
 # ── OTP endpoints ─────────────────────────────────────────────────────────────

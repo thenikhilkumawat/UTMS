@@ -604,24 +604,35 @@
     });
   };
 
+  // ── acctPgLoad — reload account state ────────────────────────────────────
+  function acctPgLoad(){ window.location.reload(); }
+  window.acctPgLoad = acctPgLoad;
+
   // ── Init ─────────────────────────────────────────────────────────────────
   (function init(){
     var loading = document.getElementById('acctPgLoading');
-    var content = document.getElementById('acctPgContent');
+    var dash    = document.getElementById('acctPgDash');
+    var guest   = document.getElementById('acctPgGuest');
     fetch('/api/account/me').then(function(r){return r.json();}).then(function(d){
-      if(d.ok){
-        acctPgState.acc = d.account;
+      if(d.ok && d.logged_in){
+        acctPgState.acc = d;
         if(loading) loading.style.display='none';
-        if(content) content.style.display='block';
-        // Read tab from URL hash
+        if(dash) dash.style.display='block';
+        var nameEl   = document.getElementById('acctPgName2');
+        var subEl    = document.getElementById('acctPgSub');
+        var avatarEl = document.getElementById('acctPgAvatar');
+        if(nameEl)   nameEl.textContent   = d.name   || '';
+        if(subEl)    subEl.textContent    = d.mobile || d.email || '';
+        if(avatarEl) avatarEl.textContent = (d.name||'U').charAt(0).toUpperCase();
         var hash = window.location.hash.replace('#','');
         var validTabs = ACCTPG_TABS;
         acctPgSetTab(validTabs.indexOf(hash)>-1 ? hash : 'profile');
       } else {
-        if(loading) loading.innerHTML='<div style="color:var(--muted);font-size:13px;">Please <a href="/account" style="color:var(--gold);font-weight:700;">log in</a> to view your account.</div>';
+        if(loading) loading.style.display='none';
+        if(guest) guest.style.display='block';
       }
     }).catch(function(){
-      if(loading) loading.innerHTML='<div style="color:var(--muted);font-size:13px;">Unable to load account.</div>';
+      if(loading) loading.innerHTML='<div style="color:var(--muted);font-size:13px;">Unable to load account. Please refresh the page.</div>';
     });
   })();
 })();

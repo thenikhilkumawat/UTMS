@@ -23,8 +23,8 @@ SMTP_PORT = 587
 SMTP_USER = "info@uttamtailors.in"
 SMTP_PASS = "L&m5$w8S*R*jB.G"
 
-FROM_ORDER  = "Uttam Tailors <order@uttamtailors.in>"
-FROM_UPDATE = "Uttam Tailors <update@uttamtailors.in>"
+FROM_ORDER  = "Uttam Tailors <info@uttamtailors.in>"
+FROM_UPDATE = "Uttam Tailors <info@uttamtailors.in>"
 SHOP_NAME   = "Uttam Tailors"
 SHOP_ADDR   = "Subhash Chowk, Sikar, Rajasthan"
 SHOP_PHONE  = "+91 98765 43210"

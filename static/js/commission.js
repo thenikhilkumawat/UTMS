@@ -357,12 +357,7 @@ if(form){form.addEventListener('submit',async function(e){
   // ── Logged in — proceed with order ──
 
   var btn=document.getElementById('reserveBtn');btn.disabled=true;btn.querySelector('span').textContent='Processing...';
-  try{
-    var res=await fetch('/api/orders/create',{method:'POST',body:new FormData(this)});
-    var data=await res.json();
-    if(data.success&&data.payment_url)window.location.href=data.payment_url;
-    else{alert(data.message||'Something went wrong.');btn.disabled=false;btn.querySelector('span').textContent='Complete Your Order';}
-  }catch(err){alert('Network error. Please try again.');btn.disabled=false;btn.querySelector('span').textContent='Complete Your Order';}
+  this.submit();
 });}
 
 // ── Misc ──────────────────────────────────────────────────────────────────────

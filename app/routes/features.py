@@ -188,6 +188,48 @@ def order_stage_set():
         db.execute("INSERT INTO order_stages(order_code, stage, note, updated_at) VALUES(?,?,?,?)",
                    (code, stage, note, now))
     db.commit()
+
+    # ── Email notification on key stage changes ───────────────────────────────
+    STAGE_TO_STATUS = {3: "stitching", 5: "ready"}
+    if stage in STAGE_TO_STATUS:
+        try:
+            email_status = STAGE_TO_STATUS[stage]
+            _ord = db.execute(
+                """SELECT o.web_account_id, c.name as cust_name,
+                          COALESCE(c.email,'') as cust_email, c.mobile
+                   FROM orders o
+                   LEFT JOIN customers c ON c.id=o.customer_id
+                   WHERE o.order_code=?""", (code,)
+            ).fetchone()
+            if _ord:
+                _email_to = (_ord["cust_email"] or "").strip()
+                _web_acc  = _ord["web_account_id"]
+                _cname    = _ord["cust_name"] or "Customer"
+                if not _email_to and _web_acc:
+                    _acc = db.execute(
+                        "SELECT email FROM web_accounts WHERE id=? LIMIT 1", (_web_acc,)
+                    ).fetchone()
+                    if _acc:
+                        _email_to = (_acc["email"] or "").strip()
+                if not _email_to and (_ord["mobile"] or "").strip():
+                    _acc = db.execute(
+                        "SELECT email FROM web_accounts WHERE mobile=? LIMIT 1",
+                        (_ord["mobile"],)
+                    ).fetchone()
+                    if _acc:
+                        _email_to = (_acc["email"] or "").strip()
+                if _email_to:
+                    from app.utils.email_notify import send_status_email as _se
+                    _se(_email_to, code, _cname, email_status)
+                if stage == 5:
+                    db.execute(
+                        "UPDATE orders SET status=\'ready\' WHERE order_code=? AND status=\'pending\'",
+                        (code,)
+                    )
+                    db.commit()
+        except Exception:
+            pass
+
     return jsonify({"ok": True})
 
 def ensure_order_stage(order_code):
@@ -491,7 +533,7 @@ def account_me():
             "name":            _g("name"),
             "mobile":          _g("mobile"),
             "email":           _g("email"),
-            "preview_count":   acc["preview_count"] or 0,
+            "preview_count":   _g("preview_count", 0) or 0,
             "address_line1":   _g("address_line1"),
             "address_line2":   _g("address_line2"),
             "address_city":    _g("address_city"),
@@ -1641,6 +1683,20 @@ def orders_create():
     coupon_code      = (d.get("coupon_code") or "").strip().upper()
     measurements     = d.get("measurements") or {}
     styles           = d.get("styles") or {}
+    cart_items_raw   = d.get("cart_items")
+
+    cart_items_parsed = []
+    if cart_items_raw and isinstance(cart_items_raw, list):
+        for ci in cart_items_raw:
+            ci_name  = str(ci.get("name") or "").strip()
+            ci_price = float(ci.get("price") or 0)
+            ci_qty   = max(1, int(ci.get("qty") or 1))
+            if ci_name:
+                cart_items_parsed.append({"name": ci_name, "price": ci_price, "qty": ci_qty, "amount": round(ci_price * ci_qty, 2)})
+        if cart_items_parsed:
+            garment_name  = ", ".join(ci["name"] + (" x"+str(ci["qty"]) if ci["qty"] > 1 else "") for ci in cart_items_parsed)
+            garment_price = sum(ci["amount"] for ci in cart_items_parsed)
+            quantity      = 1
 
     if not customer_name or not customer_phone:
         return jsonify({"ok": False, "error": "Name and phone required"})

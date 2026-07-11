@@ -424,6 +424,10 @@ body{overflow-x:clip!important}
               <div class="phone-row"><span class="phone-pre">+91</span><input type="tel" name="cust_phone" id="cust_phone" class="field-input" required placeholder="10-digit number" maxlength="10" oninput="updateBtn()"></div>
             </div>
             <div class="field-group" style="grid-column:1/-1;">
+              <label class="field-label">Email address</label>
+              <input type="email" name="cust_email" id="cust_email" class="field-input" placeholder="For order confirmation (optional)">
+            </div>
+            <div class="field-group" style="grid-column:1/-1;">
               <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--muted);">
                 <input type="checkbox" name="save_measurements" value="1" checked>
                 Save my measurements for future orders (recommended)
@@ -1372,6 +1376,18 @@ document.addEventListener('DOMContentLoaded', function() {
     var el = document.getElementById(id);
     if(el) el.addEventListener('input', refreshBtn);
   });
+
+  // Prefill contact details if user is logged in
+  fetch('/api/account/me').then(function(r){return r.json();}).then(function(d){
+    if(!d.ok||!d.logged_in) return;
+    var nf=document.getElementById('cust_name');
+    var mf=document.getElementById('cust_phone');
+    var ef=document.getElementById('cust_email');
+    if(nf&&!nf.value&&d.name) nf.value=d.name;
+    if(mf&&!mf.value&&d.mobile) mf.value=d.mobile.replace(/^91/,'').slice(-10);
+    if(ef&&!ef.value&&d.email) ef.value=d.email;
+    refreshBtn();
+  }).catch(function(){});
 
   var flatGrid = document.getElementById('garmentGrid');
   if (flatGrid) {

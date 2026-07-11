@@ -303,7 +303,6 @@ def upload_images(order_code):
                                 conn.execute("INSERT INTO order_images(order_id, file_path) VALUES(?,?)", (0, f"temp:{order_code}:{url}"))
                             saved += 1
                 conn.commit()
-                conn.close()
             else:
                 folder = os.path.join(Config.UPLOAD_FOLDER, order_code)
                 os.makedirs(folder, exist_ok=True)
@@ -1257,7 +1256,6 @@ def api_update_status():
     else:
         conn.execute("UPDATE orders SET status=? WHERE order_code=?", (new_status, code))
     conn.commit()
-    conn.close()
 
     # ── SMS notification ─────────────────────────────────────────────────────
     try:
@@ -1276,26 +1274,30 @@ def api_update_status():
         pass  # SMS failure never blocks status update
 
     # ── Email + FCM status notification ──────────────────────────────────────
+    import logging as _logging
+    _elog = _logging.getLogger("status_email")
     try:
         if order_row:
             _email_to = (order_row["cust_email"] or "").strip()
             _web_acc  = order_row["web_account_id"]
-            # Fallback: look up email from web_accounts if linked
+            _elog.warning("STATUS EMAIL: email_to=%r web_acc=%r code=%r status=%r", _email_to, _web_acc, code, new_status)
             if not _email_to and _web_acc:
                 _acc_r = get_db().execute(
                     "SELECT email FROM web_accounts WHERE id=? LIMIT 1", (_web_acc,)
                 ).fetchone()
                 if _acc_r:
                     _email_to = (_acc_r["email"] or "").strip()
+            _elog.warning("STATUS EMAIL: final email_to=%r", _email_to)
             _cname = order_row["cust_name"] or "Customer"
             if _email_to:
                 from app.utils.email_notify import send_status_email as _se
-                _se(_email_to, code, _cname, new_status)
+                result = _se(_email_to, code, _cname, new_status)
+                _elog.warning("STATUS EMAIL: send result=%r", result)
             if _web_acc:
                 from app.utils.fcm import push_status_update as _fcm_su
                 _fcm_su(_web_acc, code, new_status)
-    except Exception:
-        pass
+    except Exception as _ex:
+        open("/tmp/email_err.txt","a").write(str(_ex)+"\n")
 
     return jsonify({"ok": True})
 
@@ -1354,7 +1356,6 @@ def api_collect_payment():
                          (now, code))
 
     conn.commit()
-    conn.close()
     return jsonify({"ok": True, "remaining": new_rem})
 
 
@@ -1710,7 +1711,6 @@ def api_worklog_add():
             VALUES(?,?,?,?,?,?,?,?,?)
         """, (order["id"], code, garment, qty, emp_name, today, making_rate, notes, now))
         conn.commit()
-        conn.close()
         return jsonify({"ok": True, "auto_ready": False, "progress": f"{notes}: {qty} piece(s) logged"})
 
     # STITCHING — validate garment exists in order
@@ -1768,7 +1768,6 @@ def api_worklog_delete(log_id):
         return jsonify({"ok": False, "error": "Work log entry not found"})
     conn.execute("DELETE FROM work_logs WHERE id=?", (log_id,))
     conn.commit()
-    conn.close()
     return jsonify({"ok": True})
 
 
@@ -1783,7 +1782,6 @@ def api_worklog_delete_by_order():
     result = conn.execute("DELETE FROM work_logs WHERE order_code=?", (code,))
     deleted = result.rowcount if hasattr(result, 'rowcount') else 0
     conn.commit()
-    conn.close()
     return jsonify({"ok": True, "deleted": deleted})
 
 
@@ -1805,7 +1803,6 @@ def api_worklog_cleanup_past():
         )
     """)
     conn.commit()
-    conn.close()
     return jsonify({"ok": True})
 
 
@@ -2025,7 +2022,6 @@ def api_pickup_collect_and_deliver():
             (now, code)
         )
         conn.commit()
-        conn.close()
         _send_delivered_sms()
         return jsonify({"ok":True})
 
@@ -2040,7 +2036,6 @@ def api_pickup_collect_and_deliver():
             (now, code)
         )
         conn.commit()
-        conn.close()
         _send_delivered_sms()
         return jsonify({"ok":True})
 
@@ -2064,7 +2059,6 @@ def api_pickup_collect_and_deliver():
         VALUES(?,'income','payment',?,?,?,?,'employee',?)
     """, (today, amount, mode, order["id"], f"Final payment on delivery #{code}", now))
     conn.commit()
-    conn.close()
     _send_delivered_sms()
     return jsonify({"ok":True})
 
@@ -2100,7 +2094,6 @@ def api_pickup_deliver():
         (now, code)
     )
     conn.commit()
-    conn.close()
     try:
         if sms_row and sms_row["mobile"]:
             from app.utils.sms import send_status_sms as _dsms
@@ -2258,7 +2251,6 @@ def api_finance_add():
         VALUES(?,?,?,?,?,?,?,'employee',?)
     """, (tx_date, tx_type, category, amount, mode, order_id, note, now))
     conn.commit()
-    conn.close()
     return jsonify({"ok": True})
 
 
@@ -2381,7 +2373,6 @@ def api_log_notify():
         (order_code, customer, mobile, lang, now)
     )
     conn.commit()
-    conn.close()
     return jsonify({"ok": True})
 
 

@@ -174,40 +174,79 @@
 <script>
 var _order = {};
 var _delivery = 'pickup';
+var _fromCart = new URLSearchParams(window.location.search).get('from') === 'cart';
+var _cartCheckout = {};
 
-// Load order from sessionStorage
-try {
-  _order = JSON.parse(sessionStorage.getItem('pdp_order') || '{}');
-} catch(e) {}
+if(_fromCart){
+  try { _cartCheckout = JSON.parse(sessionStorage.getItem('cart_checkout') || '{}'); } catch(e) {}
+  // Fallback: read directly from cart localStorage if sessionStorage was cleared
+  if(!_cartCheckout.items || !_cartCheckout.items.length){
+    try {
+      var _rawCart = JSON.parse(localStorage.getItem('uttam_cart') || '[]');
+      if(_rawCart.length) _cartCheckout = {items: _rawCart, coupon: {}};
+    } catch(e2) {}
+  }
+  var _cartItems = _cartCheckout.items || [];
+  var _cartTotal = _cartItems.reduce(function(s,i){ return s+(parseFloat(i.price||0)*(parseInt(i.qty)||1)); }, 0);
+  _order.item_name = _cartItems.map(function(i){ return i.name+(i.qty>1?' x'+i.qty:''); }).join(', ') || '';
+  _order.item_price = _cartTotal;
+  _order.qty = 1;
+} else {
+  try { _order = JSON.parse(sessionStorage.getItem('pdp_order') || '{}'); } catch(e) {}
+}
 
 function init(){
   if(!_order.item_name){
-    document.querySelector('.review-wrap').innerHTML='<div style="text-align:center;padding:4rem;"><h2>No order found.</h2><a href="/our-craft">← Browse garments</a></div>';
+    if(_fromCart){
+      window.location.href='/cart';
+    } else {
+      document.querySelector('.review-wrap').innerHTML='<div style="text-align:center;padding:4rem;"><h2>No order found.</h2><a href="/our-craft">← Browse garments</a></div>';
+    }
     return;
   }
 
   // Item details
-  var img = document.getElementById('revImg');
-  if(img && _order.item_img) img.src = _order.item_img;
-  var name = document.getElementById('revName');
-  if(name) name.textContent = _order.item_name;
-  var sub = document.getElementById('revSub');
-  if(sub) sub.textContent = (_order.size ? 'Size: '+_order.size : '') + (_order.urgent ? ' · 🔥 Urgent' : '');
-
-  // Specs
-  var specs = document.getElementById('revSpecs');
-  if(specs){
-    var h = '';
-    if(_order.qty > 1) h += '<div class="review-spec-row"><span class="review-spec-label">Quantity</span><span class="review-spec-value">'+_order.qty+'</span></div>';
-    if(_order.meas_method) h += '<div class="review-spec-row"><span class="review-spec-label">Measurements</span><span class="review-spec-value">'+(_order.meas_method.charAt(0).toUpperCase()+_order.meas_method.slice(1).replace(/_/g,' '))+'</span></div>';
-    if(_order.fabric && _order.fabric !== 'own') h += '<div class="review-spec-row"><span class="review-spec-label">Fabric</span><span class="review-spec-value">From catalogue</span></div>';
-    if(_order.styles){
-      Object.keys(_order.styles).forEach(function(k){
-        h += '<div class="review-spec-row"><span class="review-spec-label">'+k+'</span><span class="review-spec-value">'+_order.styles[k]+'</span></div>';
+  function _esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g,function(ch){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];}); }
+  if(_fromCart && _cartCheckout.items && _cartCheckout.items.length){
+    var card = document.getElementById('reviewItemCard');
+    var ct = card ? card.querySelector('.review-card-title') : null;
+    if(ct) ct.textContent = 'Your Cart ('+_cartCheckout.items.length+' item'+(_cartCheckout.items.length>1?'s':'')+')';
+    var ir = card ? card.querySelector('.review-item-row') : null;
+    if(ir){
+      var h = '';
+      _cartCheckout.items.forEach(function(it){
+        var qty=parseInt(it.qty)||1; var price=parseFloat(it.price||0);
+        h += '<div class="review-item-row" style="border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:12px;">';
+        if(it.img) h += '<img class="review-item-img" src="'+_esc(it.img)+'" alt="" onerror="this.style.display='none'">';
+        else h += '<div class="review-item-img" style="background:var(--bg2);border-radius:8px;"></div>';
+        h += '<div><div class="review-item-name">'+_esc(it.name)+'</div>';
+        h += '<div class="review-item-sub">Rs. '+price+(qty>1?' x '+qty+' = Rs. '+(price*qty):'')+'</div></div></div>';
       });
+      ir.outerHTML = h;
     }
-    if(_order.notes) h += '<div class="review-spec-row"><span class="review-spec-label">Notes</span><span class="review-spec-value">'+_order.notes+'</span></div>';
-    specs.innerHTML = h;
+    var specs = document.getElementById('revSpecs');
+    if(specs) specs.innerHTML = '';
+    if(_cartCheckout.coupon && _cartCheckout.coupon.code){
+      var ci = document.getElementById('couponInput');
+      if(ci && !ci.value){ ci.value = _cartCheckout.coupon.code; setTimeout(applyCoupon, 600); }
+    }
+  } else {
+    var img = document.getElementById('revImg');
+    if(img && _order.item_img) img.src = _order.item_img;
+    var name = document.getElementById('revName');
+    if(name) name.textContent = _order.item_name;
+    var sub = document.getElementById('revSub');
+    if(sub) sub.textContent = (_order.size ? 'Size: '+_order.size : '') + (_order.urgent ? ' Urgent' : '');
+    var specs = document.getElementById('revSpecs');
+    if(specs){
+      var h = '';
+      if(_order.qty > 1) h += '<div class="review-spec-row"><span class="review-spec-label">Quantity</span><span class="review-spec-value">'+_order.qty+'</span></div>';
+      if(_order.meas_method) h += '<div class="review-spec-row"><span class="review-spec-label">Measurements</span><span class="review-spec-value">'+(_order.meas_method.charAt(0).toUpperCase()+_order.meas_method.slice(1).replace(/_/g,' '))+'</span></div>';
+      if(_order.fabric && _order.fabric !== 'own') h += '<div class="review-spec-row"><span class="review-spec-label">Fabric</span><span class="review-spec-value">From catalogue</span></div>';
+      if(_order.styles){ Object.keys(_order.styles).forEach(function(k){ h += '<div class="review-spec-row"><span class="review-spec-label">'+k+'</span><span class="review-spec-value">'+_order.styles[k]+'</span></div>'; }); }
+      if(_order.notes) h += '<div class="review-spec-row"><span class="review-spec-label">Notes</span><span class="review-spec-value">'+_order.notes+'</span></div>';
+      specs.innerHTML = h;
+    }
   }
 
   _delivery = 'pickup';
@@ -378,6 +417,7 @@ function _doPlaceOrder(){
   btn.disabled = true;
 
   var delivDate = document.getElementById('deliveryDate');
+  var isUrgentNow = (function(){ var cb=document.getElementById('revUrgent'); return cb ? cb.checked : (_order.urgent||false); })();
   var payload = {
     coupon_code: _couponCode || '',
     delivery_date: delivDate ? delivDate.value : '',
@@ -389,15 +429,20 @@ function _doPlaceOrder(){
     fabric: _order.fabric || 'own',
     measurement_method: _order.meas_method || 'standard',
     measurements: _order.measurements || {},
-    urgent: (function(){ var cb=document.getElementById('revUrgent'); return cb ? cb.checked : (_order.urgent||false); })(),
+    urgent: isUrgentNow,
     notes: _order.notes || '',
     delivery: _delivery,
     customer_name: name,
     customer_phone: phone,
     customer_email: (document.getElementById('custEmail')||{value:''}).value || '',
     customer_address: addr,
-    source: 'product_page'
+    source: _fromCart ? 'cart' : 'product_page'
   };
+  if(_fromCart && _cartCheckout.items && _cartCheckout.items.length){
+    payload.cart_items = _cartCheckout.items.map(function(it){
+      return {name: it.name, price: parseFloat(it.price||0), qty: parseInt(it.qty)||1};
+    });
+  }
 
   fetch('/api/orders/create', {
     method: 'POST',
@@ -406,9 +451,12 @@ function _doPlaceOrder(){
   })
   .then(function(r){return r.json();})
   .then(function(d){
-    if(d.success || d.payment_url){
+    if(d.success || d.payment_url || d.ok){
       sessionStorage.removeItem('pdp_order');
-      window.location.href = d.payment_url || '/order-confirmed?id='+d.order_id;
+      sessionStorage.removeItem('cart_checkout');
+      if(_fromCart){ try{ localStorage.removeItem('uttam_cart'); }catch(e){} if(typeof _updateCartBadge==='function')_updateCartBadge(); }
+      var dest = d.payment_url || (d.order_code ? '/order-confirmed?code='+d.order_code : (d.order_id ? '/order-confirmed?id='+d.order_id : '/order-confirmed'));
+      window.location.href = dest;
     } else {
       btn.textContent = 'Place Order & Pay Advance →';
       btn.disabled = false;
@@ -484,30 +532,16 @@ function detectLocation(inputId, btn){
   );
 }
 
-// ── Account prefill on order-review page ─────────────────────────────────
-(function(){
-  // Check if already logged in — prefill and show badge
-  fetch('/api/account/me').then(function(r){return r.json();}).then(function(d){
-    if(d && d.name){
-      _prefillAccount(d);
-    } else {
-      // Show login nudge panel
-      var panel = document.getElementById('revLoginPanel');
-      if(panel) panel.style.display = 'block';
-    }
-  }).catch(function(){});
-})();
-
+// ── Account prefill ───────────────────────────────────────────────────────────
 function _prefillAccount(acc){
   var nf = document.getElementById('custName');
   var mf = document.getElementById('custPhone');
-  var af = document.getElementById('custAddress');
-  if(nf && !nf.value && acc.name) nf.value = acc.name;
-  if(mf && !mf.value && acc.mobile) mf.value = acc.mobile;
   var ef = document.getElementById('custEmail');
-  if(ef && !ef.value && acc.email) ef.value = acc.email;
+  var af = document.getElementById('custAddress');
+  if(nf && !nf.value && acc.name)   nf.value = acc.name;
+  if(mf && !mf.value && acc.mobile) mf.value = acc.mobile.replace(/^91/,'').slice(-10);
+  if(ef && !ef.value && acc.email)  ef.value = acc.email;
   if(af && !af.value){
-    // Build address from saved profile
     var parts = [acc.address_line1, acc.address_line2, acc.address_city, acc.address_state, acc.address_pincode];
     var addr = parts.filter(Boolean).join(', ');
     if(addr) af.value = addr;
@@ -517,6 +551,27 @@ function _prefillAccount(acc){
   var panel = document.getElementById('revLoginPanel');
   if(panel) panel.style.display = 'none';
 }
+
+{% if current_user %}
+(function(){
+  _prefillAccount({
+    name:   {{ current_user.name|tojson }},
+    mobile: {{ current_user.mobile|tojson }},
+    email:  {{ current_user.email|tojson }}
+  });
+})();
+{% else %}
+(function(){
+  fetch('/api/account/me',{credentials:'same-origin'}).then(function(r){return r.json();}).then(function(d){
+    if(d && (d.name || d.ok)){
+      _prefillAccount(d);
+    } else {
+      var panel = document.getElementById('revLoginPanel');
+      if(panel) panel.style.display = 'block';
+    }
+  }).catch(function(){});
+})();
+{% endif %}
 
 function revDoLogin(){
   var mobile = (document.getElementById('revLoginMobile').value || '').trim();
@@ -529,11 +584,7 @@ function revDoLogin(){
   }).then(function(r){return r.json();}).then(function(d){
     if(d.ok){
       _prefillAccount(d);
-      // If login was triggered by the order gate, auto-proceed
-      if(_pendingPlaceOrder){
-        _pendingPlaceOrder = false;
-        setTimeout(function(){ _doPlaceOrder(); }, 400);
-      }
+      if(_pendingPlaceOrder){ _pendingPlaceOrder = false; setTimeout(function(){ _doPlaceOrder(); }, 400); }
     } else {
       msg.textContent = d.error || 'Login failed. Check mobile/password.';
     }
@@ -543,7 +594,6 @@ function revDoLogin(){
 document.addEventListener('DOMContentLoaded', function(){
   init();
   ['custAddress'].forEach(function(id){ attachLocationBtn(id); });
-  /* Meta Pixel — InitiateCheckout */
   try{if(window.fbq)fbq('track','InitiateCheckout');}catch(e){}
 });
 </script>

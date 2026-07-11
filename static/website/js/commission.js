@@ -141,12 +141,11 @@ function updateBtn(){
 }
 
 var form=document.getElementById('commissionForm');
-if(form){form.addEventListener('submit',async function(e){
-  e.preventDefault();var btn=document.getElementById('reserveBtn');btn.disabled=true;btn.querySelector('span').textContent='Processing...';
-  try{var res=await fetch('/api/orders/create',{method:'POST',headers:{'X-CSRFToken':csrf()},body:new FormData(this)});var data=await res.json();
-  if(data.success&&data.payment_url)window.location.href=data.payment_url;
-  else{alert(data.message||'Something went wrong.');btn.disabled=false;btn.querySelector('span').textContent='Confirm and Place Order';}}
-  catch(err){alert('Network error. Please try again.');btn.disabled=false;btn.querySelector('span').textContent='Confirm and Place Order';}
+if(form){form.addEventListener('submit',function(e){
+  e.preventDefault();
+  var btn=document.getElementById('reserveBtn');
+  btn.disabled=true;btn.querySelector('span').textContent='Processing...';
+  this.submit();
 });}
 
 function openSizeGuide(e){e.preventDefault();var m=document.getElementById('sizeGuideModal');if(m)m.style.display='flex';}
