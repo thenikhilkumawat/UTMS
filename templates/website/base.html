@@ -1336,24 +1336,15 @@ function closePopup(){
 <!-- ═══ END SUPPORT CHAT WIDGET ══════════════════════════════════════════════ -->
 
 <script>
-/* ═══ LOADER — hide on DOMContentLoaded ═══ */
-(function(){
-  var ldr = document.getElementById('site-loader');
-  if(!ldr) return;
-  var hidden = false;
-  function hideLdr(){
-    if(hidden) return;
-    hidden = true;
-    ldr.classList.add('ldr-hidden');
-    setTimeout(function(){ if(ldr.parentNode) ldr.parentNode.removeChild(ldr); }, 900);
-  }
-  if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', hideLdr, {once:true});
-  } else {
-    hideLdr();
-  }
-  setTimeout(hideLdr, 2000);
-})();
+/* ═══ LOADER — force hide after 1.5s ═══ */
+setTimeout(function(){
+  var l = document.getElementById('site-loader');
+  if(!l) return;
+  l.style.transition = 'opacity 0.5s ease';
+  l.style.opacity = '0';
+  l.style.pointerEvents = 'none';
+  setTimeout(function(){ l.style.display = 'none'; }, 500);
+}, 1500);
 
 /* ═══ SCROLL REVEAL — velocity-aware Intersection Observer ═══ */
 (function(){
