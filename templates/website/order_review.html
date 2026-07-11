@@ -3,279 +3,247 @@
 
 {% block head %}
 <style>
-/* ── Layout ── */
-.co-wrap{max-width:560px;margin:0 auto;padding:100px 1.25rem 5rem;}
-.co-back{display:inline-flex;align-items:center;gap:5px;font-family:var(--fm);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);text-decoration:none;margin-bottom:2rem;}
-.co-back:hover{color:var(--gold);}
-.co-brand{font-family:var(--fm);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:.5rem;}
-.co-title{font-family:var(--fd);font-size:clamp(28px,5vw,42px);font-weight:300;color:var(--dark);line-height:1.1;margin-bottom:2.5rem;}
+/* ── Base ── */
+.rv-wrap{max-width:1020px;margin:0 auto;padding:110px 1.5rem 5rem;}
+.rv-back{display:inline-flex;align-items:center;gap:5px;font-family:var(--fm);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-decoration:none;margin-bottom:1.5rem;}
+.rv-back:hover{color:var(--gold);}
+.rv-title{font-family:var(--fd);font-size:clamp(26px,3.5vw,38px);font-weight:300;color:var(--dark);margin-bottom:.2rem;letter-spacing:-.01em;}
+.rv-subtitle{font-family:var(--fm);font-size:9.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:2rem;}
 
-/* ── Sections ── */
-.co-sec{padding:1.75rem 0;border-top:1px solid var(--border);}
-.co-sec:last-child{border-bottom:1px solid var(--border);}
-.co-sec-label{font-family:var(--fm);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:1.1rem;display:flex;justify-content:space-between;align-items:center;}
+/* ── Grid ── */
+.rv-grid{display:flex;gap:1.5rem;align-items:flex-start;}.rv-left{flex:1;min-width:0;}
+.rv-right-col{width:340px;flex-shrink:0;position:sticky;top:100px;max-height:calc(100vh - 115px);overflow-y:auto;}
 
-/* ── Items ── */
-.co-item{display:flex;gap:13px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border);}
-.co-item:last-child{border-bottom:none;padding-bottom:0;}
-.co-item-img{width:54px;height:66px;border-radius:7px;object-fit:cover;object-position:top;background:var(--bg2);flex-shrink:0;}
-.co-item-name{font-family:var(--fd);font-size:17px;color:var(--dark);line-height:1.2;margin-bottom:4px;}
-.co-item-price{font-family:var(--fm);font-size:11px;letter-spacing:.05em;color:var(--gold);}
+/* ── Cards ── */
+.rv-card{background:#fff;border:1px solid var(--border);border-radius:11px;padding:1.25rem;margin-bottom:1rem;}
+.rv-card-label{font-family:var(--fm);font-size:9px;letter-spacing:.17em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem;padding-bottom:8px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
 
-/* ── Spec rows ── */
-.co-spec{display:flex;justify-content:space-between;padding:4px 0;font-size:12.5px;}
-.co-spec-k{color:var(--muted);}
-.co-spec-v{color:var(--dark);font-weight:500;}
+/* ── Item card ── */
+.rv-item{display:flex;gap:12px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--border);}
+.rv-item:last-child{border-bottom:none;padding-bottom:0;}
+.rv-item-img{width:52px;height:64px;border-radius:7px;object-fit:cover;object-position:top;background:var(--bg2);flex-shrink:0;}
+.rv-item-name{font-family:var(--fd);font-size:16px;color:var(--dark);line-height:1.2;margin-bottom:2px;}
+.rv-item-price{font-family:var(--fm);font-size:11px;letter-spacing:.04em;color:var(--gold);}
 
 /* ── Login panel ── */
-.co-login-note{font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.55;}
-.co-tabs{display:flex;gap:0;border:1px solid var(--border);border-radius:7px;overflow:hidden;margin-bottom:12px;}
-.co-tab{flex:1;padding:9px;font-size:10px;font-family:var(--fm);letter-spacing:.09em;text-transform:uppercase;border:none;cursor:pointer;transition:all .15s;background:#fff;color:var(--muted);}
-.co-tab.active{background:var(--dark);color:#fff;}
+.rv-tab-bar{display:flex;border:1px solid var(--border);border-radius:7px;overflow:hidden;margin-bottom:10px;}
+.rv-tab{flex:1;padding:8px;font-size:11px;font-family:var(--fm);letter-spacing:.08em;text-transform:uppercase;border:none;cursor:pointer;transition:all .15s;}
+.rv-tab.active{background:var(--dark);color:#fff;}
+.rv-tab:not(.active){background:#fff;color:var(--muted);}
+.rv-input{width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;outline:none;font-family:inherit;transition:border-color .15s;}
+.rv-input:focus{border-color:var(--gold);}
 
-/* ── Form fields ── */
-.co-field{position:relative;margin-bottom:10px;}
-.co-label{display:block;font-family:var(--fm);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
-.co-in{width:100%;box-sizing:border-box;padding:11px 13px;border:1px solid var(--border);border-radius:8px;font-size:13.5px;outline:none;font-family:inherit;color:var(--dark);background:#fff;transition:border-color .2s;}
-.co-in:focus{border-color:var(--gold);}
-.co-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.co-addr-row{display:flex;gap:8px;align-items:flex-end;}
-.co-addr-row .co-field{flex:1;margin-bottom:0;}
-.co-loc-btn{flex-shrink:0;width:43px;height:43px;border:1px solid var(--border);border-radius:8px;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);transition:all .15s;}
-.co-loc-btn:hover{border-color:var(--gold);color:var(--gold);}
+/* ── Details form ── */
+.rv-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.rv-addr-wrap{display:flex;gap:7px;align-items:center;}
+.rv-loc-btn{flex-shrink:0;width:40px;height:40px;border:1px solid var(--border);border-radius:7px;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;color:var(--muted);}
+.rv-loc-btn:hover{border-color:var(--gold);color:var(--gold);}
 
-/* ── Priority ── */
-.co-pri-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.co-pri-opt{padding:14px;border:1.5px solid var(--border);border-radius:9px;cursor:pointer;transition:all .2s;}
-.co-pri-opt.active{border-color:var(--gold);background:rgba(184,120,48,.04);}
-.co-pri-icon{font-size:20px;margin-bottom:6px;}
-.co-pri-name{font-family:var(--fm);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--dark);margin-bottom:2px;}
-.co-pri-desc{font-size:11.5px;color:var(--muted);}
+/* ── Priority toggle (segmented) ── */
+.rv-seg{display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:12px;}
+.rv-seg-opt{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 8px;cursor:pointer;transition:all .15s;border:none;background:#fff;font-family:inherit;}
+.rv-seg-opt:not(:last-child){border-right:1px solid var(--border);}
+.rv-seg-opt.active{background:var(--dark);color:#fff;}
+.rv-seg-opt:not(.active){color:var(--muted);}
+.rv-seg-label{font-family:var(--fm);font-size:10px;letter-spacing:.08em;text-transform:uppercase;}
+.rv-seg-desc{font-size:10px;opacity:.75;margin-top:1px;}
 
-/* ── Delivery ── */
-.co-del-opt{display:flex;align-items:center;gap:12px;padding:13px 14px;border:1.5px solid var(--border);border-radius:9px;cursor:pointer;transition:all .2s;margin-bottom:8px;}
-.co-del-opt:last-child{margin-bottom:0;}
-.co-del-opt.active{border-color:var(--gold);background:rgba(184,120,48,.04);}
-.co-del-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;position:relative;transition:all .15s;}
-.co-del-opt.active .co-del-dot{border-color:var(--gold);}
-.co-del-opt.active .co-del-dot::after{content:'';position:absolute;inset:3px;border-radius:50%;background:var(--gold);}
-.co-del-main{font-size:13.5px;font-weight:600;color:var(--dark);line-height:1.3;}
-.co-del-sub{font-size:11.5px;color:var(--muted);margin-top:2px;}
-.co-del-price{margin-left:auto;font-family:var(--fm);font-size:11.5px;font-weight:600;color:var(--dark);white-space:nowrap;}
+/* ── Delivery options ── */
+.rv-del-list{display:flex;flex-direction:column;gap:7px;}
+.rv-del-opt{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;transition:all .15s;}
+.rv-del-opt.active{border-color:var(--gold);background:rgba(184,120,48,.04);}
+.rv-del-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;position:relative;transition:all .15s;}
+.rv-del-opt.active .rv-del-dot{border-color:var(--gold);}
+.rv-del-opt.active .rv-del-dot::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:6px;height:6px;border-radius:50%;background:var(--gold);}
+.rv-del-info{flex:1;}
+.rv-del-name{font-size:13px;font-weight:600;color:var(--dark);line-height:1.2;}
+.rv-del-sub{font-size:11px;color:var(--muted);margin-top:1px;}
+.rv-del-price{font-family:var(--fm);font-size:11px;color:var(--gold);font-weight:600;white-space:nowrap;}
 
-/* ── Summary ── */
-.co-sum-row{display:flex;justify-content:space-between;font-size:13.5px;padding:7px 0;}
-.co-sum-k{color:var(--dark);}
-.co-sum-v{color:var(--dark);font-weight:500;}
-.co-sum-div{border-top:1px solid var(--border);margin:6px 0;}
-.co-sum-total{display:flex;justify-content:space-between;font-family:var(--fd);font-size:24px;padding:8px 0;}
-.co-advance{background:linear-gradient(135deg,#faf4ec,#f2e8d8);border-radius:9px;padding:13px 15px;margin-top:12px;}
-.co-adv-label{font-family:var(--fm);font-size:8.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
-.co-adv-desc{font-size:13px;color:var(--dark);margin-bottom:6px;}
-.co-adv-amount{font-family:var(--fd);font-size:22px;color:var(--gold);}
-
-/* ── Coupon ── */
-.co-coupon-row{display:flex;gap:7px;margin-top:14px;}
-.co-coupon-in{flex:1;padding:10px 13px;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none;font-family:inherit;}
-.co-coupon-in:focus{border-color:var(--gold);}
-.co-coupon-btn{padding:10px 18px;background:var(--dark);color:#fff;border:none;border-radius:8px;font-family:var(--fm);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;white-space:nowrap;}
-
-/* ── CTA ── */
-.co-cta-sec{padding-top:1.75rem;}
-.co-place-btn{width:100%;padding:16px;background:var(--dark);color:#fff;border:none;border-radius:9px;font-family:var(--fm);font-size:11px;letter-spacing:.15em;text-transform:uppercase;cursor:pointer;transition:background .2s;display:block;}
-.co-place-btn:hover{background:var(--brown);}
-.co-place-note{text-align:center;font-size:11.5px;color:var(--muted);margin-top:10px;}
+/* ── Right summary ── */
+.rv-sum-line{display:flex;justify-content:space-between;font-size:13px;color:var(--dark);padding:6px 0;}
+.rv-sum-div{border-top:1px solid var(--border);margin:4px 0;}
+.rv-sum-total{display:flex;justify-content:space-between;font-size:19px;font-weight:700;color:var(--dark);padding-top:10px;}
+.rv-coupon-wrap{display:flex;gap:6px;margin:10px 0 3px;}
+.rv-coupon-in{flex:1;padding:8px 11px;border:1px solid var(--border);border-radius:7px;font-size:13px;outline:none;font-family:inherit;}
+.rv-coupon-in:focus{border-color:var(--gold);}
+.rv-apply-btn{padding:8px 14px;background:var(--dark);color:#fff;border:none;border-radius:7px;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;font-family:var(--fm);}
+.rv-advance-box{background:linear-gradient(135deg,#faf3e8,#f0e6d3);border-radius:8px;padding:10px 12px;margin:10px 0 6px;}
+.rv-place-btn{width:100%;padding:14px;background:var(--dark);color:#fff;border:none;border-radius:8px;font-family:var(--fm);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;margin-top:10px;transition:background .2s;}
+.rv-place-btn:hover{background:var(--brown);}
 
 /* ── Badge ── */
-.co-badge{font-size:9px;background:var(--gold);color:#fff;padding:2px 8px;border-radius:20px;font-family:var(--fm);letter-spacing:.05em;}
+.rv-badge{font-size:9.5px;background:var(--gold);color:#fff;padding:2px 8px;border-radius:20px;font-family:var(--fm);letter-spacing:.05em;}
 
-/* ── Date msg ── */
-#deliveryDateMsg{font-size:11.5px;margin-top:5px;min-height:14px;}
+/* ── Spec row ── */
+.rv-spec{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12.5px;}
+.rv-spec:last-child{border-bottom:none;}
+.rv-spec-k{color:var(--muted);}
+.rv-spec-v{color:var(--dark);font-weight:500;text-align:right;max-width:60%;}
 
 /* ── Mobile ── */
-@media(max-width:500px){
-  .co-row{grid-template-columns:1fr;}
-  .co-pri-row{grid-template-columns:1fr 1fr;}
-  .co-wrap{padding:88px 1rem 4rem;}
+@media(max-width:740px){
+  .rv-grid{flex-direction:column;}
+  .rv-right-col{width:100%;max-height:none;position:static;}
+  .rv-row{grid-template-columns:1fr;}
+  .rv-wrap{padding:88px 1rem 4rem;}
+  .rv-seg{flex-direction:column;}
+  .rv-seg-opt:not(:last-child){border-right:none;border-bottom:1px solid var(--border);}
 }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="co-wrap">
+<div class="rv-wrap">
+  <a href="javascript:history.back()" class="rv-back">← Back</a>
+  <div class="rv-title">Review Your Order</div>
+  <div class="rv-subtitle">Uttam Tailors · Est. 1987 · Sikar</div>
 
-  <a href="javascript:history.back()" class="co-back">← Back</a>
-  <div class="co-brand">Uttam Tailors · Sikar</div>
-  <div class="co-title">Review<br>Your Order</div>
+  <div class="rv-grid">
+    <!-- ── LEFT ── -->
+    <div class="rv-left">
 
-  <!-- 1. ORDER ITEMS -->
-  <div class="co-sec" id="coItemSec">
-    <div class="co-sec-label">Your Order <span id="coItemCount"></span></div>
-    <div id="coItemsBody">
-      <div class="co-item">
-        <img id="revImg" class="co-item-img" src="" alt="">
-        <div>
-          <div class="co-item-name" id="revName">—</div>
-          <div class="co-item-price" id="revSub">Loading…</div>
+      <!-- Items -->
+      <div class="rv-card" id="reviewItemCard">
+        <div class="rv-card-label">Your Garment</div>
+        <div class="review-item-row">
+          <img id="revImg" class="rv-item-img" src="" alt="">
+          <div>
+            <div class="rv-item-name" id="revName">—</div>
+            <div class="rv-item-price" id="revSub">Loading...</div>
+          </div>
+        </div>
+        <div id="revSpecs"></div>
+      </div>
+
+      <!-- Login panel -->
+      <div class="rv-card" id="revLoginPanel" style="display:none;">
+        <div class="rv-card-label" id="revLoginTitle">Account Required</div>
+        <p style="font-size:12.5px;color:var(--muted);margin-bottom:12px;line-height:1.5;">Please log in or create a free account to place and track your order.</p>
+        <div class="rv-tab-bar">
+          <button type="button" id="revTabLogin" class="rv-tab active" onclick="revSwitchTab('login')">Log In</button>
+          <button type="button" id="revTabSignup" class="rv-tab" onclick="revSwitchTab('signup')">Sign Up</button>
+        </div>
+        <div id="revFormLogin">
+          <input type="tel" id="revLoginMobile" class="rv-input" placeholder="Mobile number" maxlength="10" style="margin-bottom:6px;">
+          <input type="email" id="revLoginEmail" class="rv-input" placeholder="Email (optional)" style="margin-bottom:6px;">
+          <input type="password" id="revLoginPass" class="rv-input" placeholder="Password" style="margin-bottom:8px;">
+          <button type="button" onclick="revDoLogin()" style="width:100%;padding:10px;background:var(--dark);color:#fff;border:none;border-radius:7px;font-family:var(--fm);font-size:10px;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;">Log In</button>
+        </div>
+        <div id="revFormSignup" style="display:none;">
+          <input type="text" id="revSignupName" class="rv-input" placeholder="Full name *" style="margin-bottom:6px;">
+          <div class="rv-row" style="margin-bottom:6px;">
+            <input type="tel" id="revSignupMobile" class="rv-input" placeholder="Mobile *" maxlength="10">
+            <input type="email" id="revSignupEmail" class="rv-input" placeholder="Email (optional)">
+          </div>
+          <input type="password" id="revSignupPass" class="rv-input" placeholder="Password * (min 6 chars)" style="margin-bottom:8px;">
+          <button type="button" onclick="revDoSignup()" style="width:100%;padding:10px;background:var(--dark);color:#fff;border:none;border-radius:7px;font-family:var(--fm);font-size:10px;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;">Create Account &amp; Continue</button>
+        </div>
+        <div id="revLoginMsg" style="font-size:12px;margin-top:7px;color:crimson;text-align:center;min-height:14px;"></div>
+      </div>
+
+      <!-- Details -->
+      <div class="rv-card">
+        <div class="rv-card-label">
+          Your Details
+          <span id="revAccBadge" class="rv-badge" style="display:none;">✓ Logged in</span>
+        </div>
+        <div class="rv-row" style="margin-bottom:7px;">
+          <input class="rv-input" id="custName" placeholder="Full name *" type="text">
+          <input class="rv-input" id="custPhone" placeholder="Mobile *" type="tel">
+        </div>
+        <input class="rv-input" id="custEmail" placeholder="Email (for order updates)" type="email" style="margin-bottom:7px;">
+        <div class="rv-addr-wrap">
+          <input class="rv-input" id="custAddress" placeholder="Delivery address (optional)" type="text" style="flex:1;margin-bottom:0;">
+          <button type="button" class="rv-loc-btn" id="locBtn" title="Detect location" onclick="detectLocation('custAddress',this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+          </button>
         </div>
       </div>
-    </div>
-    <div id="revSpecs" style="margin-top:10px;"></div>
-  </div>
 
-  <!-- 2. LOGIN (shown only if not logged in) -->
-  <div class="co-sec" id="revLoginPanel" style="display:none;">
-    <div class="co-sec-label" id="revLoginTitle">Your Account</div>
-    <p class="co-login-note">Please log in or create a free account to place your order and track it anytime.</p>
-    <div class="co-tabs">
-      <button type="button" id="revTabLogin" class="co-tab active" onclick="revSwitchTab('login')">Log In</button>
-      <button type="button" id="revTabSignup" class="co-tab" onclick="revSwitchTab('signup')">Create Account</button>
-    </div>
-    <div id="revFormLogin">
-      <div class="co-field">
-        <label class="co-label">Mobile number</label>
-        <input type="tel" id="revLoginMobile" class="co-in" placeholder="10-digit mobile" maxlength="10">
-      </div>
-      <div class="co-field">
-        <label class="co-label">Email address <span style="font-size:9px;opacity:.6;">(optional)</span></label>
-        <input type="email" id="revLoginEmail" class="co-in" placeholder="your@email.com">
-      </div>
-      <div class="co-field">
-        <label class="co-label">Password</label>
-        <input type="password" id="revLoginPass" class="co-in" placeholder="Your password">
-      </div>
-      <button type="button" onclick="revDoLogin()" class="co-place-btn" style="margin-top:4px;">Log In &amp; Continue</button>
-    </div>
-    <div id="revFormSignup" style="display:none;">
-      <div class="co-field">
-        <label class="co-label">Full name *</label>
-        <input type="text" id="revSignupName" class="co-in" placeholder="As on Aadhaar">
-      </div>
-      <div class="co-row">
-        <div class="co-field">
-          <label class="co-label">Mobile *</label>
-          <input type="tel" id="revSignupMobile" class="co-in" placeholder="10-digit" maxlength="10">
+      <!-- Preferences: Priority + Date + Delivery — all in one card -->
+      <div class="rv-card">
+        <div class="rv-card-label">Preferences</div>
+
+        <!-- Priority segmented toggle -->
+        <div style="font-family:var(--fm);font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Order Priority</div>
+        <div class="rv-seg" style="margin-bottom:12px;">
+          <button type="button" class="rv-seg-opt active" id="priStd" onclick="selectPriority('standard',this)">
+            <div>
+              <div class="rv-seg-label">Standard</div>
+              <div class="rv-seg-desc">5–7 days</div>
+            </div>
+          </button>
+          <button type="button" class="rv-seg-opt" id="priUrg" onclick="selectPriority('urgent',this)">
+            <div>
+              <div class="rv-seg-label">⚡ Urgent</div>
+              <div class="rv-seg-desc">2–3 days · +10%</div>
+            </div>
+          </button>
         </div>
-        <div class="co-field">
-          <label class="co-label">Email <span style="font-size:9px;opacity:.6;">(optional)</span></label>
-          <input type="email" id="revSignupEmail" class="co-in" placeholder="your@email.com">
+
+        <!-- Delivery date -->
+        <div style="font-family:var(--fm);font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Needed By</div>
+        <input type="date" id="deliveryDate" class="rv-input" style="margin-bottom:4px;" onchange="checkDeliveryDate(this)">
+        <div id="deliveryDateMsg" style="font-size:11px;color:var(--muted);margin-bottom:14px;"></div>
+
+        <!-- Delivery type -->
+        <div style="font-family:var(--fm);font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Delivery</div>
+        <div class="rv-del-list">
+          <div class="rv-del-opt active" onclick="selectDel('pickup',this)">
+            <div class="rv-del-dot"></div>
+            <div class="rv-del-info">
+              <div class="rv-del-name">Pick up from shop</div>
+              <div class="rv-del-sub">Subhash Chowk, Sikar</div>
+            </div>
+            <div class="rv-del-price">Free</div>
+          </div>
+          <div class="rv-del-opt" onclick="selectDel('home',this)">
+            <div class="rv-del-dot"></div>
+            <div class="rv-del-info">
+              <div class="rv-del-name">Home delivery</div>
+              <div class="rv-del-sub" id="delHomeSub">Within Sikar · 1–2 days after ready</div>
+            </div>
+            <div class="rv-del-price" id="delHomePrice">Rs. 100</div>
+          </div>
         </div>
-      </div>
-      <div class="co-field">
-        <label class="co-label">Password * <span style="font-size:9px;opacity:.6;">(min 6 characters)</span></label>
-        <input type="password" id="revSignupPass" class="co-in" placeholder="Choose a password">
-      </div>
-      <button type="button" onclick="revDoSignup()" class="co-place-btn" style="margin-top:4px;">Create Account &amp; Continue</button>
-    </div>
-    <div id="revLoginMsg" style="font-size:12px;margin-top:8px;color:crimson;text-align:center;min-height:16px;"></div>
-  </div>
 
-  <!-- 3. CONTACT DETAILS -->
-  <div class="co-sec">
-    <div class="co-sec-label">
-      Contact Details
-      <span id="revAccBadge" class="co-badge" style="display:none;">✓ Logged in</span>
-    </div>
-    <div class="co-row">
-      <div class="co-field">
-        <label class="co-label">Full name *</label>
-        <input type="text" id="custName" class="co-in" placeholder="Your name">
+        <!-- hidden checkbox for JS compat -->
+        <input type="checkbox" id="revUrgent" style="display:none;" onchange="updateSummary()">
       </div>
-      <div class="co-field">
-        <label class="co-label">Mobile *</label>
-        <input type="tel" id="custPhone" class="co-in" placeholder="10-digit number">
-      </div>
-    </div>
-    <div class="co-field">
-      <label class="co-label">Email address</label>
-      <input type="email" id="custEmail" class="co-in" placeholder="For order confirmation (optional)">
-    </div>
-    <div class="co-addr-row">
-      <div class="co-field">
-        <label class="co-label">Delivery address</label>
-        <input type="text" id="custAddress" class="co-in" placeholder="Optional — only for home delivery">
-      </div>
-      <button type="button" class="co-loc-btn" id="locBtn" title="Detect my location" onclick="detectLocation('custAddress',this)">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
-      </button>
-    </div>
-  </div>
 
-  <!-- 4. WHEN DO YOU NEED IT -->
-  <div class="co-sec">
-    <div class="co-sec-label">When Do You Need It?</div>
-    <div class="co-field">
-      <label class="co-label">Expected ready date</label>
-      <input type="date" id="deliveryDate" class="co-in" onchange="checkDeliveryDate(this)">
-      <div id="deliveryDateMsg"></div>
-    </div>
-    <div class="co-pri-row" style="margin-top:12px;">
-      <div class="co-pri-opt active" id="priStd" onclick="selectPriority('standard',this)">
-        <div class="co-pri-icon">🧵</div>
-        <div class="co-pri-name">Standard</div>
-        <div class="co-pri-desc">5–7 days · regular price</div>
-      </div>
-      <div class="co-pri-opt" id="priUrg" onclick="selectPriority('urgent',this)">
-        <div class="co-pri-icon">⚡</div>
-        <div class="co-pri-name">Urgent</div>
-        <div class="co-pri-desc">2–3 days · +10% charge</div>
-      </div>
-    </div>
-    <input type="checkbox" id="revUrgent" style="display:none;" onchange="updateSummary()">
-  </div>
+    </div><!-- /left -->
 
-  <!-- 5. DELIVERY -->
-  <div class="co-sec">
-    <div class="co-sec-label">Delivery</div>
-    <div class="co-del-opt active" onclick="selectDel('pickup',this)">
-      <div class="co-del-dot"></div>
-      <div>
-        <div class="co-del-main">Pick up from shop</div>
-        <div class="co-del-sub">Subhash Chowk, Sikar</div>
-      </div>
-      <div class="co-del-price">Free</div>
-    </div>
-    <div class="co-del-opt" onclick="selectDel('home',this)">
-      <div class="co-del-dot"></div>
-      <div>
-        <div class="co-del-main">Home delivery</div>
-        <div class="co-del-sub" id="delHomeSub">Within Sikar · 1–2 days after ready</div>
-      </div>
-      <div class="co-del-price" id="delHomePrice">Rs. 100</div>
-    </div>
-  </div>
+    <!-- ── RIGHT (sticky via CSS on parent) ── -->
+    <div class="rv-right-col">
+      <div class="rv-card" style="margin-bottom:0;">
+        <div class="rv-card-label">Order Summary</div>
+        <div class="rv-sum-line"><span>Stitching</span><span id="sumStitch">—</span></div>
+        <div class="rv-sum-line" id="sumUrgentRow" style="display:none;"><span>⚡ Urgent (+10%)</span><span id="sumUrgent">—</span></div>
+        <div class="rv-sum-line"><span id="sumDeliveryLabel">Delivery</span><span id="sumDelivery">Free</span></div>
+        <div class="rv-sum-line" id="couponRow" style="display:none;color:#16a34a;"><span>Coupon</span><span id="couponDiscount">—</span></div>
+        <div class="rv-sum-div"></div>
+        <div class="rv-sum-total"><span>Total</span><span id="sumTotal">—</span></div>
 
-  <!-- 6. ORDER TOTAL -->
-  <div class="co-sec">
-    <div class="co-sec-label">Order Total</div>
-    <div class="co-sum-row"><span class="co-sum-k">Stitching charge</span><span class="co-sum-v" id="sumStitch">—</span></div>
-    <div class="co-sum-row" id="sumUrgentRow" style="display:none;"><span class="co-sum-k">⚡ Urgent (+10%)</span><span class="co-sum-v" id="sumUrgent">—</span></div>
-    <div class="co-sum-row"><span class="co-sum-k" id="sumDeliveryLabel">Delivery</span><span class="co-sum-v" id="sumDelivery">Free</span></div>
-    <div class="co-sum-row" id="couponRow" style="display:none;"><span class="co-sum-k" style="color:#16a34a;">Coupon discount</span><span class="co-sum-v" style="color:#16a34a;" id="couponDiscount">—</span></div>
-    <div class="co-sum-div"></div>
-    <div class="co-sum-total"><span>Total</span><span id="sumTotal">—</span></div>
+        <div class="rv-advance-box">
+          <div style="font-family:var(--fm);font-size:8.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);margin-bottom:3px;">Payment</div>
+          <div style="font-size:12.5px;color:var(--dark);margin-bottom:5px;">30% advance · rest on delivery</div>
+          <div style="font-size:13px;">Advance: <strong id="sumAdvance" style="color:var(--gold);font-size:15px;">—</strong></div>
+        </div>
 
-    <div class="co-advance">
-      <div class="co-adv-label">Payment schedule</div>
-      <div class="co-adv-desc">30% advance now · remaining balance on delivery</div>
-      <div class="co-adv-amount" id="sumAdvance">—</div>
-      <div style="font-size:11px;color:var(--muted);margin-top:3px;">advance payable now</div>
+        <div class="rv-coupon-wrap">
+          <input type="text" id="couponInput" class="rv-coupon-in" placeholder="Coupon code" onkeydown="if(event.key==='Enter')applyCoupon()">
+          <button type="button" onclick="applyCoupon()" class="rv-apply-btn">Apply</button>
+        </div>
+        <div id="couponMsg" style="font-size:11px;min-height:13px;margin-bottom:2px;"></div>
+
+        <button class="rv-place-btn place-order-btn" onclick="placeOrder()">Place Order &amp; Pay Advance →</button>
+        <p style="text-align:center;font-size:11px;color:var(--muted);margin-top:8px;line-height:1.4;">+ WhatsApp updates at every step</p>
+      </div>
     </div>
 
-    <div class="co-coupon-row">
-      <input type="text" id="couponInput" class="co-coupon-in" placeholder="Coupon code" onkeydown="if(event.key==='Enter')applyCoupon()">
-      <button type="button" class="co-coupon-btn" onclick="applyCoupon()">Apply</button>
-    </div>
-    <div id="couponMsg" style="font-size:11.5px;margin-top:5px;min-height:14px;"></div>
-  </div>
-
-  <!-- 7. PLACE ORDER -->
-  <div class="co-cta-sec">
-    <button class="co-place-btn place-order-btn" onclick="placeOrder()">Place Order &amp; Pay Advance →</button>
-    <p class="co-place-note">Secure · WhatsApp updates at every step</p>
-  </div>
-
-</div><!-- /co-wrap -->
+  </div><!-- /grid -->
+</div><!-- /wrap -->
 
 <script>
 var _order = {};
@@ -284,56 +252,58 @@ var _fromCart = new URLSearchParams(window.location.search).get('from') === 'car
 var _cartCheckout = {};
 
 if(_fromCart){
-  try{_cartCheckout=JSON.parse(sessionStorage.getItem('cart_checkout')||'{}');}catch(e){}
-  if(!_cartCheckout.items||!_cartCheckout.items.length){
-    try{var _rc=JSON.parse(localStorage.getItem('uttam_cart')||'[]');if(_rc.length)_cartCheckout={items:_rc,coupon:{}};}catch(e2){}
+  try { _cartCheckout = JSON.parse(sessionStorage.getItem('cart_checkout') || '{}'); } catch(e) {}
+  if(!_cartCheckout.items || !_cartCheckout.items.length){
+    try { var _rc=JSON.parse(localStorage.getItem('uttam_cart')||'[]'); if(_rc.length) _cartCheckout={items:_rc,coupon:{}}; } catch(e2) {}
   }
-  var _ci=_cartCheckout.items||[];
-  var _ct=_ci.reduce(function(s,i){return s+(parseFloat(i.price||0)*(parseInt(i.qty)||1));},0);
-  _order.item_name=_ci.map(function(i){return i.name+(i.qty>1?' x'+i.qty:'');}).join(', ')||'Cart Order';
-  _order.item_price=_ct; _order.qty=1;
-}else{
-  try{_order=JSON.parse(sessionStorage.getItem('pdp_order')||'{}');}catch(e){}
+  var _cartItems = _cartCheckout.items || [];
+  var _cartTotal = _cartItems.reduce(function(s,i){ return s+(parseFloat(i.price||0)*(parseInt(i.qty)||1)); }, 0);
+  _order.item_name = _cartItems.map(function(i){ return i.name+(i.qty>1?' x'+i.qty:''); }).join(', ') || 'Cart Order';
+  _order.item_price = _cartTotal;
+  _order.qty = 1;
+} else {
+  try { _order = JSON.parse(sessionStorage.getItem('pdp_order') || '{}'); } catch(e) {}
 }
 
-function esc(s){return(s==null?'':String(s)).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
 
 function init(){
-  if(!_order.item_name){window.location.href='/cart';return;}
+  if(!_order.item_name){ window.location.href='/cart'; return; }
 
-  if(_fromCart&&_cartCheckout.items&&_cartCheckout.items.length){
-    var lbl=document.getElementById('coItemCount');
-    if(lbl)lbl.textContent='· '+_cartCheckout.items.length+' item'+(_cartCheckout.items.length>1?'s':'');
-    var body=document.getElementById('coItemsBody');
-    if(body){
+  var card = document.getElementById('reviewItemCard');
+  if(_fromCart && _cartCheckout.items && _cartCheckout.items.length){
+    var cardTitle = card ? card.querySelector('.rv-card-label') : null;
+    if(cardTitle) cardTitle.textContent = 'Your Cart ('+_cartCheckout.items.length+' item'+(_cartCheckout.items.length>1?'s':'')+')';
+    var itemRow = card ? card.querySelector('.review-item-row') : null;
+    if(itemRow){
       var h='';
       _cartCheckout.items.forEach(function(it){
         var qty=parseInt(it.qty)||1,price=parseFloat(it.price||0);
-        h+='<div class="co-item">';
-        if(it.img)h+='<img class="co-item-img" src="'+esc(it.img)+'" alt="">';
-        else h+='<div class="co-item-img"></div>';
-        h+='<div><div class="co-item-name">'+esc(it.name)+'</div>';
-        h+='<div class="co-item-price">Rs. '+price+(qty>1?' &times; '+qty+' = Rs. '+(price*qty):'')+'</div></div></div>';
+        h+='<div class="rv-item">';
+        if(it.img) h+='<img class="rv-item-img" src="'+esc(it.img)+'" alt="">';
+        else h+='<div class="rv-item-img"></div>';
+        h+='<div><div class="rv-item-name">'+esc(it.name)+'</div>';
+        h+='<div class="rv-item-price">Rs. '+price+(qty>1?' &times; '+qty+' = Rs. '+(price*qty):'')+'</div></div></div>';
       });
-      body.innerHTML=h;
+      itemRow.outerHTML=h;
     }
-    var specs=document.getElementById('revSpecs');if(specs)specs.innerHTML='';
+    var specs=document.getElementById('revSpecs'); if(specs)specs.innerHTML='';
     if(_cartCheckout.coupon&&_cartCheckout.coupon.code){
       var ci=document.getElementById('couponInput');
       if(ci&&!ci.value){ci.value=_cartCheckout.coupon.code;setTimeout(applyCoupon,600);}
     }
-  }else{
-    var img=document.getElementById('revImg');if(img&&_order.item_img)img.src=_order.item_img;
-    var nm=document.getElementById('revName');if(nm)nm.textContent=_order.item_name;
-    var sb=document.getElementById('revSub');if(sb)sb.textContent=(_order.size?'Size: '+_order.size:'')+(_order.urgent?' · Urgent':'');
+  } else {
+    var img=document.getElementById('revImg'); if(img&&_order.item_img)img.src=_order.item_img;
+    var name=document.getElementById('revName'); if(name)name.textContent=_order.item_name;
+    var sub=document.getElementById('revSub'); if(sub)sub.textContent=(_order.size?'Size: '+_order.size:'')+(_order.urgent?' · ⚡ Urgent':'');
     var specs=document.getElementById('revSpecs');
     if(specs){
       var h='';
-      if(_order.qty>1)h+='<div class="co-spec"><span class="co-spec-k">Quantity</span><span class="co-spec-v">'+_order.qty+'</span></div>';
-      if(_order.meas_method)h+='<div class="co-spec"><span class="co-spec-k">Measurements</span><span class="co-spec-v">'+(_order.meas_method.charAt(0).toUpperCase()+_order.meas_method.slice(1).replace(/_/g,' '))+'</span></div>';
-      if(_order.fabric&&_order.fabric!=='own')h+='<div class="co-spec"><span class="co-spec-k">Fabric</span><span class="co-spec-v">From catalogue</span></div>';
-      if(_order.styles){Object.keys(_order.styles).forEach(function(k){h+='<div class="co-spec"><span class="co-spec-k">'+k+'</span><span class="co-spec-v">'+_order.styles[k]+'</span></div>';});}
-      if(_order.notes)h+='<div class="co-spec"><span class="co-spec-k">Special notes</span><span class="co-spec-v">'+_order.notes+'</span></div>';
+      if(_order.qty>1)h+='<div class="rv-spec"><span class="rv-spec-k">Qty</span><span class="rv-spec-v">'+_order.qty+'</span></div>';
+      if(_order.meas_method)h+='<div class="rv-spec"><span class="rv-spec-k">Measurements</span><span class="rv-spec-v">'+(_order.meas_method.charAt(0).toUpperCase()+_order.meas_method.slice(1).replace(/_/g,' '))+'</span></div>';
+      if(_order.fabric&&_order.fabric!=='own')h+='<div class="rv-spec"><span class="rv-spec-k">Fabric</span><span class="rv-spec-v">From catalogue</span></div>';
+      if(_order.styles){Object.keys(_order.styles).forEach(function(k){h+='<div class="rv-spec"><span class="rv-spec-k">'+k+'</span><span class="rv-spec-v">'+_order.styles[k]+'</span></div>';});}
+      if(_order.notes)h+='<div class="rv-spec"><span class="rv-spec-k">Notes</span><span class="rv-spec-v">'+_order.notes+'</span></div>';
       specs.innerHTML=h;
     }
   }
@@ -341,55 +311,63 @@ function init(){
   _delivery='pickup';
   updateSummary();
 
-  var today=new Date(),minD=new Date(today),defD=new Date(today);
-  minD.setDate(today.getDate()+1);defD.setDate(today.getDate()+7);
+  var today=new Date();
+  var minDate=new Date(today); minDate.setDate(today.getDate()+1);
+  var defaultDate=new Date(today); defaultDate.setDate(today.getDate()+7);
   var dd=document.getElementById('deliveryDate');
-  if(dd){dd.min=minD.toISOString().split('T')[0];dd.value=defD.toISOString().split('T')[0];}
+  if(dd){dd.min=minDate.toISOString().split('T')[0];dd.value=defaultDate.toISOString().split('T')[0];}
 }
 
-var FREE_DEL=1499;
+var FREE_DELIVERY_ABOVE=1499;
 
 function updateSummary(){
   var base=(_order.item_price||0)*(_order.qty||1);
   var cb=document.getElementById('revUrgent');
-  var isUrg=cb?cb.checked:(_order.urgent||false);
-  var urge=isUrg?Math.round(base*0.1):0;
-  var delC=_delivery==='home'?(base+urge)>=FREE_DEL?0:100:0;
-  var total=base+urge+delC,disc=_couponDiscount||0,final=Math.max(0,total-disc);
+  var isUrgent=cb?cb.checked:(_order.urgent||false);
+  var urgent=isUrgent?Math.round(base*0.1):0;
+  var delCharge=_delivery==='home'?(base+urgent)>=FREE_DELIVERY_ABOVE?0:100:0;
+  var total=base+urgent+delCharge;
+  var disc=_couponDiscount||0;
+  var finalTotal=Math.max(0,total-disc);
+  var finalAdv=Math.ceil(finalTotal*0.3);
 
   document.getElementById('sumStitch').textContent='Rs. '+base;
-  var ur=document.getElementById('sumUrgentRow');if(ur)ur.style.display=urge?'':'none';
-  document.getElementById('sumUrgent').textContent='Rs. '+urge;
+  var ur=document.getElementById('sumUrgentRow'); if(ur)ur.style.display=urgent?'':'none';
+  document.getElementById('sumUrgent').textContent='Rs. '+urgent;
 
   var dl=document.getElementById('sumDeliveryLabel'),dv=document.getElementById('sumDelivery');
   var hs=document.getElementById('delHomeSub'),hp=document.getElementById('delHomePrice');
   if(_delivery==='home'){
     if(dl)dl.textContent='Home delivery';
-    if(dv)dv.textContent=delC>0?'Rs. '+delC:'Free';
-    if(hs)hs.textContent=delC>0?'Free above Rs. '+FREE_DEL:'Free delivery applied';
-    if(hp)hp.textContent=delC>0?'Rs. '+delC:'Free';
-  }else{
-    if(dl)dl.textContent='Pickup';if(dv)dv.textContent='Free';
-    if(hs)hs.textContent='Within Sikar · 1–2 days after ready';if(hp)hp.textContent='Rs. 100';
+    if(dv)dv.textContent=delCharge>0?'Rs. '+delCharge:'Free';
+    if(hs)hs.textContent=delCharge>0?'Within Sikar · free above Rs. '+FREE_DELIVERY_ABOVE:'✓ Free delivery';
+    if(hp)hp.textContent=delCharge>0?'Rs. '+delCharge:'Free';
+  } else {
+    if(dl)dl.textContent='Pickup';
+    if(dv)dv.textContent='Free';
+    if(hs)hs.textContent='Within Sikar · 1–2 days after ready';
+    if(hp)hp.textContent='Rs. 100';
   }
 
-  document.getElementById('sumTotal').textContent='Rs. '+final;
-  document.getElementById('sumAdvance').textContent='Rs. '+Math.ceil(final*0.3);
-  var cr=document.getElementById('couponRow');if(cr)cr.style.display=disc>0?'':'none';
-  var cd=document.getElementById('couponDiscount');if(cd)cd.textContent='-Rs. '+disc;
+  document.getElementById('sumTotal').textContent='Rs. '+finalTotal;
+  document.getElementById('sumAdvance').textContent='Rs. '+finalAdv;
+  var cr=document.getElementById('couponRow'); if(cr)cr.style.display=disc>0?'':'none';
+  var cd=document.getElementById('couponDiscount'); if(cd)cd.textContent='-Rs. '+disc;
 }
 
 function selectDel(type,el){
   _delivery=type;
-  document.querySelectorAll('.co-del-opt').forEach(function(d){d.classList.remove('active');});
-  el.classList.add('active');updateSummary();
+  document.querySelectorAll('.rv-del-opt').forEach(function(d){d.classList.remove('active');});
+  el.classList.add('active');
+  updateSummary();
 }
 
 function selectPriority(type,el){
-  document.querySelectorAll('.co-pri-opt').forEach(function(d){d.classList.remove('active');});
+  var isUrgent=type==='urgent';
+  document.querySelectorAll('.rv-seg-opt').forEach(function(d){d.classList.remove('active');});
   el.classList.add('active');
   var cb=document.getElementById('revUrgent');
-  if(cb){cb.checked=(type==='urgent');cb.dispatchEvent(new Event('change'));}
+  if(cb){cb.checked=isUrgent;cb.dispatchEvent(new Event('change'));}
   updateSummary();
 }
 
@@ -400,28 +378,29 @@ function applyCoupon(){
   var msg=document.getElementById('couponMsg');
   if(!code){if(msg)msg.textContent='';return;}
   var base=(_order.item_price||0)*(_order.qty||1);
-  var cb=document.getElementById('revUrgent'),urge=(cb&&cb.checked)?Math.round(base*0.1):0;
-  var delC=_delivery==='home'&&(base+urge)<FREE_DEL?100:0;
-  fetch('/api/validate-coupon',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:code,order_total:base+urge+delC})})
+  var cb=document.getElementById('revUrgent');
+  var urgent=(cb&&cb.checked)?Math.round(base*0.1):0;
+  var delCharge=_delivery==='home'&&(base+urgent)<FREE_DELIVERY_ABOVE?100:0;
+  fetch('/api/validate-coupon',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:code,order_total:base+urgent+delCharge})})
   .then(function(r){return r.json();}).then(function(d){
     if(d.valid){_couponDiscount=d.discount;_couponCode=code;if(msg){msg.style.color='#16a34a';msg.textContent=d.message;}}
     else{_couponDiscount=0;_couponCode='';if(msg){msg.style.color='#dc2626';msg.textContent=d.message;}}
     updateSummary();
-  }).catch(function(){if(msg){msg.style.color='#dc2626';msg.textContent='Could not validate coupon.';}});
+  }).catch(function(){if(msg){msg.style.color='#dc2626';msg.textContent='Could not validate.';}});
 }
 
 function checkDeliveryDate(inp){
   var msg=document.getElementById('deliveryDateMsg');
   if(!inp.value||!msg)return;
-  var diff=Math.ceil((new Date(inp.value)-new Date())/(864e5));
-  if(diff<=3){
-    msg.style.color='#e8913a';msg.textContent='Within 3 days — switching to Urgent.';
+  var diffDays=Math.ceil((new Date(inp.value)-new Date())/(1000*60*60*24));
+  if(diffDays<=3){
+    msg.style.color='#e8913a';msg.textContent='⚡ Within 3 days — switching to Urgent.';
     selectPriority('urgent',document.getElementById('priUrg'));
-  }else if(diff<=7){
-    msg.style.color='var(--muted)';msg.textContent='Standard delivery works for this date.';
+  } else if(diffDays<=7){
+    msg.style.color='var(--muted)';msg.textContent='Standard delivery is achievable.';
     selectPriority('standard',document.getElementById('priStd'));
-  }else{
-    msg.style.color='#16a34a';msg.textContent='Plenty of time — no rush.';
+  } else {
+    msg.style.color='#16a34a';msg.textContent='✓ Plenty of time.';
     selectPriority('standard',document.getElementById('priStd'));
   }
 }
@@ -432,8 +411,8 @@ function placeOrder(){
   fetch('/api/account/me').then(function(r){return r.json();}).then(function(d){
     if(d&&d.name){_doPlaceOrder();}
     else{
-      var p=document.getElementById('revLoginPanel');
-      if(p){p.style.display='block';p.scrollIntoView({behavior:'smooth',block:'start'});}
+      var panel=document.getElementById('revLoginPanel');
+      if(panel){panel.style.display='block';panel.scrollIntoView({behavior:'smooth',block:'center'});}
       _pendingPlaceOrder=true;
     }
   }).catch(function(){_doPlaceOrder();});
@@ -443,15 +422,17 @@ function _doPlaceOrder(){
   var name=(document.getElementById('custName').value||'').trim();
   var phone=(document.getElementById('custPhone').value||'').trim();
   if(!name||!phone){alert('Please enter your name and mobile number.');return;}
-  var btn=document.querySelector('.co-place-btn');
-  btn.textContent='Processing…';btn.disabled=true;
-  var dd=document.getElementById('deliveryDate'),cb2=document.getElementById('revUrgent');
+  var btn=document.querySelector('.rv-place-btn');
+  btn.textContent='Processing...';btn.disabled=true;
+  var dd=document.getElementById('deliveryDate');
+  var cb2=document.getElementById('revUrgent');
+  var isUrgentNow=cb2?cb2.checked:(_order.urgent||false);
   var payload={
     coupon_code:_couponCode||'',delivery_date:dd?dd.value:'',
     garment_name:_order.item_name,garment_price:_order.item_price,quantity:_order.qty||1,
     size:_order.size||'',styles:_order.styles||{},fabric:_order.fabric||'own',
     measurement_method:_order.meas_method||'standard',measurements:_order.measurements||{},
-    urgent:cb2?cb2.checked:(_order.urgent||false),notes:_order.notes||'',delivery:_delivery,
+    urgent:isUrgentNow,notes:_order.notes||'',delivery:_delivery,
     customer_name:name,customer_phone:phone,
     customer_email:(document.getElementById('custEmail')||{value:''}).value||'',
     customer_address:(document.getElementById('custAddress')||{value:''}).value||'',
@@ -466,7 +447,7 @@ function _doPlaceOrder(){
       sessionStorage.removeItem('pdp_order');sessionStorage.removeItem('cart_checkout');
       if(_fromCart){try{localStorage.removeItem('uttam_cart');}catch(e){}if(typeof _updateCartBadge==='function')_updateCartBadge();}
       window.location.href=d.payment_url||(d.order_code?'/order-confirmed?code='+d.order_code:(d.order_id?'/order-confirmed?id='+d.order_id:'/order-confirmed'));
-    }else{
+    } else {
       btn.textContent='Place Order & Pay Advance →';btn.disabled=false;
       alert(d.message||'Something went wrong. Please try again.');
     }
@@ -474,27 +455,32 @@ function _doPlaceOrder(){
 }
 
 function detectLocation(inputId,btn){
-  if(!navigator.geolocation){alert('Location access not supported on this browser.');return;}
-  btn.innerHTML='<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>';
+  if(!navigator.geolocation){alert('Location not supported.');return;}
+  btn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>';
   btn.disabled=true;
   navigator.geolocation.getCurrentPosition(
     function(pos){
       fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat='+pos.coords.latitude+'&lon='+pos.coords.longitude+'&addressdetails=1',{headers:{'Accept-Language':'en'}})
       .then(function(r){return r.json();}).then(function(data){
         var a=data.address||{},parts=[];
-        ['house_number','road','street','suburb','neighbourhood','city','town','village','state','postcode'].forEach(function(k){if(a[k])parts.push(a[k]);});
-        var inp2=document.getElementById(inputId);if(inp2)inp2.value=parts.join(', ');
-        btn.innerHTML='<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>';
+        if(a.house_number)parts.push(a.house_number);
+        if(a.road||a.street)parts.push(a.road||a.street);
+        if(a.suburb||a.neighbourhood)parts.push(a.suburb||a.neighbourhood);
+        if(a.city||a.town||a.village)parts.push(a.city||a.town||a.village);
+        if(a.state)parts.push(a.state);if(a.postcode)parts.push(a.postcode);
+        var inp2=document.getElementById(inputId);
+        if(inp2){inp2.value=parts.join(', ');}
+        btn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>';
         btn.disabled=false;
-        setTimeout(function(){btn.innerHTML='<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>';},2500);
-      }).catch(function(){btn.innerHTML='<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>';btn.disabled=false;});
+        setTimeout(function(){btn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>';},2500);
+      }).catch(function(){btn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>';btn.disabled=false;});
     },
-    function(){btn.innerHTML='<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>';btn.disabled=false;},
+    function(){btn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>';btn.disabled=false;},
     {timeout:10000,maximumAge:60000}
   );
 }
 
-/* Auto prefill account */
+/* Account prefill on load */
 (function(){
   fetch('/api/account/me').then(function(r){return r.json();}).then(function(d){
     if(d&&d.name){_prefillAccount(d);}
@@ -507,16 +493,17 @@ function _prefillAccount(acc){
   if(nf&&!nf.value&&acc.name)nf.value=acc.name;
   if(mf&&!mf.value&&acc.mobile)mf.value=acc.mobile.replace(/^91/,'').slice(-10);
   if(ef&&!ef.value&&acc.email)ef.value=acc.email;
-  var badge=document.getElementById('revAccBadge');if(badge&&acc.name)badge.style.display='inline-block';
+  var badge=document.getElementById('revAccBadge');
+  if(badge&&(acc.name||acc.mobile))badge.style.display='inline-block';
   var panel=document.getElementById('revLoginPanel');if(panel)panel.style.display='none';
 }
 
 function revSwitchTab(tab){
-  var isL=tab==='login';
-  document.getElementById('revFormLogin').style.display=isL?'':'none';
-  document.getElementById('revFormSignup').style.display=isL?'none':'';
-  document.getElementById('revTabLogin').className='co-tab'+(isL?' active':'');
-  document.getElementById('revTabSignup').className='co-tab'+(isL?'':' active');
+  var isLogin=tab==='login';
+  document.getElementById('revFormLogin').style.display=isLogin?'':'none';
+  document.getElementById('revFormSignup').style.display=isLogin?'none':'';
+  document.getElementById('revTabLogin').className='rv-tab'+(isLogin?' active':'');
+  document.getElementById('revTabSignup').className='rv-tab'+(isLogin?'':' active');
   document.getElementById('revLoginMsg').textContent='';
 }
 
@@ -524,11 +511,11 @@ function revDoLogin(){
   var mobile=(document.getElementById('revLoginMobile').value||'').trim();
   var email=(document.getElementById('revLoginEmail').value||'').trim();
   var pass=(document.getElementById('revLoginPass').value||'').trim();
-  var msg=document.getElementById('revLoginMsg');
+  
   if((!mobile&&!email)||!pass){msg.textContent='Please enter your mobile/email and password.';return;}
   fetch('/api/account/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({identifier:mobile||email,password:pass})})
   .then(function(r){return r.json();}).then(function(d){
-    if(d.ok){document.getElementById('revLoginPanel').style.display='none';_prefillAccount(d.account||d);if(_pendingPlaceOrder){_pendingPlaceOrder=false;setTimeout(_doPlaceOrder,400);}}
+    if(d.ok){document.getElementById('revLoginPanel').style.display='none';_prefillAccount(d.account||d);if(_pendingPlaceOrder){_pendingPlaceOrder=false;setTimeout(function(){_doPlaceOrder();},400);}}
     else{msg.textContent=d.error||'Login failed. Please check your credentials.';}
   }).catch(function(){msg.textContent='Connection error. Please try again.';});
 }
@@ -538,13 +525,13 @@ function revDoSignup(){
   var mobile=(document.getElementById('revSignupMobile').value||'').trim();
   var email=(document.getElementById('revSignupEmail').value||'').trim();
   var pass=(document.getElementById('revSignupPass').value||'').trim();
-  var msg=document.getElementById('revLoginMsg');
+  
   if(!name){msg.textContent='Please enter your full name.';return;}
   if(!mobile||mobile.length<10){msg.textContent='Please enter a valid 10-digit mobile number.';return;}
   if(!pass||pass.length<6){msg.textContent='Password must be at least 6 characters.';return;}
   fetch('/api/account/signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,mobile:mobile,email:email,password:pass})})
   .then(function(r){return r.json();}).then(function(d){
-    if(d.ok){document.getElementById('revLoginPanel').style.display='none';_prefillAccount({name:name,mobile:mobile,email:email});if(_pendingPlaceOrder){_pendingPlaceOrder=false;setTimeout(_doPlaceOrder,400);}}
+    if(d.ok){document.getElementById('revLoginPanel').style.display='none';_prefillAccount({name:name,mobile:mobile,email:email});if(_pendingPlaceOrder){_pendingPlaceOrder=false;setTimeout(function(){_doPlaceOrder();},400);}}
     else{msg.textContent=d.error||'Could not create account. Please try again.';}
   }).catch(function(){msg.textContent='Connection error. Please try again.';});
 }
@@ -561,7 +548,7 @@ function revDoSignup(){
 
 document.addEventListener('DOMContentLoaded',function(){init();});
 if(document.readyState==='complete'||document.readyState==='interactive'){
-  setTimeout(function(){var s=document.getElementById('revSub');if(s&&s.textContent==='Loading…')init();},200);
+  setTimeout(function(){if(document.getElementById('revSub')&&document.getElementById('revSub').textContent==='Loading...')init();},200);
 }
 </script>
 {% endblock %}
