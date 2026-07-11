@@ -219,6 +219,13 @@ var CART_PG_SETTINGS = {{ {'delivery_charge': (settings.delivery_charge|int if s
     }).catch(function(){ if(wrap)wrap.style.display='none'; });
   }
 
+  window.cartPgProceedToOrder = function(){
+    var cart = _getCart();
+    if(!cart.length){ alert('Your cart is empty.'); return; }
+    try{ sessionStorage.setItem('cart_checkout', JSON.stringify({items:cart,coupon:cartPgCoupon})); }catch(e2){}
+    window.location.href = '/order-review?from=cart';
+  };
+
   document.addEventListener('DOMContentLoaded', function(){ cartPgRender(); });
 })();
 </script>
