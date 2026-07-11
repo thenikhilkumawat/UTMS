@@ -1377,17 +1377,18 @@ document.addEventListener('DOMContentLoaded', function() {
     if(el) el.addEventListener('input', refreshBtn);
   });
 
-  // Prefill contact details if user is logged in
-  fetch('/api/account/me').then(function(r){return r.json();}).then(function(d){
-    if(!d.ok||!d.logged_in) return;
-    var nf=document.getElementById('cust_name');
-    var mf=document.getElementById('cust_phone');
-    var ef=document.getElementById('cust_email');
-    if(nf&&!nf.value&&d.name) nf.value=d.name;
-    if(mf&&!mf.value&&d.mobile) mf.value=d.mobile.replace(/^91/,'').slice(-10);
-    if(ef&&!ef.value&&d.email) ef.value=d.email;
-    refreshBtn();
-  }).catch(function(){});
+  // Prefill contact details from server-side session (instant, no fetch)
+  {% if current_user %}
+  (function(){
+    var nf = document.getElementById('cust_name');
+    var mf = document.getElementById('cust_phone');
+    var ef = document.getElementById('cust_email');
+    if (nf && !nf.value) nf.value = {{ current_user.name|tojson }};
+    if (mf && !mf.value) mf.value = {{ current_user.mobile|tojson }}.replace(/^91/, '').slice(-10);
+    if (ef && !ef.value) ef.value = {{ current_user.email|tojson }};
+    if (typeof refreshBtn === 'function') refreshBtn();
+  })();
+  {% endif %}
 
   var flatGrid = document.getElementById('garmentGrid');
   if (flatGrid) {

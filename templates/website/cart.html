@@ -43,7 +43,7 @@
           <div style="border-top:1px solid var(--border);padding-top:12px;display:flex;justify-content:space-between;font-size:16px;font-weight:800;color:var(--dark);margin-bottom:18px;"><span>Total</span><span id="cartPgTotal">Rs. 0</span></div>
         </div>
 
-        <a id="cartPgCheckoutBtn" href="/commission" class="nav-cta" style="display:block;text-align:center;padding:14px;">Proceed to Order &rarr;</a>
+        <button id="cartPgCheckoutBtn" type="button" onclick="cartPgProceedToOrder()" class="nav-cta" style="display:block;width:100%;text-align:center;padding:14px;cursor:pointer;border:none;">Proceed to Order &rarr;</button>
         <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:8px;">We'll confirm your order and payment (Cash / UPI) over WhatsApp.</p>
       </div>
     </div>
@@ -159,18 +159,7 @@ var CART_PG_SETTINGS = {{ {'delivery_charge': (settings.delivery_charge|int if s
     }
     document.getElementById('cartPgTotal').textContent='Rs. '+total;
 
-    var link=document.getElementById('cartPgCheckoutBtn');
-    if(link){
-      var cart=_getCart();
-      // Use a single comma-separated "garments" param (matching what commission.html's
-      // URL-preselect actually parses) — repeating "garment=" per item only ever
-      // carried the first item over, since both Flask and URLSearchParams.get()
-      // return just the first value for a repeated key.
-      var names=cart.map(function(i){return i.name+(i.qty>1?(' x'+i.qty):'');}).join(',');
-      var href='/commission?garments='+encodeURIComponent(names);
-      if(cartPgCoupon.code) href += '&coupon='+encodeURIComponent(cartPgCoupon.code);
-      link.href=href;
-    }
+    // Button handled by cartPgProceedToOrder()
   }
 
   window.cartPgApplyCoupon = function(){
