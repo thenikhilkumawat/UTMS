@@ -5,81 +5,90 @@
 <style>
 /* ── Base ── */
 .rv-wrap{max-width:1020px;margin:0 auto;padding:110px 1.5rem 5rem;}
-.rv-back{display:inline-flex;align-items:center;gap:5px;font-family:var(--fm);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-decoration:none;margin-bottom:1.75rem;}
+.rv-back{display:inline-flex;align-items:center;gap:5px;font-family:var(--fm);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-decoration:none;margin-bottom:1.5rem;}
 .rv-back:hover{color:var(--gold);}
-.rv-title{font-family:var(--fd);font-size:clamp(28px,4vw,42px);font-weight:300;color:var(--dark);margin-bottom:.25rem;letter-spacing:-.01em;}
-.rv-subtitle{font-family:var(--fm);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:2.5rem;}
-.rv-grid{display:grid;grid-template-columns:1fr 360px;gap:2rem;align-items:start;}
+.rv-title{font-family:var(--fd);font-size:clamp(26px,3.5vw,38px);font-weight:300;color:var(--dark);margin-bottom:.2rem;letter-spacing:-.01em;}
+.rv-subtitle{font-family:var(--fm);font-size:9.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:2rem;}
+
+/* ── Grid ── */
+.rv-grid{display:grid;grid-template-columns:1fr 340px;gap:1.5rem;align-items:start;}
+.rv-right-col{align-self:start;position:sticky;top:100px;}
 
 /* ── Cards ── */
-.rv-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin-bottom:1.25rem;}
-.rv-card-label{font-family:var(--fm);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:1.1rem;padding-bottom:10px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.rv-card{background:#fff;border:1px solid var(--border);border-radius:11px;padding:1.25rem;margin-bottom:1rem;}
+.rv-card-label{font-family:var(--fm);font-size:9px;letter-spacing:.17em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem;padding-bottom:8px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
 
 /* ── Item card ── */
-.rv-item{display:flex;gap:14px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border);}
+.rv-item{display:flex;gap:12px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--border);}
 .rv-item:last-child{border-bottom:none;padding-bottom:0;}
-.rv-item-img{width:58px;height:70px;border-radius:8px;object-fit:cover;object-position:top;background:var(--bg2);flex-shrink:0;}
-.rv-item-name{font-family:var(--fd);font-size:17px;color:var(--dark);line-height:1.2;margin-bottom:3px;}
+.rv-item-img{width:52px;height:64px;border-radius:7px;object-fit:cover;object-position:top;background:var(--bg2);flex-shrink:0;}
+.rv-item-name{font-family:var(--fd);font-size:16px;color:var(--dark);line-height:1.2;margin-bottom:2px;}
 .rv-item-price{font-family:var(--fm);font-size:11px;letter-spacing:.04em;color:var(--gold);}
 
 /* ── Login panel ── */
-.rv-tab-bar{display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:1rem;}
-.rv-tab{flex:1;padding:9px;font-size:11px;font-family:var(--fm);letter-spacing:.08em;text-transform:uppercase;border:none;cursor:pointer;transition:all .15s;}
+.rv-tab-bar{display:flex;border:1px solid var(--border);border-radius:7px;overflow:hidden;margin-bottom:10px;}
+.rv-tab{flex:1;padding:8px;font-size:11px;font-family:var(--fm);letter-spacing:.08em;text-transform:uppercase;border:none;cursor:pointer;transition:all .15s;}
 .rv-tab.active{background:var(--dark);color:#fff;}
 .rv-tab:not(.active){background:#fff;color:var(--muted);}
-.rv-input{width:100%;box-sizing:border-box;padding:10px 13px;border:1px solid var(--border);border-radius:8px;font-size:13.5px;outline:none;font-family:inherit;margin-bottom:8px;transition:border-color .15s;}
+.rv-input{width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;outline:none;font-family:inherit;transition:border-color .15s;}
 .rv-input:focus{border-color:var(--gold);}
 
 /* ── Details form ── */
-.rv-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.rv-addr-wrap{display:flex;gap:8px;align-items:flex-start;}
-.rv-loc-btn{flex-shrink:0;width:42px;height:42px;border:1px solid var(--border);border-radius:8px;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;color:var(--muted);}
+.rv-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.rv-addr-wrap{display:flex;gap:7px;align-items:center;}
+.rv-loc-btn{flex-shrink:0;width:40px;height:40px;border:1px solid var(--border);border-radius:7px;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;color:var(--muted);}
 .rv-loc-btn:hover{border-color:var(--gold);color:var(--gold);}
 
-/* ── Priority card ── */
-.rv-priority-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.rv-priority-opt{display:flex;align-items:center;gap:10px;padding:12px 14px;border:1.5px solid var(--border);border-radius:9px;cursor:pointer;transition:all .15s;}
-.rv-priority-opt.active{border-color:var(--gold);background:rgba(184,120,48,.04);}
-.rv-priority-radio{width:16px;height:16px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;position:relative;transition:all .15s;}
-.rv-priority-opt.active .rv-priority-radio{border-color:var(--gold);}
-.rv-priority-opt.active .rv-priority-radio::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:7px;height:7px;border-radius:50%;background:var(--gold);}
-.rv-priority-name{font-size:13px;font-weight:600;color:var(--dark);}
-.rv-priority-desc{font-size:11px;color:var(--muted);margin-top:1px;}
+/* ── Priority toggle (segmented) ── */
+.rv-seg{display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:12px;}
+.rv-seg-opt{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 8px;cursor:pointer;transition:all .15s;border:none;background:#fff;font-family:inherit;}
+.rv-seg-opt:not(:last-child){border-right:1px solid var(--border);}
+.rv-seg-opt.active{background:var(--dark);color:#fff;}
+.rv-seg-opt:not(.active){color:var(--muted);}
+.rv-seg-label{font-family:var(--fm);font-size:10px;letter-spacing:.08em;text-transform:uppercase;}
+.rv-seg-desc{font-size:10px;opacity:.75;margin-top:1px;}
 
-/* ── Delivery opts ── */
-.rv-del-opt{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1.5px solid var(--border);border-radius:9px;cursor:pointer;transition:all .15s;margin-bottom:8px;}
-.rv-del-opt:last-child{margin-bottom:0;}
+/* ── Delivery options ── */
+.rv-del-list{display:flex;flex-direction:column;gap:7px;}
+.rv-del-opt{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;transition:all .15s;}
 .rv-del-opt.active{border-color:var(--gold);background:rgba(184,120,48,.04);}
-.rv-del-radio{width:16px;height:16px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;position:relative;transition:all .15s;}
-.rv-del-opt.active .rv-del-radio{border-color:var(--gold);}
-.rv-del-opt.active .rv-del-radio::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:7px;height:7px;border-radius:50%;background:var(--gold);}
+.rv-del-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;position:relative;transition:all .15s;}
+.rv-del-opt.active .rv-del-dot{border-color:var(--gold);}
+.rv-del-opt.active .rv-del-dot::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:6px;height:6px;border-radius:50%;background:var(--gold);}
+.rv-del-info{flex:1;}
+.rv-del-name{font-size:13px;font-weight:600;color:var(--dark);line-height:1.2;}
+.rv-del-sub{font-size:11px;color:var(--muted);margin-top:1px;}
+.rv-del-price{font-family:var(--fm);font-size:11px;color:var(--gold);font-weight:600;white-space:nowrap;}
 
 /* ── Right summary ── */
-.rv-sum-line{display:flex;justify-content:space-between;font-size:13.5px;color:var(--dark);padding:7px 0;}
-.rv-sum-total{display:flex;justify-content:space-between;font-size:20px;font-weight:700;color:var(--dark);border-top:1.5px solid var(--border);margin-top:6px;padding-top:14px;}
-.rv-coupon-wrap{display:flex;gap:7px;margin:12px 0 4px;}
-.rv-coupon-in{flex:1;padding:9px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;outline:none;font-family:inherit;}
+.rv-sum-line{display:flex;justify-content:space-between;font-size:13px;color:var(--dark);padding:6px 0;}
+.rv-sum-div{border-top:1px solid var(--border);margin:4px 0;}
+.rv-sum-total{display:flex;justify-content:space-between;font-size:19px;font-weight:700;color:var(--dark);padding-top:10px;}
+.rv-coupon-wrap{display:flex;gap:6px;margin:10px 0 3px;}
+.rv-coupon-in{flex:1;padding:8px 11px;border:1px solid var(--border);border-radius:7px;font-size:13px;outline:none;font-family:inherit;}
 .rv-coupon-in:focus{border-color:var(--gold);}
-.rv-apply-btn{padding:9px 16px;background:var(--dark);color:#fff;border:none;border-radius:7px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;font-family:var(--fm);white-space:nowrap;}
-.rv-place-btn{width:100%;padding:15px;background:var(--dark);color:#fff;border:none;border-radius:9px;font-family:var(--fm);font-size:11px;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;margin-top:14px;transition:background .2s;}
+.rv-apply-btn{padding:8px 14px;background:var(--dark);color:#fff;border:none;border-radius:7px;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;font-family:var(--fm);}
+.rv-advance-box{background:linear-gradient(135deg,#faf3e8,#f0e6d3);border-radius:8px;padding:10px 12px;margin:10px 0 6px;}
+.rv-place-btn{width:100%;padding:14px;background:var(--dark);color:#fff;border:none;border-radius:8px;font-family:var(--fm);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;margin-top:10px;transition:background .2s;}
 .rv-place-btn:hover{background:var(--brown);}
-.rv-advance-box{background:linear-gradient(135deg,#faf3e8,#f5ece0);border-radius:9px;padding:12px 14px;margin:14px 0 4px;}
 
-/* ── Spec rows ── */
-.rv-spec{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;}
+/* ── Badge ── */
+.rv-badge{font-size:9.5px;background:var(--gold);color:#fff;padding:2px 8px;border-radius:20px;font-family:var(--fm);letter-spacing:.05em;}
+
+/* ── Spec row ── */
+.rv-spec{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12.5px;}
 .rv-spec:last-child{border-bottom:none;}
 .rv-spec-k{color:var(--muted);}
 .rv-spec-v{color:var(--dark);font-weight:500;text-align:right;max-width:60%;}
 
-/* ── Logged-in badge ── */
-.rv-badge{font-size:10px;background:var(--gold);color:#fff;padding:2px 9px;border-radius:20px;font-family:var(--fm);letter-spacing:.06em;}
-
 /* ── Mobile ── */
-@media(max-width:760px){
+@media(max-width:740px){
   .rv-grid{grid-template-columns:1fr;}
+  .rv-right-col{position:static;}
   .rv-row{grid-template-columns:1fr;}
-  .rv-priority-row{grid-template-columns:1fr;}
-  .rv-wrap{padding:90px 1rem 4rem;}
+  .rv-wrap{padding:88px 1rem 4rem;}
+  .rv-seg{flex-direction:column;}
+  .rv-seg-opt:not(:last-child){border-right:none;border-bottom:1px solid var(--border);}
 }
 </style>
 {% endblock %}
@@ -94,7 +103,7 @@
     <!-- ── LEFT ── -->
     <div>
 
-      <!-- Garment / Cart items -->
+      <!-- Items -->
       <div class="rv-card" id="reviewItemCard">
         <div class="rv-card-label">Your Garment</div>
         <div class="review-item-row">
@@ -107,133 +116,134 @@
         <div id="revSpecs"></div>
       </div>
 
-      <!-- Login / Sign-up panel -->
+      <!-- Login panel -->
       <div class="rv-card" id="revLoginPanel" style="display:none;">
         <div class="rv-card-label" id="revLoginTitle">Account Required</div>
-        <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5;">Order track karne ke liye ek free account zaruri hai.</p>
+        <p style="font-size:12.5px;color:var(--muted);margin-bottom:12px;line-height:1.5;">Order track karne ke liye ek free account zaruri hai.</p>
         <div class="rv-tab-bar">
           <button type="button" id="revTabLogin" class="rv-tab active" onclick="revSwitchTab('login')">Log In</button>
           <button type="button" id="revTabSignup" class="rv-tab" onclick="revSwitchTab('signup')">Sign Up</button>
         </div>
-        <!-- Login -->
         <div id="revFormLogin">
-          <input type="tel" id="revLoginMobile" class="rv-input" placeholder="Mobile number" maxlength="10">
-          <input type="email" id="revLoginEmail" class="rv-input" placeholder="Email address (optional)">
-          <input type="password" id="revLoginPass" class="rv-input" placeholder="Password" style="margin-bottom:10px;">
-          <button type="button" onclick="revDoLogin()" style="width:100%;padding:11px;background:var(--dark);color:#fff;border:none;border-radius:8px;font-family:var(--fm);font-size:10px;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;">Log In</button>
+          <input type="tel" id="revLoginMobile" class="rv-input" placeholder="Mobile number" maxlength="10" style="margin-bottom:6px;">
+          <input type="email" id="revLoginEmail" class="rv-input" placeholder="Email (optional)" style="margin-bottom:6px;">
+          <input type="password" id="revLoginPass" class="rv-input" placeholder="Password" style="margin-bottom:8px;">
+          <button type="button" onclick="revDoLogin()" style="width:100%;padding:10px;background:var(--dark);color:#fff;border:none;border-radius:7px;font-family:var(--fm);font-size:10px;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;">Log In</button>
         </div>
-        <!-- Sign up -->
         <div id="revFormSignup" style="display:none;">
-          <input type="text" id="revSignupName" class="rv-input" placeholder="Full name *">
-          <div class="rv-row">
-            <input type="tel" id="revSignupMobile" class="rv-input" placeholder="Mobile *" maxlength="10" style="margin-bottom:0;">
-            <input type="email" id="revSignupEmail" class="rv-input" placeholder="Email (optional)" style="margin-bottom:0;">
+          <input type="text" id="revSignupName" class="rv-input" placeholder="Full name *" style="margin-bottom:6px;">
+          <div class="rv-row" style="margin-bottom:6px;">
+            <input type="tel" id="revSignupMobile" class="rv-input" placeholder="Mobile *" maxlength="10">
+            <input type="email" id="revSignupEmail" class="rv-input" placeholder="Email (optional)">
           </div>
-          <input type="password" id="revSignupPass" class="rv-input" placeholder="Password * (min 6 chars)" style="margin-top:8px;margin-bottom:10px;">
-          <button type="button" onclick="revDoSignup()" style="width:100%;padding:11px;background:var(--dark);color:#fff;border:none;border-radius:8px;font-family:var(--fm);font-size:10px;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;">Create Account &amp; Continue</button>
+          <input type="password" id="revSignupPass" class="rv-input" placeholder="Password * (min 6 chars)" style="margin-bottom:8px;">
+          <button type="button" onclick="revDoSignup()" style="width:100%;padding:10px;background:var(--dark);color:#fff;border:none;border-radius:7px;font-family:var(--fm);font-size:10px;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;">Create Account &amp; Continue</button>
         </div>
-        <div id="revLoginMsg" style="font-size:12px;margin-top:8px;color:crimson;text-align:center;min-height:16px;"></div>
+        <div id="revLoginMsg" style="font-size:12px;margin-top:7px;color:crimson;text-align:center;min-height:14px;"></div>
       </div>
 
-      <!-- Customer details -->
+      <!-- Details -->
       <div class="rv-card">
         <div class="rv-card-label">
           Your Details
           <span id="revAccBadge" class="rv-badge" style="display:none;">✓ Logged in</span>
         </div>
-        <div class="rv-row">
-          <input class="rv-input" id="custName" placeholder="Full name *" type="text" style="margin-bottom:0;">
-          <input class="rv-input" id="custPhone" placeholder="Mobile number *" type="tel" style="margin-bottom:0;">
+        <div class="rv-row" style="margin-bottom:7px;">
+          <input class="rv-input" id="custName" placeholder="Full name *" type="text">
+          <input class="rv-input" id="custPhone" placeholder="Mobile *" type="tel">
         </div>
-        <input class="rv-input" id="custEmail" placeholder="Email address (for order confirmation)" type="email" style="margin-top:8px;">
+        <input class="rv-input" id="custEmail" placeholder="Email (for order updates)" type="email" style="margin-bottom:7px;">
         <div class="rv-addr-wrap">
-          <input class="rv-input" id="custAddress" placeholder="Delivery address (optional)" type="text" style="margin-bottom:0;flex:1;">
-          <button type="button" class="rv-loc-btn" id="locBtn" title="Use my location" onclick="detectLocation('custAddress', this)">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+          <input class="rv-input" id="custAddress" placeholder="Delivery address (optional)" type="text" style="flex:1;margin-bottom:0;">
+          <button type="button" class="rv-loc-btn" id="locBtn" title="Detect location" onclick="detectLocation('custAddress',this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
           </button>
         </div>
       </div>
 
-      <!-- Priority + Date combined -->
+      <!-- Preferences: Priority + Date + Delivery — all in one card -->
       <div class="rv-card">
-        <div class="rv-card-label">Order Priority &amp; Date</div>
-        <div class="rv-priority-row" style="margin-bottom:14px;">
-          <div class="rv-priority-opt active" id="priStd" onclick="selectPriority('standard',this)">
-            <div class="rv-priority-radio"></div>
+        <div class="rv-card-label">Preferences</div>
+
+        <!-- Priority segmented toggle -->
+        <div style="font-family:var(--fm);font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Order Priority</div>
+        <div class="rv-seg" style="margin-bottom:12px;">
+          <button type="button" class="rv-seg-opt active" id="priStd" onclick="selectPriority('standard',this)">
             <div>
-              <div class="rv-priority-name">Standard</div>
-              <div class="rv-priority-desc">Ready in 5–7 days</div>
+              <div class="rv-seg-label">Standard</div>
+              <div class="rv-seg-desc">5–7 days</div>
             </div>
+          </button>
+          <button type="button" class="rv-seg-opt" id="priUrg" onclick="selectPriority('urgent',this)">
+            <div>
+              <div class="rv-seg-label">⚡ Urgent</div>
+              <div class="rv-seg-desc">2–3 days · +10%</div>
+            </div>
+          </button>
+        </div>
+
+        <!-- Delivery date -->
+        <div style="font-family:var(--fm);font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Needed By</div>
+        <input type="date" id="deliveryDate" class="rv-input" style="margin-bottom:4px;" onchange="checkDeliveryDate(this)">
+        <div id="deliveryDateMsg" style="font-size:11px;color:var(--muted);margin-bottom:14px;"></div>
+
+        <!-- Delivery type -->
+        <div style="font-family:var(--fm);font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Delivery</div>
+        <div class="rv-del-list">
+          <div class="rv-del-opt active" onclick="selectDel('pickup',this)">
+            <div class="rv-del-dot"></div>
+            <div class="rv-del-info">
+              <div class="rv-del-name">Pick up from shop</div>
+              <div class="rv-del-sub">Subhash Chowk, Sikar</div>
+            </div>
+            <div class="rv-del-price">Free</div>
           </div>
-          <div class="rv-priority-opt" id="priUrg" onclick="selectPriority('urgent',this)">
-            <div class="rv-priority-radio"></div>
-            <div>
-              <div class="rv-priority-name">⚡ Urgent</div>
-              <div class="rv-priority-desc">2–3 days · +10% charge</div>
+          <div class="rv-del-opt" onclick="selectDel('home',this)">
+            <div class="rv-del-dot"></div>
+            <div class="rv-del-info">
+              <div class="rv-del-name">Home delivery</div>
+              <div class="rv-del-sub" id="delHomeSub">Within Sikar · 1–2 days after ready</div>
             </div>
+            <div class="rv-del-price" id="delHomePrice">Rs. 100</div>
           </div>
         </div>
-        <input type="date" id="deliveryDate" class="rv-input" style="margin-bottom:4px;" onchange="checkDeliveryDate(this)">
-        <div id="deliveryDateMsg" style="font-size:12px;color:var(--muted);"></div>
-        <!-- hidden checkbox for backward compat -->
+
+        <!-- hidden checkbox for JS compat -->
         <input type="checkbox" id="revUrgent" style="display:none;" onchange="updateSummary()">
       </div>
 
-      <!-- Delivery -->
-      <div class="rv-card">
-        <div class="rv-card-label">Delivery Option</div>
-        <div class="rv-del-opt active" onclick="selectDel('pickup',this)">
-          <div class="rv-del-radio"></div>
-          <div style="flex:1;">
-            <div style="font-size:13.5px;font-weight:600;color:var(--dark);">Pick up from shop</div>
-            <div style="font-size:12px;color:var(--muted);">Subhash Chowk, Sikar</div>
-          </div>
-          <div style="font-family:var(--fm);font-size:11px;color:var(--gold);font-weight:600;">Free</div>
-        </div>
-        <div class="rv-del-opt" onclick="selectDel('home',this)">
-          <div class="rv-del-radio"></div>
-          <div style="flex:1;">
-            <div style="font-size:13.5px;font-weight:600;color:var(--dark);">Home delivery</div>
-            <div style="font-size:12px;color:var(--muted);">Within Sikar · 1–2 days after ready</div>
-            <div id="delHomeNote" style="font-size:11px;color:var(--gold);margin-top:2px;"></div>
-          </div>
-          <div id="delHomePrice" style="font-family:var(--fm);font-size:11px;color:var(--gold);font-weight:600;">Rs. 100</div>
-        </div>
-      </div>
+    </div><!-- /left -->
 
-    </div>
-
-    <!-- ── RIGHT (sticky) ── -->
-    <div style="position:sticky;top:110px;">
-      <div class="rv-card">
+    <!-- ── RIGHT (sticky via CSS on parent) ── -->
+    <div class="rv-right-col">
+      <div class="rv-card" style="margin-bottom:0;">
         <div class="rv-card-label">Order Summary</div>
-        <div class="rv-sum-line"><span>Stitching charge</span><span id="sumStitch">—</span></div>
+        <div class="rv-sum-line"><span>Stitching</span><span id="sumStitch">—</span></div>
         <div class="rv-sum-line" id="sumUrgentRow" style="display:none;"><span>⚡ Urgent (+10%)</span><span id="sumUrgent">—</span></div>
-        <div class="rv-sum-line" id="sumFabricRow" style="display:none;"><span>Fabric (est.)</span><span id="sumFabric">—</span></div>
         <div class="rv-sum-line"><span id="sumDeliveryLabel">Delivery</span><span id="sumDelivery">Free</span></div>
-        <div class="rv-sum-line" id="couponRow" style="display:none;color:green;"><span>Coupon discount</span><span id="couponDiscount">-Rs. 0</span></div>
+        <div class="rv-sum-line" id="couponRow" style="display:none;color:#16a34a;"><span>Coupon</span><span id="couponDiscount">—</span></div>
+        <div class="rv-sum-div"></div>
         <div class="rv-sum-total"><span>Total</span><span id="sumTotal">—</span></div>
 
         <div class="rv-advance-box">
-          <div style="font-family:var(--fm);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Payment</div>
-          <div style="font-size:13px;color:var(--dark);">30% advance now · Balance on delivery</div>
-          <div style="margin-top:8px;font-size:13px;">Advance payable: <strong id="sumAdvance" style="color:var(--gold);font-size:15px;">—</strong></div>
+          <div style="font-family:var(--fm);font-size:8.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);margin-bottom:3px;">Payment</div>
+          <div style="font-size:12.5px;color:var(--dark);margin-bottom:5px;">30% advance · rest on delivery</div>
+          <div style="font-size:13px;">Advance: <strong id="sumAdvance" style="color:var(--gold);font-size:15px;">—</strong></div>
         </div>
 
-        <!-- Coupon -->
         <div class="rv-coupon-wrap">
           <input type="text" id="couponInput" class="rv-coupon-in" placeholder="Coupon code" onkeydown="if(event.key==='Enter')applyCoupon()">
           <button type="button" onclick="applyCoupon()" class="rv-apply-btn">Apply</button>
         </div>
-        <div id="couponMsg" style="font-size:11px;margin-bottom:4px;min-height:14px;"></div>
+        <div id="couponMsg" style="font-size:11px;min-height:13px;margin-bottom:2px;"></div>
 
         <button class="rv-place-btn place-order-btn" onclick="placeOrder()">Place Order &amp; Pay Advance →</button>
-        <p style="text-align:center;font-size:11px;color:var(--muted);margin-top:10px;line-height:1.5;">+ WhatsApp updates at every step</p>
+        <p style="text-align:center;font-size:11px;color:var(--muted);margin-top:8px;line-height:1.4;">+ WhatsApp updates at every step</p>
       </div>
     </div>
 
-  </div>
-</div>
+  </div><!-- /grid -->
+</div><!-- /wrap -->
 
 <script>
 var _order = {};
@@ -243,7 +253,6 @@ var _cartCheckout = {};
 
 if(_fromCart){
   try { _cartCheckout = JSON.parse(sessionStorage.getItem('cart_checkout') || '{}'); } catch(e) {}
-  // Fallback: read localStorage directly
   if(!_cartCheckout.items || !_cartCheckout.items.length){
     try { var _rc=JSON.parse(localStorage.getItem('uttam_cart')||'[]'); if(_rc.length) _cartCheckout={items:_rc,coupon:{}}; } catch(e2) {}
   }
@@ -259,10 +268,7 @@ if(_fromCart){
 function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
 
 function init(){
-  if(!_order.item_name){
-    window.location.href = '/cart';
-    return;
-  }
+  if(!_order.item_name){ window.location.href='/cart'; return; }
 
   var card = document.getElementById('reviewItemCard');
   if(_fromCart && _cartCheckout.items && _cartCheckout.items.length){
@@ -270,93 +276,83 @@ function init(){
     if(cardTitle) cardTitle.textContent = 'Your Cart ('+_cartCheckout.items.length+' item'+(_cartCheckout.items.length>1?'s':'')+')';
     var itemRow = card ? card.querySelector('.review-item-row') : null;
     if(itemRow){
-      var h = '';
+      var h='';
       _cartCheckout.items.forEach(function(it){
-        var qty=parseInt(it.qty)||1, price=parseFloat(it.price||0);
-        h += '<div class="rv-item">';
-        if(it.img) h += '<img class="rv-item-img" src="'+esc(it.img)+'" alt="">';
-        else h += '<div class="rv-item-img"></div>';
-        h += '<div><div class="rv-item-name">'+esc(it.name)+'</div>';
-        h += '<div class="rv-item-price">Rs. '+price+(qty>1?' &times; '+qty+' = Rs. '+(price*qty):'')+'</div></div></div>';
+        var qty=parseInt(it.qty)||1,price=parseFloat(it.price||0);
+        h+='<div class="rv-item">';
+        if(it.img) h+='<img class="rv-item-img" src="'+esc(it.img)+'" alt="">';
+        else h+='<div class="rv-item-img"></div>';
+        h+='<div><div class="rv-item-name">'+esc(it.name)+'</div>';
+        h+='<div class="rv-item-price">Rs. '+price+(qty>1?' &times; '+qty+' = Rs. '+(price*qty):'')+'</div></div></div>';
       });
-      itemRow.outerHTML = h;
+      itemRow.outerHTML=h;
     }
-    var specs = document.getElementById('revSpecs');
-    if(specs) specs.innerHTML = '';
-    if(_cartCheckout.coupon && _cartCheckout.coupon.code){
-      var ci = document.getElementById('couponInput');
-      if(ci && !ci.value){ ci.value = _cartCheckout.coupon.code; setTimeout(applyCoupon, 600); }
+    var specs=document.getElementById('revSpecs'); if(specs)specs.innerHTML='';
+    if(_cartCheckout.coupon&&_cartCheckout.coupon.code){
+      var ci=document.getElementById('couponInput');
+      if(ci&&!ci.value){ci.value=_cartCheckout.coupon.code;setTimeout(applyCoupon,600);}
     }
   } else {
-    var img = document.getElementById('revImg');
-    if(img && _order.item_img) img.src = _order.item_img;
-    var name = document.getElementById('revName');
-    if(name) name.textContent = _order.item_name;
-    var sub = document.getElementById('revSub');
-    if(sub) sub.textContent = (_order.size ? 'Size: '+_order.size : '') + (_order.urgent ? ' · ⚡ Urgent' : '');
-    var specs = document.getElementById('revSpecs');
+    var img=document.getElementById('revImg'); if(img&&_order.item_img)img.src=_order.item_img;
+    var name=document.getElementById('revName'); if(name)name.textContent=_order.item_name;
+    var sub=document.getElementById('revSub'); if(sub)sub.textContent=(_order.size?'Size: '+_order.size:'')+(_order.urgent?' · ⚡ Urgent':'');
+    var specs=document.getElementById('revSpecs');
     if(specs){
-      var h = '';
-      if(_order.qty>1) h += '<div class="rv-spec"><span class="rv-spec-k">Quantity</span><span class="rv-spec-v">'+_order.qty+'</span></div>';
-      if(_order.meas_method) h += '<div class="rv-spec"><span class="rv-spec-k">Measurements</span><span class="rv-spec-v">'+(_order.meas_method.charAt(0).toUpperCase()+_order.meas_method.slice(1).replace(/_/g,' '))+'</span></div>';
-      if(_order.fabric&&_order.fabric!=='own') h += '<div class="rv-spec"><span class="rv-spec-k">Fabric</span><span class="rv-spec-v">From catalogue</span></div>';
-      if(_order.styles){ Object.keys(_order.styles).forEach(function(k){ h += '<div class="rv-spec"><span class="rv-spec-k">'+k+'</span><span class="rv-spec-v">'+_order.styles[k]+'</span></div>'; }); }
-      if(_order.notes) h += '<div class="rv-spec"><span class="rv-spec-k">Notes</span><span class="rv-spec-v">'+_order.notes+'</span></div>';
-      specs.innerHTML = h;
+      var h='';
+      if(_order.qty>1)h+='<div class="rv-spec"><span class="rv-spec-k">Qty</span><span class="rv-spec-v">'+_order.qty+'</span></div>';
+      if(_order.meas_method)h+='<div class="rv-spec"><span class="rv-spec-k">Measurements</span><span class="rv-spec-v">'+(_order.meas_method.charAt(0).toUpperCase()+_order.meas_method.slice(1).replace(/_/g,' '))+'</span></div>';
+      if(_order.fabric&&_order.fabric!=='own')h+='<div class="rv-spec"><span class="rv-spec-k">Fabric</span><span class="rv-spec-v">From catalogue</span></div>';
+      if(_order.styles){Object.keys(_order.styles).forEach(function(k){h+='<div class="rv-spec"><span class="rv-spec-k">'+k+'</span><span class="rv-spec-v">'+_order.styles[k]+'</span></div>';});}
+      if(_order.notes)h+='<div class="rv-spec"><span class="rv-spec-k">Notes</span><span class="rv-spec-v">'+_order.notes+'</span></div>';
+      specs.innerHTML=h;
     }
   }
 
-  _delivery = 'pickup';
+  _delivery='pickup';
   updateSummary();
 
-  var today = new Date();
-  var minDate = new Date(today); minDate.setDate(today.getDate()+1);
-  var defaultDate = new Date(today); defaultDate.setDate(today.getDate()+7);
-  var dd = document.getElementById('deliveryDate');
-  if(dd){ dd.min = minDate.toISOString().split('T')[0]; dd.value = defaultDate.toISOString().split('T')[0]; }
-
-  var savedAddr = sessionStorage.getItem('pdp_home_addr');
-  var addrField = document.getElementById('custAddress');
-  if(savedAddr && addrField && !addrField.value) addrField.value = savedAddr;
+  var today=new Date();
+  var minDate=new Date(today); minDate.setDate(today.getDate()+1);
+  var defaultDate=new Date(today); defaultDate.setDate(today.getDate()+7);
+  var dd=document.getElementById('deliveryDate');
+  if(dd){dd.min=minDate.toISOString().split('T')[0];dd.value=defaultDate.toISOString().split('T')[0];}
 }
 
-var FREE_DELIVERY_ABOVE = 1499;
+var FREE_DELIVERY_ABOVE=1499;
 
 function updateSummary(){
-  var base = (_order.item_price||0)*(_order.qty||1);
-  var revUrgent = document.getElementById('revUrgent');
-  var isUrgent = revUrgent ? revUrgent.checked : (_order.urgent||false);
-  var urgent = isUrgent ? Math.round(base*0.1) : 0;
-  var deliveryCharge = 0;
-  if(_delivery==='home'){ deliveryCharge=(base+urgent)>=FREE_DELIVERY_ABOVE?0:100; }
-  var total = base+urgent+deliveryCharge;
-  var couponDisc = _couponDiscount||0;
-  var finalTotal = Math.max(0,total-couponDisc);
-  var finalAdvance = Math.ceil(finalTotal*0.3);
+  var base=(_order.item_price||0)*(_order.qty||1);
+  var cb=document.getElementById('revUrgent');
+  var isUrgent=cb?cb.checked:(_order.urgent||false);
+  var urgent=isUrgent?Math.round(base*0.1):0;
+  var delCharge=_delivery==='home'?(base+urgent)>=FREE_DELIVERY_ABOVE?0:100:0;
+  var total=base+urgent+delCharge;
+  var disc=_couponDiscount||0;
+  var finalTotal=Math.max(0,total-disc);
+  var finalAdv=Math.ceil(finalTotal*0.3);
 
-  document.getElementById('sumStitch').textContent = 'Rs. '+base;
-  var ur=document.getElementById('sumUrgentRow');
-  if(ur) ur.style.display=urgent?'':'none';
+  document.getElementById('sumStitch').textContent='Rs. '+base;
+  var ur=document.getElementById('sumUrgentRow'); if(ur)ur.style.display=urgent?'':'none';
   document.getElementById('sumUrgent').textContent='Rs. '+urgent;
-  var delLbl=document.getElementById('sumDeliveryLabel'),delVal=document.getElementById('sumDelivery');
-  var delNote=document.getElementById('delHomeNote'),delPrice=document.getElementById('delHomePrice');
+
+  var dl=document.getElementById('sumDeliveryLabel'),dv=document.getElementById('sumDelivery');
+  var hs=document.getElementById('delHomeSub'),hp=document.getElementById('delHomePrice');
   if(_delivery==='home'){
-    if(delLbl)delLbl.textContent='Home delivery';
-    if(delVal)delVal.textContent=deliveryCharge>0?'Rs. '+deliveryCharge:'Free';
-    if(delNote)delNote.textContent=deliveryCharge>0?'Free above Rs. '+FREE_DELIVERY_ABOVE:'✓ Free delivery applied';
-    if(delPrice)delPrice.textContent=deliveryCharge>0?'Rs. '+deliveryCharge:'Free';
+    if(dl)dl.textContent='Home delivery';
+    if(dv)dv.textContent=delCharge>0?'Rs. '+delCharge:'Free';
+    if(hs)hs.textContent=delCharge>0?'Within Sikar · free above Rs. '+FREE_DELIVERY_ABOVE:'✓ Free delivery';
+    if(hp)hp.textContent=delCharge>0?'Rs. '+delCharge:'Free';
   } else {
-    if(delLbl)delLbl.textContent='Pickup from shop';
-    if(delVal)delVal.textContent='Free';
-    if(delNote)delNote.textContent='';
-    if(delPrice)delPrice.textContent='Free';
+    if(dl)dl.textContent='Pickup';
+    if(dv)dv.textContent='Free';
+    if(hs)hs.textContent='Within Sikar · 1–2 days after ready';
+    if(hp)hp.textContent='Rs. 100';
   }
+
   document.getElementById('sumTotal').textContent='Rs. '+finalTotal;
-  document.getElementById('sumAdvance').textContent='Rs. '+finalAdvance;
-  var cr=document.getElementById('couponRow');
-  if(cr)cr.style.display=couponDisc>0?'':'none';
-  var cd=document.getElementById('couponDiscount');
-  if(cd)cd.textContent='-Rs. '+couponDisc;
+  document.getElementById('sumAdvance').textContent='Rs. '+finalAdv;
+  var cr=document.getElementById('couponRow'); if(cr)cr.style.display=disc>0?'':'none';
+  var cd=document.getElementById('couponDiscount'); if(cd)cd.textContent='-Rs. '+disc;
 }
 
 function selectDel(type,el){
@@ -366,28 +362,28 @@ function selectDel(type,el){
   updateSummary();
 }
 
-function selectPriority(type, el){
-  var isUrgent = type==='urgent';
-  document.querySelectorAll('.rv-priority-opt').forEach(function(d){d.classList.remove('active');});
+function selectPriority(type,el){
+  var isUrgent=type==='urgent';
+  document.querySelectorAll('.rv-seg-opt').forEach(function(d){d.classList.remove('active');});
   el.classList.add('active');
   var cb=document.getElementById('revUrgent');
-  if(cb){ cb.checked=isUrgent; cb.dispatchEvent(new Event('change')); }
+  if(cb){cb.checked=isUrgent;cb.dispatchEvent(new Event('change'));}
   updateSummary();
 }
 
-var _couponDiscount=0, _couponCode='';
+var _couponDiscount=0,_couponCode='';
 
 function applyCoupon(){
   var code=(document.getElementById('couponInput').value||'').trim().toUpperCase();
   var msg=document.getElementById('couponMsg');
   if(!code){if(msg)msg.textContent='';return;}
   var base=(_order.item_price||0)*(_order.qty||1);
-  var revUrgent=document.getElementById('revUrgent');
-  var urgent=(revUrgent&&revUrgent.checked)?Math.round(base*0.1):0;
-  var delCharge=_delivery==='home'&&(base+urgent)<1499?100:0;
+  var cb=document.getElementById('revUrgent');
+  var urgent=(cb&&cb.checked)?Math.round(base*0.1):0;
+  var delCharge=_delivery==='home'&&(base+urgent)<FREE_DELIVERY_ABOVE?100:0;
   fetch('/api/validate-coupon',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:code,order_total:base+urgent+delCharge})})
   .then(function(r){return r.json();}).then(function(d){
-    if(d.valid){_couponDiscount=d.discount;_couponCode=code;if(msg){msg.style.color='green';msg.textContent=d.message;}}
+    if(d.valid){_couponDiscount=d.discount;_couponCode=code;if(msg){msg.style.color='#16a34a';msg.textContent=d.message;}}
     else{_couponDiscount=0;_couponCode='';if(msg){msg.style.color='#dc2626';msg.textContent=d.message;}}
     updateSummary();
   }).catch(function(){if(msg){msg.style.color='#dc2626';msg.textContent='Could not validate.';}});
@@ -398,13 +394,13 @@ function checkDeliveryDate(inp){
   if(!inp.value||!msg)return;
   var diffDays=Math.ceil((new Date(inp.value)-new Date())/(1000*60*60*24));
   if(diffDays<=3){
-    msg.style.color='#e8913a';msg.textContent='⚡ Within 3 days — will be treated as Urgent (+10%)';
+    msg.style.color='#e8913a';msg.textContent='⚡ Within 3 days — switching to Urgent.';
     selectPriority('urgent',document.getElementById('priUrg'));
-  } else if(diffDays<=5){
-    msg.style.color='var(--muted)';msg.textContent='Ready in 5–7 days. This date is achievable.';
+  } else if(diffDays<=7){
+    msg.style.color='var(--muted)';msg.textContent='Standard delivery is achievable.';
     selectPriority('standard',document.getElementById('priStd'));
   } else {
-    msg.style.color='green';msg.textContent='✓ Plenty of time — standard order.';
+    msg.style.color='#16a34a';msg.textContent='✓ Plenty of time.';
     selectPriority('standard',document.getElementById('priStd'));
   }
 }
@@ -413,34 +409,34 @@ var _pendingPlaceOrder=false;
 
 function placeOrder(){
   fetch('/api/account/me').then(function(r){return r.json();}).then(function(d){
-    if(d&&d.name){
-      _doPlaceOrder();
-    } else {
+    if(d&&d.name){_doPlaceOrder();}
+    else{
       var panel=document.getElementById('revLoginPanel');
-      if(panel){ panel.style.display='block'; panel.scrollIntoView({behavior:'smooth',block:'center'}); }
+      if(panel){panel.style.display='block';panel.scrollIntoView({behavior:'smooth',block:'center'});}
       _pendingPlaceOrder=true;
     }
   }).catch(function(){_doPlaceOrder();});
 }
 
 function _doPlaceOrder(){
-  var name=document.getElementById('custName').value.trim();
-  var phone=document.getElementById('custPhone').value.trim();
-  var addr=document.getElementById('custAddress').value.trim();
+  var name=(document.getElementById('custName').value||'').trim();
+  var phone=(document.getElementById('custPhone').value||'').trim();
   if(!name||!phone){alert('Please enter your name and mobile number.');return;}
   var btn=document.querySelector('.rv-place-btn');
   btn.textContent='Processing...';btn.disabled=true;
-  var delivDate=document.getElementById('deliveryDate');
-  var isUrgentNow=(function(){var cb=document.getElementById('revUrgent');return cb?cb.checked:(_order.urgent||false);})();
+  var dd=document.getElementById('deliveryDate');
+  var cb2=document.getElementById('revUrgent');
+  var isUrgentNow=cb2?cb2.checked:(_order.urgent||false);
   var payload={
-    coupon_code:_couponCode||'',delivery_date:delivDate?delivDate.value:'',
+    coupon_code:_couponCode||'',delivery_date:dd?dd.value:'',
     garment_name:_order.item_name,garment_price:_order.item_price,quantity:_order.qty||1,
     size:_order.size||'',styles:_order.styles||{},fabric:_order.fabric||'own',
     measurement_method:_order.meas_method||'standard',measurements:_order.measurements||{},
     urgent:isUrgentNow,notes:_order.notes||'',delivery:_delivery,
     customer_name:name,customer_phone:phone,
     customer_email:(document.getElementById('custEmail')||{value:''}).value||'',
-    customer_address:addr,source:_fromCart?'cart':'product_page'
+    customer_address:(document.getElementById('custAddress')||{value:''}).value||'',
+    source:_fromCart?'cart':'product_page'
   };
   if(_fromCart&&_cartCheckout.items&&_cartCheckout.items.length){
     payload.cart_items=_cartCheckout.items.map(function(it){return{name:it.name,price:parseFloat(it.price||0),qty:parseInt(it.qty)||1};});
@@ -458,10 +454,9 @@ function _doPlaceOrder(){
   }).catch(function(){btn.textContent='Place Order & Pay Advance →';btn.disabled=false;alert('Connection error. Please try again.');});
 }
 
-/* Location detect */
-function detectLocation(inputId, btn){
+function detectLocation(inputId,btn){
   if(!navigator.geolocation){alert('Location not supported.');return;}
-  btn.innerHTML='<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>';
+  btn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>';
   btn.disabled=true;
   navigator.geolocation.getCurrentPosition(
     function(pos){
@@ -474,13 +469,13 @@ function detectLocation(inputId, btn){
         if(a.city||a.town||a.village)parts.push(a.city||a.town||a.village);
         if(a.state)parts.push(a.state);if(a.postcode)parts.push(a.postcode);
         var inp2=document.getElementById(inputId);
-        if(inp2){inp2.value=parts.join(', ');inp2.dispatchEvent(new Event('input'));}
-        btn.innerHTML='<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#2D6A3F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+        if(inp2){inp2.value=parts.join(', ');}
+        btn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>';
         btn.disabled=false;
-        setTimeout(function(){btn.innerHTML='<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>';},2500);
-      }).catch(function(){btn.innerHTML='<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>';btn.disabled=false;});
+        setTimeout(function(){btn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>';},2500);
+      }).catch(function(){btn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>';btn.disabled=false;});
     },
-    function(){btn.innerHTML='<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>';btn.disabled=false;},
+    function(){btn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>';btn.disabled=false;},
     {timeout:10000,maximumAge:60000}
   );
 }
@@ -488,28 +483,21 @@ function detectLocation(inputId, btn){
 /* Account prefill on load */
 (function(){
   fetch('/api/account/me').then(function(r){return r.json();}).then(function(d){
-    if(d&&d.name){
-      _prefillAccount(d);
-    } else {
-      var panel=document.getElementById('revLoginPanel');
-      if(panel)panel.style.display='block';
-    }
+    if(d&&d.name){_prefillAccount(d);}
+    else{var p=document.getElementById('revLoginPanel');if(p)p.style.display='block';}
   }).catch(function(){});
 })();
 
 function _prefillAccount(acc){
-  var nf=document.getElementById('custName'),mf=document.getElementById('custPhone'),ef=document.getElementById('custEmail'),af=document.getElementById('custAddress');
+  var nf=document.getElementById('custName'),mf=document.getElementById('custPhone'),ef=document.getElementById('custEmail');
   if(nf&&!nf.value&&acc.name)nf.value=acc.name;
   if(mf&&!mf.value&&acc.mobile)mf.value=acc.mobile.replace(/^91/,'').slice(-10);
   if(ef&&!ef.value&&acc.email)ef.value=acc.email;
-  if(af&&!af.value){var parts=[acc.address_line1,acc.address_line2,acc.address_city,acc.address_state,acc.address_pincode];var addr=parts.filter(Boolean).join(', ');if(addr)af.value=addr;}
   var badge=document.getElementById('revAccBadge');
   if(badge&&(acc.name||acc.mobile))badge.style.display='inline-block';
-  var panel=document.getElementById('revLoginPanel');
-  if(panel)panel.style.display='none';
+  var panel=document.getElementById('revLoginPanel');if(panel)panel.style.display='none';
 }
 
-/* Login / Signup tab functions */
 function revSwitchTab(tab){
   var isLogin=tab==='login';
   document.getElementById('revFormLogin').style.display=isLogin?'':'none';
@@ -527,11 +515,8 @@ function revDoLogin(){
   if((!mobile&&!email)||!pass){msg.textContent='Mobile/email aur password dono enter karo.';return;}
   fetch('/api/account/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({identifier:mobile||email,password:pass})})
   .then(function(r){return r.json();}).then(function(d){
-    if(d.ok){
-      document.getElementById('revLoginPanel').style.display='none';
-      _prefillAccount(d.account||d);
-      if(_pendingPlaceOrder){_pendingPlaceOrder=false;setTimeout(function(){_doPlaceOrder();},400);}
-    } else { msg.textContent=d.error||'Login failed.'; }
+    if(d.ok){document.getElementById('revLoginPanel').style.display='none';_prefillAccount(d.account||d);if(_pendingPlaceOrder){_pendingPlaceOrder=false;setTimeout(function(){_doPlaceOrder();},400);}}
+    else{msg.textContent=d.error||'Login failed.';}
   }).catch(function(){msg.textContent='Could not connect. Try again.';});
 }
 
@@ -546,15 +531,11 @@ function revDoSignup(){
   if(!pass||pass.length<6){msg.textContent='Password kam se kam 6 characters.';return;}
   fetch('/api/account/signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,mobile:mobile,email:email,password:pass})})
   .then(function(r){return r.json();}).then(function(d){
-    if(d.ok){
-      document.getElementById('revLoginPanel').style.display='none';
-      _prefillAccount({name:name,mobile:mobile,email:email});
-      if(_pendingPlaceOrder){_pendingPlaceOrder=false;setTimeout(function(){_doPlaceOrder();},400);}
-    } else { msg.textContent=d.error||'Account create nahi hua.'; }
+    if(d.ok){document.getElementById('revLoginPanel').style.display='none';_prefillAccount({name:name,mobile:mobile,email:email});if(_pendingPlaceOrder){_pendingPlaceOrder=false;setTimeout(function(){_doPlaceOrder();},400);}}
+    else{msg.textContent=d.error||'Account create nahi hua.';}
   }).catch(function(){msg.textContent='Could not connect. Try again.';});
 }
 
-/* Jinja2 server-side prefill */
 {% if current_user %}
 (function(){
   _prefillAccount({
@@ -565,10 +546,7 @@ function revDoSignup(){
 })();
 {% endif %}
 
-document.addEventListener('DOMContentLoaded', function(){
-  init();
-  try{if(window.fbq)fbq('track','InitiateCheckout');}catch(e){}
-});
+document.addEventListener('DOMContentLoaded',function(){init();});
 if(document.readyState==='complete'||document.readyState==='interactive'){
   setTimeout(function(){if(document.getElementById('revSub')&&document.getElementById('revSub').textContent==='Loading...')init();},200);
 }
