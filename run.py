@@ -8,24 +8,6 @@ from database import init_db, get_setting
 app = Flask(__name__, template_folder="templates", static_folder="static", static_url_path="/static")
 app.secret_key = Config.SECRET_KEY
 
-# ── Site-wide Basic Auth ──────────────────────────────────────────────────────
-_BASIC_USER = "uttam"
-_BASIC_PASS = "helloo"
-_BASIC_TOKEN = base64.b64encode(f"{_BASIC_USER}:{_BASIC_PASS}".encode()).decode()
-
-@app.before_request
-def require_basic_auth():
-    # Let health checks through so uptime monitors still work
-    if request.path in ("/health", "/health/db"):
-        return
-    auth = request.headers.get("Authorization", "")
-    if auth.startswith("Basic ") and auth[6:] == _BASIC_TOKEN:
-        return  # Correct credentials — allow request
-    return Response(
-        "Access restricted. Please enter your credentials.",
-        401,
-        {"WWW-Authenticate": 'Basic realm="Uttam Tailors"'}
-    )
 
 # ── Logging ───────────────────────────────────────────────────────────────────
 logging.basicConfig(level=logging.INFO)
@@ -381,3 +363,7 @@ def inject_web_settings():
     except Exception:
         pass
     return result
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5001, debug=False)
+

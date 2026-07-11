@@ -1181,21 +1181,6 @@ def account_wishlist_toggle():
         return jsonify({"ok": True, "action": "added"})
 
 
-@features_bp.route("/api/account/wishlist/<int:item_id>/delete", methods=["POST"])
-def account_wishlist_remove(item_id):
-    """Remove item from wishlist."""
-    acc = _get_account()
-    if not acc:
-        return jsonify({"ok": False, "error": "Not logged in"}), 401
-    _ensure_wishlist_table()
-    db = get_db()
-    db.execute(
-        "DELETE FROM web_wishlist WHERE account_id=? AND item_id=?",
-        (acc["id"], item_id)
-    )
-    db.commit()
-    return jsonify({"ok": True})
-
 @features_bp.route("/api/account/wishlist/merge", methods=["POST"])
 def account_wishlist_merge():
     """

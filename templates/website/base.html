@@ -1339,9 +1339,12 @@ function closePopup(){
 (function(){
   var ldr = document.getElementById('site-loader');
   if(!ldr) return;
-  var minWait = 600; // ms minimum display
+  var minWait = 300; // ms minimum display
   var start = Date.now();
+  var hidden = false;
   function hideLdr(){
+    if(hidden) return;
+    hidden = true;
     var elapsed = Date.now() - start;
     var delay = Math.max(0, minWait - elapsed);
     setTimeout(function(){
@@ -1354,8 +1357,8 @@ function closePopup(){
     hideLdr();
   } else {
     window.addEventListener('load', hideLdr, {once:true});
-    // Fallback: hide after 4s even if load never fires
-    setTimeout(hideLdr, 4000);
+    // Fallback: hide after 1.5s even if load never fires
+    setTimeout(hideLdr, 1500);
   }
 })();
 
