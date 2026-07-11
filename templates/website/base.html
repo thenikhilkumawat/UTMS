@@ -1335,31 +1335,23 @@ function closePopup(){
 <!-- ═══ END SUPPORT CHAT WIDGET ══════════════════════════════════════════════ -->
 
 <script>
-/* ═══ LOADER — hide on window.load, min 600ms so animation shows ═══ */
+/* ═══ LOADER — hide on DOMContentLoaded ═══ */
 (function(){
   var ldr = document.getElementById('site-loader');
   if(!ldr) return;
-  var minWait = 300; // ms minimum display
-  var start = Date.now();
   var hidden = false;
   function hideLdr(){
     if(hidden) return;
     hidden = true;
-    var elapsed = Date.now() - start;
-    var delay = Math.max(0, minWait - elapsed);
-    setTimeout(function(){
-      ldr.classList.add('ldr-hidden');
-      // Remove from DOM after transition
-      setTimeout(function(){ if(ldr.parentNode) ldr.parentNode.removeChild(ldr); }, 750);
-    }, delay);
+    ldr.classList.add('ldr-hidden');
+    setTimeout(function(){ if(ldr.parentNode) ldr.parentNode.removeChild(ldr); }, 900);
   }
-  if(document.readyState === 'complete'){
-    hideLdr();
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', hideLdr, {once:true});
   } else {
-    window.addEventListener('load', hideLdr, {once:true});
-    // Fallback: hide after 1.5s even if load never fires
-    setTimeout(hideLdr, 1500);
+    hideLdr();
   }
+  setTimeout(hideLdr, 2000);
 })();
 
 /* ═══ SCROLL REVEAL — velocity-aware Intersection Observer ═══ */
