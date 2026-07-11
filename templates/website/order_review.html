@@ -11,8 +11,10 @@
 .rv-subtitle{font-family:var(--fm);font-size:9.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:2rem;}
 
 /* ── Grid ── */
-.rv-grid{display:flex;gap:1.5rem;align-items:flex-start;}.rv-left{flex:1;min-width:0;}
-.rv-right-col{width:340px;flex-shrink:0;position:sticky;top:100px;max-height:calc(100vh - 115px);overflow-y:auto;}
+.rv-grid{display:flex;gap:0;align-items:flex-start;}
+.rv-left{flex:1;min-width:0;padding-right:1.75rem;}
+.rv-right-col{width:340px;flex-shrink:0;}
+@media(min-width:741px){.rv-right-col{position:fixed;top:100px;max-height:calc(100vh - 115px);overflow-y:auto;z-index:10;}}
 
 /* ── Cards ── */
 .rv-card{background:#fff;border:1px solid var(--border);border-radius:11px;padding:1.25rem;margin-bottom:1rem;}
@@ -84,6 +86,7 @@
 /* ── Mobile ── */
 @media(max-width:740px){
   .rv-grid{flex-direction:column;}
+  .rv-left{padding-right:0;}
   .rv-right-col{width:100%;max-height:none;position:static;}
   .rv-row{grid-template-columns:1fr;}
   .rv-wrap{padding:88px 1rem 4rem;}
@@ -546,7 +549,27 @@ function revDoSignup(){
 })();
 {% endif %}
 
-document.addEventListener('DOMContentLoaded',function(){init();});
+
+/* Position right summary panel as fixed, aligned with the wrap */
+function _posFixSummary(){
+  var rc=document.querySelector('.rv-right-col');
+  var lc=document.querySelector('.rv-left');
+  if(!rc||!lc){return;}
+  if(window.innerWidth<=740){
+    rc.style.cssText='';lc.style.paddingRight='';return;
+  }
+  var wrap=document.querySelector('.rv-wrap');
+  if(!wrap)return;
+  var r=wrap.getBoundingClientRect();
+  rc.style.left=(r.right-340)+'px';
+  rc.style.width='340px';
+  lc.style.paddingRight=''; // grid gap handled by fixed pos
+}
+_posFixSummary();
+window.addEventListener('resize',_posFixSummary);
+document.addEventListener('DOMContentLoaded',_posFixSummary);
+
+document.addEventListener('DOMContentLoaded',function(){init();_posFixSummary();});
 if(document.readyState==='complete'||document.readyState==='interactive'){
   setTimeout(function(){if(document.getElementById('revSub')&&document.getElementById('revSub').textContent==='Loading...')init();},200);
 }
