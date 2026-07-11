@@ -1185,8 +1185,8 @@ function closePopup(){
       if(_suppChatId){
         showSuppChat();
       } else if(_suppAcct && _suppAcct.logged_in){
-        // Logged-in user — skip form, auto-start
-        _doStartChat('', '', '');
+        // Logged-in user — skip form, auto-start with their details
+        _doStartChat(_suppAcct.name||'', _suppAcct.mobile||'', _suppAcct.email||'');
       }
     }
   };
