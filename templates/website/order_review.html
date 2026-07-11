@@ -119,49 +119,54 @@
         <div id="revSpecs"></div>
       </div>
 
-      <!-- Login panel -->
-      <div class="rv-card" id="revLoginPanel" style="display:none;">
-        <div class="rv-card-label" id="revLoginTitle">Account Required</div>
-        <p style="font-size:12.5px;color:var(--muted);margin-bottom:12px;line-height:1.5;">Please log in or create a free account to place and track your order.</p>
-        <div class="rv-tab-bar">
-          <button type="button" id="revTabLogin" class="rv-tab active" onclick="revSwitchTab('login')">Log In</button>
-          <button type="button" id="revTabSignup" class="rv-tab" onclick="revSwitchTab('signup')">Sign Up</button>
-        </div>
-        <div id="revFormLogin">
-          <input type="tel" id="revLoginMobile" class="rv-input" placeholder="Mobile number" maxlength="10" style="margin-bottom:6px;">
-          <input type="email" id="revLoginEmail" class="rv-input" placeholder="Email (optional)" style="margin-bottom:6px;">
-          <input type="password" id="revLoginPass" class="rv-input" placeholder="Password" style="margin-bottom:8px;">
-          <button type="button" onclick="revDoLogin()" style="width:100%;padding:10px;background:var(--dark);color:#fff;border:none;border-radius:7px;font-family:var(--fm);font-size:10px;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;">Log In</button>
-        </div>
-        <div id="revFormSignup" style="display:none;">
-          <input type="text" id="revSignupName" class="rv-input" placeholder="Full name *" style="margin-bottom:6px;">
-          <div class="rv-row" style="margin-bottom:6px;">
-            <input type="tel" id="revSignupMobile" class="rv-input" placeholder="Mobile *" maxlength="10">
-            <input type="email" id="revSignupEmail" class="rv-input" placeholder="Email (optional)">
-          </div>
-          <input type="password" id="revSignupPass" class="rv-input" placeholder="Password * (min 6 chars)" style="margin-bottom:8px;">
-          <button type="button" onclick="revDoSignup()" style="width:100%;padding:10px;background:var(--dark);color:#fff;border:none;border-radius:7px;font-family:var(--fm);font-size:10px;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;">Create Account &amp; Continue</button>
-        </div>
-        <div id="revLoginMsg" style="font-size:12px;margin-top:7px;color:crimson;text-align:center;min-height:14px;"></div>
-      </div>
+      <!-- Account card: toggles between login/signup and filled details -->
+      <div class="rv-card" id="revLoginPanel">
 
-      <!-- Details -->
-      <div class="rv-card">
-        <div class="rv-card-label">
-          Your Details
-          <span id="revAccBadge" class="rv-badge" style="display:none;">✓ Logged in</span>
+        <!-- STATE A: not logged in -->
+        <div id="revLoginSection">
+          <div class="rv-card-label">Account Required</div>
+          <p style="font-size:12.5px;color:var(--muted);margin-bottom:12px;line-height:1.5;">Please log in or create a free account to place and track your order.</p>
+          <div class="rv-tab-bar">
+            <button type="button" id="revTabLogin" class="rv-tab active" onclick="revSwitchTab('login')">Log In</button>
+            <button type="button" id="revTabSignup" class="rv-tab" onclick="revSwitchTab('signup')">Sign Up</button>
+          </div>
+          <div id="revFormLogin">
+            <input type="tel" id="revLoginMobile" class="rv-input" placeholder="Mobile number" maxlength="10" style="margin-bottom:6px;">
+            <input type="email" id="revLoginEmail" class="rv-input" placeholder="Email (optional)" style="margin-bottom:6px;">
+            <input type="password" id="revLoginPass" class="rv-input" placeholder="Password" style="margin-bottom:8px;">
+            <button type="button" onclick="revDoLogin()" style="width:100%;padding:10px;background:var(--dark);color:#fff;border:none;border-radius:7px;font-family:var(--fm);font-size:10px;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;">Log In</button>
+          </div>
+          <div id="revFormSignup" style="display:none;">
+            <input type="text" id="revSignupName" class="rv-input" placeholder="Full name *" style="margin-bottom:6px;">
+            <div class="rv-row" style="margin-bottom:6px;">
+              <input type="tel" id="revSignupMobile" class="rv-input" placeholder="Mobile *" maxlength="10">
+              <input type="email" id="revSignupEmail" class="rv-input" placeholder="Email (optional)">
+            </div>
+            <input type="password" id="revSignupPass" class="rv-input" placeholder="Password * (min 6 chars)" style="margin-bottom:8px;">
+            <button type="button" onclick="revDoSignup()" style="width:100%;padding:10px;background:var(--dark);color:#fff;border:none;border-radius:7px;font-family:var(--fm);font-size:10px;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;">Create Account &amp; Continue</button>
+          </div>
+          <div id="revLoginMsg" style="font-size:12px;margin-top:7px;color:crimson;text-align:center;min-height:14px;"></div>
         </div>
-        <div class="rv-row" style="margin-bottom:7px;">
-          <input class="rv-input" id="custName" placeholder="Full name *" type="text">
-          <input class="rv-input" id="custPhone" placeholder="Mobile *" type="tel">
+
+        <!-- STATE B: logged in — shows pre-filled details -->
+        <div id="revDetailsSection" style="display:none;">
+          <div class="rv-card-label">
+            Your Details
+            <span id="revAccBadge" class="rv-badge">✓ Logged in</span>
+          </div>
+          <div class="rv-row" style="margin-bottom:7px;">
+            <input class="rv-input" id="custName" placeholder="Full name *" type="text">
+            <input class="rv-input" id="custPhone" placeholder="Mobile *" type="tel">
+          </div>
+          <input class="rv-input" id="custEmail" placeholder="Email (for order updates)" type="email" style="margin-bottom:7px;">
+          <div class="rv-addr-wrap">
+            <input class="rv-input" id="custAddress" placeholder="Delivery address (optional)" type="text" style="flex:1;margin-bottom:0;">
+            <button type="button" class="rv-loc-btn" id="locBtn" title="Detect location" onclick="detectLocation('custAddress',this)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+            </button>
+          </div>
         </div>
-        <input class="rv-input" id="custEmail" placeholder="Email (for order updates)" type="email" style="margin-bottom:7px;">
-        <div class="rv-addr-wrap">
-          <input class="rv-input" id="custAddress" placeholder="Delivery address (optional)" type="text" style="flex:1;margin-bottom:0;">
-          <button type="button" class="rv-loc-btn" id="locBtn" title="Detect location" onclick="detectLocation('custAddress',this)">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
-          </button>
-        </div>
+
       </div>
 
       <!-- Preferences: Priority + Date + Delivery — all in one card -->
@@ -415,7 +420,7 @@ function placeOrder(){
     if(d&&d.name){_doPlaceOrder();}
     else{
       var panel=document.getElementById('revLoginPanel');
-      if(panel){panel.style.display='block';panel.scrollIntoView({behavior:'smooth',block:'center'});}
+      if(panel){panel.scrollIntoView({behavior:'smooth',block:'start'});}
       _pendingPlaceOrder=true;
     }
   }).catch(function(){_doPlaceOrder();});
@@ -487,18 +492,21 @@ function detectLocation(inputId,btn){
 (function(){
   fetch('/api/account/me').then(function(r){return r.json();}).then(function(d){
     if(d&&d.name){_prefillAccount(d);}
-    else{var p=document.getElementById('revLoginPanel');if(p)p.style.display='block';}
+    // else: loginSection is visible by default, nothing to do
   }).catch(function(){});
 })();
 
 function _prefillAccount(acc){
+  // Flip card: hide login form, show details
+  var ls=document.getElementById('revLoginSection');
+  var ds=document.getElementById('revDetailsSection');
+  if(ls)ls.style.display='none';
+  if(ds)ds.style.display='';
+  // Fill fields
   var nf=document.getElementById('custName'),mf=document.getElementById('custPhone'),ef=document.getElementById('custEmail');
   if(nf&&!nf.value&&acc.name)nf.value=acc.name;
   if(mf&&!mf.value&&acc.mobile)mf.value=acc.mobile.replace(/^91/,'').slice(-10);
   if(ef&&!ef.value&&acc.email)ef.value=acc.email;
-  var badge=document.getElementById('revAccBadge');
-  if(badge&&(acc.name||acc.mobile))badge.style.display='inline-block';
-  var panel=document.getElementById('revLoginPanel');if(panel)panel.style.display='none';
 }
 
 function revSwitchTab(tab){
@@ -518,7 +526,7 @@ function revDoLogin(){
   if((!mobile&&!email)||!pass){msg.textContent='Please enter your mobile/email and password.';return;}
   fetch('/api/account/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({identifier:mobile||email,password:pass})})
   .then(function(r){return r.json();}).then(function(d){
-    if(d.ok){document.getElementById('revLoginPanel').style.display='none';_prefillAccount(d.account||d);if(_pendingPlaceOrder){_pendingPlaceOrder=false;setTimeout(function(){_doPlaceOrder();},400);}}
+    if(d.ok){_prefillAccount(d.account||d);if(_pendingPlaceOrder){_pendingPlaceOrder=false;setTimeout(function(){_doPlaceOrder();},400);}}
     else{msg.textContent=d.error||'Login failed. Please check your credentials.';}
   }).catch(function(){msg.textContent='Connection error. Please try again.';});
 }
@@ -534,7 +542,7 @@ function revDoSignup(){
   if(!pass||pass.length<6){msg.textContent='Password must be at least 6 characters.';return;}
   fetch('/api/account/signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,mobile:mobile,email:email,password:pass})})
   .then(function(r){return r.json();}).then(function(d){
-    if(d.ok){document.getElementById('revLoginPanel').style.display='none';_prefillAccount({name:name,mobile:mobile,email:email});if(_pendingPlaceOrder){_pendingPlaceOrder=false;setTimeout(function(){_doPlaceOrder();},400);}}
+    if(d.ok){_prefillAccount({name:name,mobile:mobile,email:email});if(_pendingPlaceOrder){_pendingPlaceOrder=false;setTimeout(function(){_doPlaceOrder();},400);}}
     else{msg.textContent=d.error||'Could not create account. Please try again.';}
   }).catch(function(){msg.textContent='Connection error. Please try again.';});
 }
