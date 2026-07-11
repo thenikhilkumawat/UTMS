@@ -4,7 +4,7 @@
 {% block head %}
 <style>
 /* ── Base ── */
-.rv-wrap{max-width:1020px;margin:0 auto;padding:110px 1.5rem 5rem;}
+.rv-wrap{max-width:1020px;margin:0 auto;padding:130px 1.5rem 5rem;}
 .rv-back{display:inline-flex;align-items:center;gap:5px;font-family:var(--fm);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-decoration:none;margin-bottom:1.5rem;}
 .rv-back:hover{color:var(--gold);}
 .rv-title{font-family:var(--fd);font-size:clamp(26px,3.5vw,38px);font-weight:300;color:var(--dark);margin-bottom:.2rem;letter-spacing:-.01em;}
@@ -14,7 +14,7 @@
 .rv-grid{display:flex;gap:0;align-items:flex-start;}
 .rv-left{flex:1;min-width:0;padding-right:1.75rem;}
 .rv-right-col{width:340px;flex-shrink:0;}
-@media(min-width:741px){.rv-right-col{position:fixed;top:100px;z-index:10;}}
+@media(min-width:741px){.rv-right-col{position:fixed;top:130px;z-index:10;}}
 
 /* ── Cards ── */
 .rv-card{background:#fff;border:1px solid var(--border);border-radius:11px;padding:1.25rem;margin-bottom:1rem;}
@@ -28,10 +28,10 @@
 .rv-item-price{font-family:var(--fm);font-size:11px;letter-spacing:.04em;color:var(--gold);}
 
 /* ── Login panel ── */
-.rv-tab-bar{display:flex;border:1px solid var(--border);border-radius:7px;overflow:hidden;margin-bottom:10px;}
-.rv-tab{flex:1;padding:8px;font-size:11px;font-family:var(--fm);letter-spacing:.08em;text-transform:uppercase;border:none;cursor:pointer;transition:all .15s;}
+.rv-tab-bar{display:flex;border:1px solid var(--border);border-radius:7px;overflow:hidden;margin-bottom:12px;}
+.rv-tab{flex:1;padding:9px 0;font-size:10px;font-family:var(--fm);letter-spacing:.1em;text-transform:uppercase;border:none;cursor:pointer;transition:all .2s;line-height:1;}
 .rv-tab.active{background:var(--dark);color:#fff;}
-.rv-tab:not(.active){background:#fff;color:var(--muted);}
+.rv-tab:not(.active){background:#f5f2ee;color:var(--muted);}
 .rv-input{width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;outline:none;font-family:inherit;transition:border-color .15s;}
 .rv-input:focus{border-color:var(--gold);}
 
@@ -127,7 +127,7 @@
           <div class="rv-card-label">Account Required</div>
           <p style="font-size:12.5px;color:var(--muted);margin-bottom:12px;line-height:1.5;">Please log in or create a free account to place and track your order.</p>
           <div class="rv-tab-bar">
-            <button type="button" id="revTabLogin" class="rv-tab active" onclick="revSwitchTab('login')">Log In</button>
+            <button type="button" id="revTabLogin" class="rv-tab active" onclick="revSwitchTab('login')" style="border-right:1px solid var(--border);">Log In</button>
             <button type="button" id="revTabSignup" class="rv-tab" onclick="revSwitchTab('signup')">Sign Up</button>
           </div>
           <div id="revFormLogin">
@@ -569,6 +569,7 @@ function _posFixSummary(){
   var wrap=document.querySelector('.rv-wrap');
   if(!wrap)return;
   var r=wrap.getBoundingClientRect();
+  rc.style.top='130px';
   rc.style.left=(r.right-340)+'px';
   rc.style.width='340px';
   rc.style.maxHeight='';
