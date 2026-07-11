@@ -196,7 +196,6 @@ if(_fromCart){
 }
 
 function init(){
-  try {
   if(!_order.item_name){
     // No data from either cart or product page — send to cart
     window.location.href = '/cart';
@@ -589,8 +588,6 @@ function revDoLogin(){
   }).catch(function(){ msg.textContent = 'Could not connect. Try again.'; });
 }
 
-} catch(e){ console.error('order-review init error:', e); }
-}
 
 document.addEventListener('DOMContentLoaded', function(){
   init();
