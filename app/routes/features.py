@@ -565,6 +565,42 @@ def support_messages(chat_id):
     return jsonify({"ok": True, "status": chat["status"],
                     "messages": [dict(m) for m in msgs]})
 
+@features_bp.route("/api/admin/support/<int:chat_id>/reply", methods=["POST"])
+def admin_support_reply(chat_id):
+    if not session.get("owner_logged_in"):
+        return jsonify({"ok": False}), 403
+    ensure_tables()
+    db   = get_db()
+    chat = db.execute("SELECT * FROM support_chats WHERE id=?", (chat_id,)).fetchone()
+    if not chat:
+        return jsonify({"ok": False}), 404
+    d       = request.get_json(force=True, silent=True) or {}
+    message = d.get("message","").strip()
+    if not message:
+        return jsonify({"ok": False, "error": "Empty message"})
+    now = _now()
+    db.execute("INSERT INTO support_messages(chat_id,sender,message,created_at) VALUES(?,?,?,?)",
+        (chat_id, "admin", message, now))
+    db.execute("UPDATE support_chats SET updated_at=? WHERE id=?", (now, chat_id))
+    db.commit()
+    import threading
+    _cd = dict(chat)
+    def _notify():
+        try:
+            if _cd.get("customer_email"):
+                from app.utils.email_notify import send_support_customer_email
+                send_support_customer_email(_cd["customer_email"], _cd.get("customer_name") or "Customer", message)
+            if _cd.get("account_id"):
+                from app.utils.fcm import get_tokens_for_account, send_push
+                tokens = get_tokens_for_account(_cd["account_id"])
+                if tokens:
+                    send_push(tokens, title="Uttam Tailors replied", body=message[:100], data={"url": "https://uttamtailors.in"})
+        except Exception as e:
+            import logging; logging.getLogger(__name__).warning("Admin reply notify: %s", e)
+    threading.Thread(target=_notify, daemon=True).start()
+    return jsonify({"ok": True})
+
+
 @features_bp.route("/api/support/<int:chat_id>/send", methods=["POST"])
 def support_send(chat_id):
     ensure_tables()
@@ -573,18 +609,17 @@ def support_send(chat_id):
     if not chat:
         return jsonify({"ok": False}), 404
     acc      = _get_account()
-    is_admin = session.get("owner_logged_in")
     is_mine  = (
         (acc and chat["account_id"] == acc["id"])
         or session.get("support_session_key") == chat["session_key"]
     )
-    if not is_mine and not is_admin:
+    if not is_mine:
         return jsonify({"ok": False}), 403
     d       = request.get_json(force=True, silent=True) or {}
     message = d.get("message","").strip()
     if not message:
         return jsonify({"ok": False, "error": "Empty message"})
-    sender  = "admin" if is_admin else "customer"
+    sender  = "customer"
     now     = _now()
     db.execute(
         "INSERT INTO support_messages(chat_id,sender,message,created_at) VALUES(?,?,?,?)",
@@ -647,12 +682,11 @@ def support_upload(chat_id):
     if not chat:
         return jsonify({"ok": False}), 404
     acc      = _get_account()
-    is_admin = session.get("owner_logged_in")
     is_mine  = (
         (acc and chat["account_id"] == acc["id"])
         or session.get("support_session_key") == chat["session_key"]
     )
-    if not is_mine and not is_admin:
+    if not is_mine:
         return jsonify({"ok": False}), 403
     f = request.files.get("file")
     if not f or not f.filename:

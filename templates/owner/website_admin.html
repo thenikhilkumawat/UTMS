@@ -1618,7 +1618,7 @@ function sendScReply(){
   var msg=document.getElementById('sc_reply_input').value.trim();
   if(!msg||!_scCurrentId) return;
   document.getElementById('sc_reply_input').value='';
-  apiFetch('/api/support/'+_scCurrentId+'/send',{method:'POST',
+  apiFetch('/api/admin/support/'+_scCurrentId+'/reply',{method:'POST',
     headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg})})
     .then(function(r){return r.json();}).then(function(d){if(d.ok)fetchScChat();});
 }
