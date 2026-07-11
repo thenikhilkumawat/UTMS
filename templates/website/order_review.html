@@ -60,23 +60,46 @@
         <div id="revSpecs"></div>
       </div>
 
-      <!-- Account login / prefill panel -->
+      <!-- Account login / sign-up panel (mandatory) -->
       <div class="review-card" id="revLoginPanel" style="display:none;">
-        <div class="review-card-title">Log in for faster checkout</div>
-        <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">Log in to auto-fill your details and track this order in your account.</p>
-        <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <div class="review-card-title" id="revLoginTitle">Login / Create Account</div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">Order track karne ke liye account zaruri hai.</p>
+
+        <!-- Tabs -->
+        <div style="display:flex;gap:0;margin-bottom:16px;border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+          <button type="button" id="revTabLogin" onclick="revSwitchTab('login')"
+            style="flex:1;padding:9px;font-size:12px;font-family:var(--fm);letter-spacing:.06em;text-transform:uppercase;border:none;cursor:pointer;background:var(--dark);color:#fff;">Log In</button>
+          <button type="button" id="revTabSignup" onclick="revSwitchTab('signup')"
+            style="flex:1;padding:9px;font-size:12px;font-family:var(--fm);letter-spacing:.06em;text-transform:uppercase;border:none;cursor:pointer;background:#fff;color:var(--muted);">Sign Up</button>
+        </div>
+
+        <!-- Login form -->
+        <div id="revFormLogin">
           <input type="tel" id="revLoginMobile" placeholder="Mobile number" maxlength="10"
-            style="flex:1;padding:10px 13px;border:1px solid var(--border);border-radius:7px;font-size:13.5px;outline:none;">
+            style="width:100%;box-sizing:border-box;margin-bottom:8px;padding:10px 13px;border:1px solid var(--border);border-radius:7px;font-size:13.5px;outline:none;">
+          <input type="email" id="revLoginEmail" placeholder="Email address (optional)"
+            style="width:100%;box-sizing:border-box;margin-bottom:8px;padding:10px 13px;border:1px solid var(--border);border-radius:7px;font-size:13.5px;outline:none;">
           <input type="password" id="revLoginPass" placeholder="Password"
-            style="flex:1;padding:10px 13px;border:1px solid var(--border);border-radius:7px;font-size:13.5px;outline:none;">
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;">
+            style="width:100%;box-sizing:border-box;margin-bottom:10px;padding:10px 13px;border:1px solid var(--border);border-radius:7px;font-size:13.5px;outline:none;">
           <button type="button" onclick="revDoLogin()"
-            style="flex:1;padding:10px;background:var(--dark);color:#fff;border:none;border-radius:7px;font-family:var(--fm);font-size:11px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;">Log In</button>
-          <button type="button" onclick="document.getElementById('revLoginPanel').style.display='none';"
-            style="padding:10px 14px;background:transparent;border:1px solid var(--border);border-radius:7px;font-size:12px;color:var(--muted);cursor:pointer;">Skip</button>
+            style="width:100%;padding:11px;background:var(--dark);color:#fff;border:none;border-radius:7px;font-family:var(--fm);font-size:11px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;">Log In</button>
         </div>
-        <div id="revLoginMsg" style="font-size:12px;margin-top:6px;color:crimson;"></div>
+
+        <!-- Sign up form -->
+        <div id="revFormSignup" style="display:none;">
+          <input type="text" id="revSignupName" placeholder="Full name *"
+            style="width:100%;box-sizing:border-box;margin-bottom:8px;padding:10px 13px;border:1px solid var(--border);border-radius:7px;font-size:13.5px;outline:none;">
+          <input type="tel" id="revSignupMobile" placeholder="Mobile number *" maxlength="10"
+            style="width:100%;box-sizing:border-box;margin-bottom:8px;padding:10px 13px;border:1px solid var(--border);border-radius:7px;font-size:13.5px;outline:none;">
+          <input type="email" id="revSignupEmail" placeholder="Email address (optional)"
+            style="width:100%;box-sizing:border-box;margin-bottom:8px;padding:10px 13px;border:1px solid var(--border);border-radius:7px;font-size:13.5px;outline:none;">
+          <input type="password" id="revSignupPass" placeholder="Password * (min 6 chars)"
+            style="width:100%;box-sizing:border-box;margin-bottom:10px;padding:10px 13px;border:1px solid var(--border);border-radius:7px;font-size:13.5px;outline:none;">
+          <button type="button" onclick="revDoSignup()"
+            style="width:100%;padding:11px;background:var(--dark);color:#fff;border:none;border-radius:7px;font-family:var(--fm);font-size:11px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;">Create Account & Continue</button>
+        </div>
+
+        <div id="revLoginMsg" style="font-size:12px;margin-top:8px;color:crimson;text-align:center;"></div>
       </div>
 
       <!-- Customer details -->
@@ -571,20 +594,56 @@ function _prefillAccount(acc){
 })();
 {% endif %}
 
+function revSwitchTab(tab){
+  var isLogin = tab === 'login';
+  document.getElementById('revFormLogin').style.display  = isLogin ? '' : 'none';
+  document.getElementById('revFormSignup').style.display = isLogin ? 'none' : '';
+  document.getElementById('revTabLogin').style.background  = isLogin ? 'var(--dark)' : '#fff';
+  document.getElementById('revTabLogin').style.color       = isLogin ? '#fff' : 'var(--muted)';
+  document.getElementById('revTabSignup').style.background = isLogin ? '#fff' : 'var(--dark)';
+  document.getElementById('revTabSignup').style.color      = isLogin ? 'var(--muted)' : '#fff';
+  document.getElementById('revLoginMsg').textContent = '';
+}
+
 function revDoLogin(){
   var mobile = (document.getElementById('revLoginMobile').value || '').trim();
-  var pass   = (document.getElementById('revLoginPass').value || '').trim();
+  var email  = (document.getElementById('revLoginEmail').value  || '').trim();
+  var pass   = (document.getElementById('revLoginPass').value   || '').trim();
   var msg    = document.getElementById('revLoginMsg');
-  if(!mobile || !pass){ msg.textContent = 'Enter mobile and password.'; return; }
+  if((!mobile && !email) || !pass){ msg.textContent = 'Mobile/email aur password dono enter karo.'; return; }
   fetch('/api/account/login', {
     method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({mobile: mobile, password: pass})
+    body: JSON.stringify({identifier: mobile || email, password: pass})
   }).then(function(r){return r.json();}).then(function(d){
     if(d.ok){
+      document.getElementById('revLoginPanel').style.display = 'none';
       _prefillAccount(d);
       if(_pendingPlaceOrder){ _pendingPlaceOrder = false; setTimeout(function(){ _doPlaceOrder(); }, 400); }
     } else {
-      msg.textContent = d.error || 'Login failed. Check mobile/password.';
+      msg.textContent = d.error || 'Login failed. Mobile/password check karo.';
+    }
+  }).catch(function(){ msg.textContent = 'Could not connect. Try again.'; });
+}
+
+function revDoSignup(){
+  var name   = (document.getElementById('revSignupName').value   || '').trim();
+  var mobile = (document.getElementById('revSignupMobile').value || '').trim();
+  var email  = (document.getElementById('revSignupEmail').value  || '').trim();
+  var pass   = (document.getElementById('revSignupPass').value   || '').trim();
+  var msg    = document.getElementById('revLoginMsg');
+  if(!name){ msg.textContent = 'Name enter karo.'; return; }
+  if(!mobile || mobile.length < 10){ msg.textContent = 'Valid 10-digit mobile number enter karo.'; return; }
+  if(!pass || pass.length < 6){ msg.textContent = 'Password kam se kam 6 characters ka hona chahiye.'; return; }
+  fetch('/api/account/signup', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({name: name, mobile: mobile, email: email, password: pass})
+  }).then(function(r){return r.json();}).then(function(d){
+    if(d.ok){
+      document.getElementById('revLoginPanel').style.display = 'none';
+      _prefillAccount({name: name, mobile: mobile, email: email, logged_in: true});
+      if(_pendingPlaceOrder){ _pendingPlaceOrder = false; setTimeout(function(){ _doPlaceOrder(); }, 400); }
+    } else {
+      msg.textContent = d.error || 'Account create nahi hua. Try again.';
     }
   }).catch(function(){ msg.textContent = 'Could not connect. Try again.'; });
 }
