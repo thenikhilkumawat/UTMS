@@ -595,9 +595,10 @@ def support_send(chat_id):
 
     # ── Notifications ────────────────────────────────────────────────────────
     import threading
-    customer_name  = chat.get("customer_name") or "Customer"
-    customer_email = chat.get("customer_email") or ""
-    account_id     = chat.get("account_id")
+    _cd = dict(chat)
+    customer_name  = _cd.get("customer_name") or "Customer"
+    customer_email = _cd.get("customer_email") or ""
+    account_id     = _cd.get("account_id")
 
     if sender == "customer":
         def _notify_owner():
