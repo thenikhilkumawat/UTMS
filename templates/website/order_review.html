@@ -563,7 +563,11 @@ function revDoSignup(){
 {% endif %}
 
 
-/* Panel stays fixed at top:130px, but slides up when left col ends */
+/* 
+  Top: aligns with Your Cart on load, sticks at 130px on scroll
+  Bottom: slides up when left col ends — never overlaps footer
+  Uses left col rect for top/bottom; spacer rect only for left position
+*/
 var _STICK_TOP=130;
 function _manageSummary(){
   var sp=document.getElementById('rv-spacer');
@@ -571,11 +575,13 @@ function _manageSummary(){
   var lc=document.querySelector('.rv-left');
   if(!sp||!rc||!lc)return;
   if(window.innerWidth<=740){rc.style.cssText='';return;}
+  var lcR=lc.getBoundingClientRect();
   var sr=sp.getBoundingClientRect();
   var rcH=rc.offsetHeight;
-  var lcBottom=lc.getBoundingClientRect().bottom;
-  /* top=130 normally; when left col bottom < 130+panelH, slide panel up */
-  var top=Math.min(_STICK_TOP, lcBottom-rcH);
+  /* top tracks left col top (for cart alignment), clamped to _STICK_TOP */
+  var top=Math.max(_STICK_TOP, lcR.top);
+  /* bottom clamp: slide panel up when left col bottom approaches */
+  top=Math.min(top, lcR.bottom-rcH);
   rc.style.position='fixed';
   rc.style.top=top+'px';
   rc.style.left=sr.left+'px';
