@@ -475,7 +475,8 @@ function attachLocationBtn(inputId){
   var wrap = inp.parentNode;
   // Create wrapper div
   var wr = document.createElement('div');
-  wr.style.cssText = 'position:relative;display:flex;gap:6px;align-items:center;';
+  wr.style.cssText = 'position:relative;display:flex;gap:6px;align-items:flex-start;margin-bottom:10px;';
+  inp.style.marginBottom = '0';
   inp.parentNode.insertBefore(wr, inp);
   wr.appendChild(inp);
   inp.style.flex = '1';
@@ -483,7 +484,7 @@ function attachLocationBtn(inputId){
   var btn = document.createElement('button');
   btn.type = 'button';
   btn.title = 'Use my location';
-  btn.style.cssText = 'flex-shrink:0;width:38px;height:38px;border:1px solid var(--border);border-radius:6px;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;transition:all .15s;';
+  btn.style.cssText = 'flex-shrink:0;width:42px;height:42px;border:1px solid var(--border);border-radius:8px;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;transition:all .15s;margin-bottom:10px;';
   btn.innerHTML = '📍';
   btn.onclick = function(){ detectLocation(inputId, btn); };
   wr.appendChild(btn);
@@ -560,7 +561,7 @@ function _prefillAccount(acc){
 {% else %}
 (function(){
   fetch('/api/account/me',{credentials:'same-origin'}).then(function(r){return r.json();}).then(function(d){
-    if(d && (d.name || d.ok)){
+    if(d && d.logged_in && d.name){
       _prefillAccount(d);
     } else {
       var panel = document.getElementById('revLoginPanel');
