@@ -3,194 +3,235 @@
 
 {% block head %}
 <style>
-.review-wrap{max-width:960px;margin:0 auto;padding:2rem 2rem 5rem;}
-.review-grid{display:grid;grid-template-columns:1fr 380px;gap:2.5rem;align-items:start;}
-.review-card{background:#fff;border:1px solid var(--border);border-radius:var(--rLg);padding:1.75rem;margin-bottom:1.5rem;}
-.review-card-title{font-family:var(--fm);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem;padding-bottom:10px;border-bottom:1px solid var(--border);}
-.review-item-row{display:flex;gap:14px;align-items:center;margin-bottom:1rem;}
-.review-item-img{width:64px;height:76px;border-radius:8px;object-fit:cover;object-position:top;background:var(--bg2);flex-shrink:0;}
-.review-item-name{font-family:var(--fd);font-size:20px;color:var(--dark);}
-.review-item-sub{font-family:var(--fm);font-size:11px;color:var(--gold);margin-top:3px;}
-.review-spec-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;}
-.review-spec-row:last-child{border-bottom:none;}
-.review-spec-label{color:var(--muted);}
-.review-spec-value{color:var(--dark);font-weight:500;text-align:right;max-width:60%;}
-.del-opts{display:flex;flex-direction:column;gap:8px;}
-.del-opt{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;transition:all .15s;}
-.del-opt.active{border-color:var(--gold);background:rgba(184,120,48,.05);}
-.del-opt-radio{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;}
-.del-opt.active .del-opt-radio{border-color:var(--gold);background:var(--gold);}
-.del-opt.active .del-opt-radio::after{content:'';width:7px;height:7px;border-radius:50%;background:#fff;}
-.del-opt-name{font-size:14px;font-weight:600;color:var(--dark);}
-.del-opt-desc{font-size:12px;color:var(--muted);}
-.del-opt-price{margin-left:auto;font-family:var(--fm);font-size:12px;color:var(--gold);font-weight:600;}
-.summary-line{display:flex;justify-content:space-between;padding:8px 0;font-size:14px;color:var(--dark);}
-.summary-total{display:flex;justify-content:space-between;padding:12px 0;font-size:18px;font-weight:700;color:var(--dark);border-top:2px solid var(--border);margin-top:6px;}
-.place-order-btn{width:100%;padding:16px;background:var(--dark);color:#fff;border:none;border-radius:var(--r);font-family:var(--fm);font-size:12px;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;transition:background .2s;font-weight:700;margin-top:1rem;}
-.place-order-btn:hover{background:var(--brown);}
-.customer-field{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:14px;margin-bottom:10px;outline:none;}
-.customer-field:focus{border-color:var(--gold);}
-@media(max-width:768px){.review-grid{grid-template-columns:1fr;}.review-wrap{padding:1.5rem 1rem 4rem;}}
+/* ── Base ── */
+.rv-wrap{max-width:1020px;margin:0 auto;padding:110px 1.5rem 5rem;}
+.rv-back{display:inline-flex;align-items:center;gap:5px;font-family:var(--fm);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-decoration:none;margin-bottom:1.75rem;}
+.rv-back:hover{color:var(--gold);}
+.rv-title{font-family:var(--fd);font-size:clamp(28px,4vw,42px);font-weight:300;color:var(--dark);margin-bottom:.25rem;letter-spacing:-.01em;}
+.rv-subtitle{font-family:var(--fm);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:2.5rem;}
+.rv-grid{display:grid;grid-template-columns:1fr 360px;gap:2rem;align-items:start;}
 
-/* Fabric on review page */
-.review-fab-row{display:flex;align-items:flex-start;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);gap:12px;}
-.review-fab-detail{display:flex;align-items:center;gap:10px;}
-.review-fab-img{width:52px;height:52px;border-radius:6px;object-fit:cover;cursor:zoom-in;border:1px solid var(--border);}
+/* ── Cards ── */
+.rv-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin-bottom:1.25rem;}
+.rv-card-label{font-family:var(--fm);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:1.1rem;padding-bottom:10px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+
+/* ── Item card ── */
+.rv-item{display:flex;gap:14px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border);}
+.rv-item:last-child{border-bottom:none;padding-bottom:0;}
+.rv-item-img{width:58px;height:70px;border-radius:8px;object-fit:cover;object-position:top;background:var(--bg2);flex-shrink:0;}
+.rv-item-name{font-family:var(--fd);font-size:17px;color:var(--dark);line-height:1.2;margin-bottom:3px;}
+.rv-item-price{font-family:var(--fm);font-size:11px;letter-spacing:.04em;color:var(--gold);}
+
+/* ── Login panel ── */
+.rv-tab-bar{display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:1rem;}
+.rv-tab{flex:1;padding:9px;font-size:11px;font-family:var(--fm);letter-spacing:.08em;text-transform:uppercase;border:none;cursor:pointer;transition:all .15s;}
+.rv-tab.active{background:var(--dark);color:#fff;}
+.rv-tab:not(.active){background:#fff;color:var(--muted);}
+.rv-input{width:100%;box-sizing:border-box;padding:10px 13px;border:1px solid var(--border);border-radius:8px;font-size:13.5px;outline:none;font-family:inherit;margin-bottom:8px;transition:border-color .15s;}
+.rv-input:focus{border-color:var(--gold);}
+
+/* ── Details form ── */
+.rv-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.rv-addr-wrap{display:flex;gap:8px;align-items:flex-start;}
+.rv-loc-btn{flex-shrink:0;width:42px;height:42px;border:1px solid var(--border);border-radius:8px;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;color:var(--muted);}
+.rv-loc-btn:hover{border-color:var(--gold);color:var(--gold);}
+
+/* ── Priority card ── */
+.rv-priority-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.rv-priority-opt{display:flex;align-items:center;gap:10px;padding:12px 14px;border:1.5px solid var(--border);border-radius:9px;cursor:pointer;transition:all .15s;}
+.rv-priority-opt.active{border-color:var(--gold);background:rgba(184,120,48,.04);}
+.rv-priority-radio{width:16px;height:16px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;position:relative;transition:all .15s;}
+.rv-priority-opt.active .rv-priority-radio{border-color:var(--gold);}
+.rv-priority-opt.active .rv-priority-radio::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:7px;height:7px;border-radius:50%;background:var(--gold);}
+.rv-priority-name{font-size:13px;font-weight:600;color:var(--dark);}
+.rv-priority-desc{font-size:11px;color:var(--muted);margin-top:1px;}
+
+/* ── Delivery opts ── */
+.rv-del-opt{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1.5px solid var(--border);border-radius:9px;cursor:pointer;transition:all .15s;margin-bottom:8px;}
+.rv-del-opt:last-child{margin-bottom:0;}
+.rv-del-opt.active{border-color:var(--gold);background:rgba(184,120,48,.04);}
+.rv-del-radio{width:16px;height:16px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;position:relative;transition:all .15s;}
+.rv-del-opt.active .rv-del-radio{border-color:var(--gold);}
+.rv-del-opt.active .rv-del-radio::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:7px;height:7px;border-radius:50%;background:var(--gold);}
+
+/* ── Right summary ── */
+.rv-sum-line{display:flex;justify-content:space-between;font-size:13.5px;color:var(--dark);padding:7px 0;}
+.rv-sum-total{display:flex;justify-content:space-between;font-size:20px;font-weight:700;color:var(--dark);border-top:1.5px solid var(--border);margin-top:6px;padding-top:14px;}
+.rv-coupon-wrap{display:flex;gap:7px;margin:12px 0 4px;}
+.rv-coupon-in{flex:1;padding:9px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;outline:none;font-family:inherit;}
+.rv-coupon-in:focus{border-color:var(--gold);}
+.rv-apply-btn{padding:9px 16px;background:var(--dark);color:#fff;border:none;border-radius:7px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;font-family:var(--fm);white-space:nowrap;}
+.rv-place-btn{width:100%;padding:15px;background:var(--dark);color:#fff;border:none;border-radius:9px;font-family:var(--fm);font-size:11px;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;margin-top:14px;transition:background .2s;}
+.rv-place-btn:hover{background:var(--brown);}
+.rv-advance-box{background:linear-gradient(135deg,#faf3e8,#f5ece0);border-radius:9px;padding:12px 14px;margin:14px 0 4px;}
+
+/* ── Spec rows ── */
+.rv-spec{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.rv-spec:last-child{border-bottom:none;}
+.rv-spec-k{color:var(--muted);}
+.rv-spec-v{color:var(--dark);font-weight:500;text-align:right;max-width:60%;}
+
+/* ── Logged-in badge ── */
+.rv-badge{font-size:10px;background:var(--gold);color:#fff;padding:2px 9px;border-radius:20px;font-family:var(--fm);letter-spacing:.06em;}
+
+/* ── Mobile ── */
+@media(max-width:760px){
+  .rv-grid{grid-template-columns:1fr;}
+  .rv-row{grid-template-columns:1fr;}
+  .rv-priority-row{grid-template-columns:1fr;}
+  .rv-wrap{padding:90px 1rem 4rem;}
+}
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="review-wrap" style="padding-top:120px;">
-  <a href="javascript:history.back()" style="display:inline-flex;align-items:center;gap:6px;font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:1.5rem;text-decoration:none;">← Back</a>
-  <h1 style="font-family:var(--fd);font-size:36px;font-weight:300;color:var(--dark);margin-bottom:2rem;">Review Your Order</h1>
+<div class="rv-wrap">
+  <a href="javascript:history.back()" class="rv-back">← Back</a>
+  <div class="rv-title">Review Your Order</div>
+  <div class="rv-subtitle">Uttam Tailors · Est. 1987 · Sikar</div>
 
-  <div class="review-grid">
-    <!-- LEFT: Order details -->
+  <div class="rv-grid">
+    <!-- ── LEFT ── -->
     <div>
-      <!-- Item summary -->
-      <div class="review-card" id="reviewItemCard">
-        <div class="review-card-title">Your Garment</div>
+
+      <!-- Garment / Cart items -->
+      <div class="rv-card" id="reviewItemCard">
+        <div class="rv-card-label">Your Garment</div>
         <div class="review-item-row">
-          <img id="revImg" class="review-item-img" src="" alt="">
+          <img id="revImg" class="rv-item-img" src="" alt="">
           <div>
-            <div class="review-item-name" id="revName">—</div>
-            <div class="review-item-sub" id="revSub">Loading...</div>
+            <div class="rv-item-name" id="revName">—</div>
+            <div class="rv-item-price" id="revSub">Loading...</div>
           </div>
         </div>
         <div id="revSpecs"></div>
       </div>
 
-      <!-- Account login / sign-up panel (mandatory) -->
-      <div class="review-card" id="revLoginPanel" style="display:none;">
-        <div class="review-card-title" id="revLoginTitle">Login / Create Account</div>
-        <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">Order track karne ke liye account zaruri hai.</p>
-
-        <!-- Tabs -->
-        <div style="display:flex;gap:0;margin-bottom:16px;border:1px solid var(--border);border-radius:8px;overflow:hidden;">
-          <button type="button" id="revTabLogin" onclick="revSwitchTab('login')"
-            style="flex:1;padding:9px;font-size:12px;font-family:var(--fm);letter-spacing:.06em;text-transform:uppercase;border:none;cursor:pointer;background:var(--dark);color:#fff;">Log In</button>
-          <button type="button" id="revTabSignup" onclick="revSwitchTab('signup')"
-            style="flex:1;padding:9px;font-size:12px;font-family:var(--fm);letter-spacing:.06em;text-transform:uppercase;border:none;cursor:pointer;background:#fff;color:var(--muted);">Sign Up</button>
+      <!-- Login / Sign-up panel -->
+      <div class="rv-card" id="revLoginPanel" style="display:none;">
+        <div class="rv-card-label" id="revLoginTitle">Account Required</div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5;">Order track karne ke liye ek free account zaruri hai.</p>
+        <div class="rv-tab-bar">
+          <button type="button" id="revTabLogin" class="rv-tab active" onclick="revSwitchTab('login')">Log In</button>
+          <button type="button" id="revTabSignup" class="rv-tab" onclick="revSwitchTab('signup')">Sign Up</button>
         </div>
-
-        <!-- Login form -->
+        <!-- Login -->
         <div id="revFormLogin">
-          <input type="tel" id="revLoginMobile" placeholder="Mobile number" maxlength="10"
-            style="width:100%;box-sizing:border-box;margin-bottom:8px;padding:10px 13px;border:1px solid var(--border);border-radius:7px;font-size:13.5px;outline:none;">
-          <input type="email" id="revLoginEmail" placeholder="Email address (optional)"
-            style="width:100%;box-sizing:border-box;margin-bottom:8px;padding:10px 13px;border:1px solid var(--border);border-radius:7px;font-size:13.5px;outline:none;">
-          <input type="password" id="revLoginPass" placeholder="Password"
-            style="width:100%;box-sizing:border-box;margin-bottom:10px;padding:10px 13px;border:1px solid var(--border);border-radius:7px;font-size:13.5px;outline:none;">
-          <button type="button" onclick="revDoLogin()"
-            style="width:100%;padding:11px;background:var(--dark);color:#fff;border:none;border-radius:7px;font-family:var(--fm);font-size:11px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;">Log In</button>
+          <input type="tel" id="revLoginMobile" class="rv-input" placeholder="Mobile number" maxlength="10">
+          <input type="email" id="revLoginEmail" class="rv-input" placeholder="Email address (optional)">
+          <input type="password" id="revLoginPass" class="rv-input" placeholder="Password" style="margin-bottom:10px;">
+          <button type="button" onclick="revDoLogin()" style="width:100%;padding:11px;background:var(--dark);color:#fff;border:none;border-radius:8px;font-family:var(--fm);font-size:10px;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;">Log In</button>
         </div>
-
-        <!-- Sign up form -->
+        <!-- Sign up -->
         <div id="revFormSignup" style="display:none;">
-          <input type="text" id="revSignupName" placeholder="Full name *"
-            style="width:100%;box-sizing:border-box;margin-bottom:8px;padding:10px 13px;border:1px solid var(--border);border-radius:7px;font-size:13.5px;outline:none;">
-          <input type="tel" id="revSignupMobile" placeholder="Mobile number *" maxlength="10"
-            style="width:100%;box-sizing:border-box;margin-bottom:8px;padding:10px 13px;border:1px solid var(--border);border-radius:7px;font-size:13.5px;outline:none;">
-          <input type="email" id="revSignupEmail" placeholder="Email address (optional)"
-            style="width:100%;box-sizing:border-box;margin-bottom:8px;padding:10px 13px;border:1px solid var(--border);border-radius:7px;font-size:13.5px;outline:none;">
-          <input type="password" id="revSignupPass" placeholder="Password * (min 6 chars)"
-            style="width:100%;box-sizing:border-box;margin-bottom:10px;padding:10px 13px;border:1px solid var(--border);border-radius:7px;font-size:13.5px;outline:none;">
-          <button type="button" onclick="revDoSignup()"
-            style="width:100%;padding:11px;background:var(--dark);color:#fff;border:none;border-radius:7px;font-family:var(--fm);font-size:11px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;">Create Account & Continue</button>
+          <input type="text" id="revSignupName" class="rv-input" placeholder="Full name *">
+          <div class="rv-row">
+            <input type="tel" id="revSignupMobile" class="rv-input" placeholder="Mobile *" maxlength="10" style="margin-bottom:0;">
+            <input type="email" id="revSignupEmail" class="rv-input" placeholder="Email (optional)" style="margin-bottom:0;">
+          </div>
+          <input type="password" id="revSignupPass" class="rv-input" placeholder="Password * (min 6 chars)" style="margin-top:8px;margin-bottom:10px;">
+          <button type="button" onclick="revDoSignup()" style="width:100%;padding:11px;background:var(--dark);color:#fff;border:none;border-radius:8px;font-family:var(--fm);font-size:10px;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;">Create Account &amp; Continue</button>
         </div>
-
-        <div id="revLoginMsg" style="font-size:12px;margin-top:8px;color:crimson;text-align:center;"></div>
+        <div id="revLoginMsg" style="font-size:12px;margin-top:8px;color:crimson;text-align:center;min-height:16px;"></div>
       </div>
 
       <!-- Customer details -->
-      <div class="review-card">
-        <div class="review-card-title" style="display:flex;justify-content:space-between;align-items:center;">
+      <div class="rv-card">
+        <div class="rv-card-label">
           Your Details
-          <span id="revAccBadge" style="display:none;font-size:10px;background:var(--gold);color:#fff;padding:2px 8px;border-radius:20px;font-family:var(--fm);letter-spacing:.06em;">✓ Logged in</span>
+          <span id="revAccBadge" class="rv-badge" style="display:none;">✓ Logged in</span>
         </div>
-        <input class="customer-field" id="custName" placeholder="Full name *" type="text">
-        <input class="customer-field" id="custPhone" placeholder="Mobile number * (for WhatsApp updates)" type="tel">
-        <input class="customer-field" id="custEmail" placeholder="Email address * (for order confirmation)" type="email">
-        <input class="customer-field" id="custAddress" placeholder="Delivery address (optional)" type="text">
-      </div>
-
-      <!-- Urgent toggle -->
-      <div class="review-card">
-        <div class="review-card-title">Order Priority</div>
-        <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:4px 0;">
-          <div>
-            <div style="font-weight:600;font-size:14px;color:var(--dark);">🔥 Urgent Order</div>
-            <div style="font-size:12px;color:var(--muted);margin-top:2px;">Ready within 2–3 days · 10% extra charge applies</div>
-          </div>
-          <input type="checkbox" id="revUrgent" style="width:20px;height:20px;accent-color:var(--gold);cursor:pointer;" onchange="updateSummary()">
-        </label>
-      </div>
-
-      <!-- Delivery date -->
-      <div class="review-card">
-        <div class="review-card-title">When do you need it?</div>
-        <div style="margin-bottom:8px;">
-          <input type="date" id="deliveryDate" class="customer-field"
-            style="margin-bottom:4px;"
-            onchange="checkDeliveryDate(this)">
-          <div id="deliveryDateMsg" style="font-size:12px;color:var(--muted);"></div>
+        <div class="rv-row">
+          <input class="rv-input" id="custName" placeholder="Full name *" type="text" style="margin-bottom:0;">
+          <input class="rv-input" id="custPhone" placeholder="Mobile number *" type="tel" style="margin-bottom:0;">
+        </div>
+        <input class="rv-input" id="custEmail" placeholder="Email address (for order confirmation)" type="email" style="margin-top:8px;">
+        <div class="rv-addr-wrap">
+          <input class="rv-input" id="custAddress" placeholder="Delivery address (optional)" type="text" style="margin-bottom:0;flex:1;">
+          <button type="button" class="rv-loc-btn" id="locBtn" title="Use my location" onclick="detectLocation('custAddress', this)">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+          </button>
         </div>
       </div>
 
-      <!-- Delivery options -->
-      <div class="review-card">
-        <div class="review-card-title">Delivery Option</div>
-        <div class="del-opts">
-          <div class="del-opt active" onclick="selectDel('pickup',this)">
-            <div class="del-opt-radio"></div>
-            <div><div class="del-opt-name">Pick up from shop</div><div class="del-opt-desc">Subhash Chowk, Sikar</div></div>
-            <div class="del-opt-price">Free</div>
-          </div>
-          <div class="del-opt" onclick="selectDel('home',this)">
-            <div class="del-opt-radio"></div>
+      <!-- Priority + Date combined -->
+      <div class="rv-card">
+        <div class="rv-card-label">Order Priority &amp; Date</div>
+        <div class="rv-priority-row" style="margin-bottom:14px;">
+          <div class="rv-priority-opt active" id="priStd" onclick="selectPriority('standard',this)">
+            <div class="rv-priority-radio"></div>
             <div>
-              <div class="del-opt-name">Home delivery</div>
-              <div class="del-opt-desc">Within Sikar city · 1–2 days after ready</div>
-              <div class="del-opt-desc" id="delHomeNote" style="color:var(--gold);margin-top:2px;"></div>
+              <div class="rv-priority-name">Standard</div>
+              <div class="rv-priority-desc">Ready in 5–7 days</div>
             </div>
-            <div class="del-opt-price" id="delHomePrice">Rs. 100</div>
+          </div>
+          <div class="rv-priority-opt" id="priUrg" onclick="selectPriority('urgent',this)">
+            <div class="rv-priority-radio"></div>
+            <div>
+              <div class="rv-priority-name">⚡ Urgent</div>
+              <div class="rv-priority-desc">2–3 days · +10% charge</div>
+            </div>
           </div>
         </div>
+        <input type="date" id="deliveryDate" class="rv-input" style="margin-bottom:4px;" onchange="checkDeliveryDate(this)">
+        <div id="deliveryDateMsg" style="font-size:12px;color:var(--muted);"></div>
+        <!-- hidden checkbox for backward compat -->
+        <input type="checkbox" id="revUrgent" style="display:none;" onchange="updateSummary()">
+      </div>
+
+      <!-- Delivery -->
+      <div class="rv-card">
+        <div class="rv-card-label">Delivery Option</div>
+        <div class="rv-del-opt active" onclick="selectDel('pickup',this)">
+          <div class="rv-del-radio"></div>
+          <div style="flex:1;">
+            <div style="font-size:13.5px;font-weight:600;color:var(--dark);">Pick up from shop</div>
+            <div style="font-size:12px;color:var(--muted);">Subhash Chowk, Sikar</div>
+          </div>
+          <div style="font-family:var(--fm);font-size:11px;color:var(--gold);font-weight:600;">Free</div>
+        </div>
+        <div class="rv-del-opt" onclick="selectDel('home',this)">
+          <div class="rv-del-radio"></div>
+          <div style="flex:1;">
+            <div style="font-size:13.5px;font-weight:600;color:var(--dark);">Home delivery</div>
+            <div style="font-size:12px;color:var(--muted);">Within Sikar · 1–2 days after ready</div>
+            <div id="delHomeNote" style="font-size:11px;color:var(--gold);margin-top:2px;"></div>
+          </div>
+          <div id="delHomePrice" style="font-family:var(--fm);font-size:11px;color:var(--gold);font-weight:600;">Rs. 100</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── RIGHT (sticky) ── -->
+    <div style="position:sticky;top:110px;">
+      <div class="rv-card">
+        <div class="rv-card-label">Order Summary</div>
+        <div class="rv-sum-line"><span>Stitching charge</span><span id="sumStitch">—</span></div>
+        <div class="rv-sum-line" id="sumUrgentRow" style="display:none;"><span>⚡ Urgent (+10%)</span><span id="sumUrgent">—</span></div>
+        <div class="rv-sum-line" id="sumFabricRow" style="display:none;"><span>Fabric (est.)</span><span id="sumFabric">—</span></div>
+        <div class="rv-sum-line"><span id="sumDeliveryLabel">Delivery</span><span id="sumDelivery">Free</span></div>
+        <div class="rv-sum-line" id="couponRow" style="display:none;color:green;"><span>Coupon discount</span><span id="couponDiscount">-Rs. 0</span></div>
+        <div class="rv-sum-total"><span>Total</span><span id="sumTotal">—</span></div>
+
+        <div class="rv-advance-box">
+          <div style="font-family:var(--fm);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Payment</div>
+          <div style="font-size:13px;color:var(--dark);">30% advance now · Balance on delivery</div>
+          <div style="margin-top:8px;font-size:13px;">Advance payable: <strong id="sumAdvance" style="color:var(--gold);font-size:15px;">—</strong></div>
+        </div>
+
+        <!-- Coupon -->
+        <div class="rv-coupon-wrap">
+          <input type="text" id="couponInput" class="rv-coupon-in" placeholder="Coupon code" onkeydown="if(event.key==='Enter')applyCoupon()">
+          <button type="button" onclick="applyCoupon()" class="rv-apply-btn">Apply</button>
+        </div>
+        <div id="couponMsg" style="font-size:11px;margin-bottom:4px;min-height:14px;"></div>
+
+        <button class="rv-place-btn place-order-btn" onclick="placeOrder()">Place Order &amp; Pay Advance →</button>
+        <p style="text-align:center;font-size:11px;color:var(--muted);margin-top:10px;line-height:1.5;">+ WhatsApp updates at every step</p>
       </div>
     </div>
 
-    <!-- RIGHT: Summary + payment -->
-    <div style="position:sticky;top:120px;">
-      <div class="review-card">
-        <div class="review-card-title">Order Summary</div>
-        <div class="summary-line"><span>Stitching charge</span><span id="sumStitch">—</span></div>
-        <div class="summary-line" id="sumUrgentRow" style="display:none;"><span>🔥 Urgent surcharge (10%)</span><span id="sumUrgent">—</span></div>
-        <div class="summary-line" id="sumFabricRow" style="display:none;"><span>Fabric (estimate)</span><span id="sumFabric">—</span></div>
-        <div class="summary-line"><span id="sumDeliveryLabel">Delivery</span><span id="sumDelivery">Free</span></div>
-        <div class="summary-total"><span>Total</span><span id="sumTotal">—</span></div>
-        <div style="background:var(--bg2);border-radius:8px;padding:12px;margin:12px 0;font-size:12px;color:var(--muted);">
-          <div style="font-weight:600;color:var(--dark);margin-bottom:4px;">Payment</div>
-          Advance: 30% now (online). Balance on delivery.
-        </div>
-        <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Advance payable: <strong id="sumAdvance" style="color:var(--gold);">—</strong></div>
-        <!-- Coupon code -->
-        <div id="couponWrap" style="margin-bottom:10px;">
-          <div style="display:flex;gap:6px;">
-            <input type="text" id="couponInput" placeholder="Coupon code (optional)"
-              style="flex:1;padding:9px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;outline:none;"
-              onkeydown="if(event.key==='Enter')applyCoupon()">
-            <button type="button" onclick="applyCoupon()"
-              style="padding:9px 16px;background:var(--dark);color:#fff;border:none;border-radius:6px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;">Apply</button>
-          </div>
-          <div id="couponMsg" style="font-size:11px;margin-top:4px;"></div>
-        </div>
-        <div class="summary-line" id="couponRow" style="display:none;color:green;">
-          <span>🎟 Discount</span><span id="couponDiscount">-Rs. 0</span>
-        </div>
-        <button class="place-order-btn" onclick="placeOrder()">Place Order &amp; Pay Advance →</button>
-        <p style="text-align:center;font-size:11px;color:var(--muted);margin-top:10px;">+ WhatsApp updates at every step</p>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -202,47 +243,43 @@ var _cartCheckout = {};
 
 if(_fromCart){
   try { _cartCheckout = JSON.parse(sessionStorage.getItem('cart_checkout') || '{}'); } catch(e) {}
-  // Fallback: read directly from cart localStorage if sessionStorage was cleared
+  // Fallback: read localStorage directly
   if(!_cartCheckout.items || !_cartCheckout.items.length){
-    try {
-      var _rawCart = JSON.parse(localStorage.getItem('uttam_cart') || '[]');
-      if(_rawCart.length) _cartCheckout = {items: _rawCart, coupon: {}};
-    } catch(e2) {}
+    try { var _rc=JSON.parse(localStorage.getItem('uttam_cart')||'[]'); if(_rc.length) _cartCheckout={items:_rc,coupon:{}}; } catch(e2) {}
   }
   var _cartItems = _cartCheckout.items || [];
   var _cartTotal = _cartItems.reduce(function(s,i){ return s+(parseFloat(i.price||0)*(parseInt(i.qty)||1)); }, 0);
-  _order.item_name = _cartItems.map(function(i){ return i.name+(i.qty>1?' x'+i.qty:''); }).join(', ') || '';
+  _order.item_name = _cartItems.map(function(i){ return i.name+(i.qty>1?' x'+i.qty:''); }).join(', ') || 'Cart Order';
   _order.item_price = _cartTotal;
   _order.qty = 1;
 } else {
   try { _order = JSON.parse(sessionStorage.getItem('pdp_order') || '{}'); } catch(e) {}
 }
 
+function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+
 function init(){
   if(!_order.item_name){
-    // No data from either cart or product page — send to cart
     window.location.href = '/cart';
     return;
   }
 
-  // Item details
-  function _esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g,function(ch){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];}); }
+  var card = document.getElementById('reviewItemCard');
   if(_fromCart && _cartCheckout.items && _cartCheckout.items.length){
-    var card = document.getElementById('reviewItemCard');
-    var ct = card ? card.querySelector('.review-card-title') : null;
-    if(ct) ct.textContent = 'Your Cart ('+_cartCheckout.items.length+' item'+(_cartCheckout.items.length>1?'s':'')+')';
-    var ir = card ? card.querySelector('.review-item-row') : null;
-    if(ir){
+    var cardTitle = card ? card.querySelector('.rv-card-label') : null;
+    if(cardTitle) cardTitle.textContent = 'Your Cart ('+_cartCheckout.items.length+' item'+(_cartCheckout.items.length>1?'s':'')+')';
+    var itemRow = card ? card.querySelector('.review-item-row') : null;
+    if(itemRow){
       var h = '';
       _cartCheckout.items.forEach(function(it){
-        var qty=parseInt(it.qty)||1; var price=parseFloat(it.price||0);
-        h += '<div class="review-item-row" style="border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:12px;">';
-        if(it.img) h += '<img class="review-item-img" src="'+_esc(it.img)+'" alt="">';
-        else h += '<div class="review-item-img" style="background:var(--bg2);border-radius:8px;"></div>';
-        h += '<div><div class="review-item-name">'+_esc(it.name)+'</div>';
-        h += '<div class="review-item-sub">Rs. '+price+(qty>1?' x '+qty+' = Rs. '+(price*qty):'')+'</div></div></div>';
+        var qty=parseInt(it.qty)||1, price=parseFloat(it.price||0);
+        h += '<div class="rv-item">';
+        if(it.img) h += '<img class="rv-item-img" src="'+esc(it.img)+'" alt="">';
+        else h += '<div class="rv-item-img"></div>';
+        h += '<div><div class="rv-item-name">'+esc(it.name)+'</div>';
+        h += '<div class="rv-item-price">Rs. '+price+(qty>1?' &times; '+qty+' = Rs. '+(price*qty):'')+'</div></div></div>';
       });
-      ir.outerHTML = h;
+      itemRow.outerHTML = h;
     }
     var specs = document.getElementById('revSpecs');
     if(specs) specs.innerHTML = '';
@@ -256,15 +293,15 @@ function init(){
     var name = document.getElementById('revName');
     if(name) name.textContent = _order.item_name;
     var sub = document.getElementById('revSub');
-    if(sub) sub.textContent = (_order.size ? 'Size: '+_order.size : '') + (_order.urgent ? ' Urgent' : '');
+    if(sub) sub.textContent = (_order.size ? 'Size: '+_order.size : '') + (_order.urgent ? ' · ⚡ Urgent' : '');
     var specs = document.getElementById('revSpecs');
     if(specs){
       var h = '';
-      if(_order.qty > 1) h += '<div class="review-spec-row"><span class="review-spec-label">Quantity</span><span class="review-spec-value">'+_order.qty+'</span></div>';
-      if(_order.meas_method) h += '<div class="review-spec-row"><span class="review-spec-label">Measurements</span><span class="review-spec-value">'+(_order.meas_method.charAt(0).toUpperCase()+_order.meas_method.slice(1).replace(/_/g,' '))+'</span></div>';
-      if(_order.fabric && _order.fabric !== 'own') h += '<div class="review-spec-row"><span class="review-spec-label">Fabric</span><span class="review-spec-value">From catalogue</span></div>';
-      if(_order.styles){ Object.keys(_order.styles).forEach(function(k){ h += '<div class="review-spec-row"><span class="review-spec-label">'+k+'</span><span class="review-spec-value">'+_order.styles[k]+'</span></div>'; }); }
-      if(_order.notes) h += '<div class="review-spec-row"><span class="review-spec-label">Notes</span><span class="review-spec-value">'+_order.notes+'</span></div>';
+      if(_order.qty>1) h += '<div class="rv-spec"><span class="rv-spec-k">Quantity</span><span class="rv-spec-v">'+_order.qty+'</span></div>';
+      if(_order.meas_method) h += '<div class="rv-spec"><span class="rv-spec-k">Measurements</span><span class="rv-spec-v">'+(_order.meas_method.charAt(0).toUpperCase()+_order.meas_method.slice(1).replace(/_/g,' '))+'</span></div>';
+      if(_order.fabric&&_order.fabric!=='own') h += '<div class="rv-spec"><span class="rv-spec-k">Fabric</span><span class="rv-spec-v">From catalogue</span></div>';
+      if(_order.styles){ Object.keys(_order.styles).forEach(function(k){ h += '<div class="rv-spec"><span class="rv-spec-k">'+k+'</span><span class="rv-spec-v">'+_order.styles[k]+'</span></div>'; }); }
+      if(_order.notes) h += '<div class="rv-spec"><span class="rv-spec-k">Notes</span><span class="rv-spec-v">'+_order.notes+'</span></div>';
       specs.innerHTML = h;
     }
   }
@@ -272,17 +309,12 @@ function init(){
   _delivery = 'pickup';
   updateSummary();
 
-  // Set min delivery date (tomorrow) and default (7 days)
   var today = new Date();
   var minDate = new Date(today); minDate.setDate(today.getDate()+1);
   var defaultDate = new Date(today); defaultDate.setDate(today.getDate()+7);
   var dd = document.getElementById('deliveryDate');
-  if(dd){
-    dd.min = minDate.toISOString().split('T')[0];
-    dd.value = defaultDate.toISOString().split('T')[0];
-  }
+  if(dd){ dd.min = minDate.toISOString().split('T')[0]; dd.value = defaultDate.toISOString().split('T')[0]; }
 
-  // Pre-fill home visit address if saved
   var savedAddr = sessionStorage.getItem('pdp_home_addr');
   var addrField = document.getElementById('custAddress');
   if(savedAddr && addrField && !addrField.value) addrField.value = savedAddr;
@@ -291,288 +323,238 @@ function init(){
 var FREE_DELIVERY_ABOVE = 1499;
 
 function updateSummary(){
-  var base = (_order.item_price || 0) * (_order.qty || 1);
+  var base = (_order.item_price||0)*(_order.qty||1);
   var revUrgent = document.getElementById('revUrgent');
-  var isUrgent = revUrgent ? revUrgent.checked : (_order.urgent || false);
-  var urgent = isUrgent ? Math.round(base * 0.1) : 0;
-
-  // Delivery charge: Rs.100 for home delivery, free if order >= Rs.1499 or pickup
+  var isUrgent = revUrgent ? revUrgent.checked : (_order.urgent||false);
+  var urgent = isUrgent ? Math.round(base*0.1) : 0;
   var deliveryCharge = 0;
-  if(_delivery === 'home'){
-    deliveryCharge = (base + urgent) >= FREE_DELIVERY_ABOVE ? 0 : 100;
-  }
+  if(_delivery==='home'){ deliveryCharge=(base+urgent)>=FREE_DELIVERY_ABOVE?0:100; }
+  var total = base+urgent+deliveryCharge;
+  var couponDisc = _couponDiscount||0;
+  var finalTotal = Math.max(0,total-couponDisc);
+  var finalAdvance = Math.ceil(finalTotal*0.3);
 
-  var total = base + urgent + deliveryCharge;
-  var advance = Math.ceil(total * 0.3);
-
-  document.getElementById('sumStitch').textContent = 'Rs. ' + base;
-  var ur = document.getElementById('sumUrgentRow');
-  if(ur) ur.style.display = urgent ? '' : 'none';
-  document.getElementById('sumUrgent').textContent = 'Rs. ' + urgent;
-
-  // Update delivery line
-  var delLbl  = document.getElementById('sumDeliveryLabel');
-  var delVal  = document.getElementById('sumDelivery');
-  var delNote = document.getElementById('delHomeNote');
-  var delPrice= document.getElementById('delHomePrice');
-  if(_delivery === 'home'){
-    if(delLbl) delLbl.textContent = 'Home delivery';
-    if(delVal) delVal.textContent = deliveryCharge > 0 ? 'Rs. ' + deliveryCharge : 'Free';
-    if(delNote) delNote.textContent = deliveryCharge > 0
-      ? 'Free above Rs. ' + FREE_DELIVERY_ABOVE : '✓ Free delivery applied';
-    if(delPrice) delPrice.textContent = deliveryCharge > 0 ? 'Rs. ' + deliveryCharge : 'Free';
+  document.getElementById('sumStitch').textContent = 'Rs. '+base;
+  var ur=document.getElementById('sumUrgentRow');
+  if(ur) ur.style.display=urgent?'':'none';
+  document.getElementById('sumUrgent').textContent='Rs. '+urgent;
+  var delLbl=document.getElementById('sumDeliveryLabel'),delVal=document.getElementById('sumDelivery');
+  var delNote=document.getElementById('delHomeNote'),delPrice=document.getElementById('delHomePrice');
+  if(_delivery==='home'){
+    if(delLbl)delLbl.textContent='Home delivery';
+    if(delVal)delVal.textContent=deliveryCharge>0?'Rs. '+deliveryCharge:'Free';
+    if(delNote)delNote.textContent=deliveryCharge>0?'Free above Rs. '+FREE_DELIVERY_ABOVE:'✓ Free delivery applied';
+    if(delPrice)delPrice.textContent=deliveryCharge>0?'Rs. '+deliveryCharge:'Free';
   } else {
-    if(delLbl) delLbl.textContent = 'Pickup from shop';
-    if(delVal) delVal.textContent = 'Free';
-    if(delNote) delNote.textContent = '';
-    if(delPrice) delPrice.textContent = 'Free';
+    if(delLbl)delLbl.textContent='Pickup from shop';
+    if(delVal)delVal.textContent='Free';
+    if(delNote)delNote.textContent='';
+    if(delPrice)delPrice.textContent='Free';
   }
-
-  // Apply coupon discount
-  var couponDisc = _couponDiscount || 0;
-  var finalTotal = Math.max(0, total - couponDisc);
-  var finalAdvance = Math.ceil(finalTotal * 0.3);
-
-  document.getElementById('sumTotal').textContent = 'Rs. ' + finalTotal;
-  document.getElementById('sumAdvance').textContent = 'Rs. ' + finalAdvance;
-
-  var cr = document.getElementById('couponRow');
-  if(cr) cr.style.display = couponDisc > 0 ? '' : 'none';
-  var cd = document.getElementById('couponDiscount');
-  if(cd) cd.textContent = '-Rs. ' + couponDisc;
+  document.getElementById('sumTotal').textContent='Rs. '+finalTotal;
+  document.getElementById('sumAdvance').textContent='Rs. '+finalAdvance;
+  var cr=document.getElementById('couponRow');
+  if(cr)cr.style.display=couponDisc>0?'':'none';
+  var cd=document.getElementById('couponDiscount');
+  if(cd)cd.textContent='-Rs. '+couponDisc;
 }
 
-function selectDel(type, el){
-  _delivery = type;
-  document.querySelectorAll('.del-opt').forEach(function(d){d.classList.remove('active');});
+function selectDel(type,el){
+  _delivery=type;
+  document.querySelectorAll('.rv-del-opt').forEach(function(d){d.classList.remove('active');});
   el.classList.add('active');
   updateSummary();
 }
 
-var _couponDiscount = 0;
-var _couponCode = '';
+function selectPriority(type, el){
+  var isUrgent = type==='urgent';
+  document.querySelectorAll('.rv-priority-opt').forEach(function(d){d.classList.remove('active');});
+  el.classList.add('active');
+  var cb=document.getElementById('revUrgent');
+  if(cb){ cb.checked=isUrgent; cb.dispatchEvent(new Event('change')); }
+  updateSummary();
+}
+
+var _couponDiscount=0, _couponCode='';
 
 function applyCoupon(){
-  var code = (document.getElementById('couponInput').value||'').trim().toUpperCase();
-  var msg = document.getElementById('couponMsg');
-  if(!code){ if(msg) msg.textContent=''; return; }
-  // Calculate current total for min-order check
-  var base = (_order.item_price||0)*(_order.qty||1);
-  var revUrgent = document.getElementById('revUrgent');
-  var urgent = (revUrgent&&revUrgent.checked)?Math.round(base*0.1):0;
-  var delCharge = _delivery==='home'&&(base+urgent)<1499?100:0;
-  var currentTotal = base+urgent+delCharge;
-  fetch('/api/validate-coupon',{
-    method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({code:code,order_total:currentTotal})
-  })
-  .then(function(r){return r.json();})
-  .then(function(d){
-    if(d.valid){
-      _couponDiscount=d.discount; _couponCode=code;
-      if(msg){msg.style.color='green';msg.textContent=d.message;}
-    } else {
-      _couponDiscount=0; _couponCode='';
-      if(msg){msg.style.color='#dc2626';msg.textContent=d.message;}
-    }
+  var code=(document.getElementById('couponInput').value||'').trim().toUpperCase();
+  var msg=document.getElementById('couponMsg');
+  if(!code){if(msg)msg.textContent='';return;}
+  var base=(_order.item_price||0)*(_order.qty||1);
+  var revUrgent=document.getElementById('revUrgent');
+  var urgent=(revUrgent&&revUrgent.checked)?Math.round(base*0.1):0;
+  var delCharge=_delivery==='home'&&(base+urgent)<1499?100:0;
+  fetch('/api/validate-coupon',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:code,order_total:base+urgent+delCharge})})
+  .then(function(r){return r.json();}).then(function(d){
+    if(d.valid){_couponDiscount=d.discount;_couponCode=code;if(msg){msg.style.color='green';msg.textContent=d.message;}}
+    else{_couponDiscount=0;_couponCode='';if(msg){msg.style.color='#dc2626';msg.textContent=d.message;}}
     updateSummary();
   }).catch(function(){if(msg){msg.style.color='#dc2626';msg.textContent='Could not validate.';}});
 }
 
 function checkDeliveryDate(inp){
-  var msg = document.getElementById('deliveryDateMsg');
-  if(!inp.value || !msg) return;
-  var selected = new Date(inp.value);
-  var today = new Date();
-  var diffDays = Math.ceil((selected - today) / (1000*60*60*24));
-  var urgentBox = document.getElementById('revUrgent');
-  if(diffDays <= 3){
-    msg.style.color = '#e8913a';
-    msg.textContent = '⚡ This is within 3 days — will be treated as Urgent (+10%)';
-    if(urgentBox){ urgentBox.checked = true; urgentBox.dispatchEvent(new Event('change')); updateSummary(); }
-  } else if(diffDays <= 5){
-    msg.style.color = 'var(--muted)';
-    msg.textContent = 'Ready in 5–7 days. This date is achievable.';
-    if(urgentBox){ urgentBox.checked = false; updateSummary(); }
+  var msg=document.getElementById('deliveryDateMsg');
+  if(!inp.value||!msg)return;
+  var diffDays=Math.ceil((new Date(inp.value)-new Date())/(1000*60*60*24));
+  if(diffDays<=3){
+    msg.style.color='#e8913a';msg.textContent='⚡ Within 3 days — will be treated as Urgent (+10%)';
+    selectPriority('urgent',document.getElementById('priUrg'));
+  } else if(diffDays<=5){
+    msg.style.color='var(--muted)';msg.textContent='Ready in 5–7 days. This date is achievable.';
+    selectPriority('standard',document.getElementById('priStd'));
   } else {
-    msg.style.color = 'green';
-    msg.textContent = '✓ Plenty of time — standard order.';
-    if(urgentBox){ urgentBox.checked = false; updateSummary(); }
+    msg.style.color='green';msg.textContent='✓ Plenty of time — standard order.';
+    selectPriority('standard',document.getElementById('priStd'));
   }
 }
 
-var _pendingPlaceOrder = false;
+var _pendingPlaceOrder=false;
 
 function placeOrder(){
-  // Must be logged in before placing order
   fetch('/api/account/me').then(function(r){return r.json();}).then(function(d){
-    if(d && d.ok){
+    if(d&&d.name){
       _doPlaceOrder();
     } else {
-      // Make login panel mandatory — update title, hide skip
-      var panel = document.getElementById('revLoginPanel');
-      if(panel){
-        var title = panel.querySelector('.review-card-title');
-        if(title) title.textContent = 'Log in to place your order';
-        var desc = panel.querySelector('p');
-        if(desc) desc.textContent = 'Ek free account banao — order track karne ke liye zaruri hai.';
-        var skipBtn = panel.querySelector('button[onclick*="display"]');
-        if(skipBtn) skipBtn.style.display = 'none';
-        panel.style.display = 'block';
-        panel.scrollIntoView({behavior:'smooth', block:'center'});
-      }
-      _pendingPlaceOrder = true;
+      var panel=document.getElementById('revLoginPanel');
+      if(panel){ panel.style.display='block'; panel.scrollIntoView({behavior:'smooth',block:'center'}); }
+      _pendingPlaceOrder=true;
     }
-  }).catch(function(){ _doPlaceOrder(); });
+  }).catch(function(){_doPlaceOrder();});
 }
 
 function _doPlaceOrder(){
-  var name = document.getElementById('custName').value.trim();
-  var phone = document.getElementById('custPhone').value.trim();
-  var addr = document.getElementById('custAddress').value.trim();
-  if(!name || !phone){ alert('Please enter your name and mobile number.'); return; }
-
-  var btn = document.querySelector('.place-order-btn');
-  btn.textContent = 'Processing...';
-  btn.disabled = true;
-
-  var delivDate = document.getElementById('deliveryDate');
-  var isUrgentNow = (function(){ var cb=document.getElementById('revUrgent'); return cb ? cb.checked : (_order.urgent||false); })();
-  var payload = {
-    coupon_code: _couponCode || '',
-    delivery_date: delivDate ? delivDate.value : '',
-    garment_name: _order.item_name,
-    garment_price: _order.item_price,
-    quantity: _order.qty || 1,
-    size: _order.size || '',
-    styles: _order.styles || {},
-    fabric: _order.fabric || 'own',
-    measurement_method: _order.meas_method || 'standard',
-    measurements: _order.measurements || {},
-    urgent: isUrgentNow,
-    notes: _order.notes || '',
-    delivery: _delivery,
-    customer_name: name,
-    customer_phone: phone,
-    customer_email: (document.getElementById('custEmail')||{value:''}).value || '',
-    customer_address: addr,
-    source: _fromCart ? 'cart' : 'product_page'
+  var name=document.getElementById('custName').value.trim();
+  var phone=document.getElementById('custPhone').value.trim();
+  var addr=document.getElementById('custAddress').value.trim();
+  if(!name||!phone){alert('Please enter your name and mobile number.');return;}
+  var btn=document.querySelector('.rv-place-btn');
+  btn.textContent='Processing...';btn.disabled=true;
+  var delivDate=document.getElementById('deliveryDate');
+  var isUrgentNow=(function(){var cb=document.getElementById('revUrgent');return cb?cb.checked:(_order.urgent||false);})();
+  var payload={
+    coupon_code:_couponCode||'',delivery_date:delivDate?delivDate.value:'',
+    garment_name:_order.item_name,garment_price:_order.item_price,quantity:_order.qty||1,
+    size:_order.size||'',styles:_order.styles||{},fabric:_order.fabric||'own',
+    measurement_method:_order.meas_method||'standard',measurements:_order.measurements||{},
+    urgent:isUrgentNow,notes:_order.notes||'',delivery:_delivery,
+    customer_name:name,customer_phone:phone,
+    customer_email:(document.getElementById('custEmail')||{value:''}).value||'',
+    customer_address:addr,source:_fromCart?'cart':'product_page'
   };
-  if(_fromCart && _cartCheckout.items && _cartCheckout.items.length){
-    payload.cart_items = _cartCheckout.items.map(function(it){
-      return {name: it.name, price: parseFloat(it.price||0), qty: parseInt(it.qty)||1};
-    });
+  if(_fromCart&&_cartCheckout.items&&_cartCheckout.items.length){
+    payload.cart_items=_cartCheckout.items.map(function(it){return{name:it.name,price:parseFloat(it.price||0),qty:parseInt(it.qty)||1};});
   }
-
-  fetch('/api/orders/create', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify(payload)
-  })
-  .then(function(r){return r.json();})
-  .then(function(d){
-    if(d.success || d.payment_url || d.ok){
-      sessionStorage.removeItem('pdp_order');
-      sessionStorage.removeItem('cart_checkout');
-      if(_fromCart){ try{ localStorage.removeItem('uttam_cart'); }catch(e){} if(typeof _updateCartBadge==='function')_updateCartBadge(); }
-      var dest = d.payment_url || (d.order_code ? '/order-confirmed?code='+d.order_code : (d.order_id ? '/order-confirmed?id='+d.order_id : '/order-confirmed'));
-      window.location.href = dest;
+  fetch('/api/orders/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+  .then(function(r){return r.json();}).then(function(d){
+    if(d.success||d.payment_url||d.ok){
+      sessionStorage.removeItem('pdp_order');sessionStorage.removeItem('cart_checkout');
+      if(_fromCart){try{localStorage.removeItem('uttam_cart');}catch(e){}if(typeof _updateCartBadge==='function')_updateCartBadge();}
+      window.location.href=d.payment_url||(d.order_code?'/order-confirmed?code='+d.order_code:(d.order_id?'/order-confirmed?id='+d.order_id:'/order-confirmed'));
     } else {
-      btn.textContent = 'Place Order & Pay Advance →';
-      btn.disabled = false;
-      alert(d.message || 'Something went wrong. Please try again.');
+      btn.textContent='Place Order & Pay Advance →';btn.disabled=false;
+      alert(d.message||'Something went wrong. Please try again.');
     }
-  })
-  .catch(function(){
-    btn.textContent = 'Place Order & Pay Advance →';
-    btn.disabled = false;
-    alert('Connection error. Please try again.');
-  });
+  }).catch(function(){btn.textContent='Place Order & Pay Advance →';btn.disabled=false;alert('Connection error. Please try again.');});
 }
 
-
-/* ── Location auto-detect ── */
-function attachLocationBtn(inputId){
-  var inp = document.getElementById(inputId);
-  if(!inp) return;
-  var wrap = inp.parentNode;
-  // Create wrapper div
-  var wr = document.createElement('div');
-  wr.style.cssText = 'position:relative;display:flex;gap:6px;align-items:flex-start;margin-bottom:10px;';
-  inp.style.marginBottom = '0';
-  inp.parentNode.insertBefore(wr, inp);
-  wr.appendChild(inp);
-  inp.style.flex = '1';
-  // Create locate button
-  var btn = document.createElement('button');
-  btn.type = 'button';
-  btn.title = 'Use my location';
-  btn.style.cssText = 'flex-shrink:0;width:42px;height:42px;border:1px solid var(--border);border-radius:8px;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;transition:all .15s;margin-bottom:10px;';
-  btn.innerHTML = '📍';
-  btn.onclick = function(){ detectLocation(inputId, btn); };
-  wr.appendChild(btn);
-}
-
+/* Location detect */
 function detectLocation(inputId, btn){
-  if(!navigator.geolocation){ alert('Location not supported by your browser.'); return; }
-  btn.innerHTML = '⏳';
-  btn.disabled = true;
+  if(!navigator.geolocation){alert('Location not supported.');return;}
+  btn.innerHTML='<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>';
+  btn.disabled=true;
   navigator.geolocation.getCurrentPosition(
     function(pos){
-      var lat = pos.coords.latitude, lon = pos.coords.longitude;
-      fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat='+lat+'&lon='+lon+'&addressdetails=1', {
-        headers:{'Accept-Language':'en'}
-      })
-      .then(function(r){return r.json();})
-      .then(function(data){
-        var a = data.address || {};
-        var parts = [];
-        if(a.house_number) parts.push(a.house_number);
-        if(a.road||a.street) parts.push(a.road||a.street);
-        if(a.suburb||a.neighbourhood) parts.push(a.suburb||a.neighbourhood);
-        if(a.city||a.town||a.village) parts.push(a.city||a.town||a.village);
-        if(a.state) parts.push(a.state);
-        if(a.postcode) parts.push(a.postcode);
-        var address = parts.join(', ');
-        var inp2 = document.getElementById(inputId);
-        if(inp2){ inp2.value = address; inp2.dispatchEvent(new Event('input')); }
-        btn.innerHTML = '✅';
-        btn.disabled = false;
-        setTimeout(function(){btn.innerHTML='📍';}, 2000);
-      })
-      .catch(function(){
-        btn.innerHTML = '📍'; btn.disabled = false;
-        alert('Could not fetch address. Enter manually.');
-      });
+      fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat='+pos.coords.latitude+'&lon='+pos.coords.longitude+'&addressdetails=1',{headers:{'Accept-Language':'en'}})
+      .then(function(r){return r.json();}).then(function(data){
+        var a=data.address||{},parts=[];
+        if(a.house_number)parts.push(a.house_number);
+        if(a.road||a.street)parts.push(a.road||a.street);
+        if(a.suburb||a.neighbourhood)parts.push(a.suburb||a.neighbourhood);
+        if(a.city||a.town||a.village)parts.push(a.city||a.town||a.village);
+        if(a.state)parts.push(a.state);if(a.postcode)parts.push(a.postcode);
+        var inp2=document.getElementById(inputId);
+        if(inp2){inp2.value=parts.join(', ');inp2.dispatchEvent(new Event('input'));}
+        btn.innerHTML='<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#2D6A3F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+        btn.disabled=false;
+        setTimeout(function(){btn.innerHTML='<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>';},2500);
+      }).catch(function(){btn.innerHTML='<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>';btn.disabled=false;});
     },
-    function(err){
-      btn.innerHTML = '📍'; btn.disabled = false;
-      alert('Location access denied. Please enable location in browser settings.');
-    },
-    {timeout:10000, maximumAge:60000}
+    function(){btn.innerHTML='<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>';btn.disabled=false;},
+    {timeout:10000,maximumAge:60000}
   );
 }
 
-// ── Account prefill ───────────────────────────────────────────────────────────
+/* Account prefill on load */
+(function(){
+  fetch('/api/account/me').then(function(r){return r.json();}).then(function(d){
+    if(d&&d.name){
+      _prefillAccount(d);
+    } else {
+      var panel=document.getElementById('revLoginPanel');
+      if(panel)panel.style.display='block';
+    }
+  }).catch(function(){});
+})();
+
 function _prefillAccount(acc){
-  var nf = document.getElementById('custName');
-  var mf = document.getElementById('custPhone');
-  var ef = document.getElementById('custEmail');
-  var af = document.getElementById('custAddress');
-  if(nf && !nf.value && acc.name)   nf.value = acc.name;
-  if(mf && !mf.value && acc.mobile) mf.value = acc.mobile.replace(/^91/,'').slice(-10);
-  if(ef && !ef.value && acc.email)  ef.value = acc.email;
-  if(af && !af.value){
-    var parts = [acc.address_line1, acc.address_line2, acc.address_city, acc.address_state, acc.address_pincode];
-    var addr = parts.filter(Boolean).join(', ');
-    if(addr) af.value = addr;
-  }
-  var badge = document.getElementById('revAccBadge');
-  if(badge) badge.style.display = 'inline-block';
-  var panel = document.getElementById('revLoginPanel');
-  if(panel) panel.style.display = 'none';
+  var nf=document.getElementById('custName'),mf=document.getElementById('custPhone'),ef=document.getElementById('custEmail'),af=document.getElementById('custAddress');
+  if(nf&&!nf.value&&acc.name)nf.value=acc.name;
+  if(mf&&!mf.value&&acc.mobile)mf.value=acc.mobile.replace(/^91/,'').slice(-10);
+  if(ef&&!ef.value&&acc.email)ef.value=acc.email;
+  if(af&&!af.value){var parts=[acc.address_line1,acc.address_line2,acc.address_city,acc.address_state,acc.address_pincode];var addr=parts.filter(Boolean).join(', ');if(addr)af.value=addr;}
+  var badge=document.getElementById('revAccBadge');
+  if(badge&&(acc.name||acc.mobile))badge.style.display='inline-block';
+  var panel=document.getElementById('revLoginPanel');
+  if(panel)panel.style.display='none';
 }
 
+/* Login / Signup tab functions */
+function revSwitchTab(tab){
+  var isLogin=tab==='login';
+  document.getElementById('revFormLogin').style.display=isLogin?'':'none';
+  document.getElementById('revFormSignup').style.display=isLogin?'none':'';
+  document.getElementById('revTabLogin').className='rv-tab'+(isLogin?' active':'');
+  document.getElementById('revTabSignup').className='rv-tab'+(isLogin?'':' active');
+  document.getElementById('revLoginMsg').textContent='';
+}
+
+function revDoLogin(){
+  var mobile=(document.getElementById('revLoginMobile').value||'').trim();
+  var email=(document.getElementById('revLoginEmail').value||'').trim();
+  var pass=(document.getElementById('revLoginPass').value||'').trim();
+  var msg=document.getElementById('revLoginMsg');
+  if((!mobile&&!email)||!pass){msg.textContent='Mobile/email aur password dono enter karo.';return;}
+  fetch('/api/account/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({identifier:mobile||email,password:pass})})
+  .then(function(r){return r.json();}).then(function(d){
+    if(d.ok){
+      document.getElementById('revLoginPanel').style.display='none';
+      _prefillAccount(d.account||d);
+      if(_pendingPlaceOrder){_pendingPlaceOrder=false;setTimeout(function(){_doPlaceOrder();},400);}
+    } else { msg.textContent=d.error||'Login failed.'; }
+  }).catch(function(){msg.textContent='Could not connect. Try again.';});
+}
+
+function revDoSignup(){
+  var name=(document.getElementById('revSignupName').value||'').trim();
+  var mobile=(document.getElementById('revSignupMobile').value||'').trim();
+  var email=(document.getElementById('revSignupEmail').value||'').trim();
+  var pass=(document.getElementById('revSignupPass').value||'').trim();
+  var msg=document.getElementById('revLoginMsg');
+  if(!name){msg.textContent='Name enter karo.';return;}
+  if(!mobile||mobile.length<10){msg.textContent='Valid 10-digit mobile enter karo.';return;}
+  if(!pass||pass.length<6){msg.textContent='Password kam se kam 6 characters.';return;}
+  fetch('/api/account/signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,mobile:mobile,email:email,password:pass})})
+  .then(function(r){return r.json();}).then(function(d){
+    if(d.ok){
+      document.getElementById('revLoginPanel').style.display='none';
+      _prefillAccount({name:name,mobile:mobile,email:email});
+      if(_pendingPlaceOrder){_pendingPlaceOrder=false;setTimeout(function(){_doPlaceOrder();},400);}
+    } else { msg.textContent=d.error||'Account create nahi hua.'; }
+  }).catch(function(){msg.textContent='Could not connect. Try again.';});
+}
+
+/* Jinja2 server-side prefill */
 {% if current_user %}
 (function(){
   _prefillAccount({
@@ -581,83 +563,14 @@ function _prefillAccount(acc){
     email:  {{ current_user.email|tojson }}
   });
 })();
-{% else %}
-(function(){
-  fetch('/api/account/me',{credentials:'same-origin'}).then(function(r){return r.json();}).then(function(d){
-    if(d && d.logged_in && d.name){
-      _prefillAccount(d);
-    } else {
-      var panel = document.getElementById('revLoginPanel');
-      if(panel) panel.style.display = 'block';
-    }
-  }).catch(function(){});
-})();
 {% endif %}
-
-function revSwitchTab(tab){
-  var isLogin = tab === 'login';
-  document.getElementById('revFormLogin').style.display  = isLogin ? '' : 'none';
-  document.getElementById('revFormSignup').style.display = isLogin ? 'none' : '';
-  document.getElementById('revTabLogin').style.background  = isLogin ? 'var(--dark)' : '#fff';
-  document.getElementById('revTabLogin').style.color       = isLogin ? '#fff' : 'var(--muted)';
-  document.getElementById('revTabSignup').style.background = isLogin ? '#fff' : 'var(--dark)';
-  document.getElementById('revTabSignup').style.color      = isLogin ? 'var(--muted)' : '#fff';
-  document.getElementById('revLoginMsg').textContent = '';
-}
-
-function revDoLogin(){
-  var mobile = (document.getElementById('revLoginMobile').value || '').trim();
-  var email  = (document.getElementById('revLoginEmail').value  || '').trim();
-  var pass   = (document.getElementById('revLoginPass').value   || '').trim();
-  var msg    = document.getElementById('revLoginMsg');
-  if((!mobile && !email) || !pass){ msg.textContent = 'Mobile/email aur password dono enter karo.'; return; }
-  fetch('/api/account/login', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({identifier: mobile || email, password: pass})
-  }).then(function(r){return r.json();}).then(function(d){
-    if(d.ok){
-      document.getElementById('revLoginPanel').style.display = 'none';
-      _prefillAccount(d);
-      if(_pendingPlaceOrder){ _pendingPlaceOrder = false; setTimeout(function(){ _doPlaceOrder(); }, 400); }
-    } else {
-      msg.textContent = d.error || 'Login failed. Mobile/password check karo.';
-    }
-  }).catch(function(){ msg.textContent = 'Could not connect. Try again.'; });
-}
-
-function revDoSignup(){
-  var name   = (document.getElementById('revSignupName').value   || '').trim();
-  var mobile = (document.getElementById('revSignupMobile').value || '').trim();
-  var email  = (document.getElementById('revSignupEmail').value  || '').trim();
-  var pass   = (document.getElementById('revSignupPass').value   || '').trim();
-  var msg    = document.getElementById('revLoginMsg');
-  if(!name){ msg.textContent = 'Name enter karo.'; return; }
-  if(!mobile || mobile.length < 10){ msg.textContent = 'Valid 10-digit mobile number enter karo.'; return; }
-  if(!pass || pass.length < 6){ msg.textContent = 'Password kam se kam 6 characters ka hona chahiye.'; return; }
-  fetch('/api/account/signup', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({name: name, mobile: mobile, email: email, password: pass})
-  }).then(function(r){return r.json();}).then(function(d){
-    if(d.ok){
-      document.getElementById('revLoginPanel').style.display = 'none';
-      _prefillAccount({name: name, mobile: mobile, email: email, logged_in: true});
-      if(_pendingPlaceOrder){ _pendingPlaceOrder = false; setTimeout(function(){ _doPlaceOrder(); }, 400); }
-    } else {
-      msg.textContent = d.error || 'Account create nahi hua. Try again.';
-    }
-  }).catch(function(){ msg.textContent = 'Could not connect. Try again.'; });
-}
-
 
 document.addEventListener('DOMContentLoaded', function(){
   init();
-  ['custAddress'].forEach(function(id){ attachLocationBtn(id); });
   try{if(window.fbq)fbq('track','InitiateCheckout');}catch(e){}
 });
-
-// Fallback: if DOMContentLoaded already fired (script loaded late), run now
-if(document.readyState === 'complete' || document.readyState === 'interactive'){
-  setTimeout(function(){ if(document.getElementById('revSub') && document.getElementById('revSub').textContent === 'Loading...') init(); }, 200);
+if(document.readyState==='complete'||document.readyState==='interactive'){
+  setTimeout(function(){if(document.getElementById('revSub')&&document.getElementById('revSub').textContent==='Loading...')init();},200);
 }
 </script>
 {% endblock %}
