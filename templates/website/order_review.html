@@ -14,7 +14,7 @@
 .rv-grid{display:flex;gap:0;align-items:flex-start;}
 .rv-left{flex:1;min-width:0;padding-right:1.75rem;}
 .rv-right-col{width:340px;flex-shrink:0;}
-@media(min-width:741px){.rv-right-col{position:fixed;top:100px;max-height:calc(100vh - 115px);overflow-y:auto;z-index:10;}}
+@media(min-width:741px){.rv-right-col{position:fixed;top:100px;z-index:10;}}
 
 /* ── Cards ── */
 .rv-card{background:#fff;border:1px solid var(--border);border-radius:11px;padding:1.25rem;margin-bottom:1rem;}
@@ -563,6 +563,8 @@ function _posFixSummary(){
   var r=wrap.getBoundingClientRect();
   rc.style.left=(r.right-340)+'px';
   rc.style.width='340px';
+  rc.style.maxHeight='';
+  rc.style.overflowY='';
   lc.style.paddingRight=''; // grid gap handled by fixed pos
 }
 _posFixSummary();
