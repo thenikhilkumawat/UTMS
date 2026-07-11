@@ -1430,8 +1430,10 @@ setTimeout(function(){
   }
   // Only register if browser supports it
   if("serviceWorker" in navigator && "Notification" in window){
-    window.addEventListener("load", function(){
+    if(document.readyState === "loading"){
+      document.addEventListener("DOMContentLoaded", function(){ _loadFcmConfig(function(cfg, vapid){ _registerFCM(cfg, vapid); }); });
+    } else {
       _loadFcmConfig(function(cfg, vapid){ _registerFCM(cfg, vapid); });
-    });
+    }
   }
 })();
