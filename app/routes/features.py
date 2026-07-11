@@ -592,6 +592,40 @@ def support_send(chat_id):
     )
     db.execute("UPDATE support_chats SET updated_at=? WHERE id=?", (now, chat_id))
     db.commit()
+
+    # ── Notifications ────────────────────────────────────────────────────────
+    import threading
+    customer_name  = chat.get("customer_name") or "Customer"
+    customer_email = chat.get("customer_email") or ""
+    account_id     = chat.get("account_id")
+
+    if sender == "customer":
+        def _notify_owner():
+            try:
+                from app.utils.email_notify import send_support_owner_email
+                send_support_owner_email(chat_id, customer_name, message, customer_email)
+            except Exception as e:
+                import logging; logging.getLogger(__name__).warning("Support owner email error: %s", e)
+        threading.Thread(target=_notify_owner, daemon=True).start()
+
+    elif sender == "admin":
+        def _notify_customer():
+            try:
+                if customer_email:
+                    from app.utils.email_notify import send_support_customer_email
+                    send_support_customer_email(customer_email, customer_name, message)
+                if account_id:
+                    from app.utils.fcm import get_tokens_for_account, send_push
+                    tokens = get_tokens_for_account(account_id)
+                    if tokens:
+                        send_push(tokens,
+                            title="Uttam Tailors replied 💬",
+                            body=message[:100],
+                            data={"url": "https://uttamtailors.in"})
+            except Exception as e:
+                import logging; logging.getLogger(__name__).warning("Support customer notify error: %s", e)
+        threading.Thread(target=_notify_customer, daemon=True).start()
+
     return jsonify({"ok": True})
 
 @features_bp.route("/api/support/<int:chat_id>/close", methods=["POST"])

@@ -313,3 +313,47 @@ def send_delivery_email(
 """
     html = _wrap(body, preheader=f"Your order {order_code} is out for delivery!")
     return _send(to, f"Out for Delivery 🚚 — Order {order_code} | Uttam Tailors", html, FROM_UPDATE)
+
+
+# ── Support chat notifications ─────────────────────────────────────────────────
+
+def send_support_owner_email(chat_id: int, customer_name: str, message: str, customer_email: str = "") -> bool:
+    """Notify shop owner when a customer sends a support message."""
+    email_line = f"<div class='card-row'><span class='card-label'>Customer Email</span><span class='card-value'>{customer_email}</span></div>" if customer_email else ""
+    body = f"""
+<p class="greeting">New Support Message 💬</p>
+<p class="subtitle">A customer has sent a message on the website support chat.</p>
+
+<div class="card">
+  <div class="card-row"><span class="card-label">Chat ID</span><span class="card-value">#{chat_id}</span></div>
+  <div class="card-row"><span class="card-label">Customer Name</span><span class="card-value">{customer_name}</span></div>
+  {email_line}
+  <div class="card-row"><span class="card-label">Message</span><span class="card-value">{message}</span></div>
+</div>
+
+<a href="https://dashboard.uttamtailors.in" class="cta-btn">💬 Reply on Dashboard</a>
+"""
+    html = _wrap(body, preheader=f"New message from {customer_name}")
+    return _send("info@uttamtailors.in", f"New Support Message from {customer_name} — Uttam Tailors", html, FROM_UPDATE)
+
+
+def send_support_customer_email(to: str, customer_name: str, message: str) -> bool:
+    """Notify customer when admin replies to their support chat."""
+    if not to:
+        return False
+    body = f"""
+<p class="greeting">Namaste, {customer_name}! 🙏</p>
+<p class="subtitle">Uttam Tailors has replied to your support message.</p>
+
+<div class="card">
+  <div class="card-row"><span class="card-label">Reply</span><span class="card-value">{message}</span></div>
+</div>
+
+<a href="https://uttamtailors.in" class="cta-btn">💬 Continue Chat</a>
+
+<p style="font-size:13px;color:#7a5c3a;text-align:center;">
+  You can also call us at <strong>{SHOP_PHONE}</strong>
+</p>
+"""
+    html = _wrap(body, preheader="Uttam Tailors replied to your message")
+    return _send(to, "Uttam Tailors replied to your message 💬", html, FROM_UPDATE)
