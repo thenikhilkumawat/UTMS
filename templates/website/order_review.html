@@ -563,20 +563,27 @@ function revDoSignup(){
 {% endif %}
 
 
-/* Position summary panel fixed, aligned to spacer */
+/* Panel stays fixed at top:130px, but slides up when left col ends */
+var _STICK_TOP=130;
 function _manageSummary(){
   var sp=document.getElementById('rv-spacer');
   var rc=document.querySelector('.rv-right-col');
-  if(!sp||!rc)return;
+  var lc=document.querySelector('.rv-left');
+  if(!sp||!rc||!lc)return;
   if(window.innerWidth<=740){rc.style.cssText='';return;}
   var sr=sp.getBoundingClientRect();
+  var rcH=rc.offsetHeight;
+  var lcBottom=lc.getBoundingClientRect().bottom;
+  /* top=130 normally; when left col bottom < 130+panelH, slide panel up */
+  var top=Math.min(_STICK_TOP, lcBottom-rcH);
   rc.style.position='fixed';
-  rc.style.top='130px';
+  rc.style.top=top+'px';
   rc.style.left=sr.left+'px';
   rc.style.width=sr.width+'px';
   rc.style.zIndex='10';
 }
 _manageSummary();
+window.addEventListener('scroll',_manageSummary,{passive:true});
 window.addEventListener('resize',_manageSummary);
 
 document.addEventListener('DOMContentLoaded',function(){init();_manageSummary();});
