@@ -1,0 +1,550 @@
+{% extends "website/base.html" %}
+{% block title %}Review Your Order — Uttam Tailors{% endblock %}
+
+{% block head %}
+<style>
+.review-wrap{max-width:960px;margin:0 auto;padding:2rem 2rem 5rem;}
+.review-grid{display:grid;grid-template-columns:1fr 380px;gap:2.5rem;align-items:start;}
+.review-card{background:#fff;border:1px solid var(--border);border-radius:var(--rLg);padding:1.75rem;margin-bottom:1.5rem;}
+.review-card-title{font-family:var(--fm);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem;padding-bottom:10px;border-bottom:1px solid var(--border);}
+.review-item-row{display:flex;gap:14px;align-items:center;margin-bottom:1rem;}
+.review-item-img{width:64px;height:76px;border-radius:8px;object-fit:cover;object-position:top;background:var(--bg2);flex-shrink:0;}
+.review-item-name{font-family:var(--fd);font-size:20px;color:var(--dark);}
+.review-item-sub{font-family:var(--fm);font-size:11px;color:var(--gold);margin-top:3px;}
+.review-spec-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.review-spec-row:last-child{border-bottom:none;}
+.review-spec-label{color:var(--muted);}
+.review-spec-value{color:var(--dark);font-weight:500;text-align:right;max-width:60%;}
+.del-opts{display:flex;flex-direction:column;gap:8px;}
+.del-opt{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;transition:all .15s;}
+.del-opt.active{border-color:var(--gold);background:rgba(184,120,48,.05);}
+.del-opt-radio{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.del-opt.active .del-opt-radio{border-color:var(--gold);background:var(--gold);}
+.del-opt.active .del-opt-radio::after{content:'';width:7px;height:7px;border-radius:50%;background:#fff;}
+.del-opt-name{font-size:14px;font-weight:600;color:var(--dark);}
+.del-opt-desc{font-size:12px;color:var(--muted);}
+.del-opt-price{margin-left:auto;font-family:var(--fm);font-size:12px;color:var(--gold);font-weight:600;}
+.summary-line{display:flex;justify-content:space-between;padding:8px 0;font-size:14px;color:var(--dark);}
+.summary-total{display:flex;justify-content:space-between;padding:12px 0;font-size:18px;font-weight:700;color:var(--dark);border-top:2px solid var(--border);margin-top:6px;}
+.place-order-btn{width:100%;padding:16px;background:var(--dark);color:#fff;border:none;border-radius:var(--r);font-family:var(--fm);font-size:12px;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;transition:background .2s;font-weight:700;margin-top:1rem;}
+.place-order-btn:hover{background:var(--brown);}
+.customer-field{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:14px;margin-bottom:10px;outline:none;}
+.customer-field:focus{border-color:var(--gold);}
+@media(max-width:768px){.review-grid{grid-template-columns:1fr;}.review-wrap{padding:1.5rem 1rem 4rem;}}
+
+/* Fabric on review page */
+.review-fab-row{display:flex;align-items:flex-start;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);gap:12px;}
+.review-fab-detail{display:flex;align-items:center;gap:10px;}
+.review-fab-img{width:52px;height:52px;border-radius:6px;object-fit:cover;cursor:zoom-in;border:1px solid var(--border);}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="review-wrap" style="padding-top:120px;">
+  <a href="javascript:history.back()" style="display:inline-flex;align-items:center;gap:6px;font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:1.5rem;text-decoration:none;">← Back</a>
+  <h1 style="font-family:var(--fd);font-size:36px;font-weight:300;color:var(--dark);margin-bottom:2rem;">Review Your Order</h1>
+
+  <div class="review-grid">
+    <!-- LEFT: Order details -->
+    <div>
+      <!-- Item summary -->
+      <div class="review-card" id="reviewItemCard">
+        <div class="review-card-title">Your Garment</div>
+        <div class="review-item-row">
+          <img id="revImg" class="review-item-img" src="" alt="">
+          <div>
+            <div class="review-item-name" id="revName">—</div>
+            <div class="review-item-sub" id="revSub">Loading...</div>
+          </div>
+        </div>
+        <div id="revSpecs"></div>
+      </div>
+
+      <!-- Account login / prefill panel -->
+      <div class="review-card" id="revLoginPanel" style="display:none;">
+        <div class="review-card-title">Log in for faster checkout</div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">Log in to auto-fill your details and track this order in your account.</p>
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <input type="tel" id="revLoginMobile" placeholder="Mobile number" maxlength="10"
+            style="flex:1;padding:10px 13px;border:1px solid var(--border);border-radius:7px;font-size:13.5px;outline:none;">
+          <input type="password" id="revLoginPass" placeholder="Password"
+            style="flex:1;padding:10px 13px;border:1px solid var(--border);border-radius:7px;font-size:13.5px;outline:none;">
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button type="button" onclick="revDoLogin()"
+            style="flex:1;padding:10px;background:var(--dark);color:#fff;border:none;border-radius:7px;font-family:var(--fm);font-size:11px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;">Log In</button>
+          <button type="button" onclick="document.getElementById('revLoginPanel').style.display='none';"
+            style="padding:10px 14px;background:transparent;border:1px solid var(--border);border-radius:7px;font-size:12px;color:var(--muted);cursor:pointer;">Skip</button>
+        </div>
+        <div id="revLoginMsg" style="font-size:12px;margin-top:6px;color:crimson;"></div>
+      </div>
+
+      <!-- Customer details -->
+      <div class="review-card">
+        <div class="review-card-title" style="display:flex;justify-content:space-between;align-items:center;">
+          Your Details
+          <span id="revAccBadge" style="display:none;font-size:10px;background:var(--gold);color:#fff;padding:2px 8px;border-radius:20px;font-family:var(--fm);letter-spacing:.06em;">✓ Logged in</span>
+        </div>
+        <input class="customer-field" id="custName" placeholder="Full name *" type="text">
+        <input class="customer-field" id="custPhone" placeholder="Mobile number * (for WhatsApp updates)" type="tel">
+        <input class="customer-field" id="custEmail" placeholder="Email address * (for order confirmation)" type="email">
+        <input class="customer-field" id="custAddress" placeholder="Delivery address (optional)" type="text">
+      </div>
+
+      <!-- Urgent toggle -->
+      <div class="review-card">
+        <div class="review-card-title">Order Priority</div>
+        <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:4px 0;">
+          <div>
+            <div style="font-weight:600;font-size:14px;color:var(--dark);">🔥 Urgent Order</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px;">Ready within 2–3 days · 10% extra charge applies</div>
+          </div>
+          <input type="checkbox" id="revUrgent" style="width:20px;height:20px;accent-color:var(--gold);cursor:pointer;" onchange="updateSummary()">
+        </label>
+      </div>
+
+      <!-- Delivery date -->
+      <div class="review-card">
+        <div class="review-card-title">When do you need it?</div>
+        <div style="margin-bottom:8px;">
+          <input type="date" id="deliveryDate" class="customer-field"
+            style="margin-bottom:4px;"
+            onchange="checkDeliveryDate(this)">
+          <div id="deliveryDateMsg" style="font-size:12px;color:var(--muted);"></div>
+        </div>
+      </div>
+
+      <!-- Delivery options -->
+      <div class="review-card">
+        <div class="review-card-title">Delivery Option</div>
+        <div class="del-opts">
+          <div class="del-opt active" onclick="selectDel('pickup',this)">
+            <div class="del-opt-radio"></div>
+            <div><div class="del-opt-name">Pick up from shop</div><div class="del-opt-desc">Subhash Chowk, Sikar</div></div>
+            <div class="del-opt-price">Free</div>
+          </div>
+          <div class="del-opt" onclick="selectDel('home',this)">
+            <div class="del-opt-radio"></div>
+            <div>
+              <div class="del-opt-name">Home delivery</div>
+              <div class="del-opt-desc">Within Sikar city · 1–2 days after ready</div>
+              <div class="del-opt-desc" id="delHomeNote" style="color:var(--gold);margin-top:2px;"></div>
+            </div>
+            <div class="del-opt-price" id="delHomePrice">Rs. 100</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Summary + payment -->
+    <div style="position:sticky;top:120px;">
+      <div class="review-card">
+        <div class="review-card-title">Order Summary</div>
+        <div class="summary-line"><span>Stitching charge</span><span id="sumStitch">—</span></div>
+        <div class="summary-line" id="sumUrgentRow" style="display:none;"><span>🔥 Urgent surcharge (10%)</span><span id="sumUrgent">—</span></div>
+        <div class="summary-line" id="sumFabricRow" style="display:none;"><span>Fabric (estimate)</span><span id="sumFabric">—</span></div>
+        <div class="summary-line"><span id="sumDeliveryLabel">Delivery</span><span id="sumDelivery">Free</span></div>
+        <div class="summary-total"><span>Total</span><span id="sumTotal">—</span></div>
+        <div style="background:var(--bg2);border-radius:8px;padding:12px;margin:12px 0;font-size:12px;color:var(--muted);">
+          <div style="font-weight:600;color:var(--dark);margin-bottom:4px;">Payment</div>
+          Advance: 30% now (online). Balance on delivery.
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Advance payable: <strong id="sumAdvance" style="color:var(--gold);">—</strong></div>
+        <!-- Coupon code -->
+        <div id="couponWrap" style="margin-bottom:10px;">
+          <div style="display:flex;gap:6px;">
+            <input type="text" id="couponInput" placeholder="Coupon code (optional)"
+              style="flex:1;padding:9px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;outline:none;"
+              onkeydown="if(event.key==='Enter')applyCoupon()">
+            <button type="button" onclick="applyCoupon()"
+              style="padding:9px 16px;background:var(--dark);color:#fff;border:none;border-radius:6px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;">Apply</button>
+          </div>
+          <div id="couponMsg" style="font-size:11px;margin-top:4px;"></div>
+        </div>
+        <div class="summary-line" id="couponRow" style="display:none;color:green;">
+          <span>🎟 Discount</span><span id="couponDiscount">-Rs. 0</span>
+        </div>
+        <button class="place-order-btn" onclick="placeOrder()">Place Order &amp; Pay Advance →</button>
+        <p style="text-align:center;font-size:11px;color:var(--muted);margin-top:10px;">+ WhatsApp updates at every step</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var _order = {};
+var _delivery = 'pickup';
+
+// Load order from sessionStorage
+try {
+  _order = JSON.parse(sessionStorage.getItem('pdp_order') || '{}');
+} catch(e) {}
+
+function init(){
+  if(!_order.item_name){
+    document.querySelector('.review-wrap').innerHTML='<div style="text-align:center;padding:4rem;"><h2>No order found.</h2><a href="/our-craft">← Browse garments</a></div>';
+    return;
+  }
+
+  // Item details
+  var img = document.getElementById('revImg');
+  if(img && _order.item_img) img.src = _order.item_img;
+  var name = document.getElementById('revName');
+  if(name) name.textContent = _order.item_name;
+  var sub = document.getElementById('revSub');
+  if(sub) sub.textContent = (_order.size ? 'Size: '+_order.size : '') + (_order.urgent ? ' · 🔥 Urgent' : '');
+
+  // Specs
+  var specs = document.getElementById('revSpecs');
+  if(specs){
+    var h = '';
+    if(_order.qty > 1) h += '<div class="review-spec-row"><span class="review-spec-label">Quantity</span><span class="review-spec-value">'+_order.qty+'</span></div>';
+    if(_order.meas_method) h += '<div class="review-spec-row"><span class="review-spec-label">Measurements</span><span class="review-spec-value">'+(_order.meas_method.charAt(0).toUpperCase()+_order.meas_method.slice(1).replace(/_/g,' '))+'</span></div>';
+    if(_order.fabric && _order.fabric !== 'own') h += '<div class="review-spec-row"><span class="review-spec-label">Fabric</span><span class="review-spec-value">From catalogue</span></div>';
+    if(_order.styles){
+      Object.keys(_order.styles).forEach(function(k){
+        h += '<div class="review-spec-row"><span class="review-spec-label">'+k+'</span><span class="review-spec-value">'+_order.styles[k]+'</span></div>';
+      });
+    }
+    if(_order.notes) h += '<div class="review-spec-row"><span class="review-spec-label">Notes</span><span class="review-spec-value">'+_order.notes+'</span></div>';
+    specs.innerHTML = h;
+  }
+
+  _delivery = 'pickup';
+  updateSummary();
+
+  // Set min delivery date (tomorrow) and default (7 days)
+  var today = new Date();
+  var minDate = new Date(today); minDate.setDate(today.getDate()+1);
+  var defaultDate = new Date(today); defaultDate.setDate(today.getDate()+7);
+  var dd = document.getElementById('deliveryDate');
+  if(dd){
+    dd.min = minDate.toISOString().split('T')[0];
+    dd.value = defaultDate.toISOString().split('T')[0];
+  }
+
+  // Pre-fill home visit address if saved
+  var savedAddr = sessionStorage.getItem('pdp_home_addr');
+  var addrField = document.getElementById('custAddress');
+  if(savedAddr && addrField && !addrField.value) addrField.value = savedAddr;
+}
+
+var FREE_DELIVERY_ABOVE = 1499;
+
+function updateSummary(){
+  var base = (_order.item_price || 0) * (_order.qty || 1);
+  var revUrgent = document.getElementById('revUrgent');
+  var isUrgent = revUrgent ? revUrgent.checked : (_order.urgent || false);
+  var urgent = isUrgent ? Math.round(base * 0.1) : 0;
+
+  // Delivery charge: Rs.100 for home delivery, free if order >= Rs.1499 or pickup
+  var deliveryCharge = 0;
+  if(_delivery === 'home'){
+    deliveryCharge = (base + urgent) >= FREE_DELIVERY_ABOVE ? 0 : 100;
+  }
+
+  var total = base + urgent + deliveryCharge;
+  var advance = Math.ceil(total * 0.3);
+
+  document.getElementById('sumStitch').textContent = 'Rs. ' + base;
+  var ur = document.getElementById('sumUrgentRow');
+  if(ur) ur.style.display = urgent ? '' : 'none';
+  document.getElementById('sumUrgent').textContent = 'Rs. ' + urgent;
+
+  // Update delivery line
+  var delLbl  = document.getElementById('sumDeliveryLabel');
+  var delVal  = document.getElementById('sumDelivery');
+  var delNote = document.getElementById('delHomeNote');
+  var delPrice= document.getElementById('delHomePrice');
+  if(_delivery === 'home'){
+    if(delLbl) delLbl.textContent = 'Home delivery';
+    if(delVal) delVal.textContent = deliveryCharge > 0 ? 'Rs. ' + deliveryCharge : 'Free';
+    if(delNote) delNote.textContent = deliveryCharge > 0
+      ? 'Free above Rs. ' + FREE_DELIVERY_ABOVE : '✓ Free delivery applied';
+    if(delPrice) delPrice.textContent = deliveryCharge > 0 ? 'Rs. ' + deliveryCharge : 'Free';
+  } else {
+    if(delLbl) delLbl.textContent = 'Pickup from shop';
+    if(delVal) delVal.textContent = 'Free';
+    if(delNote) delNote.textContent = '';
+    if(delPrice) delPrice.textContent = 'Free';
+  }
+
+  // Apply coupon discount
+  var couponDisc = _couponDiscount || 0;
+  var finalTotal = Math.max(0, total - couponDisc);
+  var finalAdvance = Math.ceil(finalTotal * 0.3);
+
+  document.getElementById('sumTotal').textContent = 'Rs. ' + finalTotal;
+  document.getElementById('sumAdvance').textContent = 'Rs. ' + finalAdvance;
+
+  var cr = document.getElementById('couponRow');
+  if(cr) cr.style.display = couponDisc > 0 ? '' : 'none';
+  var cd = document.getElementById('couponDiscount');
+  if(cd) cd.textContent = '-Rs. ' + couponDisc;
+}
+
+function selectDel(type, el){
+  _delivery = type;
+  document.querySelectorAll('.del-opt').forEach(function(d){d.classList.remove('active');});
+  el.classList.add('active');
+  updateSummary();
+}
+
+var _couponDiscount = 0;
+var _couponCode = '';
+
+function applyCoupon(){
+  var code = (document.getElementById('couponInput').value||'').trim().toUpperCase();
+  var msg = document.getElementById('couponMsg');
+  if(!code){ if(msg) msg.textContent=''; return; }
+  // Calculate current total for min-order check
+  var base = (_order.item_price||0)*(_order.qty||1);
+  var revUrgent = document.getElementById('revUrgent');
+  var urgent = (revUrgent&&revUrgent.checked)?Math.round(base*0.1):0;
+  var delCharge = _delivery==='home'&&(base+urgent)<1499?100:0;
+  var currentTotal = base+urgent+delCharge;
+  fetch('/api/validate-coupon',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({code:code,order_total:currentTotal})
+  })
+  .then(function(r){return r.json();})
+  .then(function(d){
+    if(d.valid){
+      _couponDiscount=d.discount; _couponCode=code;
+      if(msg){msg.style.color='green';msg.textContent=d.message;}
+    } else {
+      _couponDiscount=0; _couponCode='';
+      if(msg){msg.style.color='#dc2626';msg.textContent=d.message;}
+    }
+    updateSummary();
+  }).catch(function(){if(msg){msg.style.color='#dc2626';msg.textContent='Could not validate.';}});
+}
+
+function checkDeliveryDate(inp){
+  var msg = document.getElementById('deliveryDateMsg');
+  if(!inp.value || !msg) return;
+  var selected = new Date(inp.value);
+  var today = new Date();
+  var diffDays = Math.ceil((selected - today) / (1000*60*60*24));
+  var urgentBox = document.getElementById('revUrgent');
+  if(diffDays <= 3){
+    msg.style.color = '#e8913a';
+    msg.textContent = '⚡ This is within 3 days — will be treated as Urgent (+10%)';
+    if(urgentBox){ urgentBox.checked = true; urgentBox.dispatchEvent(new Event('change')); updateSummary(); }
+  } else if(diffDays <= 5){
+    msg.style.color = 'var(--muted)';
+    msg.textContent = 'Ready in 5–7 days. This date is achievable.';
+    if(urgentBox){ urgentBox.checked = false; updateSummary(); }
+  } else {
+    msg.style.color = 'green';
+    msg.textContent = '✓ Plenty of time — standard order.';
+    if(urgentBox){ urgentBox.checked = false; updateSummary(); }
+  }
+}
+
+var _pendingPlaceOrder = false;
+
+function placeOrder(){
+  // Must be logged in before placing order
+  fetch('/api/account/me').then(function(r){return r.json();}).then(function(d){
+    if(d && d.ok){
+      _doPlaceOrder();
+    } else {
+      // Make login panel mandatory — update title, hide skip
+      var panel = document.getElementById('revLoginPanel');
+      if(panel){
+        var title = panel.querySelector('.review-card-title');
+        if(title) title.textContent = 'Log in to place your order';
+        var desc = panel.querySelector('p');
+        if(desc) desc.textContent = 'Ek free account banao — order track karne ke liye zaruri hai.';
+        var skipBtn = panel.querySelector('button[onclick*="display"]');
+        if(skipBtn) skipBtn.style.display = 'none';
+        panel.style.display = 'block';
+        panel.scrollIntoView({behavior:'smooth', block:'center'});
+      }
+      _pendingPlaceOrder = true;
+    }
+  }).catch(function(){ _doPlaceOrder(); });
+}
+
+function _doPlaceOrder(){
+  var name = document.getElementById('custName').value.trim();
+  var phone = document.getElementById('custPhone').value.trim();
+  var addr = document.getElementById('custAddress').value.trim();
+  if(!name || !phone){ alert('Please enter your name and mobile number.'); return; }
+
+  var btn = document.querySelector('.place-order-btn');
+  btn.textContent = 'Processing...';
+  btn.disabled = true;
+
+  var delivDate = document.getElementById('deliveryDate');
+  var payload = {
+    coupon_code: _couponCode || '',
+    delivery_date: delivDate ? delivDate.value : '',
+    garment_name: _order.item_name,
+    garment_price: _order.item_price,
+    quantity: _order.qty || 1,
+    size: _order.size || '',
+    styles: _order.styles || {},
+    fabric: _order.fabric || 'own',
+    measurement_method: _order.meas_method || 'standard',
+    measurements: _order.measurements || {},
+    urgent: (function(){ var cb=document.getElementById('revUrgent'); return cb ? cb.checked : (_order.urgent||false); })(),
+    notes: _order.notes || '',
+    delivery: _delivery,
+    customer_name: name,
+    customer_phone: phone,
+    customer_email: (document.getElementById('custEmail')||{value:''}).value || '',
+    customer_address: addr,
+    source: 'product_page'
+  };
+
+  fetch('/api/orders/create', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
+  })
+  .then(function(r){return r.json();})
+  .then(function(d){
+    if(d.success || d.payment_url){
+      sessionStorage.removeItem('pdp_order');
+      window.location.href = d.payment_url || '/order-confirmed?id='+d.order_id;
+    } else {
+      btn.textContent = 'Place Order & Pay Advance →';
+      btn.disabled = false;
+      alert(d.message || 'Something went wrong. Please try again.');
+    }
+  })
+  .catch(function(){
+    btn.textContent = 'Place Order & Pay Advance →';
+    btn.disabled = false;
+    alert('Connection error. Please try again.');
+  });
+}
+
+
+/* ── Location auto-detect ── */
+function attachLocationBtn(inputId){
+  var inp = document.getElementById(inputId);
+  if(!inp) return;
+  var wrap = inp.parentNode;
+  // Create wrapper div
+  var wr = document.createElement('div');
+  wr.style.cssText = 'position:relative;display:flex;gap:6px;align-items:center;';
+  inp.parentNode.insertBefore(wr, inp);
+  wr.appendChild(inp);
+  inp.style.flex = '1';
+  // Create locate button
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.title = 'Use my location';
+  btn.style.cssText = 'flex-shrink:0;width:38px;height:38px;border:1px solid var(--border);border-radius:6px;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;transition:all .15s;';
+  btn.innerHTML = '📍';
+  btn.onclick = function(){ detectLocation(inputId, btn); };
+  wr.appendChild(btn);
+}
+
+function detectLocation(inputId, btn){
+  if(!navigator.geolocation){ alert('Location not supported by your browser.'); return; }
+  btn.innerHTML = '⏳';
+  btn.disabled = true;
+  navigator.geolocation.getCurrentPosition(
+    function(pos){
+      var lat = pos.coords.latitude, lon = pos.coords.longitude;
+      fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat='+lat+'&lon='+lon+'&addressdetails=1', {
+        headers:{'Accept-Language':'en'}
+      })
+      .then(function(r){return r.json();})
+      .then(function(data){
+        var a = data.address || {};
+        var parts = [];
+        if(a.house_number) parts.push(a.house_number);
+        if(a.road||a.street) parts.push(a.road||a.street);
+        if(a.suburb||a.neighbourhood) parts.push(a.suburb||a.neighbourhood);
+        if(a.city||a.town||a.village) parts.push(a.city||a.town||a.village);
+        if(a.state) parts.push(a.state);
+        if(a.postcode) parts.push(a.postcode);
+        var address = parts.join(', ');
+        var inp2 = document.getElementById(inputId);
+        if(inp2){ inp2.value = address; inp2.dispatchEvent(new Event('input')); }
+        btn.innerHTML = '✅';
+        btn.disabled = false;
+        setTimeout(function(){btn.innerHTML='📍';}, 2000);
+      })
+      .catch(function(){
+        btn.innerHTML = '📍'; btn.disabled = false;
+        alert('Could not fetch address. Enter manually.');
+      });
+    },
+    function(err){
+      btn.innerHTML = '📍'; btn.disabled = false;
+      alert('Location access denied. Please enable location in browser settings.');
+    },
+    {timeout:10000, maximumAge:60000}
+  );
+}
+
+// ── Account prefill on order-review page ─────────────────────────────────
+(function(){
+  // Check if already logged in — prefill and show badge
+  fetch('/api/account/me').then(function(r){return r.json();}).then(function(d){
+    if(d && d.name){
+      _prefillAccount(d);
+    } else {
+      // Show login nudge panel
+      var panel = document.getElementById('revLoginPanel');
+      if(panel) panel.style.display = 'block';
+    }
+  }).catch(function(){});
+})();
+
+function _prefillAccount(acc){
+  var nf = document.getElementById('custName');
+  var mf = document.getElementById('custPhone');
+  var af = document.getElementById('custAddress');
+  if(nf && !nf.value && acc.name) nf.value = acc.name;
+  if(mf && !mf.value && acc.mobile) mf.value = acc.mobile;
+  var ef = document.getElementById('custEmail');
+  if(ef && !ef.value && acc.email) ef.value = acc.email;
+  if(af && !af.value){
+    // Build address from saved profile
+    var parts = [acc.address_line1, acc.address_line2, acc.address_city, acc.address_state, acc.address_pincode];
+    var addr = parts.filter(Boolean).join(', ');
+    if(addr) af.value = addr;
+  }
+  var badge = document.getElementById('revAccBadge');
+  if(badge) badge.style.display = 'inline-block';
+  var panel = document.getElementById('revLoginPanel');
+  if(panel) panel.style.display = 'none';
+}
+
+function revDoLogin(){
+  var mobile = (document.getElementById('revLoginMobile').value || '').trim();
+  var pass   = (document.getElementById('revLoginPass').value || '').trim();
+  var msg    = document.getElementById('revLoginMsg');
+  if(!mobile || !pass){ msg.textContent = 'Enter mobile and password.'; return; }
+  fetch('/api/account/login', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({mobile: mobile, password: pass})
+  }).then(function(r){return r.json();}).then(function(d){
+    if(d.ok){
+      _prefillAccount(d);
+      // If login was triggered by the order gate, auto-proceed
+      if(_pendingPlaceOrder){
+        _pendingPlaceOrder = false;
+        setTimeout(function(){ _doPlaceOrder(); }, 400);
+      }
+    } else {
+      msg.textContent = d.error || 'Login failed. Check mobile/password.';
+    }
+  }).catch(function(){ msg.textContent = 'Could not connect. Try again.'; });
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  init();
+  ['custAddress'].forEach(function(id){ attachLocationBtn(id); });
+  /* Meta Pixel — InitiateCheckout */
+  try{if(window.fbq)fbq('track','InitiateCheckout');}catch(e){}
+});
+</script>
+{% endblock %}

@@ -1,0 +1,1450 @@
+<!DOCTYPE html>
+<html lang="en" data-lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#F7F0E6">
+
+{# ── SEO Meta ── #}
+{% set _t  = page_meta.title    if page_meta and page_meta.title    else 'Uttam Tailors — Master Tailoring, Sikar since 1987' %}
+{% set _d  = page_meta.desc     if page_meta and page_meta.desc     else 'Master tailoring in Sikar since 1987. Custom shirts, suits, kurta, blazers, pathani. Order online with home delivery across India.' %}
+{% set _rb = page_meta.robots   if page_meta and page_meta.robots   else 'index,follow' %}
+{% set _og = page_meta.og_image if page_meta and page_meta.og_image else 'https://uttamtailors.in/static/website/img/hero_banner_bc11b3d8a7.png' %}
+{% set _cn = page_meta.canonical if page_meta and page_meta.canonical else '' %}
+
+<title>{{ _t }}</title>
+<meta name="description" content="{{ _d }}">
+<meta name="robots" content="{{ _rb }}">
+<link rel="canonical" href="{{ _cn if _cn else 'https://uttamtailors.in' + request.path }}">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Uttam Tailors">
+<meta property="og:title" content="{{ _t }}">
+<meta property="og:description" content="{{ _d }}">
+<meta property="og:url" content="https://uttamtailors.in{{ request.path }}">
+<meta property="og:image" content="{{ _og }}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ _t }}">
+<meta name="twitter:description" content="{{ _d }}">
+<meta name="twitter:image" content="{{ _og }}">
+
+{# ── Tracking Codes ── #}
+{% set _gsc = web_settings.get('tracking_gsc_meta','') %}
+{% set _gtm = web_settings.get('tracking_gtm_id','') %}
+{% set _ga4 = web_settings.get('tracking_ga4_id','') %}
+{% if _gsc %}<meta name="google-site-verification" content="{{ _gsc }}">{% endif %}
+{% if _gtm %}
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','{{ _gtm }}');</script>
+{% elif _ga4 %}
+<script async src="https://www.googletagmanager.com/gtag/js?id={{ _ga4 }}"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{ _ga4 }}');</script>
+{% endif %}
+
+{# ── LocalBusiness Schema (AEO — AI tools + Google rich results) ── #}
+{% set _sn  = web_settings.get('web_shop_name','Uttam Tailors') %}
+{% set _ph  = web_settings.get('web_footer_phone','+91 XXXXX XXXXX') %}
+{% set _em  = web_settings.get('web_footer_email','info.uttamtailors@gmail.com') %}
+{% set _hrs = web_settings.get('web_shop_hours','Mo-Sa 09:00-20:00') %}
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"ClothingStore","name":"{{ _sn }}","description":"Custom tailoring in Sikar, Rajasthan since 1987. Suits, shirts, kurtas, pathani and alterations.","url":"https://uttamtailors.in","telephone":"{{ _ph }}","email":"{{ _em }}","foundingDate":"1987","priceRange":"₹₹","address":{"@type":"PostalAddress","streetAddress":"Subhash Chowk","addressLocality":"Sikar","addressRegion":"Rajasthan","postalCode":"332001","addressCountry":"IN"},"geo":{"@type":"GeoCoordinates","latitude":27.6094,"longitude":75.1397},"openingHours":"{{ _hrs }}","hasMap":"https://maps.google.com/?q=Uttam+Tailors+Sikar+Rajasthan"}
+</script>
+
+{# ── Breadcrumb Schema ── #}
+{% if breadcrumbs is defined and breadcrumbs %}
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://uttamtailors.in"}{% for label,url in breadcrumbs %},{"@type":"ListItem","position":{{ loop.index+1 }},"name":"{{ label }}"{% if url %},"item":"https://uttamtailors.in{{ url }}"{% endif %}}{% endfor %}]}
+</script>
+{% endif %}
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="dns-prefetch" href="https://images.unsplash.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Load Google Fonts without blocking the page's "loading" state (helps when internet is slow/unstable) -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Great+Vibes&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Great+Vibes&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400&display=swap"></noscript>
+<link rel="stylesheet" href="{{ url_for('static', filename='website/css/site.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='website/css/fixes.css') }}">
+<style>
+/* ═══════════════════════════════ PAGE LOADER ═══════════════════════════════ */
+#site-loader{
+  position:fixed;inset:0;z-index:999999;
+  background:radial-gradient(ellipse at 50% 38%,#2B1609 0%,#1C0F06 62%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  transition:opacity .85s ease,visibility .85s ease;
+}
+#site-loader.ldr-hidden{opacity:0;visibility:hidden;pointer-events:none;}
+
+/* ── Brand (appears first) ── */
+.ldr-brand{
+  display:flex;flex-direction:column;align-items:center;gap:5px;
+  margin-bottom:2rem;
+  animation:ldrSlideUp .7s cubic-bezier(.22,1,.36,1) .05s both;
+}
+.ldr-brand-name{
+  font-family:'Great Vibes',cursive;font-size:46px;font-weight:400;
+  color:#FAF0E4;line-height:1;letter-spacing:.02em;
+}
+.ldr-brand-sub{
+  font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.35em;
+  color:rgba(200,144,58,.5);text-transform:uppercase;text-align:center;
+}
+
+/* ── Gold rule (appears second) ── */
+.ldr-rule{
+  width:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(200,144,58,.6),transparent);
+  margin-bottom:2.2rem;
+  animation:ldrRuleGrow .65s ease .55s both;
+}
+@keyframes ldrRuleGrow{from{width:0;opacity:0;}to{width:180px;opacity:1;}}
+
+/* ── Icons stage (row) ── */
+.ldr-stage{
+  display:flex;align-items:center;justify-content:center;
+  gap:2.8rem;position:relative;
+}
+
+/* Thread connector SVG (appears third) */
+.ldr-connector{
+  position:absolute;top:50%;left:0;right:0;height:1px;
+  transform:translateY(-50%);pointer-events:none;overflow:visible;
+  animation:ldrFadeIn .5s ease .6s both;
+}
+.ldr-wave-path{
+  stroke-dasharray:280;stroke-dashoffset:280;
+  animation:waveDraw 2.2s ease-in-out 1s infinite alternate;
+}
+@keyframes waveDraw{to{stroke-dashoffset:0;}}
+
+/* ── Scissors (appears fourth) ── */
+.ldr-sc{
+  width:80px;height:80px;flex-shrink:0;
+  filter:drop-shadow(0 0 10px rgba(200,144,58,.22));
+  animation:ldrPopIn .55s cubic-bezier(.34,1.56,.64,1) .38s both;
+}
+.ldr-sc .sc-a{
+  transform-origin:35px 35px;
+  animation:scOpenA 1.7s cubic-bezier(.45,.05,.55,.95) .95s infinite;
+}
+.ldr-sc .sc-b{
+  transform-origin:35px 35px;
+  animation:scOpenB 1.7s cubic-bezier(.45,.05,.55,.95) .95s infinite;
+}
+@keyframes scOpenA{0%,100%{transform:rotate(0deg);}50%{transform:rotate(-24deg);}}
+@keyframes scOpenB{0%,100%{transform:rotate(0deg);}50%{transform:rotate(24deg);}}
+
+/* ── Needle (appears fifth) ── */
+.ldr-needle{
+  width:26px;height:88px;flex-shrink:0;
+  filter:drop-shadow(0 3px 8px rgba(200,144,58,.18));
+  animation:ldrPopIn .5s cubic-bezier(.34,1.56,.64,1) .68s both,
+            needleStitch 1.9s ease-in-out 1.25s infinite;
+}
+@keyframes needleStitch{
+  0%{transform:translateY(-14px) rotate(-6deg);}
+  42%,58%{transform:translateY(13px) rotate(0deg);}
+  100%{transform:translateY(-14px) rotate(-6deg);}
+}
+.ldr-thread-path{
+  stroke-dasharray:72;stroke-dashoffset:72;
+  animation:drawThread 1.9s ease-in-out 1.25s infinite;
+}
+@keyframes drawThread{
+  0%{stroke-dashoffset:72;}46%,54%{stroke-dashoffset:0;}100%{stroke-dashoffset:-72;}
+}
+
+/* ── Button (appears sixth) ── */
+.ldr-btn{
+  width:64px;height:64px;flex-shrink:0;
+  filter:drop-shadow(0 0 8px rgba(200,144,58,.15));
+  animation:ldrPopIn .5s cubic-bezier(.34,1.56,.64,1) .95s both,
+            btnSpin 5s linear 1.5s infinite;
+}
+@keyframes btnSpin{to{transform:rotate(360deg);}}
+
+/* ── Shared entrance keyframes ── */
+@keyframes ldrPopIn{
+  from{opacity:0;transform:scale(.35) translateY(8px);}
+  to{opacity:1;transform:scale(1) translateY(0);}
+}
+@keyframes ldrSlideUp{
+  from{opacity:0;transform:translateY(18px);}
+  to{opacity:1;transform:translateY(0);}
+}
+@keyframes ldrFadeIn{from{opacity:0;}to{opacity:1;}}
+
+/* ── Text & dots (appears last) ── */
+.ldr-text{
+  font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.22em;
+  color:rgba(250,240,228,.28);text-transform:uppercase;
+  margin-top:2.4rem;
+  animation:ldrFadeIn .6s ease 1.25s both;
+}
+.ldr-dots{display:flex;gap:8px;margin-top:.8rem;animation:ldrFadeIn .5s ease 1.45s both;}
+.ldr-dots span{
+  width:4px;height:4px;border-radius:50%;background:#B07028;
+  animation:dotPulse 1.4s ease-in-out 1.6s infinite;
+}
+.ldr-dots span:nth-child(2){animation-delay:1.82s;}
+.ldr-dots span:nth-child(3){animation-delay:2.04s;}
+@keyframes dotPulse{0%,80%,100%{transform:scale(.6);opacity:.25;}40%{transform:scale(1.5);opacity:1;}}
+
+/* ═══════════════════════════ SCROLL REVEAL ═══════════════════════════════ */
+.reveal{opacity:0;transform:translateY(42px);transition:opacity .75s ease,transform .75s ease;}
+.reveal.visible{opacity:1;transform:translateY(0);}
+.reveal-left{opacity:0;transform:translateX(-36px);transition:opacity .7s ease,transform .7s ease;}
+.reveal-left.visible{opacity:1;transform:translateX(0);}
+.reveal-right{opacity:0;transform:translateX(36px);transition:opacity .7s ease,transform .7s ease;}
+.reveal-right.visible{opacity:1;transform:translateX(0);}
+.reveal-scale{opacity:0;transform:scale(.95);transition:opacity .65s ease,transform .65s ease;}
+.reveal-scale.visible{opacity:1;transform:scale(1);}
+
+/* ═══════════════════ SUPPORT CHAT — TRACK ORDER STRIP ══════════════════════ */
+.supp-track-row{padding:9px 12px;border-top:1px solid rgba(28,15,6,.1);background:#f9f7f4;}
+.supp-track-link{display:flex;align-items:center;gap:9px;padding:8px 12px;background:#fff;border:1.5px solid rgba(28,15,6,.1);border-radius:9px;font-size:12px;font-weight:600;color:var(--dark);text-decoration:none;transition:background .15s,border-color .15s;}
+.supp-track-link:hover{background:#f5f2ee;border-color:rgba(28,15,6,.2);}
+.supp-track-link .trl-arrow{margin-left:auto;opacity:.35;}
+</style>
+{% block head %}{% endblock %}
+</head>
+<body>
+
+{% set _mpx = web_settings.get('tracking_meta_pixel','') %}
+{% set _gtm2 = web_settings.get('tracking_gtm_id','') %}
+{% if _gtm2 %}<noscript><iframe src="https://www.googletagmanager.com/ns.html?id={{ _gtm2 }}" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>{% endif %}
+{% if _mpx %}<script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','{{ _mpx }}');fbq('track','PageView');window._fbpx='{{ _mpx }}';</script>
+<noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id={{ _mpx }}&ev=PageView&noscript=1" alt=""/></noscript>{% endif %}
+
+<!-- ═══ PAGE LOADER ═══ -->
+<div id="site-loader" aria-hidden="true">
+
+  <!-- 1. Brand — slides up first -->
+  <div class="ldr-brand">
+    <div class="ldr-brand-name">Uttam Tailors</div>
+    <div class="ldr-brand-sub">Est. 1987 &middot; Sikar, Rajasthan</div>
+  </div>
+
+  <!-- 2. Gold rule — grows after brand -->
+  <div class="ldr-rule"></div>
+
+  <!-- 3. Icons stage -->
+  <div class="ldr-stage">
+    <!-- Thread connector (fades in behind icons) -->
+    <svg class="ldr-connector" viewBox="0 0 320 24" preserveAspectRatio="none" style="width:100%;height:24px;">
+      <path class="ldr-wave-path"
+            d="M0 12 Q40 2 80 12 Q120 22 160 12 Q200 2 240 12 Q280 22 320 12"
+            fill="none" stroke="rgba(180,120,40,.3)" stroke-width="1.4"/>
+    </svg>
+
+    <!-- Scissors — pops in + opens -->
+    <svg class="ldr-sc" viewBox="0 0 70 70" fill="none">
+      <g class="sc-a">
+        <path d="M35 35 L64 8" stroke="#C8903A" stroke-width="2.8" stroke-linecap="round"/>
+        <circle cx="22" cy="48" r="11" stroke="#C8903A" stroke-width="2.2"/>
+        <circle cx="22" cy="48" r="5" fill="rgba(200,144,58,.18)"/>
+        <circle cx="22" cy="48" r="1.8" fill="#C8903A" opacity=".6"/>
+      </g>
+      <g class="sc-b">
+        <path d="M35 35 L64 62" stroke="#C8903A" stroke-width="2.8" stroke-linecap="round"/>
+        <circle cx="22" cy="22" r="11" stroke="#C8903A" stroke-width="2.2"/>
+        <circle cx="22" cy="22" r="5" fill="rgba(200,144,58,.18)"/>
+        <circle cx="22" cy="22" r="1.8" fill="#C8903A" opacity=".6"/>
+      </g>
+      <!-- Pivot -->
+      <circle cx="35" cy="35" r="3.2" fill="#C8903A"/>
+      <circle cx="35" cy="35" r="1.4" fill="#1C0F06"/>
+    </svg>
+
+    <!-- Needle + stitching thread — pops in + bobs -->
+    <svg class="ldr-needle" viewBox="0 0 24 88" fill="none">
+      <!-- Shaft -->
+      <rect x="10" y="4" width="4" height="62" rx="2" fill="#E8DDD0"/>
+      <!-- Highlights -->
+      <rect x="11" y="6" width="1.2" height="56" rx=".6" fill="rgba(255,255,255,.22)"/>
+      <!-- Eye of needle -->
+      <ellipse cx="12" cy="18" rx="4.5" ry="7" fill="none" stroke="#C8903A" stroke-width="1.8"/>
+      <ellipse cx="12" cy="18" rx="2" ry="3.5" fill="#1C0F06"/>
+      <!-- Tip -->
+      <path d="M10 66 Q12 75 14 66" fill="#C8903A"/>
+      <!-- Thread -->
+      <path class="ldr-thread-path"
+            d="M12 25 Q20 36 4 48 Q-2 55 12 68"
+            fill="none" stroke="#C8903A" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+
+    <!-- Button — pops in + spins -->
+    <svg class="ldr-btn" viewBox="0 0 64 64" fill="none">
+      <!-- Outer ring -->
+      <circle cx="32" cy="32" r="28" stroke="#C8903A" stroke-width="2.2"/>
+      <!-- Decorative dashed inner -->
+      <circle cx="32" cy="32" r="20" stroke="rgba(200,144,58,.22)" stroke-width="1" stroke-dasharray="4 5"/>
+      <!-- 4 button holes -->
+      <circle cx="24" cy="26" r="3.8" stroke="#C8903A" stroke-width="1.8"/>
+      <circle cx="40" cy="26" r="3.8" stroke="#C8903A" stroke-width="1.8"/>
+      <circle cx="24" cy="38" r="3.8" stroke="#C8903A" stroke-width="1.8"/>
+      <circle cx="40" cy="38" r="3.8" stroke="#C8903A" stroke-width="1.8"/>
+      <!-- Crossed thread lines -->
+      <path d="M24 26 L40 38 M40 26 L24 38" stroke="rgba(200,144,58,.6)" stroke-width="1.5" stroke-linecap="round"/>
+      <!-- Rim texture dots -->
+      <circle cx="32" cy="4.5" r="1.2" fill="rgba(200,144,58,.4)"/>
+      <circle cx="32" cy="59.5" r="1.2" fill="rgba(200,144,58,.4)"/>
+      <circle cx="4.5" cy="32" r="1.2" fill="rgba(200,144,58,.4)"/>
+      <circle cx="59.5" cy="32" r="1.2" fill="rgba(200,144,58,.4)"/>
+    </svg>
+  </div>
+
+  <!-- 4. Tagline & dots — appear last -->
+  <p class="ldr-text">Crafting your experience</p>
+  <div class="ldr-dots"><span></span><span></span><span></span></div>
+
+</div>
+
+<!-- ANNOUNCEMENT BAR -->
+<script>var _annSpeed='{{ ann_speed|default("55") }}';</script>
+<div class="ann-bar">
+  <div class="ann-track" id="annTrack" data-speed="{{ ann_speed|default('55') }}">
+    {% set ann_items = ann_items if ann_items else [
+      'Rs. 100 off on your first order',
+      'Free delivery within Sikar city',
+      'Free alteration if fit is off',
+      'Ready in 5–7 days',
+      'Now shipping across India'
+    ] %}
+    {# Two identical halves, each repeated enough to overflow wide screens so there is NEVER an empty gap #}
+    {% for _ in range(2) %}{% for _r in range(2) %}{% for item in ann_items %}{% if item.strip() %}
+    <div class="ann-item"><span>&#10022;</span> {{ item }} <span class="ann-dot">&#8226;</span></div>
+    {% endif %}{% endfor %}{% endfor %}{% endfor %}
+  </div>
+</div>
+
+<!-- NAV -->
+<nav class="nav" id="mainNav">
+  <div class="nav-inner">
+    <!-- LEFT: Burger -->
+    <div class="nav-left">
+      <button class="nav-burger" id="navBurger" onclick="openDrawer()" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+    <!-- CENTER: Logo -->
+    <a href="{{ url_for('website.home') }}" class="nav-logo-center" aria-label="Uttam Tailors Home">
+      <span class="logo-name">Uttam Tailors</span>
+      <span class="logo-est">Est. 1987 &middot; Sikar</span>
+    </a>
+    <!-- RIGHT: Actions -->
+    <div class="nav-right">
+      <a href="{{ url_for('website.commission') }}" class="nav-cta">Customise Your Garment</a>
+      <button class="nav-icon-btn" id="wishlistBtn" onclick="openWishlist()" aria-label="Wishlist" title="Wishlist">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+        <span class="nav-icon-badge" id="wishlistCount" style="display:none;">0</span>
+      </button>
+      <button class="nav-icon-btn" id="cartBtn" onclick="openCart()" aria-label="Cart" title="Cart">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+        <span class="nav-icon-badge" id="cartCount" style="display:none;">0</span>
+      </button>
+      <button class="nav-icon-btn" id="acctBtn" onclick="openAccount()" aria-label="Account" title="My Account">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span class="nav-icon-badge" id="acctDot" style="display:none;background:#2D6A3F;">&#10003;</span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- Drawer: 3 independent fixed panels -->
+
+<!-- P1: Main menu (always present, slides with burger) -->
+<div class="mm-p1" id="mmP1">
+  <div class="drawer-head">
+    <span class="drawer-logo">Uttam Tailors</span>
+    <button class="drawer-close" onclick="mmClose()">&times;</button>
+  </div>
+  <nav class="drawer-links">
+    <a href="{{ url_for('website.home') }}" class="drawer-link {% if active=='home' %}active-link{% endif %}">Home</a>
+    <a href="{{ url_for('website.services') }}" class="drawer-link {% if active=='services' %}active-link{% endif %}">Our Craft</a>
+    <div class="drawer-link mm-svc-row" id="mmSvcRow"
+         onmouseenter="mmOpenP2()"
+         onmouseleave="mmCheckLeave(event)">
+      <span>Our Services</span>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>
+    <a href="{{ url_for('website.about') }}" class="drawer-link {% if active=='about' %}active-link{% endif %}">Our Story</a>
+    <a href="{{ url_for('website.contact') }}" class="drawer-link {% if active=='contact' %}active-link{% endif %}">Contact</a>
+    <a href="#" class="drawer-link" onclick="mmClose();setTimeout(function(){toggleSuppPanel();},200);return false;">Support</a>
+  </nav>
+  <div class="drawer-footer">
+    <a href="{{ url_for('website.commission') }}" class="nav-cta" style="display:block;text-align:center;">Customise Your Garment &rarr;</a>
+  </div>
+</div>
+
+<!-- P2: Categories (independent fixed panel, right of P1) -->
+<div class="mm-p2" id="mmP2"
+     onmouseenter="mmP2Enter()"
+     onmouseleave="mmP2Leave(event)">
+  <div class="mm-panel-title">Our Services</div>
+  {% for cat, items, media in nav_services %}
+  <div class="mm-cat-row" data-cat="{{ loop.index0 }}"
+       onmouseenter="mmOpenP3({{ loop.index0 }}, this)">
+    <span>{{ cat.name }}</span>
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+  </div>
+  {% endfor %}
+  <div class="mm-panel-footer">
+    <a href="{{ url_for('website.our_services') }}" onclick="mmClose()">View all services &rarr;</a>
+  </div>
+</div>
+
+<!-- P3: Items with images (independent fixed panel, right of P2) -->
+<div class="mm-p3" id="mmP3"
+     onmouseenter="mmP3Enter()"
+     onmouseleave="mmP3Leave(event)">
+  {% for cat, items, media in nav_services %}
+  <div class="mm-items" data-panel="{{ loop.index0 }}">
+    {% for item in items %}
+      {% set _m = media.get(item.id, {}) %}
+      {% set _img = _m.get('images', [('') ])[0] if _m.get('images') else item.image_url %}
+    <a href="{% if item.slug %}/garment/{{ item.slug }}{% else %}{{ url_for('website.product_detail', item_id=item.id) }}{% endif %}" class="mm-item" onclick="mmClose()">
+      <div class="mm-item-img">
+        {% if _img %}<img src="{{ _img }}" alt="{{ item.name }}" loading="lazy">
+        {% else %}<div class="mm-item-ph">✂</div>{% endif %}
+      </div>
+      <div>
+        <div class="mm-item-name">{{ item.name }}</div>
+        <div class="mm-item-price">Rs. {{ item.price }}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% endfor %}
+</div>
+
+<div class="nav-overlay" id="navOverlay" onclick="closeAll()"></div>
+
+<!-- Wishlist Panel -->
+<div class="wl-panel" id="wlPanel">
+  <div class="wl-head">
+    <span class="wl-title">Saved Garments</span>
+    <button class="drawer-close" onclick="closeWishlist()">&times;</button>
+  </div>
+  <div class="wl-body" id="wlBody">
+    <div class="wl-empty">No saved garments yet.<br><br>Tap ♡ on any garment to save it here.</div>
+  </div>
+</div>
+
+<!-- Cart Panel (same width, slides from right) -->
+<div class="wl-panel" id="cartPanel">
+  <div class="wl-head">
+    <span class="wl-title">Your Order</span>
+    <button class="drawer-close" onclick="closeCart()">&times;</button>
+  </div>
+  <div class="wl-body" id="cartBody">
+    <div class="wl-empty" id="cartEmpty">No items yet.<br><br>Browse our garments and add items to order.</div>
+    <div id="cartItems"></div>
+  </div>
+  <div style="padding:1.25rem 1.75rem;border-top:1px solid var(--border);background:var(--bg);">
+    <div id="cartFooter" style="display:none;">
+      <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:600;margin-bottom:1rem;">
+        <span>Total</span><span id="cartTotal" style="color:var(--gold);"></span>
+      </div>
+    </div>
+    <a href="/cart" onclick="closeCart();" style="display:block;text-align:center;padding:11px;margin-bottom:8px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-weight:700;color:var(--dark);text-decoration:none;">View Full Cart &amp; Checkout &rarr;</a>
+    <div id="cartOrderWrap" style="display:none;">
+      <a id="cartOrderBtn" href="/commission" class="nav-cta" style="display:block;text-align:center;padding:14px;">Proceed to Order &rarr;</a>
+      <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:8px;">Stitching charges only · Fabric priced separately</p>
+    </div>
+  </div>
+</div>
+
+<!-- Account Panel (login / signup / profile) -->
+<div class="wl-panel" id="acctPanel">
+  <div class="wl-head">
+    <span class="wl-title">My Account</span>
+    <button class="drawer-close" onclick="closeAccount()">&times;</button>
+  </div>
+  <div class="wl-body" id="acctBody" style="padding:1.5rem 1.75rem;">
+    <!-- filled by JS -->
+  </div>
+</div>
+
+{% block content %}{% endblock %}
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <p class="footer-logo">{{ web_settings.get('web_shop_name','Uttam Tailors') }}</p>
+      <p class="footer-tagline">{{ web_settings.get('web_footer_tagline','Measured to the thread. Since 1987.') }}</p>
+      <p class="footer-addr">
+        {{ web_settings.get('web_footer_address','Subhash Chowk, Sikar — 332001, Rajasthan') }}<br>
+        {{ web_settings.get('web_footer_hours','Mon – Sat · 9am – 7pm') }}
+      </p>
+      <a href="{{ web_settings.get('web_header_cta_url','/commission') }}" class="footer-order-btn">{{ web_settings.get('web_header_cta_text','Customise Your Garment') }} &rarr;</a>
+    </div>
+    <div class="footer-cols">
+      <div class="footer-col">
+        <p class="footer-col-title">Pages</p>
+        <a href="{{ url_for('website.home') }}">Home</a>
+        <a href="{{ url_for('website.services') }}">Our Craft</a>
+        <a href="{{ url_for('website.about') }}">Our Story</a>
+        <a href="{{ url_for('website.contact') }}">Contact Us</a>
+        <a href="{{ url_for('website.track_order') }}">Track your order</a>
+        <a href="/style-request">Bring Your Inspo</a>
+        <a href="/our-work">Fresh From The Workshop</a>
+        {% for page in footer_pages if page.show_in_footer %}
+        <a href="/page/{{ page.slug }}">{{ page.title }}</a>
+        {% endfor %}
+      </div>
+      <div class="footer-col">
+        <p class="footer-col-title">We make</p>
+        {% for item in footer_make_items %}
+          {% if item.url %}<a href="{{ item.url }}">{{ item.label }}</a>
+          {% else %}<span>{{ item.label }}</span>{% endif %}
+        {% else %}
+        <span>Shirts &amp; Pants</span>
+        <span>Suits &amp; Blazers</span>
+        <span>Kurta, Pathani &amp; Ethnic</span>
+        <span>Wedding &amp; Occasion Wear</span>
+        <span>Alterations &amp; Repairs</span>
+        {% endfor %}
+      </div>
+      <div class="footer-col">
+        <p class="footer-col-title">Contact</p>
+        {% set phone = web_settings.get('web_footer_phone','+91 XXXXX XXXXX') %}
+        {% set wa = web_settings.get('web_footer_whatsapp','91XXXXXXXXXX') %}
+        {% set email = web_settings.get('web_footer_email','info.uttamtailors@gmail.com') %}
+        {% set maps = web_settings.get('web_footer_maps_url','#') %}
+        <a href="tel:{{ phone }}">{{ phone }}</a>
+        <a href="https://wa.me/{{ wa }}" target="_blank" rel="noopener">WhatsApp</a>
+        <a href="{{ maps }}" target="_blank" rel="noopener">{{ web_settings.get('web_footer_address','Subhash Chowk, Sikar') }}</a>
+        <a href="mailto:{{ email }}">{{ email }}</a>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bulk">
+    For bulk orders &amp; corporate enquiries: <a href="mailto:{{ web_settings.get('web_footer_bulk_email','info.uttamtailors@gmail.com') }}">{{ web_settings.get('web_footer_bulk_email','info.uttamtailors@gmail.com') }}</a>
+  </div>
+  <div class="footer-bottom">
+    <span>{{ web_settings.get('web_footer_copyright','© 2025 Uttam Tailors, Sikar. All rights reserved.') }}</span>
+    <span>{{ web_settings.get('web_footer_est','Est. 1987 · Handcrafted in Rajasthan') }}</span>
+  </div>
+</footer>
+
+<script src="{{ url_for('static', filename='website/js/site.js') }}"></script>
+<script>
+/* ── Announcement bar — requestAnimationFrame ticker (no CSS animation = no jerk) ── */
+(function(){
+  var track = document.getElementById('annTrack');
+  if(!track) return;
+
+  /* Speed: pixels per second. _annSpeed is total seconds for one full loop.
+     We measure halfWidth after layout, then derive px/s from that. */
+  var pos = 0;
+  var halfW = 0;
+  var pxPerMs = 0; /* pixels per millisecond */
+  var lastTs = null;
+
+  function measure(){
+    halfW = track.scrollWidth / 2;
+    /* target duration: read from data-speed attr or _annSpeed global */
+    var dur = (parseFloat(track.getAttribute('data-speed') || _annSpeed) || 40) * 1000;
+    pxPerMs = halfW / dur;
+  }
+
+  function tick(ts){
+    if(lastTs !== null){
+      var delta = ts - lastTs;
+      pos -= pxPerMs * delta;
+      /* Seamless reset: at -halfW the content looks identical to 0 */
+      if(pos <= -halfW) pos += halfW;
+      track.style.transform = 'translate3d('+pos.toFixed(3)+'px,0,0)';
+    }
+    lastTs = ts;
+    requestAnimationFrame(tick);
+  }
+
+  /* Wait one frame for fonts/layout to settle, then measure and start */
+  requestAnimationFrame(function(){
+    measure();
+    /* Re-measure on resize so speed stays proportional */
+    window.addEventListener('resize', function(){ measure(); }, {passive:true});
+    requestAnimationFrame(tick);
+  });
+})();
+
+/* ── Drawer ── */
+
+
+
+function _checkOverlay(){
+  var anyOpen=['navDrawer','wlPanel','cartPanel','acctPanel'].some(function(id){
+    var el=document.getElementById(id);return el&&el.classList.contains('open');
+  });
+  document.getElementById('navOverlay').classList.toggle('open',anyOpen);
+  if(!anyOpen)document.body.style.overflow='';
+}
+
+/* ── Wishlist ── */
+function _getWL(){try{return JSON.parse(localStorage.getItem('ut_wishlist')||'[]');}catch(e){return[];}}
+function _saveWL(l){try{localStorage.setItem('ut_wishlist',JSON.stringify(l));}catch(e){}}
+function toggleWishlist(id,name,price,img){
+  var list=_getWL(),idx=list.findIndex(function(i){return i.id===id;});
+  var added=idx===-1;
+  if(idx>-1)list.splice(idx,1);
+  else list.push({id:id,name:String(name),price:String(price),img:img||''});
+  _saveWL(list);_renderWL();_updateWLBtns();
+  if(_acctState && _acctState.logged_in){
+    var url='/api/account/wishlist/'+id+(added?'':'/delete');
+    fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({})}).catch(function(){});
+  }
+}
+function isWishlisted(id){return _getWL().some(function(i){return i.id===id;});}
+function isInCart(id){return _getCart().some(function(i){return i.id===id;});}
+function _updateCartBtns(){
+  var cart=_getCart();
+  document.querySelectorAll('[data-cart-id]').forEach(function(btn){
+    var id=parseInt(btn.dataset.cartId);
+    btn.classList.toggle('cart-active',cart.some(function(i){return i.id===id;}));
+  });
+}
+function _updateWLBtns(){
+  var list=_getWL(),count=list.length;
+  var badge=document.getElementById('wishlistCount');
+  if(badge){badge.style.display=count>0?'flex':'none';badge.textContent=count;}
+  document.querySelectorAll('[data-wl-id]').forEach(function(btn){
+    var id=parseInt(btn.dataset.wlId);
+    btn.classList.toggle('wl-active',list.some(function(i){return i.id===id;}));
+    btn.setAttribute('aria-pressed',isWishlisted(id)?'true':'false');
+  });
+}
+function _wlBadgeHtml(it,status){
+  if(!status)return '';
+  var b='';
+  var curPrice=parseFloat(status.price);
+  var oldPrice=parseFloat(it.price);
+  if(!isNaN(curPrice)&&!isNaN(oldPrice)&&curPrice<oldPrice){
+    b+='<span style="display:inline-block;background:#1f7a3d;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;margin-top:3px;margin-right:5px;">PRICE DROP &#8595; Rs. '+Math.round(oldPrice-curPrice)+'</span>';
+  }
+  if(typeof status.stock_qty==='number'){
+    if(status.stock_qty===0){
+      b+='<span style="display:inline-block;background:#9c1f1f;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;margin-top:3px;">OUT OF STOCK</span>';
+    }else if(status.stock_qty>0&&status.stock_qty<=5){
+      b+='<span style="display:inline-block;background:#b8780f;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;margin-top:3px;">ONLY '+status.stock_qty+' LEFT</span>';
+    }
+  }
+  return b;
+}
+function _renderWL(){
+  var body=document.getElementById('wlBody');if(!body)return;
+  var list=_getWL();
+  if(!list.length){body.innerHTML='<div class="wl-empty">No saved garments yet.<br><br>Tap ♡ on any garment to save it here.</div>';return;}
+  var h='';
+  list.forEach(function(it){
+    h+='<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);" data-wl-row="'+it.id+'">';
+    h+='<a href="/garment/'+it.id+'" onclick="mmClose();closeWishlist();" style="text-decoration:none;flex-shrink:0;">';
+    h+=it.img?'<img class="wl-item-img" src="'+it.img+'" alt="">':'<div class="wl-item-img"></div>';
+    h+='</a>';
+    h+='<div style="flex:1;min-width:0;">';
+    h+='<a href="/garment/'+it.id+'" onclick="mmClose();closeWishlist();" style="text-decoration:none;">';
+    h+='<div class="wl-item-name">'+it.name+'</div>';
+    h+='<div class="wl-item-price">Rs. '+it.price+' stitching</div>';
+    h+='</a>';
+    h+='<div data-wl-badges="'+it.id+'"></div>';
+    var _ocName=String(it.name||'').replace(/'/g,"\\'");
+    var _ocPrice=String(it.price||'').replace(/'/g,"\\'");
+    var _ocImg=String(it.img||'').replace(/'/g,"\\'");
+    var _oc=("moveWLToCart("+it.id+",'"+_ocName+"','"+_ocPrice+"','"+_ocImg+"')").replace(/"/g,'&quot;');
+    h+='<button onclick="'+_oc+'" style="margin-top:6px;font-size:11px;font-weight:700;background:#1a0e06;color:#F7F0E6;border:none;padding:5px 10px;border-radius:5px;cursor:pointer;">Move to Cart</button>';
+    h+='</div>';
+    h+='<button class="wl-remove" onclick="event.preventDefault();event.stopPropagation();toggleWishlist('+it.id+',null,null,null);" title="Remove">&times;</button>';
+    h+='</div>';
+  });
+  body.innerHTML=h;
+  _wlFetchStatus(list);
+}
+function _wlFetchStatus(list){
+  if(!list||!list.length)return;
+  var ids=list.map(function(i){return i.id;}).join(',');
+  fetch('/api/wishlist-status?ids='+encodeURIComponent(ids)).then(function(r){return r.json();}).then(function(d){
+    if(!d||!d.ok||!d.items)return;
+    var byId={};d.items.forEach(function(s){byId[s.id]=s;});
+    list.forEach(function(it){
+      var el=document.querySelector('[data-wl-badges="'+it.id+'"]');
+      if(el)el.innerHTML=_wlBadgeHtml(it,byId[it.id]);
+    });
+  }).catch(function(){});
+}
+function moveWLToCart(id,name,price,img){
+  addToCart(id,name,price,img);
+  var list=_getWL().filter(function(i){return i.id!==id;});
+  _saveWL(list);_renderWL();_updateWLBtns();
+  if(_acctState && _acctState.logged_in){
+    fetch('/api/account/wishlist/'+id+'/delete',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({})}).catch(function(){});
+  }
+}
+function openWishlist(){
+  _renderWL();
+  document.getElementById('wlPanel').classList.add('open');
+  document.getElementById('navOverlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeWishlist(){
+  document.getElementById('wlPanel').classList.remove('open');
+  _checkOverlay();
+}
+
+/* ── Cart ── */
+function _getCart(){try{return JSON.parse(localStorage.getItem('ut_cart')||'[]');}catch(e){return[];}}
+function _saveCart(c){try{localStorage.setItem('ut_cart',JSON.stringify(c));}catch(e){}}
+
+
+
+
+
+/* ── Mega Menu ── */
+var _mmP2Open = false, _mmP3Open = false;
+
+function openDrawer(){
+  document.getElementById('mmP1').classList.add('open');
+  document.getElementById('navOverlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function mmClose(){
+  ['mmP1','mmP2','mmP3'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el)el.classList.remove('open');
+  });
+  document.querySelectorAll('.mm-cat-row').forEach(function(r){r.classList.remove('active');});
+  document.querySelectorAll('.mm-items').forEach(function(p){p.classList.remove('active');});
+  var o=document.getElementById('navOverlay');
+  if(o)o.classList.remove('open');
+  document.body.style.overflow='';
+  _mmP2Open=false; _mmP3Open=false;
+}
+function closeDrawer(){mmClose();}
+function closeAll(){mmClose();}
+
+function mmOpenP2(){
+  document.getElementById('mmP2').classList.add('open');
+  _mmP2Open=true;
+}
+function mmOpenP3(idx, el){
+  document.querySelectorAll('.mm-cat-row').forEach(function(r){r.classList.remove('active');});
+  el.classList.add('active');
+  document.querySelectorAll('.mm-items').forEach(function(p){p.classList.remove('active');});
+  var panel=document.querySelector('.mm-items[data-panel="'+idx+'"]');
+  if(panel)panel.classList.add('active');
+  document.getElementById('mmP3').classList.add('open');
+  _mmP3Open=true;
+}
+
+/* Close panels when mouse leaves */
+function mmCheckLeave(e){
+  var p2=document.getElementById('mmP2');
+  var to=e.relatedTarget;
+  if(!p2||!p2.contains(to)){
+    setTimeout(function(){
+      if(!_mmP2Open) return;
+      var hover=document.querySelector('#mmP2:hover,#mmP3:hover');
+      if(!hover) mmCloseSubPanels();
+    },80);
+  }
+}
+function mmP2Enter(){_mmP2Open=true;}
+function mmP2Leave(e){
+  var to=e.relatedTarget;
+  var p1=document.getElementById('mmP1');
+  var p3=document.getElementById('mmP3');
+  if((p1&&p1.contains(to))||(p3&&p3.contains(to)))return;
+  setTimeout(function(){
+    var hover=document.querySelector('#mmP1:hover,#mmP2:hover,#mmP3:hover');
+    if(!hover) mmCloseSubPanels();
+  },100);
+}
+function mmP3Enter(){_mmP3Open=true;}
+function mmP3Leave(e){
+  var to=e.relatedTarget;
+  var p2=document.getElementById('mmP2');
+  if(p2&&p2.contains(to))return;
+  setTimeout(function(){
+    var hover=document.querySelector('#mmP1:hover,#mmP2:hover,#mmP3:hover');
+    if(!hover) mmCloseSubPanels();
+  },100);
+}
+function mmCloseSubPanels(){
+  var p2=document.getElementById('mmP2');
+  var p3=document.getElementById('mmP3');
+  if(p2)p2.classList.remove('open');
+  if(p3)p3.classList.remove('open');
+  document.querySelectorAll('.mm-cat-row').forEach(function(r){r.classList.remove('active');});
+  document.querySelectorAll('.mm-items').forEach(function(p){p.classList.remove('active');});
+  _mmP2Open=false; _mmP3Open=false;
+}
+
+/* Click overlay closes all */
+document.addEventListener('DOMContentLoaded',function(){
+  var ov=document.getElementById('navOverlay');
+  if(ov)ov.addEventListener('click',mmClose);
+});
+
+
+/* ── Cart & Wishlist helpers ── */
+function cartFromBtn(btn){
+  var id=parseInt(btn.dataset.id||0);
+  var name=btn.dataset.name||'';
+  var price=btn.dataset.price||'0';
+  var img=btn.dataset.img||'';
+  if(!id)return;
+  addToCart(id,name,price,img);
+}
+function wlFromBtn(btn){
+  var id=parseInt(btn.dataset.id||0);
+  var name=btn.dataset.name||'';
+  var price=btn.dataset.price||'0';
+  var img=btn.dataset.img||'';
+  if(!id)return;
+  toggleWishlist(id,name,price,img);
+}
+function addToCart(id,name,price,img){
+  if(!id)return;
+  var idn=parseInt(id);if(!idn)return;
+  var cart=_getCart(),ex=cart.find(function(i){return i.id===idn;});
+  if(ex){ex.qty=(ex.qty||1)+1;}
+  else{cart.push({id:idn,name:String(name||''),price:parseInt(price)||0,img:String(img||''),qty:1});}
+  _saveCart(cart);_renderCart();_updateCartBadge();_updateCartBtns();
+  try{if(window.fbq)fbq('track','AddToCart',{content_ids:[String(idn)],content_name:String(name||''),value:parseFloat(price)||0,currency:'INR'});}catch(e){}
+  var already = _getCart().find(function(i){return i.id===idn;}) && _getCart().find(function(i){return i.id===idn;}).qty > 1;
+  var t=document.createElement('div');
+  t.innerHTML='<span>&#10003;</span> '+(already?'Quantity updated':'Added to Cart');
+  t.style.cssText='position:fixed;top:90px;right:16px;background:#1a0e06;color:#F7F0E6;padding:12px 20px;border-radius:8px;font-size:13px;z-index:99999;display:flex;align-items:center;gap:8px;box-shadow:0 4px 20px rgba(0,0,0,.3);';
+  document.body.appendChild(t);
+  setTimeout(function(){t.style.opacity='0';t.style.transition='opacity .4s';setTimeout(function(){if(t.parentNode)t.parentNode.removeChild(t);},400);},2200);
+  try{
+    var panel=document.getElementById('cartPanel');
+    if(panel){panel.classList.add('open');}
+    document.body.style.overflow='hidden';
+    // Use _checkOverlay to manage overlay state
+    if(typeof _checkOverlay==='function') _checkOverlay();
+    else {
+      var overlay=document.getElementById('navOverlay');
+      if(overlay)overlay.classList.add('open');
+    }
+  }catch(e){}
+}
+function _renderCart(){
+  var cart=_getCart();
+  var empty=document.getElementById('cartEmpty');
+  var items=document.getElementById('cartItems');
+  var footer=document.getElementById('cartFooter');
+  var orderWrap=document.getElementById('cartOrderWrap');
+  var total=document.getElementById('cartTotal');
+  if(!items)return;
+  if(!cart.length){
+    if(empty)empty.style.display='block';
+    items.innerHTML='';
+    if(footer)footer.style.display='none';
+    if(orderWrap)orderWrap.style.display='none';
+    return;
+  }
+  if(empty)empty.style.display='none';
+  if(footer)footer.style.display='block';
+  if(orderWrap)orderWrap.style.display='block';
+  var sum=cart.reduce(function(s,i){return s+(i.price*(i.qty||1));},0);
+  if(total)total.textContent='Rs. '+sum;
+  var h='';
+  cart.forEach(function(it){
+    h+='<a href="/garment/'+it.id+'" onclick="mmClose();closeCart();" style="text-decoration:none;display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);">';
+    h+=it.img?'<img class="wl-item-img" src="'+it.img+'" alt="">':'<div class="wl-item-img"></div>';
+    h+='<div style="flex:1;min-width:0;"><div class="wl-item-name">'+it.name+'</div>';
+    h+='<div class="wl-item-price">Rs. '+it.price+' &times; '+(it.qty||1)+'</div></div>';
+    h+='<button class="wl-remove" onclick="event.preventDefault();event.stopPropagation();removeFromCart('+it.id+');" title="Remove">&times;</button></a>';
+  });
+  items.innerHTML=h;
+  var link=document.getElementById('cartOrderBtn');
+  if(link){var names=cart.map(function(i){return encodeURIComponent(i.name);}).join('&garment=');link.href='/commission?garment='+names;}
+}
+function _updateCartBadge(){
+  var count=_getCart().reduce(function(s,i){return s+(i.qty||1);},0);
+  var b=document.getElementById('cartCount');
+  if(b){b.style.display=count>0?'flex':'none';b.textContent=count;}
+}
+function removeFromCart(id){
+  _saveCart(_getCart().filter(function(i){return i.id!==id;}));
+  _renderCart();_updateCartBadge();_updateCartBtns();
+}
+function openCart(){
+  _renderCart();
+  var p=document.getElementById('cartPanel'),o=document.getElementById('navOverlay');
+  if(p)p.classList.add('open');if(o)o.classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeCart(){
+  var p=document.getElementById('cartPanel');if(p)p.classList.remove('open');
+  _checkOverlay();
+}
+function openWishlist(){
+  _renderWL();
+  var p=document.getElementById('wlPanel'),o=document.getElementById('navOverlay');
+  if(p)p.classList.add('open');if(o)o.classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeWishlist(){
+  var p=document.getElementById('wlPanel');if(p)p.classList.remove('open');
+  _checkOverlay();
+}
+/* ── Account ── */
+var _acctState = null; // {logged_in, name, mobile, preview_count, limit}
+var _acctTab = 'login';
+
+function _acctRefresh(){
+  fetch('/api/account/me').then(function(r){return r.json();}).then(function(d){
+    if(d && d.ok){
+      _acctState = d;
+      var dot=document.getElementById('acctDot');
+      if(dot) dot.style.display = d.logged_in ? 'flex' : 'none';
+    }
+  }).catch(function(){});
+}
+_acctRefresh();
+
+function _acctTabBtn(active,label,tab){
+  return '<button type="button" onclick="_acctSetTab(\''+tab+'\')" style="flex:1;border:none;border-radius:6px;padding:9px 0;font-size:12.5px;font-weight:700;letter-spacing:.03em;cursor:pointer;background:'+(active?'var(--dark,#1a0e06)':'transparent')+';color:'+(active?'#fff':'var(--muted)')+';">'+label+'</button>';
+}
+
+function _acctRenderForm(){
+  var body=document.getElementById('acctBody'); if(!body) return;
+  var nameField = _acctTab==='signup' ? '<div style="margin-bottom:12px;"><label style="display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;">Your name</label><input type="text" id="acctFName" placeholder="e.g. Rohit Sharma" style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:7px;padding:11px 13px;font-size:13.5px;"></div>' : '';
+  var h = '';
+  h += '<p style="font-size:12.5px;color:var(--muted);line-height:1.6;margin-bottom:16px;">Log in or create a free account to track your orders and keep generating AI style previews.</p>';
+  h += '<div style="display:flex;gap:6px;margin-bottom:16px;background:var(--bg,#faf3e8);border-radius:8px;padding:4px;">';
+  h += _acctTabBtn(_acctTab==='login','Log in','login');
+  h += _acctTabBtn(_acctTab==='signup','Sign up','signup');
+  h += '</div>';
+  h += nameField;
+  h += '<button type="button" onclick="window.location.href=\'/auth/google/login?next=\'+encodeURIComponent(window.location.pathname)" style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;border:1.5px solid var(--border);border-radius:8px;padding:11px 0;background:#fff;font-size:13.5px;font-weight:600;color:var(--dark,#1a0e06);cursor:pointer;margin-bottom:14px;"><svg width="16" height="16" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84c-.21 1.12-.84 2.07-1.8 2.71v2.26h2.9c1.7-1.57 2.7-3.88 2.7-6.61z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.9-2.26c-.8.55-1.85.86-3.06.86-2.36 0-4.36-1.6-5.07-3.74H.93v2.34C2.42 16.06 5.48 18 9 18z"/><path fill="#FBBC05" d="M3.93 10.68A5.4 5.4 0 0 1 3.64 9c0-.58.1-1.15.29-1.68V4.98H.93A8.97 8.97 0 0 0 0 9c0 1.45.35 2.83.93 4.02l3-2.34z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.46 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0 5.48 0 2.42 1.94.93 4.98l3 2.34C4.64 5.18 6.64 3.58 9 3.58z"/></svg>Continue with Google</button>';
+  h += '<div style="text-align:center;font-size:11.5px;color:var(--muted);margin:-8px 0 14px;">or use your mobile number</div>';
+  if(_acctTab==='signup'){
+    h += '<div style="margin-bottom:12px;"><label style="display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;">Mobile Number</label><input type="tel" id="acctFMobile" maxlength="10" placeholder="10-digit mobile number" style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:7px;padding:11px 13px;font-size:13.5px;"></div>';
+    h += '<div style="margin-bottom:12px;"><label style="display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;">Email Address <span style="font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></label><input type="email" id="acctFEmail" placeholder="you@example.com" style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:7px;padding:11px 13px;font-size:13.5px;"></div>';
+  } else {
+    h += '<div style="margin-bottom:12px;"><label style="display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;">Mobile or Email</label><input type="text" id="acctFIdentifier" placeholder="Mobile number or email address" style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:7px;padding:11px 13px;font-size:13.5px;"></div>';
+  }
+  h += '<div style="margin-bottom:6px;"><label style="display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;">Password</label><input type="password" id="acctFPassword" placeholder="'+(_acctTab==='signup'?'Choose a password (min 6 chars)':'Your password')+'" style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:7px;padding:11px 13px;font-size:13.5px;"></div>';
+  h += '<div id="acctFMsg" style="font-size:12px;min-height:1.2em;margin:6px 0 4px;"></div>';
+  h += '<button type="button" id="acctFBtn" onclick="_acctSubmit()" class="nav-cta" style="width:100%;display:block;text-align:center;padding:13px;border:none;cursor:pointer;margin-top:6px;">'+(_acctTab==='signup'?'Create account':'Log in')+'</button>';
+  body.innerHTML = h;
+}
+
+function _acctSetTab(tab){ _acctTab=tab; _acctRenderForm(); }
+
+function _acctRenderProfile(){
+  var body=document.getElementById('acctBody'); if(!body) return;
+  var s=_acctState||{};
+  var h='';
+  h += '<div style="text-align:center;padding:8px 0 20px;">';
+  h += '<div style="width:56px;height:56px;border-radius:50%;background:var(--gold,#C8903A);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;margin:0 auto 12px;">'+((s.name||'U').charAt(0).toUpperCase())+'</div>';
+  h += '<div style="font-size:17px;font-weight:700;color:var(--dark,#1a0e06);">'+(s.name||'')+'</div>';
+  h += '<div style="font-size:12.5px;color:var(--muted);margin-top:2px;">'+(s.mobile||'')+'</div>';
+  h += '</div>';
+  h += '<div style="background:var(--bg,#faf3e8);border-radius:10px;padding:14px 16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;">';
+  h += '<span style="font-size:12.5px;color:var(--muted);">AI style previews used</span>';
+  h += '<span style="font-size:14px;font-weight:700;color:var(--gold,#C8903A);">'+(s.preview_count||0)+'</span>';
+  h += '</div>';
+  h += '<a href="/account" style="display:block;text-align:center;padding:12px;margin-bottom:10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-weight:700;color:var(--dark,#1a0e06);text-decoration:none;">Manage account, orders &amp; wishlist &rarr;</a>';
+  h += '<a href="{{ url_for("website.commission") }}" class="nav-cta" style="display:block;text-align:center;padding:13px;margin-bottom:10px;">Customise Your Garment &rarr;</a>';
+  h += '<button type="button" onclick="_acctLogout()" style="width:100%;background:transparent;border:1px solid var(--border);border-radius:8px;padding:12px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;">Log out</button>';
+  body.innerHTML = h;
+}
+
+function _acctSubmit(){
+  var name=(document.getElementById('acctFName')||{}).value||'';
+  var mobile=((document.getElementById('acctFMobile')||{}).value||'').replace(/\D/g,'');
+  var email=((document.getElementById('acctFEmail')||{}).value||'').trim();
+  var identifier=((document.getElementById('acctFIdentifier')||{}).value||'').trim();
+  var password=(document.getElementById('acctFPassword')||{}).value||'';
+  var msg=document.getElementById('acctFMsg'), btn=document.getElementById('acctFBtn');
+  if(_acctTab==='signup'){
+    if(!name.trim()){ if(msg){msg.style.color='#dc2626';msg.textContent='Please enter your name';} return; }
+    if(mobile.length<10){ if(msg){msg.style.color='#dc2626';msg.textContent='Please enter a valid 10-digit mobile number';} return; }
+    if(password.length<6){ if(msg){msg.style.color='#dc2626';msg.textContent='Password must be at least 6 characters';} return; }
+  } else {
+    if(!identifier){ if(msg){msg.style.color='#dc2626';msg.textContent='Please enter your mobile number or email';} return; }
+    if(!password){ if(msg){msg.style.color='#dc2626';msg.textContent='Please enter your password';} return; }
+  }
+  if(msg){msg.style.color='var(--muted)';msg.textContent='Please wait...';}
+  if(btn) btn.disabled=true;
+  var url = _acctTab==='signup' ? '/api/account/signup' : '/api/account/login';
+  var payload = _acctTab==='signup'
+    ? {name:name.trim(), mobile:mobile, email:email, password:password}
+    : {identifier:identifier, password:password};
+  fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(btn) btn.disabled=false;
+      if(d.ok){
+        var _wname=(d.account&&d.account.name)||d.name||'';
+        if(msg){msg.style.color='#2D6A3F';msg.textContent='Welcome'+ (_wname?' '+_wname:'')+'!';}
+        _acctRefresh();
+        try{
+          var wl=_getWL();
+          if(wl && wl.length){
+            fetch('/api/account/wishlist/merge',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({item_ids:wl.map(function(i){return i&&i.id;}).filter(function(id){return id;})})}).catch(function(){});
+          }
+        }catch(e){}
+        // Sync localStorage cart to server so abandoned-cart recovery works
+        try{
+          var lc=_getCart();
+          if(lc && lc.length){
+            var syncItems=lc.map(function(i){return {item_id:i.id,item_name:i.name||'',item_price:i.price||0,item_img:i.img||'',qty:i.qty||1};});
+            fetch('/api/cart/sync',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items:syncItems})}).catch(function(){});
+          }
+        }catch(e){}
+        setTimeout(function(){ _acctRenderProfile(); },500);
+      } else {
+        if(msg){msg.style.color='#dc2626';msg.textContent=d.error||'Something went wrong, please try again';}
+      }
+    })
+    .catch(function(){
+      if(btn) btn.disabled=false;
+      if(msg){msg.style.color='#dc2626';msg.textContent='Network error. Please try again.';}
+    });
+}
+
+function _acctLogout(){
+  fetch('/api/account/logout',{method:'POST'}).then(function(){
+    _acctState=null;
+    var dot=document.getElementById('acctDot'); if(dot) dot.style.display='none';
+    _acctTab='login';
+    _acctRenderForm();
+  });
+}
+
+function _acctRender(){
+  if(_acctState && _acctState.logged_in) _acctRenderProfile();
+  else { _acctTab='login'; _acctRenderForm(); }
+}
+
+function openAccount(){
+  fetch('/api/account/me').then(function(r){return r.json();}).then(function(d){
+    if(d && d.ok) _acctState = d;
+    _acctRender();
+  }).catch(function(){ _acctRender(); });
+  var p=document.getElementById('acctPanel'),o=document.getElementById('navOverlay');
+  if(p)p.classList.add('open'); if(o)o.classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeAccount(){
+  var p=document.getElementById('acctPanel'); if(p)p.classList.remove('open');
+  _checkOverlay();
+}
+
+function closeAll(){mmClose();}
+
+function handleSvcClick(e){
+  // On touch/mobile, click goes to services page instead of opening hover panel
+  if(window.innerWidth <= 900){
+    window.location.href = '/our-craft';
+  }
+}
+/* ── Init ── */
+_updateWLBtns();
+_updateCartBadge();
+_updateCartBtns();
+</script>
+{% block scripts %}{% endblock %}
+
+<!-- ── Discount Popup ── -->
+{% set popup_on = web_settings.get('web_popup_enabled','0') == '1' %}
+{% if popup_on %}
+<div id="discountPopup" style="display:none;position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,.5);align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;max-width:420px;width:90%;overflow:hidden;position:relative;">
+    {% if web_settings.get('web_popup_image') %}
+    <img src="{{ web_settings.get('web_popup_image') }}" style="width:100%;max-height:200px;object-fit:cover;">
+    {% endif %}
+    <div style="padding:28px 24px;">
+      <button onclick="closePopup()" style="position:absolute;top:12px;right:16px;background:none;border:none;font-size:22px;cursor:pointer;color:#888;">&times;</button>
+      <div style="font-family:'Playfair Display',serif;font-size:24px;color:#1a0e06;margin-bottom:8px;">{{ web_settings.get('web_popup_title','') }}</div>
+      <p style="font-size:14px;color:#5a4a3a;margin-bottom:16px;">{{ web_settings.get('web_popup_body','') }}</p>
+      {% if web_settings.get('web_popup_code') %}
+      <div style="background:#f5ede0;border-radius:8px;padding:10px 14px;text-align:center;margin-bottom:14px;">
+        <span style="font-size:11px;color:#7a6a58;text-transform:uppercase;letter-spacing:.1em;">Your coupon</span>
+        <div style="font-size:20px;font-weight:700;color:#C8903A;letter-spacing:.08em;">{{ web_settings.get('web_popup_code') }}</div>
+      </div>
+      {% endif %}
+      <a href="{{ url_for('website.commission') }}" onclick="closePopup()" style="display:block;text-align:center;background:#1a0e06;color:#fff;padding:12px;border-radius:8px;font-family:'Montserrat',sans-serif;font-size:11px;letter-spacing:.12em;text-transform:uppercase;text-decoration:none;">{{ web_settings.get('web_popup_btn','Claim Offer') }}</a>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  if(sessionStorage.getItem('popupSeen')) return;
+  var delay = parseInt('{{ web_settings.get("web_popup_delay","5") }}')*1000;
+  setTimeout(function(){
+    var p = document.getElementById('discountPopup');
+    if(p){ p.style.display='flex'; }
+  }, delay);
+})();
+function closePopup(){
+  var p=document.getElementById('discountPopup');
+  if(p)p.style.display='none';
+  sessionStorage.setItem('popupSeen','1');
+}
+</script>
+{% endif %}
+
+<!-- ═══ SUPPORT CHAT WIDGET ════════════════════════════════════════════════ -->
+<style>
+.supp-fab{position:fixed;bottom:84px;right:24px;z-index:8900;width:52px;height:52px;border-radius:50%;
+  background:var(--dark);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 18px rgba(0,0,0,.28);transition:transform .18s;}
+.supp-fab:hover{transform:scale(1.08);}
+.supp-fab .supp-notif{position:absolute;top:4px;right:4px;width:10px;height:10px;border-radius:50%;
+  background:#e94560;border:2px solid #fff;display:none;}
+.supp-panel{position:fixed;bottom:148px;right:24px;z-index:8901;width:320px;max-width:calc(100vw - 48px);
+  background:#fff;border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,.18);display:none;flex-direction:column;overflow:hidden;}
+.supp-panel.open{display:flex;}
+.supp-panel-head{background:var(--dark);color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;}
+.supp-panel-head strong{font-size:14px;}
+.supp-panel-head small{font-size:11px;opacity:.7;display:block;}
+.supp-panel-close{background:none;border:none;color:#fff;font-size:20px;cursor:pointer;line-height:1;padding:0;}
+.supp-intro{padding:1rem;}
+.supp-intro input{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;margin-bottom:8px;}
+.supp-intro button{width:100%;padding:10px;background:var(--gold);color:#1C0F06;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;}
+.supp-chat-area{flex:1;min-height:180px;max-height:260px;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;background:#f8f6f2;}
+.supp-msg{max-width:80%;padding:8px 12px;border-radius:12px;font-size:13px;line-height:1.4;}
+.supp-msg.customer{align-self:flex-end;background:var(--gold);color:#1C0F06;border-bottom-right-radius:3px;}
+.supp-msg.admin{align-self:flex-start;background:#fff;border:1px solid var(--border);border-bottom-left-radius:3px;}
+.supp-msg .st{font-size:9.5px;opacity:.6;margin-top:3px;}
+.supp-input-row{display:flex;gap:7px;padding:10px 12px 10px 10px;border-top:1px solid var(--border);align-items:center;}
+.supp-input-row input[type=text]{flex:1;padding:8px 10px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;min-width:0;}
+.supp-input-row .supp-send-btn{padding:8px 16px;background:var(--gold);color:#1C0F06;border:none;border-radius:7px;font-size:13px;cursor:pointer;font-weight:700;flex-shrink:0;margin-right:2px;}
+.supp-attach-btn{background:#fdf6ee;border:1.5px solid var(--border);border-radius:7px;padding:7px 8px;cursor:pointer;color:var(--dark);line-height:0;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.supp-attach-btn:hover{border-color:var(--gold);background:#fdf0e0;}
+.supp-upload-bar{height:3px;background:var(--gold);border-radius:2px;transition:width .2s;width:0%;display:none;}
+.supp-msg img.supp-att-img{max-width:100%;border-radius:8px;margin-top:4px;display:block;cursor:pointer;}
+.supp-att-pdf{display:inline-flex;align-items:center;gap:6px;margin-top:4px;padding:6px 10px;background:rgba(0,0,0,.07);border-radius:6px;font-size:12px;text-decoration:none;color:inherit;}
+.supp-att-video{max-width:100%;border-radius:8px;margin-top:4px;display:block;}
+</style>
+
+<button class="supp-fab" id="suppFab" onclick="toggleSuppPanel()" aria-label="Support chat" title="Chat with us">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+  <span class="supp-notif" id="suppNotif"></span>
+</button>
+
+<div class="supp-panel" id="suppPanel">
+  <div class="supp-panel-head">
+    <div><strong>Chat with us</strong><small>Uttam Tailors · usually replies in hours</small></div>
+    <button class="supp-panel-close" onclick="toggleSuppPanel()">&#x2715;</button>
+  </div>
+  <div id="suppIntro">
+    <div class="supp-intro">
+      <input id="suppName" type="text" placeholder="Your name *">
+      <input id="suppMobile" type="tel" placeholder="WhatsApp number">
+      <input id="suppEmail" type="email" placeholder="Email address">
+      <button onclick="startSuppChat()">Start Chat</button>
+    </div>
+  </div>
+  <div id="suppChatArea" class="supp-chat-area" style="display:none;"></div>
+  <div id="suppUploadBar" class="supp-upload-bar"></div>
+  <div id="suppInputRow" class="supp-input-row" style="display:none;">
+    <button class="supp-attach-btn" onclick="document.getElementById('suppFileInput').click()" title="Attach image, PDF or video">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+    </button>
+    <input type="file" id="suppFileInput" accept="image/*,.pdf,video/*" style="display:none" onchange="sendSuppFile(this)">
+    <input type="text" id="suppMsgInput" placeholder="Type here…" onkeydown="if(event.key==='Enter')sendSuppMsg()">
+    <button class="supp-send-btn" onclick="sendSuppMsg()">Send</button>
+  </div>
+  <div class="supp-track-row">
+    <a href="/track-order" class="supp-track-link">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+      Track your order
+      <svg class="trl-arrow" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </a>
+  </div>
+</div>
+
+<script>
+(function(){
+  var _suppChatId = parseInt(localStorage.getItem('supp_chat_id')||'0') || null;
+  var _suppPollTimer = null;
+  var _suppLastCount = 0;
+  var _suppAcct = null; // {logged_in, name, mobile, email}
+
+  function _esc(s){ var d=document.createElement('div');d.textContent=s||'';return d.innerHTML; }
+
+  // Fetch account info once on load
+  fetch('/api/account/me').then(function(r){return r.json();}).then(function(d){
+    if(d && d.ok) _suppAcct = d;
+  }).catch(function(){});
+
+  window.toggleSuppPanel = function(){
+    var p = document.getElementById('suppPanel');
+    p.classList.toggle('open');
+    document.getElementById('suppNotif').style.display = 'none';
+    if(p.classList.contains('open')){
+      if(_suppChatId){
+        showSuppChat();
+      } else if(_suppAcct && _suppAcct.logged_in){
+        // Logged-in user — skip form, auto-start
+        _doStartChat('', '', '');
+      }
+    }
+  };
+
+  function _doStartChat(name, mobile, email){
+    fetch('/api/support/start',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name:name, mobile:mobile, email:email})})
+      .then(function(r){return r.json();})
+      .then(function(d){
+        if(d.ok){
+          _suppChatId = d.chat_id;
+          localStorage.setItem('supp_chat_id', _suppChatId);
+          showSuppChat();
+          startSuppPoll();
+        }
+      });
+  }
+
+  window.startSuppChat = function(){
+    var name   = (document.getElementById('suppName').value||'').trim();
+    var mobile = (document.getElementById('suppMobile').value||'').trim();
+    var email  = (document.getElementById('suppEmail').value||'').trim();
+    if(!name){ document.getElementById('suppName').focus(); return; }
+    _doStartChat(name, mobile, email);
+  };
+
+  function showSuppChat(){
+    document.getElementById('suppIntro').style.display = 'none';
+    document.getElementById('suppChatArea').style.display = 'flex';
+    document.getElementById('suppInputRow').style.display = 'flex';
+    loadSuppChat();
+  }
+
+  function loadSuppChat(){
+    if(!_suppChatId) return;
+    fetch('/api/support/'+_suppChatId+'/messages')
+      .then(function(r){
+        if(r.status===403||r.status===404){
+          // Session expired or chat not found — clear stored chat_id and stop polling
+          _suppChatId = null;
+          localStorage.removeItem('supp_chat_id');
+          if(_suppPollTimer){ clearInterval(_suppPollTimer); _suppPollTimer=null; }
+          return null;
+        }
+        return r.json();
+      })
+      .then(function(d){
+        if(!d||!d.ok) return;
+        var msgs = d.messages||[];
+        if(msgs.length === _suppLastCount) return;
+        _suppLastCount = msgs.length;
+        var area = document.getElementById('suppChatArea');
+        var html = '';
+        msgs.forEach(function(m){
+          var cls = m.sender==='customer'?'customer':'admin';
+          var body = '';
+          if(m.message) body += _esc(m.message);
+          if(m.attachment_url){
+            var url = _esc(m.attachment_url);
+            if(m.attachment_type==='image'){
+              body += '<img class="supp-att-img" src="'+url+'" onclick="window.open(this.src)" loading="lazy">';
+            } else if(m.attachment_type==='pdf'){
+              body += '<a class="supp-att-pdf" href="'+url+'" target="_blank" rel="noopener">&#128196; View PDF</a>';
+            } else if(m.attachment_type==='video'){
+              body += '<video class="supp-att-video" src="'+url+'" controls preload="metadata"></video>';
+            }
+          }
+          html += '<div class="supp-msg '+cls+'">'+body+'<div class="st">'+_esc(m.created_at||'')+'</div></div>';
+        });
+        area.innerHTML = html || '<div style="font-size:12px;color:var(--muted);text-align:center;margin-top:1rem;">Send a message — we\'ll reply shortly.</div>';
+        area.scrollTop = area.scrollHeight;
+        // Badge if panel closed and new admin msg
+        var panel = document.getElementById('suppPanel');
+        if(!panel.classList.contains('open')){
+          var lastMsg = msgs[msgs.length-1];
+          if(lastMsg && lastMsg.sender==='admin')
+            document.getElementById('suppNotif').style.display='block';
+        }
+      }).catch(function(){});
+  }
+
+  function startSuppPoll(){
+    if(_suppPollTimer) clearInterval(_suppPollTimer);
+    _suppPollTimer = setInterval(loadSuppChat, 5000);
+  }
+
+  window.sendSuppMsg = function(){
+    var input = document.getElementById('suppMsgInput');
+    var msg = input.value.trim();
+    if(!msg || !_suppChatId) return;
+    input.value = '';
+    fetch('/api/support/'+_suppChatId+'/send',{method:'POST',
+      headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg})})
+      .then(function(r){return r.json();})
+      .then(function(d){ if(d.ok) loadSuppChat(); });
+  };
+
+  window.sendSuppFile = function(inp){
+    var file = inp.files[0];
+    inp.value = '';
+    if(!file || !_suppChatId) return;
+    var bar = document.getElementById('suppUploadBar');
+    bar.style.display = 'block';
+    bar.style.width = '0%';
+    var fd = new FormData();
+    fd.append('file', file);
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/support/'+_suppChatId+'/upload');
+    xhr.upload.onprogress = function(e){
+      if(e.lengthComputable) bar.style.width = Math.round(e.loaded/e.total*100)+'%';
+    };
+    xhr.onload = function(){
+      bar.style.width = '100%';
+      setTimeout(function(){ bar.style.display='none'; bar.style.width='0%'; }, 400);
+      try{
+        var d = JSON.parse(xhr.responseText);
+        if(d.ok){ loadSuppChat(); }
+        else{ alert(d.error || 'Upload failed'); }
+      }catch(e){ alert('Upload error'); }
+    };
+    xhr.onerror = function(){ bar.style.display='none'; alert('Upload failed'); };
+    xhr.send(fd);
+  };
+
+  // Auto-restore if existing chat — but verify first (handles page refresh / session expiry)
+  if(_suppChatId){
+    fetch('/api/support/'+_suppChatId+'/messages')
+      .then(function(r){
+        if(r.status===403||r.status===404){
+          // Stale chat_id — clear it, don't auto-open
+          _suppChatId=null;
+          localStorage.removeItem('supp_chat_id');
+          return null;
+        }
+        return r.json();
+      })
+      .then(function(d){
+        if(d&&d.ok){
+          showSuppChat();
+          startSuppPoll();
+        }
+      })
+      .catch(function(){});
+  }
+})();
+</script>
+<!-- ═══ END SUPPORT CHAT WIDGET ══════════════════════════════════════════════ -->
+
+<script>
+/* ═══ LOADER — hide on window.load, min 600ms so animation shows ═══ */
+(function(){
+  var ldr = document.getElementById('site-loader');
+  if(!ldr) return;
+  var minWait = 600; // ms minimum display
+  var start = Date.now();
+  function hideLdr(){
+    var elapsed = Date.now() - start;
+    var delay = Math.max(0, minWait - elapsed);
+    setTimeout(function(){
+      ldr.classList.add('ldr-hidden');
+      // Remove from DOM after transition
+      setTimeout(function(){ if(ldr.parentNode) ldr.parentNode.removeChild(ldr); }, 750);
+    }, delay);
+  }
+  if(document.readyState === 'complete'){
+    hideLdr();
+  } else {
+    window.addEventListener('load', hideLdr, {once:true});
+    // Fallback: hide after 4s even if load never fires
+    setTimeout(hideLdr, 4000);
+  }
+})();
+
+/* ═══ SCROLL REVEAL — velocity-aware Intersection Observer ═══ */
+(function(){
+  /* Track scroll velocity: dy/dt in px/ms */
+  var _svY = 0, _svLast = window.scrollY, _svTime = performance.now(), _svSpeed = 1;
+  document.addEventListener('scroll', function(){
+    var now = performance.now();
+    var dy = Math.abs(window.scrollY - _svLast);
+    var dt = now - _svTime;
+    if(dt > 0) _svSpeed = Math.min(5, Math.max(1, dy / dt * 10));
+    _svLast = window.scrollY; _svTime = now;
+  }, {passive:true});
+
+  var _srOpts = {rootMargin:"0px 0px -60px 0px", threshold:0.08};
+  var _srObs = new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){
+      if(!entry.isIntersecting) return;
+      var el = entry.target;
+      var delay = parseFloat(el.dataset.delay||0);
+      var extraDelay = _svSpeed > 2 ? 0 : delay;
+      setTimeout(function(){ el.classList.add("sr-visible"); }, extraDelay * 1000);
+      _srObs.unobserve(el);
+    });
+  }, _srOpts);
+
+  function _initSR(){
+    document.querySelectorAll(".sr").forEach(function(el){
+      if(!el.classList.contains("sr-visible")) _srObs.observe(el);
+    });
+  }
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded", _initSR);
+  } else {
+    _initSR();
+  }
+  // Re-init after dynamic content
+  window._srInit = _initSR;
+})();
+
+/* ═══ FCM PUSH NOTIFICATION REGISTRATION ═══ */
+(function(){
+  // Only runs if Firebase config is stored in settings (set via admin panel)
+  function _loadFcmConfig(cb){
+    fetch("/api/fcm-web-config").then(function(r){ return r.ok ? r.json() : null; }).then(function(d){
+      if(d && d.config && d.config.projectId) cb(d.config, d.vapidKey||null);
+    }).catch(function(){});
+  }
+  function _registerFCM(firebaseConfig, vapidKey){
+    if(!firebaseConfig || !firebaseConfig.apiKey) return;
+    // Load Firebase SDK dynamically
+    var s1 = document.createElement("script");
+    s1.src = "https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js";
+    s1.onload = function(){
+      var s2 = document.createElement("script");
+      s2.src = "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js";
+      s2.onload = function(){
+        try {
+          if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+          var messaging = firebase.messaging();
+          // Register service worker
+          navigator.serviceWorker.register("/firebase-messaging-sw.js").then(function(reg){
+            // Send config to SW
+            if(reg.active) reg.active.postMessage({type:"FIREBASE_CONFIG",config:firebaseConfig});
+            // Request permission + get token
+            Notification.requestPermission().then(function(perm){
+              if(perm !== "granted") return;
+              var tokOpts = vapidKey ? {vapidKey: vapidKey, serviceWorkerRegistration: reg} : {serviceWorkerRegistration: reg};
+              messaging.getToken(tokOpts).then(function(token){
+                if(!token) return;
+                fetch("/api/register-fcm-token",{
+                  method:"POST",
+                  headers:{"Content-Type":"application/json"},
+                  body:JSON.stringify({token:token})
+                });
+              }).catch(function(){});
+            });
+          });
+        } catch(e){}
+      };
+      document.head.appendChild(s2);
+    };
+    document.head.appendChild(s1);
+  }
+  // Only register if browser supports it
+  if("serviceWorker" in navigator && "Notification" in window){
+    window.addEventListener("load", function(){
+      _loadFcmConfig(function(cfg, vapid){ _registerFCM(cfg, vapid); });
+    });
+  }
+})();

@@ -21,18 +21,18 @@
   <div class="wizard-steps" id="wizard-new" style="margin-bottom:24px;display:none;">
     <div class="wizard-step" id="wn1"><span class="step-num">1</span><span>Start</span></div>
     <div class="wizard-step" id="wn2"><span class="step-num">2</span><span data-t="step_garments">Garments</span></div>
-    <div class="wizard-step" id="wn3"><span class="step-num">3</span><span data-t="step_customer">Customer</span></div>
-    <div class="wizard-step" id="wn4"><span class="step-num">4</span><span data-t="step_payment">Payment</span></div>
-    <div class="wizard-step" id="wn5"><span class="step-num">5</span><span data-t="step_images">Images</span></div>
+    <div class="wizard-step" id="wn3"><span class="step-num">3</span><span data-t="step_images">Images</span></div>
+    <div class="wizard-step" id="wn4"><span class="step-num">4</span><span data-t="step_customer">Customer</span></div>
+    <div class="wizard-step" id="wn5"><span class="step-num">5</span><span data-t="step_payment">Payment</span></div>
   </div>
 
   <!-- EXISTING CUSTOMER: 5 steps (search is step 1) -->
   <div class="wizard-steps" id="wizard-existing" style="margin-bottom:24px;display:none;">
     <div class="wizard-step" id="we1"><span class="step-num">1</span><span>Search</span></div>
     <div class="wizard-step" id="we2"><span class="step-num">2</span><span data-t="step_garments">Garments</span></div>
-    <div class="wizard-step" id="we3"><span class="step-num">3</span><span data-t="step_customer">Confirm</span></div>
-    <div class="wizard-step" id="we4"><span class="step-num">4</span><span data-t="step_payment">Payment</span></div>
-    <div class="wizard-step" id="we5"><span class="step-num">5</span><span data-t="step_images">Images</span></div>
+    <div class="wizard-step" id="we3"><span class="step-num">3</span><span data-t="step_images">Images</span></div>
+    <div class="wizard-step" id="we4"><span class="step-num">4</span><span data-t="step_customer">Confirm</span></div>
+    <div class="wizard-step" id="we5"><span class="step-num">5</span><span data-t="step_payment">Payment</span></div>
   </div>
 
   <!-- ════ STEP 0: Choose customer type (Start) ════ -->
@@ -130,15 +130,11 @@
         <div id="garment-count-row" style="display:none;margin-top:10px;padding:10px 14px;background:#f0f9ff;border-radius:8px;font-size:13px;font-weight:600;color:var(--accent);">
           <span id="g-count-text"></span>
         </div>
-        <button id="g-continue-btn" onclick="switchGarmentPhase('garments','measure')"
-          style="display:none;width:100%;margin-top:14px;padding:14px;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;">
-          <span class="lang-en">✅ All garments added — Fill Measurements →</span><span class="lang-hi" style="display:none;">✅ सभी कपड़े जुड़ गए — अब माप भरें →</span>
-        </button>
       </div>
     </div>
     <div style="display:flex;justify-content:space-between;">
       <button class="btn btn-ghost" onclick="goStart()">← Back</button>
-      <button class="btn btn-primary" onclick="validateGarments('new')">Next: Customer →</button>
+      <button class="btn btn-primary" onclick="validateGarments('new')">Next: Images →</button>
     </div>
   </div>
 
@@ -168,8 +164,8 @@
       </div>
     </div>
     <div style="display:flex;justify-content:space-between;">
-      <button class="btn btn-ghost" onclick="goNewStep(4)">← Payment</button>
-      <button class="btn btn-success" onclick="showSuccess()">✅ Finish Order</button>
+      <button class="btn btn-ghost" onclick="goNewStep(2)">← Garments</button>
+      <button class="btn btn-primary" onclick="goNewStep(4)">Next: Customer →</button>
     </div>
   </div>
 
@@ -179,38 +175,8 @@
       <div class="card-header"><span class="card-title">✨ New Customer Details</span></div>
       <div class="card-body">
         <div class="form-grid">
-          <div class="field-wrap"><label>Customer Name <span style="color:var(--danger);">*</span></label><input type="text" id="n_name" data-tp="customer_name" data-autocorrect-name autocomplete="off"></div>
-          <div class="field-wrap">
-            <label>Mobile No. &nbsp;
-              <span style="float:right;display:inline-flex;background:#f1f5f9;border-radius:6px;padding:1px;gap:1px;vertical-align:middle;">
-                <button type="button" id="toggle-mobile-btn" onclick="switchMobileMode('mobile')" style="padding:1px 7px;border:none;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer;background:var(--accent);color:#fff;line-height:1.6;">📱</button>
-                <button type="button" id="toggle-ref-btn" onclick="switchMobileMode('ref')" style="padding:1px 7px;border:none;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer;background:transparent;color:#64748b;line-height:1.6;">🔗 Ref</button>
-              </span>
-            </label>
-            <input type="tel" id="n_mobile" inputmode="numeric" maxlength="10"
-              oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10);checkMobileExists(this.value)"
-              placeholder="Mobile number">
-            <input type="text" id="n_ref_code" inputmode="numeric" placeholder="Order code e.g. 3910"
-              oninput="lookupRefCode(this.value)" style="display:none;">
-            <div id="mobile-exists-warn" style="display:none;background:#fffbeb;border:1px solid #fbbf24;border-radius:6px;padding:5px 8px;font-size:11px;color:#92400e;">
-              ⚠️ <strong id="mobile-exists-name"></strong> ka order (<span id="mobile-exists-code"></span>) — alag naam likho
-            </div>
-            <div id="ref-lookup-result" style="display:none;background:#f0fdf4;border:1px solid #86efac;border-radius:6px;padding:5px 8px;font-size:11px;color:#166534;">
-              ✅ <span id="ref-lookup-info"></span>
-            </div>
-            <div id="ref-lookup-error" style="display:none;background:#fee2e2;border-radius:6px;padding:5px 8px;font-size:11px;color:#dc2626;">
-              ❌ Order nahi mila
-            </div>
-          </div>
-          <div class="field-wrap full" style="margin-top:-4px;">
-            <span id="n_alt_toggle" onclick="document.getElementById('n_alt_wrap').style.display='block';this.style.display='none';"
-              style="font-size:12px;color:#6366f1;cursor:pointer;font-weight:600;">+ Add alternative mobile</span>
-            <div id="n_alt_wrap" style="display:none;">
-              <label>Alt. Mobile</label>
-              <input type="tel" id="n_alt_mobile" inputmode="numeric" maxlength="10" placeholder="Alternative number"
-                oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)">
-            </div>
-          </div>
+          <div class="field-wrap"><label>Customer Name <span style="color:var(--danger);">*</span></label><input type="text" id="n_name" data-tp="customer_name"></div>
+          <div class="field-wrap"><label>Mobile Number <span style="color:var(--danger);">*</span></label><input type="tel" id="n_mobile" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" required oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)"></div>
           <div class="field-wrap full"><label data-t="address">Address</label><input type="text" id="n_address"></div>
           <div class="field-wrap"><label>Order Date</label><input type="date" id="n_odate"></div>
           <div class="field-wrap">
@@ -226,7 +192,7 @@
       </div>
     </div>
     <div style="display:flex;justify-content:space-between;">
-      <button class="btn btn-ghost" onclick="goNewStep(2)">← Garments</button>
+      <button class="btn btn-ghost" onclick="goNewStep(3)">← Images</button>
       <button class="btn btn-primary" onclick="validateNewCustomer()">Next: Payment →</button>
     </div>
   </div>
@@ -236,7 +202,7 @@
     {% include 'employee/_payment.html' ignore missing %}
     <div id="payment-inner-new"></div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;">
-      <button class="btn btn-ghost" onclick="goNewStep(3)">← Customer</button>
+      <button class="btn btn-ghost" onclick="goNewStep(4)">← Customer</button>
       <button class="btn btn-success btn-lg" onclick="confirmOrder('new')" id="confirm-btn-new">✅ Confirm Order</button>
     </div>
   </div>
@@ -355,15 +321,11 @@
         <div id="existing-garment-count-row" style="display:none;margin-top:10px;padding:10px 14px;background:#f0f9ff;border-radius:8px;font-size:13px;font-weight:600;color:var(--accent);">
           <span id="eg-count-text"></span>
         </div>
-        <button id="eg-continue-btn" onclick="switchGarmentPhase('existingGarments','measure')"
-          style="display:none;width:100%;margin-top:14px;padding:14px;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;">
-          <span class="lang-en">✅ All garments added — Fill Measurements →</span><span class="lang-hi" style="display:none;">✅ सभी कपड़े जुड़ गए — अब माप भरें →</span>
-        </button>
       </div>
     </div>
     <div style="display:flex;justify-content:space-between;">
       <button class="btn btn-ghost" onclick="goExistingStep(1)">← Back</button>
-      <button class="btn btn-primary" onclick="validateExistingGarments()">Next: Confirm →</button>
+      <button class="btn btn-primary" onclick="validateExistingGarments()">Next: Images →</button>
     </div>
   </div>
 
@@ -388,8 +350,8 @@
       </div>
     </div>
     <div style="display:flex;justify-content:space-between;">
-      <button class="btn btn-ghost" onclick="goExistingStep(4)">← Payment</button>
-      <button class="btn btn-success" onclick="showSuccess()">✅ Finish Order</button>
+      <button class="btn btn-ghost" onclick="goExistingStep(2)">← Garments</button>
+      <button class="btn btn-primary" onclick="goExistingStep(4)">Next: Confirm →</button>
     </div>
   </div>
 
@@ -399,7 +361,7 @@
       <div class="card-header"><span class="card-title">✅ Confirm Customer Details</span></div>
       <div class="card-body">
         <div class="form-grid">
-          <div class="field-wrap"><label data-t="customer_name">Name</label><input type="text" id="e_name" data-autocorrect-name autocomplete="off"></div>
+          <div class="field-wrap"><label data-t="customer_name">Name</label><input type="text" id="e_name"></div>
           <div class="field-wrap"><label data-t="mobile">Mobile</label><input type="tel" id="e_mobile" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)"></div>
           <div class="field-wrap full"><label data-t="address">Address</label><input type="text" id="e_address"></div>
           <div class="field-wrap"><label>Order Date</label><input type="date" id="e_odate"></div>
@@ -416,7 +378,7 @@
       </div>
     </div>
     <div style="display:flex;justify-content:space-between;">
-      <button class="btn btn-ghost" onclick="goExistingStep(2)">← Garments</button>
+      <button class="btn btn-ghost" onclick="goExistingStep(3)">← Images</button>
       <button class="btn btn-primary" onclick="validateExistingCustomer()">Next: Payment →</button>
     </div>
   </div>
@@ -425,7 +387,7 @@
   <div id="step-e5" style="display:none;">
     <div id="payment-inner-existing"></div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;">
-      <button class="btn btn-ghost" onclick="goExistingStep(3)">← Confirm</button>
+      <button class="btn btn-ghost" onclick="goExistingStep(4)">← Confirm</button>
       <button class="btn btn-success btn-lg" onclick="confirmOrder('existing')" id="confirm-btn-existing">✅ Confirm Order</button>
     </div>
   </div>
@@ -462,26 +424,20 @@
                 <strong style="color:var(--danger);font-size:16px;">₹<span class="pay-remaining">0</span></strong>
               </div>
             </div>
-
-            <!-- Payment mode: only visible when advance > 0 -->
-            <div class="pay-mode-section" style="display:none;">
-              <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;display:block;">Payment Mode</label>
+            <div class="field-wrap">
+              <label>Payment Mode</label>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;">
-                <div class="mode-cash" style="padding:12px;border:2px solid var(--border);border-radius:10px;text-align:center;cursor:pointer;font-weight:700;font-size:13px;color:var(--text-secondary);">💵 Cash</div>
+                <div class="mode-cash" style="padding:12px;border:2px solid var(--success);border-radius:10px;text-align:center;cursor:pointer;font-weight:700;font-size:13px;background:var(--success-light);color:var(--success);">💵 Cash</div>
                 <div class="mode-upi"  style="padding:12px;border:2px solid var(--border);border-radius:10px;text-align:center;cursor:pointer;font-weight:700;font-size:13px;color:var(--text-secondary);">📱 UPI</div>
               </div>
             </div>
           </div>
-
-          <!-- UPI QR panel — dynamic QR generated by buildQR() -->
           <div class="pay-upi-panel" style="display:none;text-align:center;background:#f9fafb;border-radius:12px;padding:24px;border:1.5px solid var(--border);flex-direction:column;align-items:center;justify-content:center;">
             <div style="font-weight:700;margin-bottom:14px;font-size:14px;">Scan to Pay</div>
-            <div id="pay-qr-box" style="display:inline-block;background:#fff;padding:10px;border-radius:8px;border:1px solid var(--border);"></div>
+            <img src="https://cdn.shopify.com/s/files/1/0587/4778/1225/files/upi_qr.jpg?v=1776686052" style="max-width:200px;border-radius:8px;border:1px solid var(--border);" alt="QR Code">
             <div style="font-size:22px;font-weight:800;color:var(--accent);margin-top:12px;">₹<span class="pay-upi-amt">0</span></div>
           </div>
-
-          <!-- Cash panel -->
-          <div class="pay-cash-panel" style="display:none;align-items:center;justify-content:center;background:#f9fafb;border-radius:12px;border:1.5px solid var(--border);">
+          <div class="pay-cash-panel" style="display:flex;align-items:center;justify-content:center;background:#f9fafb;border-radius:12px;border:1.5px solid var(--border);">
             <div style="text-align:center;padding:28px;"><div style="font-size:52px;margin-bottom:12px;">💵</div><div style="font-weight:700;color:var(--success);font-size:16px;">Receiving Cash</div></div>
           </div>
         </div>
@@ -545,14 +501,6 @@
           <div style="font-size:9px;font-weight:800;letter-spacing:1.5px;opacity:0.6;text-transform:uppercase;margin-bottom:4px;"><span class="lang-en">Due</span><span class="lang-hi" style="display:none;">बाकी</span></div>
           <div id="sc_due_pill" style="font-size:14px;font-weight:900;color:#fca5a5;"></div>
         </div>
-      </div>
-
-      <!-- Garments summary -->
-      <div style="text-align:center;color:#fff;padding:12px 20px;border-bottom:1px solid rgba(255,255,255,0.15);">
-        <div style="font-size:9px;font-weight:800;letter-spacing:1.5px;opacity:0.6;text-transform:uppercase;margin-bottom:5px;">
-          <span class="lang-en">Garments</span><span class="lang-hi" style="display:none;">कपड़े</span>
-        </div>
-        <div id="sc_garments_pill" style="font-size:14px;font-weight:800;line-height:1.6;"></div>
       </div>
 
       <!-- Cloth photos (if any) -->
@@ -641,11 +589,6 @@ let ecCustomerData = null;
 // Shared garment list (used by both flows)
 let garments = [];
 let existingGarments = [];
-// Two-phase garment UX: 'select' = quick add-all-garments list (no
-// measurements shown yet, so nothing gets forgotten before measurements
-// begin); 'measure' = full cards with measurement fields, one per garment.
-let garmentsPhase = 'select';
-let existingGarmentsPhase = 'select';
 
 // ── DATE HELPERS ─────────────────────────
 function fmtDate(d) {
@@ -723,140 +666,45 @@ function startExistingCustomer() {
 // ── NEW CUSTOMER NAVIGATION ───────────────
 function goNewStep(n) {
   setNewWizard(n);
-  const map = {2:"step-n2",3:"step-n4",4:"step-n5",5:"step-n3"};
+  const map = {2:"step-n2",3:"step-n3",4:"step-n4",5:"step-n5"};
   showStep(map[n]);
-  if (n===3) { const t=new Date().toLocaleDateString("en-CA"); if(!document.getElementById("n_odate").value) document.getElementById("n_odate").value=t; document.getElementById("n_odate").min=t; document.getElementById("n_ddate").min=t; }
-  if (n===4) { injectPayment("payment-inner-new"); recalcPayment(); }
-  if (n===5) { buildQR("qr-box","qr-link"); startImgPoll("img-preview"); }
-}
-
-
-// ── MOBILE / REFERENCE CODE TOGGLE ───────────────────────────────
-var _mobileMode = 'mobile'; // 'mobile' or 'ref'
-
-function switchMobileMode(mode) {
-  _mobileMode = mode;
-  var mWrap = document.getElementById('n_mobile');
-  var rWrap = document.getElementById('n_ref_code');
-  var mBtn  = document.getElementById('toggle-mobile-btn');
-  var rBtn  = document.getElementById('toggle-ref-btn');
-
-  if (mode === 'mobile') {
-    mWrap.style.display = '';
-    rWrap.style.display = 'none';
-    mBtn.style.background = 'var(--accent)'; mBtn.style.color = '#fff';
-    rBtn.style.background = 'transparent';   rBtn.style.color = '#64748b';
-    document.getElementById('n_mobile').required = true;
-    document.getElementById('ref-lookup-result').style.display='none';
-    document.getElementById('ref-lookup-error').style.display='none';
-  } else {
-    mWrap.style.display = 'none';
-    rWrap.style.display = '';
-    rBtn.style.background = 'var(--accent)'; rBtn.style.color = '#fff';
-    mBtn.style.background = 'transparent';   mBtn.style.color = '#64748b';
-    document.getElementById('n_mobile').required = false;
-    document.getElementById('n_mobile').value = '';
-    document.getElementById('mobile-exists-warn').style.display='none';
-    document.getElementById('mobile-exists-warn').style.display = 'none';
-  }
-}
-
-var _refLookupTimer = null;
-var _refCustomer = null;
-
-function lookupRefCode(val) {
-  clearTimeout(_refLookupTimer);
-  var res  = document.getElementById('ref-lookup-result');
-  var err  = document.getElementById('ref-lookup-error');
-  var info = document.getElementById('ref-lookup-info');
-  res.style.display = 'none'; err.style.display = 'none';
-  _refCustomer = null;
-  if (!val.trim()) return;
-
-  _refLookupTimer = setTimeout(function() {
-    fetch('/api/order-ref-lookup?code=' + encodeURIComponent(val.trim()))
-      .then(function(r){ return r.json(); })
-      .then(function(d) {
-        if (d.found) {
-          _refCustomer = d;
-          info.innerHTML = '<b>' + d.name + '</b>' +
-            (d.mobile ? ' · 📱 ' + d.mobile : '') +
-            (d.address ? '<br>📍 ' + d.address : '');
-          res.style.display = 'block';
-          err.style.display = 'none';
-          // Auto-fill mobile silently
-          if (d.mobile) document.getElementById('n_mobile').value = d.mobile;
-        } else {
-          err.style.display = 'block';
-          res.style.display = 'none';
-        }
-      }).catch(function(){ err.style.display = 'block'; });
-  }, 400);
-}
-
-// ── MOBILE EXISTS CHECK ──────────────────────────────────────────
-var _mobileCheckTimer = null;
-function checkMobileExists(val) {
-  clearTimeout(_mobileCheckTimer);
-  var warn = document.getElementById("mobile-exists-warn");
-  if (!warn) return;
-  if (val.length !== 10) { warn.style.display = "none"; return; }
-  _mobileCheckTimer = setTimeout(function() {
-    fetch("/api/check-mobile?m=" + encodeURIComponent(val))
-      .then(function(r){ return r.json(); })
-      .then(function(d) {
-        if (d.found) {
-          document.getElementById("mobile-exists-name").textContent = d.name;
-          document.getElementById("mobile-exists-code").textContent = d.last_code ? "#" + d.last_code : "order found";
-          warn.style.display = "block";
-        } else { warn.style.display = "none"; }
-      }).catch(function(){ warn.style.display = "none"; });
-  }, 500);
+  if (n===3) { buildQR("qr-box","qr-link"); startImgPoll("img-preview"); }
+  if (n===4) { stopImgPoll(); }
+  if (n===4) { const t=new Date().toISOString().split("T")[0]; if(!document.getElementById("n_odate").value) document.getElementById("n_odate").value=t; document.getElementById("n_ddate").min=t; }
+  if (n===5) { injectPayment("payment-inner-new"); recalcPayment(); }
 }
 
 function validateGarments(flow) {
   if (!garments.length) { showToast("Add at least one garment","warning"); return; }
-  if (garmentsPhase === 'select') {
-    // Don't skip straight past measurements — show the measurement
-    // cards first so nothing gets missed.
-    switchGarmentPhase('garments','measure');
-    showToast(typeof currentLang!=="undefined"&&currentLang==="hi"?"अब हर कपड़े की माप भरें":"Now fill measurements for each garment","success");
-    return;
-  }
   if (flow==="new") goNewStep(3);
 }
 
 function validateNewCustomer() {
   if (!document.getElementById("n_name").value.trim()) { showToast("Customer name required","warning"); return; }
   if (!document.getElementById("n_ddate").value) { showToast("Set delivery date","warning"); document.getElementById("n_ddate").focus(); return; }
-  goNewStep(4);
+  goNewStep(5);
 }
 
 // ── EXISTING CUSTOMER NAVIGATION ─────────
 function goExistingStep(n) {
   setExistingWizard(n);
   if (n===1) { showStep("step-e1b"); return; }
-  const map = {2:"step-e2",3:"step-e4",4:"step-e5",5:"step-e3"};
+  const map = {2:"step-e2",3:"step-e3",4:"step-e4",5:"step-e5"};
   showStep(map[n]);
   if (n===2) { renderExistingGarments(); }  // Re-render to ensure chips/tiles show
-  if (n===3) { const t=new Date().toLocaleDateString("en-CA"); if(!document.getElementById("e_odate").value) document.getElementById("e_odate").value=t; document.getElementById("e_odate").min=t; document.getElementById("e_ddate").min=t; }
-  if (n===4) { injectPayment("payment-inner-existing"); recalcPayment(); }
-  if (n===5) { buildQR("qr-box-e","qr-link-e"); startImgPoll("img-preview-e"); }
+  if (n===3) { buildQR("qr-box-e","qr-link-e"); startImgPoll("img-preview-e"); }
+  if (n===4) { const t=new Date().toISOString().split("T")[0]; if(!document.getElementById("e_odate").value) document.getElementById("e_odate").value=t; document.getElementById("e_ddate").min=t; }
+  if (n===5) { injectPayment("payment-inner-existing"); recalcPayment(); }
 }
 
 function validateExistingGarments() {
   if (!existingGarments.length) { showToast("Add at least one garment","warning"); return; }
-  if (existingGarmentsPhase === 'select') {
-    switchGarmentPhase('existingGarments','measure');
-    showToast(typeof currentLang!=="undefined"&&currentLang==="hi"?"अब हर कपड़े की माप भरें":"Now fill measurements for each garment","success");
-    return;
-  }
   goExistingStep(3);
 }
 
 function validateExistingCustomer() {
   if (!document.getElementById("e_ddate").value) { showToast("Set delivery date","warning"); document.getElementById("e_ddate").focus(); return; }
-  goExistingStep(4);
+  goExistingStep(5);
 }
 
 // ── SEARCH ────────────────────────────────
@@ -896,13 +744,6 @@ function searchCustomers() {
           </div>
           <div style="font-size:13px;font-weight:700;color:var(--accent);">Select →</div>
         </div>`).join("");
-    })
-    .catch(err => {
-      box.innerHTML = `<div style="padding:24px;text-align:center;color:var(--danger);">
-        <div style="font-size:32px;margin-bottom:8px;">⚠️</div>
-        <div style="font-weight:700;font-size:15px;">Search failed</div>
-        <div style="font-size:13px;margin-top:6px;color:var(--text-muted);">Please try again or check your connection</div></div>`;
-      console.error("[customer search] failed:", err);
     });
 }
 
@@ -1023,7 +864,7 @@ function renderOrderHistory(orders) {
           const el = document.createElement("img");
           el.src = src;
           el.title = "Click to zoom";
-          el.style.cssText = "width:70px;height:70px;object-fit:cover;border-radius:8px;border:2px solid var(--border);cursor:zoom-in;"; el.onclick = function(){ openZoomModal(this.src,'Order Image'); };;
+          el.style.cssText = "width:70px;height:70px;object-fit:cover;border-radius:8px;border:2px solid var(--border);cursor:zoom-in;";
           el.onclick = function() {
             const ov = document.getElementById("img-overlay-new");
             if (ov) { ov.querySelector("img").src=src; ov.style.display="flex"; }
@@ -1163,8 +1004,6 @@ function useTheseMeasurements(mi, garmentType, keys) {
     showToast("Added: "+tGarment(garmentType),"success");
   }
   renderExistingGarments();
-  existingGarmentsPhase = 'measure';
-  renderExistingGarments();
   goExistingStep(2);
 }
 
@@ -1223,6 +1062,11 @@ function closeUploadPopup() {
   document.getElementById("upload-iframe").src = "";
 }
 
+function closeUploadPopup() {
+  document.getElementById("upload-popup").style.display = "none";
+  document.getElementById("upload-iframe").src = "";
+}
+
 function addGarment() {
   const type=document.getElementById("g_type").value.trim();
   const qty=parseInt(document.getElementById("g_qty").value)||1;
@@ -1255,45 +1099,6 @@ function addExistingGarment() {
     renderExistingGarments();
   }
   document.getElementById("eg_type").value=""; document.getElementById("eg_qty").value="1";
-}
-
-// ── PHASE 1: Simple chip view — just type+qty, no measurements yet.
-// This is shown first so the employee adds EVERYTHING the customer
-// brought (Pant + Shirt + ...) before getting pulled into measurement
-// details for any one garment — preventing forgotten items. ──
-function buildGarmentChip(g, idx, listType) {
-  const removeFn = listType==='garments'
-    ? `garments=garments.filter(g=>g.id!==${g.id});renderGarments()`
-    : `existingGarments=existingGarments.filter(g=>g.id!==${g.id});renderExistingGarments()`;
-  return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;background:#fff;border:2px solid var(--border);border-radius:12px;margin-bottom:8px;">
-    <div style="display:flex;align-items:center;gap:10px;">
-      <span style="font-size:22px;">🧥</span>
-      <div>
-        <div style="font-weight:800;font-size:14px;color:#1e1b4b;">${tGarment(g.type)}</div>
-        <div style="font-size:12px;color:var(--text-muted);">Qty: ${g.qty}</div>
-      </div>
-    </div>
-    <button onclick="${removeFn}" style="background:var(--danger-light);color:var(--danger);border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;">✕ Remove</button>
-  </div>`;
-}
-
-// Switch between 'select' (quick list) and 'measure' (full cards) phases.
-function switchGarmentPhase(listType, phase) {
-  if (listType === 'garments') {
-    if (phase === 'measure' && garments.length === 0) {
-      showToast(typeof currentLang!=="undefined"&&currentLang==="hi"?"पहले कम से कम एक कपड़ा जोड़ें":"Add at least one garment first", "warning");
-      return;
-    }
-    garmentsPhase = phase;
-    renderGarments();
-  } else {
-    if (phase === 'measure' && existingGarments.length === 0) {
-      showToast(typeof currentLang!=="undefined"&&currentLang==="hi"?"पहले कम से कम एक कपड़ा जोड़ें":"Add at least one garment first", "warning");
-      return;
-    }
-    existingGarmentsPhase = phase;
-    renderExistingGarments();
-  }
 }
 
 function buildGarmentCard(g, idx, listType) {
@@ -1434,19 +1239,7 @@ function removeCustomChip(idx, chipIdx, listType) {
 function renderGarments() {
   const box=document.getElementById("garments-list");
   const cr=document.getElementById("garment-count-row");
-  const continueBtn=document.getElementById("g-continue-btn");
-
-  if (garmentsPhase === 'select') {
-    box.innerHTML = garments.map((g,i)=>buildGarmentChip(g,i,"garments")).join("");
-    continueBtn.style.display = garments.length ? "block" : "none";
-  } else {
-    const backLink = `<button onclick="switchGarmentPhase('garments','select')"
-      style="display:flex;align-items:center;gap:6px;background:none;border:none;color:var(--accent);font-weight:700;font-size:13px;cursor:pointer;padding:0 0 12px 0;">
-      ${typeof currentLang!=='undefined'&&currentLang==='hi' ? '← और कपड़े जोड़ें / सूची बदलें' : '← Add more garments / Edit list'}</button>`;
-    box.innerHTML = backLink + garments.map((g,i)=>buildGarmentCard(g,i,"garments")).join("");
-    continueBtn.style.display = "none";
-  }
-
+  box.innerHTML = garments.map((g,i)=>buildGarmentCard(g,i,"garments")).join("");
   cr.style.display = garments.length?"block":"none";
   document.getElementById("g-count-text").textContent = garments.length+" garment"+(garments.length!==1?"s":"")+" added";
 }
@@ -1454,19 +1247,7 @@ function renderGarments() {
 function renderExistingGarments() {
   const box=document.getElementById("existing-garments-list");
   const cr=document.getElementById("existing-garment-count-row");
-  const continueBtn=document.getElementById("eg-continue-btn");
-
-  if (existingGarmentsPhase === 'select') {
-    box.innerHTML = existingGarments.map((g,i)=>buildGarmentChip(g,i,"existingGarments")).join("");
-    continueBtn.style.display = existingGarments.length ? "block" : "none";
-  } else {
-    const backLink = `<button onclick="switchGarmentPhase('existingGarments','select')"
-      style="display:flex;align-items:center;gap:6px;background:none;border:none;color:var(--accent);font-weight:700;font-size:13px;cursor:pointer;padding:0 0 12px 0;">
-      ${typeof currentLang!=='undefined'&&currentLang==='hi' ? '← और कपड़े जोड़ें / सूची बदलें' : '← Add more garments / Edit list'}</button>`;
-    box.innerHTML = backLink + existingGarments.map((g,i)=>buildGarmentCard(g,i,"existingGarments")).join("");
-    continueBtn.style.display = "none";
-  }
-
+  box.innerHTML = existingGarments.map((g,i)=>buildGarmentCard(g,i,"existingGarments")).join("");
   cr.style.display = existingGarments.length?"block":"none";
   document.getElementById("eg-count-text").textContent = existingGarments.length+" garment"+(existingGarments.length!==1?"s":"")+" added";
   const hint=document.getElementById("ec-garment-hint");
@@ -1480,30 +1261,13 @@ function getActiveUploadCode() {
 }
 
 function buildQR(boxId, linkId) {
-  const box=document.getElementById(boxId);
-  if(!box) { console.warn("[buildQR] box element not found:", boxId); return; }
+  const box=document.getElementById(boxId); if(!box) return;
   box.innerHTML="";
   const code = getActiveUploadCode();
-  if (!code || code === "None" || code === "" || code === "0") {
-    console.warn("[buildQR] invalid upload code:", code);
-    box.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">Order code not ready yet</div>';
-    return;
-  }
   const url=window.location.origin+"/upload/"+code;
   const link=document.getElementById(linkId); if(link) link.href=url;
-  if (typeof QRCode === "undefined") {
-    console.error("[buildQR] QRCode library not loaded! Falling back to link.");
-    box.innerHTML=`<a href="${url}" target="_blank">${url}</a>`;
-    return;
-  }
-  try{
-    new QRCode(box,{text:url,width:170,height:170,colorDark:"#111827",colorLight:"#ffffff"});
-    console.log("[buildQR] QR code generated for:", url);
-  }
-  catch(e){
-    console.error("[buildQR] QRCode generation failed:", e);
-    box.innerHTML=`<a href="${url}" target="_blank">${url}</a>`;
-  }
+  try{new QRCode(box,{text:url,width:170,height:170,colorDark:"#111827",colorLight:"#ffffff"});}
+  catch(e){box.innerHTML=`<a href="${url}">${url}</a>`;}
 }
 
 function loadImages(previewId) {
@@ -1523,7 +1287,7 @@ function loadImages(previewId) {
     newImgs.forEach(img=>{
       const el=document.createElement("img");
       el.src=img.src||img.getAttribute("src");
-      el.style.cssText="width:100px;height:100px;object-fit:cover;border-radius:10px;border:2px solid var(--border);cursor:zoom-in;transition:transform 0.2s;"; el.onclick=function(){openZoomModal(this.src,"Order Image");};;
+      el.style.cssText="width:100px;height:100px;object-fit:cover;border-radius:10px;border:2px solid var(--border);cursor:zoom-in;transition:transform 0.2s;";
       el.onmouseover=()=>el.style.transform="scale(1.05)";
       el.onmouseout=()=>el.style.transform="scale(1)";
       el.onclick=()=>{
@@ -1532,8 +1296,6 @@ function loadImages(previewId) {
       };
       box.appendChild(el);
     });
-  }).catch(err=>{
-    console.error("[loadImages] failed for code="+code+":", err);
   });
 }
 let imgPreviewId = "img-preview";
@@ -1576,20 +1338,6 @@ function recalcPayment() {
   const advance=parseFloat(document.querySelector(".pay-advance")?.value||0);
   document.querySelectorAll(".pay-remaining").forEach(el=>el.textContent=Math.max(0,payable-advance));
   document.querySelectorAll(".pay-upi-amt").forEach(el=>el.textContent=advance);
-
-  // Show payment mode only when advance > 0
-  const modeSection = document.querySelector(".pay-mode-section");
-  if (modeSection) {
-    if (advance > 0) {
-      modeSection.style.display = "block";
-    } else {
-      // No advance — hide mode buttons AND both panels
-      modeSection.style.display = "none";
-      payMode = "cash"; // reset to cash internally
-      document.querySelectorAll(".pay-upi-panel").forEach(el=>el.style.display="none");
-      document.querySelectorAll(".pay-cash-panel").forEach(el=>el.style.display="none");
-    }
-  }
 }
 
 function setMode(mode) {
@@ -1604,21 +1352,6 @@ function setMode(mode) {
   });
   document.querySelectorAll(".pay-upi-panel").forEach(el=>el.style.display=isCash?"none":"flex");
   document.querySelectorAll(".pay-cash-panel").forEach(el=>el.style.display=isCash?"flex":"none");
-
-  // Generate real QR on UPI panel — the #pay-qr-box div is inside pay-upi-panel
-  if (!isCash) {
-    const qrBox = document.getElementById("pay-qr-box");
-    if (qrBox && qrBox.innerHTML.trim() === "") {
-      const code = getActiveUploadCode();
-      const url = window.location.origin + "/upload/" + code;
-      if (typeof QRCode !== "undefined") {
-        try { new QRCode(qrBox, {text:url, width:160, height:160, colorDark:"#111827", colorLight:"#ffffff"}); }
-        catch(e) { qrBox.innerHTML = `<a href="${url}" target="_blank" style="font-size:11px;">${url}</a>`; }
-      } else {
-        qrBox.innerHTML = `<a href="${url}" target="_blank" style="font-size:11px;">Open Upload Page</a>`;
-      }
-    }
-  }
   recalcPayment();
 }
 
@@ -1671,10 +1404,7 @@ function confirmOrder(flow) {
 
   fetch("/save-order",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)})
     .then(r=>r.json()).then(d=>{
-      if(d.status==="ok"){currentCode=d.order_code;savedPayload={...p,confirmed_order_code:d.order_code,repeat_of:d.repeat_of||repeatOf};
-        // Go to Images step (step 5) — optional upload, user clicks Finish to complete
-        if(flow==="new") goNewStep(5); else goExistingStep(5);
-      }
+      if(d.status==="ok"){currentCode=d.order_code;savedPayload={...p,confirmed_order_code:d.order_code,repeat_of:d.repeat_of||repeatOf};showSuccess();}
       else{showToast("Error: "+d.message,"error");btn.disabled=false;btn.textContent="✅ Confirm Order";}
     }).catch(()=>{showToast("Network error","error");btn.disabled=false;btn.textContent="✅ Confirm Order";});
 }
@@ -1708,15 +1438,6 @@ function showSuccess() {
   document.getElementById("sc_paid_pill").textContent     = "₹"+p.advance_paid;
   document.getElementById("sc_due_pill").textContent      = "₹"+p.remaining;
 
-  // Garments summary — e.g. "Shirt ×1, Pant ×2"
-  const gCounts = {};
-  (p.items||[]).forEach(it=>{
-    const t = it.type || "Item";
-    gCounts[t] = (gCounts[t]||0) + (parseInt(it.qty)||1);
-  });
-  const gSummary = Object.keys(gCounts).map(t=>`${t} ×${gCounts[t]}`).join(", ");
-  document.getElementById("sc_garments_pill").textContent = gSummary || "—";
-
   const repeatOf = p.repeat_of||"";
   if (repeatOf && !isRepeat) {
     document.getElementById("sc_repeat_code").textContent = repeatOf;
@@ -1732,7 +1453,7 @@ function showSuccess() {
         const box=document.getElementById("success-img-list");
         box.innerHTML=html;
         box.querySelectorAll("img").forEach(img=>{
-          img.style.cssText="width:90px;height:90px;object-fit:cover;border-radius:10px;border:2px solid var(--border);cursor:zoom-in;"; img.onclick=function(){openZoomModal(this.src,"Order Image");};;
+          img.style.cssText="width:90px;height:90px;object-fit:cover;border-radius:10px;border:2px solid var(--border);cursor:zoom-in;";
           img.onclick=()=>{document.getElementById("fullscreen-img").src=img.dataset.src||img.src;document.getElementById("fullscreen-ov").style.display="flex";};
         });
         document.getElementById("success-images").style.display="block";
@@ -1757,38 +1478,41 @@ function sendWA(lang){
   const mode  = p.payment_mode === "cash" ? (lang==="hi"?"नकद":"Cash") : "UPI";
   const displayCode = ecPermanentCode || currentCode; // Show customer code, not entry code
   let msg = "";
-  const adv = parseFloat(p.advance_paid) || 0;
 
   if (lang === "hi") {
-    msg = "*उत्तम टेलर्स*\n\n"
-      + "नमस्ते *" + p.customer_name + "*,\n\n"
+    msg = "*उत्तम टेलर्स*\n"
+      + "नमस्ते *" + p.customer_name + "* जी,\n"
       + "आपका ऑर्डर सफलतापूर्वक दर्ज हो गया है।\n"
       + "------------------------------------------\n\n"
-      + "- ऑर्डर नंबर: *#" + displayCode + "*\n"
-      + "- ऑर्डर तारीख: " + oFmt + "\n"
-      + "- डिलीवरी तारीख: *" + dFmt + "*\n\n"
-      + "- कपड़े: " + items + "\n\n"
-      + "- कुल राशि: *₹" + p.payable_amount + "*\n"
-      + (adv > 0 ? "- अग्रिम भुगतान: ₹" + p.advance_paid + "\n" : "")
-      + "- बकाया राशि: *₹" + p.remaining + "*\n"
-      + (adv > 0 ? "- भुगतान माध्यम: " + mode + "\n" : "")
-      + "\n-----------------------------------------------\n"
-      + "आपके विश्वास के लिए धन्यवाद। 🙏🏻\n"
+      + "• ऑर्डर नंबर: *#" + displayCode + "*\n\n"
+      + "• ऑर्डर तारीख: " + oFmt + "\n\n"
+      + "• डिलीवरी तारीख: *" + dFmt + "*\n\n"
+      + "• कपड़े: " + items + "\n\n"
+      + "• कुल राशि: *₹" + p.payable_amount + "*\n\n"
+      + "• अग्रिम भुगतान: ₹" + p.advance_paid + "\n\n"
+      + "• बकाया राशि: *₹" + p.remaining + "*\n\n"
+      + "• भुगतान माध्यम: " + mode + "\n"
+      + "-----------------------------------------------\n"
+      + "📦 ऑर्डर ट्रैक करें:\nhttps://uttamtailors.in/track-order?code=" + displayCode + "\n"
+      + "-----------------------------------------------\n"
+      + "आपका विश्वास ही हमारी सबसे बड़ी पूंजी है। 🙏\n"
       + "उत्तम टेलर्स";
   } else {
-    msg = "*Uttam Tailors*\n\n"
+    msg = "*Uttam Tailors*\n"
       + "Hello *" + p.customer_name + "*,\n"
       + "Your order has been confirmed successfully.\n"
       + "------------------------------------------\n\n"
-      + "- Order No: *#" + displayCode + "*\n"
-      + "- Order Date: " + oFmt + "\n"
-      + "- Delivery Date: *" + dFmt + "*\n\n"
-      + "- Garments: " + items + "\n\n"
-      + "- Total Amount: *₹" + p.payable_amount + "*\n"
-      + (adv > 0 ? "- Advance Paid: ₹" + p.advance_paid + "\n" : "")
-      + "- Balance Due: *₹" + p.remaining + "*\n"
-      + (adv > 0 ? "- Payment Mode: " + mode + "\n" : "")
-      + "\n-----------------------------------------------\n"
+      + "• Order No: *#" + displayCode + "*\n\n"
+      + "• Order Date: " + oFmt + "\n\n"
+      + "• Delivery Date: *" + dFmt + "*\n\n"
+      + "• Garments: " + items + "\n\n"
+      + "• Total Amount: *₹" + p.payable_amount + "*\n\n"
+      + "• Advance Paid: ₹" + p.advance_paid + "\n\n"
+      + "• Balance Due: *₹" + p.remaining + "*\n\n"
+      + "• Payment Mode: " + mode + "\n"
+      + "-----------------------------------------------\n"
+      + "📦 Track your order:\nhttps://uttamtailors.in/track-order?code=" + displayCode + "\n"
+      + "-----------------------------------------------\n"
       + "Thank you for your trust. 🙏🏻\n"
       + "Uttam Tailors";
   }

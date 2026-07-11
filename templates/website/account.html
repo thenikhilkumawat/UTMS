@@ -1,0 +1,629 @@
+{% extends "website/base.html" %}
+{% set active = "account" %}
+{% block title %}My Account — Uttam Tailors{% endblock %}
+{% block content %}
+<section class="page-hero" style="min-height:30vh;">
+  <div class="page-hero-img"><img src="https://images.unsplash.com/photo-1490367532201-b9bc1dc483f6?w=1400&q=80" alt="" loading="eager"></div>
+  <div class="page-hero-overlay"></div>
+  <div class="page-hero-content"><p class="kicker" style="color:var(--gold-l);">Your Account</p><h1 class="page-hero-title">My Account</h1></div>
+</section>
+
+<div style="max-width:1080px;margin:0 auto;padding:3rem 1.25rem 5rem;">
+
+  {% if google_error %}
+  <div style="background:#fee2e2;color:#991b1b;border-radius:8px;padding:12px 16px;margin-bottom:1.5rem;font-size:13.5px;">{{ google_error }}</div>
+  {% endif %}
+
+  <!-- Logged-out state: login / signup -->
+  <div id="acctPgGuest" style="display:none;max-width:420px;margin:0 auto;">
+    <div style="display:flex;gap:6px;margin-bottom:18px;background:#faf3e8;border-radius:8px;padding:4px;">
+      <button type="button" id="acctPgTabSignup" onclick="acctPgSetFormTab('signup')" style="flex:1;border:none;border-radius:6px;padding:9px 0;font-size:12.5px;font-weight:700;letter-spacing:.04em;cursor:pointer;background:var(--dark);color:#fff;">Sign up</button>
+      <button type="button" id="acctPgTabLogin" onclick="acctPgSetFormTab('login')" style="flex:1;border:none;border-radius:6px;padding:9px 0;font-size:12.5px;font-weight:700;letter-spacing:.04em;cursor:pointer;background:transparent;color:var(--muted);">Log in</button>
+    </div>
+
+    <button type="button" onclick="window.location.href='/auth/google/login?next=/account'" style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;border:1.5px solid var(--border);border-radius:8px;padding:11px 0;background:#fff;font-size:13.5px;font-weight:600;color:var(--dark);cursor:pointer;margin-bottom:14px;">
+      <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84c-.21 1.12-.84 2.07-1.8 2.71v2.26h2.9c1.7-1.57 2.7-3.88 2.7-6.61z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.9-2.26c-.8.55-1.85.86-3.06.86-2.36 0-4.36-1.6-5.07-3.74H.93v2.34C2.42 16.06 5.48 18 9 18z"/><path fill="#FBBC05" d="M3.93 10.68A5.4 5.4 0 0 1 3.64 9c0-.58.1-1.15.29-1.68V4.98H.93A8.97 8.97 0 0 0 0 9c0 1.45.35 2.83.93 4.02l3-2.34z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.46 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0 5.48 0 2.42 1.94.93 4.98l3 2.34C4.64 5.18 6.64 3.58 9 3.58z"/></svg>
+      Continue with Google
+    </button>
+    <div style="text-align:center;font-size:11px;color:var(--muted);margin:-6px 0 14px;">Google sign-in needs to be switched on by the shop owner — ask us if it isn't working yet.</div>
+
+    <div id="acctPgNameField" style="margin-bottom:12px;">
+      <label style="display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;">Your name</label>
+      <input type="text" id="acctPgName" placeholder="e.g. Rohit Sharma" style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:7px;padding:11px 13px;font-size:13.5px;">
+    </div>
+    <div style="margin-bottom:12px;">
+      <label style="display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;">Mobile number <span id="acctPgMobOptLbl"></span></label>
+      <input type="tel" id="acctPgMobile" placeholder="10-digit mobile number" maxlength="10" style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:7px;padding:11px 13px;font-size:13.5px;">
+    </div>
+    <div id="acctPgEmailField" style="margin-bottom:12px;">
+      <label style="display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;">Email <span id="acctPgEmailOptLbl">(optional)</span></label>
+      <input type="email" id="acctPgEmail" placeholder="you@example.com" style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:7px;padding:11px 13px;font-size:13.5px;">
+    </div>
+    <div style="margin-bottom:8px;">
+      <label style="display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;">Password</label>
+      <input type="password" id="acctPgPassword" placeholder="Your password" style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:7px;padding:11px 13px;font-size:13.5px;">
+    </div>
+    <div id="acctPgMsg" style="font-size:12px;min-height:1.2em;margin:6px 0 4px;color:#b91c1c;"></div>
+    <button type="button" id="acctPgSubmitBtn" onclick="acctPgSubmitForm()" style="width:100%;margin-top:8px;background:linear-gradient(135deg,var(--gold),var(--gold-l));color:#fff;border:none;border-radius:8px;padding:13px 0;font-size:14px;font-weight:700;letter-spacing:.03em;cursor:pointer;">Create account</button>
+  </div>
+
+  <!-- Logged-in dashboard -->
+  <div id="acctPgDash" style="display:none;">
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:1.75rem;flex-wrap:wrap;">
+      <div style="width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-l));color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;font-family:var(--fd);" id="acctPgAvatar">U</div>
+      <div>
+        <div style="font-family:var(--fd);font-size:22px;color:var(--dark);" id="acctPgName2">—</div>
+        <div style="font-size:12.5px;color:var(--muted);" id="acctPgSub">—</div>
+      </div>
+      <button type="button" onclick="acctPgLogout()" style="margin-left:auto;border:1.5px solid var(--border);background:#fff;border-radius:7px;padding:9px 16px;font-size:12.5px;font-weight:700;color:var(--dark);cursor:pointer;">Log out</button>
+    </div>
+
+    <div style="display:flex;gap:6px;overflow-x:auto;border-bottom:1px solid var(--border);margin-bottom:1.75rem;padding-bottom:1px;" id="acctPgTabs">
+      <button class="acctpg-tab" data-tab="profile" onclick="acctPgSetTab('profile')">Profile</button>
+      <button class="acctpg-tab" data-tab="addresses" onclick="acctPgSetTab('addresses')">Addresses</button>
+      <button class="acctpg-tab" data-tab="orders" onclick="acctPgSetTab('orders')">Orders</button>
+      <button class="acctpg-tab" data-tab="measurements" onclick="acctPgSetTab('measurements')">Measurements</button>
+      <button class="acctpg-tab" data-tab="occasions" onclick="acctPgSetTab('occasions')">Occasions</button>
+      <button class="acctpg-tab" data-tab="wishlist" onclick="acctPgSetTab('wishlist')">Wishlist</button>
+      <button class="acctpg-tab" data-tab="payments" onclick="acctPgSetTab('payments')">Payments</button>
+      <button class="acctpg-tab" data-tab="settings" onclick="acctPgSetTab('settings')">Settings</button>
+    </div>
+
+    <div id="acctPgPane"></div>
+  </div>
+
+  <div id="acctPgLoading" style="text-align:center;padding:4rem 0;color:var(--muted);font-size:13.5px;">Loading your account…</div>
+</div>
+
+<style>
+.acctpg-tab{border:none;background:transparent;padding:10px 14px;font-size:12.5px;font-weight:700;letter-spacing:.03em;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;}
+.acctpg-tab.active{color:var(--dark);border-bottom-color:var(--gold);}
+.acctpg-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:1.25rem 1.4rem;margin-bottom:1rem;}
+.acctpg-lbl{display:block;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
+.acctpg-in{width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:7px;padding:10px 12px;font-size:13.5px;margin-bottom:12px;font-family:inherit;}
+.acctpg-btn{background:linear-gradient(135deg,var(--gold),var(--gold-l));color:#fff;border:none;border-radius:7px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;}
+.acctpg-btn-ghost{background:transparent;border:1.5px solid var(--border);color:var(--dark);border-radius:7px;padding:9px 16px;font-size:12.5px;font-weight:700;cursor:pointer;}
+.acctpg-btn-danger{background:#fee2e2;color:#991b1b;border:none;border-radius:7px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;}
+.acctpg-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media(max-width:560px){.acctpg-row{grid-template-columns:1fr;}}
+.acctpg-status{display:inline-block;font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:7px;text-transform:uppercase;letter-spacing:.03em;}
+.acctpg-msg{font-size:12px;min-height:1.2em;margin:4px 0;}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function(){
+  var acctPgState = { acc: null, tab: 'profile', formTab: 'signup' };
+  var ACCTPG_TABS = ['profile','addresses','orders','measurements','occasions','wishlist','payments','settings'];
+
+  window.acctPgSetFormTab = function(t){
+    acctPgState.formTab = t;
+    document.getElementById('acctPgTabSignup').style.background = t==='signup' ? 'var(--dark)' : 'transparent';
+    document.getElementById('acctPgTabSignup').style.color = t==='signup' ? '#fff' : 'var(--muted)';
+    document.getElementById('acctPgTabLogin').style.background = t==='login' ? 'var(--dark)' : 'transparent';
+    document.getElementById('acctPgTabLogin').style.color = t==='login' ? '#fff' : 'var(--muted)';
+    document.getElementById('acctPgNameField').style.display = t==='signup' ? 'block' : 'none';
+    document.getElementById('acctPgSubmitBtn').textContent = t==='signup' ? 'Create account' : 'Log in';
+    document.getElementById('acctPgMsg').textContent = '';
+  };
+
+  window.acctPgSubmitForm = function(){
+    var name = document.getElementById('acctPgName').value.trim();
+    var mobile = document.getElementById('acctPgMobile').value.trim();
+    var email = document.getElementById('acctPgEmail').value.trim();
+    var password = document.getElementById('acctPgPassword').value.trim();
+    var msgEl = document.getElementById('acctPgMsg');
+    msgEl.textContent = '';
+    var url, body;
+    if (acctPgState.formTab === 'signup') {
+      url = '/api/account/signup';
+      body = {name: name, mobile: mobile, email: email, password: password};
+    } else {
+      url = '/api/account/login';
+      body = {identifier: mobile || email, password: password};
+    }
+    fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)})
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if (d.ok) { acctPgMergeWishlistThenLoad(); }
+        else { msgEl.textContent = d.error || 'Something went wrong'; }
+      })
+      .catch(function(){ msgEl.textContent = 'Network error — please try again'; });
+  };
+
+  function acctPgMergeWishlistThenLoad(){
+    var raw = [];
+    try { raw = JSON.parse(localStorage.getItem('ut_wishlist') || '[]'); } catch(e){}
+    // raw is an array of {id,name,price,img} objects — the merge API wants plain ids.
+    var ids = raw.map(function(it){ return it && it.id; }).filter(function(id){ return id; });
+    if (ids.length) {
+      fetch('/api/account/wishlist/merge', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({item_ids: ids})})
+        .then(function(){ acctPgLoad(); }).catch(function(){ acctPgLoad(); });
+    } else { acctPgLoad(); }
+  }
+
+  window.acctPgLogout = function(){
+    fetch('/api/account/logout', {method:'POST'}).then(function(){ window.location.reload(); });
+  };
+
+  window.acctPgSetTab = function(t){
+    acctPgState.tab = t;
+    document.querySelectorAll('.acctpg-tab').forEach(function(b){ b.classList.toggle('active', b.dataset.tab === t); });
+    acctPgRenderTab(t);
+  };
+
+  function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+  function acctPgRenderTab(t){
+    var pane = document.getElementById('acctPgPane');
+    pane.innerHTML = '<div style="padding:2rem 0;text-align:center;color:var(--muted);font-size:13px;">Loading…</div>';
+    if (t === 'profile') return acctPgRenderProfile(pane);
+    if (t === 'addresses') return acctPgRenderAddresses(pane);
+    if (t === 'orders') return acctPgRenderOrders(pane);
+    if (t === 'measurements') return acctPgRenderMeasurements(pane);
+    if (t === 'occasions') return acctPgRenderOccasions(pane);
+    if (t === 'wishlist') return acctPgRenderWishlist(pane);
+    if (t === 'payments') return acctPgRenderPayments(pane);
+    if (t === 'settings') return acctPgRenderSettings(pane);
+  }
+
+  // ── Profile ──────────────────────────────────────────────────────────────
+  function acctPgRenderProfile(pane){
+    var a = acctPgState.acc;
+    pane.innerHTML =
+      '<div class="acctpg-card">' +
+        '<div class="acctpg-row">' +
+          '<div><label class="acctpg-lbl">Full name</label><input class="acctpg-in" id="pfName" value="'+esc(a.name)+'"></div>' +
+          '<div><label class="acctpg-lbl">Mobile number</label><input class="acctpg-in" id="pfMobile" value="'+esc(a.mobile)+'" maxlength="10"></div>' +
+        '</div>' +
+        '<label class="acctpg-lbl">Email</label><input class="acctpg-in" id="pfEmail" value="'+esc(a.email)+'" placeholder="you@example.com">' +
+        '<label class="acctpg-lbl">Address line 1</label><input class="acctpg-in" id="pfAddr1" value="'+esc(a.address_line1)+'">' +
+        '<div class="acctpg-row">' +
+          '<div><label class="acctpg-lbl">Address line 2</label><input class="acctpg-in" id="pfAddr2" value="'+esc(a.address_line2)+'"></div>' +
+          '<div><label class="acctpg-lbl">City</label><input class="acctpg-in" id="pfCity" value="'+esc(a.address_city)+'"></div>' +
+        '</div>' +
+        '<div class="acctpg-row">' +
+          '<div><label class="acctpg-lbl">State</label><input class="acctpg-in" id="pfState" value="'+esc(a.address_state)+'"></div>' +
+          '<div><label class="acctpg-lbl">Pincode</label><input class="acctpg-in" id="pfPincode" value="'+esc(a.address_pincode)+'"></div>' +
+        '</div>' +
+        '<div class="acctpg-msg" id="pfMsg"></div>' +
+        '<button class="acctpg-btn" onclick="acctPgSaveProfile()">Save changes</button>' +
+      '</div>';
+  }
+
+  window.acctPgSaveProfile = function(){
+    var body = {
+      name: document.getElementById('pfName').value.trim(),
+      mobile: document.getElementById('pfMobile').value.trim(),
+      email: document.getElementById('pfEmail').value.trim(),
+      address_line1: document.getElementById('pfAddr1').value.trim(),
+      address_line2: document.getElementById('pfAddr2').value.trim(),
+      address_city: document.getElementById('pfCity').value.trim(),
+      address_state: document.getElementById('pfState').value.trim(),
+      address_pincode: document.getElementById('pfPincode').value.trim(),
+    };
+    var msg = document.getElementById('pfMsg');
+    fetch('/api/account/profile', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)})
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        msg.style.color = d.ok ? '#15803d' : '#b91c1c';
+        msg.textContent = d.ok ? 'Saved!' : (d.error || 'Could not save');
+        if (d.ok) acctPgLoad();
+      });
+  };
+
+  // ── Addresses ───────────────────────────────────────────────────────────
+  function acctPgRenderAddresses(pane){
+    fetch('/api/account/addresses').then(function(r){ return r.json(); }).then(function(d){
+      var addrs = (d.addresses || []);
+      var html = '<div style="display:flex;justify-content:flex-end;margin-bottom:12px;"><button class="acctpg-btn-ghost" onclick="acctPgShowAddrForm()">+ Add address</button></div>';
+      html += '<div id="acctPgAddrFormWrap"></div>';
+      if (!addrs.length) {
+        html += '<div class="acctpg-card" style="text-align:center;color:var(--muted);font-size:13px;">No saved addresses yet.</div>';
+      }
+      addrs.forEach(function(a){
+        html += '<div class="acctpg-card">' +
+          '<div style="display:flex;justify-content:space-between;align-items:flex-start;">' +
+            '<div>' +
+              '<strong style="font-size:13.5px;">'+esc(a.label)+'</strong>' + (a.is_default ? ' <span class="acctpg-status" style="background:#dcfce7;color:#15803d;">Default</span>' : '') +
+              '<div style="font-size:13px;color:var(--dark);margin-top:6px;line-height:1.6;">' + esc(a.full_name) + (a.mobile ? ' · '+esc(a.mobile) : '') + '<br>' + esc(a.line1) + (a.line2 ? ', '+esc(a.line2) : '') + '<br>' + esc(a.city) + (a.state ? ', '+esc(a.state) : '') + ' - ' + esc(a.pincode) + '</div>' +
+            '</div>' +
+            '<div style="display:flex;gap:6px;flex-shrink:0;">' +
+              (!a.is_default ? '<button class="acctpg-btn-ghost" onclick="acctPgSetDefaultAddr('+a.id+')">Set default</button>' : '') +
+              '<button class="acctpg-btn-ghost" onclick="acctPgDeleteAddr('+a.id+')">Delete</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      });
+      pane.innerHTML = html;
+    });
+  }
+
+  window.acctPgShowAddrForm = function(){
+    var wrap = document.getElementById('acctPgAddrFormWrap');
+    wrap.innerHTML = '<div class="acctpg-card">' +
+      '<div class="acctpg-row">' +
+        '<div><label class="acctpg-lbl">Label</label><input class="acctpg-in" id="afLabel" value="Home"></div>' +
+        '<div><label class="acctpg-lbl">Full name</label><input class="acctpg-in" id="afName"></div>' +
+      '</div>' +
+      '<label class="acctpg-lbl">Mobile</label><input class="acctpg-in" id="afMobile">' +
+      '<label class="acctpg-lbl">Address line 1</label><input class="acctpg-in" id="afLine1">' +
+      '<label class="acctpg-lbl">Address line 2</label><input class="acctpg-in" id="afLine2">' +
+      '<div class="acctpg-row">' +
+        '<div><label class="acctpg-lbl">City</label><input class="acctpg-in" id="afCity"></div>' +
+        '<div><label class="acctpg-lbl">State</label><input class="acctpg-in" id="afState"></div>' +
+      '</div>' +
+      '<label class="acctpg-lbl">Pincode</label><input class="acctpg-in" id="afPincode">' +
+      '<label style="font-size:12.5px;display:flex;align-items:center;gap:6px;margin-bottom:12px;"><input type="checkbox" id="afDefault"> Set as default address</label>' +
+      '<div class="acctpg-msg" id="afMsg"></div>' +
+      '<button class="acctpg-btn" onclick="acctPgSaveAddr()">Save address</button>' +
+    '</div>';
+  };
+
+  window.acctPgSaveAddr = function(){
+    var body = {
+      label: document.getElementById('afLabel').value.trim() || 'Home',
+      full_name: document.getElementById('afName').value.trim(),
+      mobile: document.getElementById('afMobile').value.trim(),
+      line1: document.getElementById('afLine1').value.trim(),
+      line2: document.getElementById('afLine2').value.trim(),
+      city: document.getElementById('afCity').value.trim(),
+      state: document.getElementById('afState').value.trim(),
+      pincode: document.getElementById('afPincode').value.trim(),
+      is_default: document.getElementById('afDefault').checked,
+    };
+    var msg = document.getElementById('afMsg');
+    fetch('/api/account/addresses', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)})
+      .then(function(r){ return r.json(); }).then(function(d){
+        if (d.ok) acctPgRenderTab('addresses');
+        else { msg.style.color = '#b91c1c'; msg.textContent = d.error || 'Could not save'; }
+      });
+  };
+
+  window.acctPgDeleteAddr = function(id){
+    if (!confirm('Delete this address?')) return;
+    fetch('/api/account/addresses/'+id+'/delete', {method:'POST'}).then(function(){ acctPgRenderTab('addresses'); });
+  };
+  window.acctPgSetDefaultAddr = function(id){
+    fetch('/api/account/addresses/'+id+'/default', {method:'POST'}).then(function(){ acctPgRenderTab('addresses'); });
+  };
+
+  // ── Orders ───────────────────────────────────────────────────────────────
+  function acctPgRenderOrders(pane){
+    fetch('/api/account/orders').then(function(r){ return r.json(); }).then(function(d){
+      var orders = d.orders || [];
+      if (!orders.length) {
+        pane.innerHTML = '<div class="acctpg-card" style="text-align:center;color:var(--muted);font-size:13px;">No orders yet. <a href="/commission" style="color:var(--gold);font-weight:700;">Place your first order →</a></div>';
+        return;
+      }
+      var html = '';
+      orders.forEach(function(o){
+        var statusColor = o.status && o.status.toLowerCase().indexOf('deliver')>-1 ? '#dcfce7;color:#15803d' :
+                           o.status && o.status.toLowerCase().indexOf('ready')>-1 ? '#ede9fe;color:#6d28d9' :
+                           o.status && o.status.toLowerCase()==='cancelled' ? '#fee2e2;color:#dc2626' : '#dbeafe;color:#1e40af';
+        html += '<div class="acctpg-card">' +
+          '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">' +
+            '<div>' +
+              '<strong style="font-size:14px;">'+esc(o.order_code)+'</strong> <span class="acctpg-status" style="background:'+statusColor+';">'+esc((o.status||'').toUpperCase())+'</span>' +
+              '<div style="font-size:12.5px;color:var(--muted);margin-top:4px;">'+esc(o.items_summary || '')+'</div>' +
+              '<div style="font-size:12px;color:var(--muted);margin-top:2px;">Ordered '+esc(o.order_date||'')+(o.delivery_date ? ' · Delivery by '+esc(o.delivery_date) : '')+'</div>' +
+            '</div>' +
+            '<div style="text-align:right;">' +
+              '<div style="font-weight:700;font-size:14px;">₹'+esc(o.payable_amount||o.total_amount||0)+'</div>' +
+              (o.remaining ? '<div style="font-size:11.5px;color:#b45309;">₹'+esc(o.remaining)+' due</div>' : '<div style="font-size:11.5px;color:#15803d;">Fully paid</div>') +
+            '</div>' +
+          '</div>' +
+          acctPgTrackingHtml(o.tracking) +
+        '</div>';
+      });
+      pane.innerHTML = html;
+    });
+  }
+
+  function acctPgTrackingHtml(tracking){
+    if (!tracking || !tracking.length) return '';
+    var html = '<div style="display:flex;gap:4px;margin-top:14px;overflow-x:auto;">';
+    tracking.forEach(function(stg, i){
+      var color = stg.done ? (stg.key === 'cancelled' ? '#dc2626' : 'var(--gold)') : 'var(--border)';
+      html += '<div style="flex:1;min-width:90px;text-align:center;">' +
+        '<div style="height:5px;border-radius:3px;background:'+color+';margin-bottom:6px;"></div>' +
+        '<div style="font-size:10px;color:'+(stg.current?'var(--dark)':'var(--muted)')+';font-weight:'+(stg.current?'800':'500')+';line-height:1.3;">'+esc(stg.label)+'</div>' +
+      '</div>';
+    });
+    html += '</div>';
+    return html;
+  }
+
+  // ── Measurement Locker ───────────────────────────────────────────────────
+  var _measData = [];
+  function acctPgRenderMeasurements(pane){
+    fetch('/api/measurements').then(function(r){return r.json();}).then(function(d){
+      _measData = d.measurements || [];
+      var html = '<div class="acctpg-card">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">' +
+          '<strong style="font-size:14px;">Measurement Locker</strong>' +
+          '<button class="btn-primary" style="padding:8px 16px;font-size:12px;" onclick="acctPgEditMeas(null)">+ Add New</button>' +
+        '</div>';
+      if(!_measData.length){
+        html += '<div style="color:var(--muted);font-size:13px;text-align:center;padding:1.5rem 0;">No measurements saved yet. Add your first profile!</div>';
+      }
+      _measData.forEach(function(m){
+        var fields = [
+          ['Chest',m.chest],['Shoulder',m.shoulder],['Sleeve',m.sleeve],
+          ['Waist',m.waist],['Hip',m.hip],['Inseam',m.inseam],
+          ['Neck',m.neck],['Thigh',m.thigh],['Height',m.height],['Weight',m.weight]
+        ].filter(function(f){return f[1];});
+        html += '<div style="border:1.5px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem;">' +
+            '<strong style="font-size:13.5px;">'+esc(m.label||'My Measurements')+'</strong>' +
+            '<div style="display:flex;gap:8px;">' +
+              '<button style="font-size:11px;padding:5px 10px;border:1px solid var(--border);border-radius:6px;background:#fff;cursor:pointer;" onclick="acctPgEditMeas('+m.id+')">Edit</button>' +
+              '<button style="font-size:11px;padding:5px 10px;border:1px solid #fca5a5;border-radius:6px;background:#fff;color:#dc2626;cursor:pointer;" onclick="acctPgDelMeas('+m.id+')">Delete</button>' +
+            '</div>' +
+          '</div>' +
+          '<div style="display:flex;flex-wrap:wrap;gap:6px;">' +
+            fields.map(function(f){ return '<span style="background:var(--bg2);border-radius:6px;padding:4px 9px;font-size:12px;"><strong>'+f[0]+':</strong> '+esc(f[1])+' in</span>'; }).join('') +
+          '</div>' +
+          (m.notes ? '<div style="font-size:12px;color:var(--muted);margin-top:6px;">'+esc(m.notes)+'</div>' : '') +
+        '</div>';
+      });
+      html += '</div>';
+      pane.innerHTML = html;
+    });
+  }
+  window.acctPgEditMeas = function(id){
+    var m = id ? _measData.find(function(x){return x.id===id;}) : null;
+    var flds = ['chest','shoulder','sleeve','waist','hip','inseam','neck','thigh','height','weight'];
+    var fldLabels = ['Chest','Shoulder','Sleeve','Waist','Hip','Inseam','Neck','Thigh','Height','Weight'];
+    var formRows = '';
+    for(var i=0;i<flds.length;i+=2){
+      formRows += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">' +
+        '<div><label style="font-size:11.5px;font-weight:700;display:block;margin-bottom:3px;">'+fldLabels[i]+' (in)</label>' +
+          '<input id="mf_'+flds[i]+'" type="number" step="0.5" value="'+(m&&m[flds[i]]?m[flds[i]]:'')+'" style="width:100%;padding:8px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;"></div>' +
+        (flds[i+1] ? '<div><label style="font-size:11.5px;font-weight:700;display:block;margin-bottom:3px;">'+fldLabels[i+1]+' (in)</label>' +
+          '<input id="mf_'+flds[i+1]+'" type="number" step="0.5" value="'+(m&&m[flds[i+1]]?m[flds[i+1]]:'')+'" style="width:100%;padding:8px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;"></div>' : '') +
+      '</div>';
+    }
+    var modal = '<div id="measModal" style="position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:1rem;">' +
+      '<div style="background:#fff;border-radius:16px;padding:1.5rem;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">' +
+          '<strong style="font-size:15px;">'+(id?'Edit':'Add')+' Measurements</strong>' +
+          '<button onclick="document.getElementById(\'measModal\').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;">&#x2715;</button>' +
+        '</div>' +
+        '<div style="margin-bottom:10px;"><label style="font-size:11.5px;font-weight:700;display:block;margin-bottom:3px;">Profile Label</label>' +
+          '<input id="mf_label" type="text" value="'+(m?esc(m.label||'My Measurements'):'My Measurements')+'" style="width:100%;padding:8px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;"></div>' +
+        formRows +
+        '<div style="margin-bottom:1rem;"><label style="font-size:11.5px;font-weight:700;display:block;margin-bottom:3px;">Notes</label>' +
+          '<textarea id="mf_notes" rows="2" style="width:100%;padding:8px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;resize:vertical;">'+(m?esc(m.notes||''):'')+'</textarea></div>' +
+        '<button class="btn-primary" style="width:100%;padding:12px;" onclick="acctPgSaveMeas('+(id||'null')+')">Save Measurements</button>' +
+      '</div></div>';
+    document.body.insertAdjacentHTML('beforeend', modal);
+  };
+  window.acctPgSaveMeas = function(id){
+    var flds = ['chest','shoulder','sleeve','waist','hip','inseam','neck','thigh','height','weight'];
+    var body = {label: document.getElementById('mf_label').value.trim(), notes: document.getElementById('mf_notes').value.trim()};
+    if(id) body.id = id;
+    flds.forEach(function(f){ var v=parseFloat(document.getElementById('mf_'+f).value); if(!isNaN(v))body[f]=v; });
+    fetch('/api/measurements/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+      .then(function(r){return r.json();}).then(function(d){
+        if(d.ok){ document.getElementById('measModal').remove(); acctPgRenderMeasurements(document.getElementById('acctPgPane')); }
+      });
+  };
+  window.acctPgDelMeas = function(id){
+    if(!confirm('Delete this measurement profile?')) return;
+    fetch('/api/measurements/'+id+'/delete',{method:'POST'}).then(function(r){return r.json();}).then(function(d){
+      if(d.ok) acctPgRenderMeasurements(document.getElementById('acctPgPane'));
+    });
+  };
+
+  // ── Occasions / Countdown ────────────────────────────────────────────────
+  function acctPgRenderOccasions(pane){
+    fetch('/api/occasions').then(function(r){return r.json();}).then(function(d){
+      var occs = d.occasions || [];
+      var today = new Date();
+      var html = '<div class="acctpg-card">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">' +
+          '<strong style="font-size:14px;">Upcoming Occasions</strong>' +
+          '<button class="btn-primary" style="padding:8px 16px;font-size:12px;" onclick="acctPgAddOccasion()">+ Add Occasion</button>' +
+        '</div>';
+      if(!occs.length){
+        html += '<div style="color:var(--muted);font-size:13px;text-align:center;padding:1.5rem 0;">No occasions saved. Add a wedding, festival, or event to track your garment deadline!</div>';
+      }
+      occs.forEach(function(o){
+        var evDate = new Date(o.event_date);
+        var daysLeft = Math.ceil((evDate - today) / 86400000);
+        var urgency = daysLeft <= 7 ? '#dc2626' : daysLeft <= 21 ? '#b45309' : '#15803d';
+        var countdown = daysLeft > 0 ? daysLeft+' days left' : (daysLeft===0 ? 'Today!' : 'Passed');
+        html += '<div style="border:1.5px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">' +
+          '<div>' +
+            '<div style="font-weight:700;font-size:13.5px;">'+esc(o.name)+'</div>' +
+            '<div style="font-size:12px;color:var(--muted);">'+esc(o.event_date)+(o.garment_type?' · '+esc(o.garment_type):'')+'</div>' +
+          '</div>' +
+          '<div style="display:flex;align-items:center;gap:10px;">' +
+            '<span style="background:var(--bg2);border-radius:20px;padding:5px 12px;font-size:12.5px;font-weight:700;color:'+urgency+';">'+countdown+'</span>' +
+            (daysLeft>0?'<a href="/commission" style="font-size:12px;color:var(--gold);font-weight:700;">Order now →</a>':'') +
+            '<button onclick="acctPgDelOccasion('+o.id+')" style="background:none;border:none;color:#dc2626;font-size:18px;cursor:pointer;">&#x2715;</button>' +
+          '</div>' +
+        '</div>';
+      });
+      html += '<div style="font-size:12px;color:var(--muted);text-align:center;margin-top:.5rem;">We recommend placing your order at least 2–3 weeks before your event.</div>';
+      html += '</div>';
+      pane.innerHTML = html;
+    });
+  }
+  window.acctPgAddOccasion = function(){
+    var modal = '<div id="occModal" style="position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:1rem;">' +
+      '<div style="background:#fff;border-radius:16px;padding:1.5rem;width:100%;max-width:400px;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">' +
+          '<strong style="font-size:15px;">Add Occasion</strong>' +
+          '<button onclick="document.getElementById(\'occModal\').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;">&#x2715;</button>' +
+        '</div>' +
+        '<div style="margin-bottom:10px;"><label style="font-size:11.5px;font-weight:700;display:block;margin-bottom:4px;">Occasion Name</label>' +
+          '<input id="occ_name" placeholder="e.g. Brother\'s Wedding" style="width:100%;padding:9px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;"></div>' +
+        '<div style="margin-bottom:10px;"><label style="font-size:11.5px;font-weight:700;display:block;margin-bottom:4px;">Event Date</label>' +
+          '<input id="occ_date" type="date" style="width:100%;padding:9px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;"></div>' +
+        '<div style="margin-bottom:1rem;"><label style="font-size:11.5px;font-weight:700;display:block;margin-bottom:4px;">Garment Type (optional)</label>' +
+          '<input id="occ_garment" placeholder="e.g. Sherwani, Suit" style="width:100%;padding:9px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;"></div>' +
+        '<button class="btn-primary" style="width:100%;padding:12px;" onclick="acctPgSaveOccasion()">Save Occasion</button>' +
+      '</div></div>';
+    document.body.insertAdjacentHTML('beforeend', modal);
+  };
+  window.acctPgSaveOccasion = function(){
+    var name = document.getElementById('occ_name').value.trim();
+    var date = document.getElementById('occ_date').value;
+    if(!name||!date){alert('Please fill in name and date.');return;}
+    fetch('/api/occasions/save',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name:name,event_date:date,garment_type:document.getElementById('occ_garment').value.trim()})})
+      .then(function(r){return r.json();}).then(function(d){
+        if(d.ok){ document.getElementById('occModal').remove(); acctPgRenderOccasions(document.getElementById('acctPgPane')); }
+      });
+  };
+  window.acctPgDelOccasion = function(id){
+    if(!confirm('Remove this occasion?')) return;
+    fetch('/api/occasions/'+id+'/delete',{method:'POST'}).then(function(r){return r.json();}).then(function(d){
+      if(d.ok) acctPgRenderOccasions(document.getElementById('acctPgPane'));
+    });
+  };
+
+  // ── Wishlist ─────────────────────────────────────────────────────────────
+  function acctPgRenderWishlist(pane){
+    fetch('/api/account/wishlist').then(function(r){ return r.json(); }).then(function(d){
+      var items = d.items || [];
+      if (!items.length) {
+        pane.innerHTML = '<div class="acctpg-card" style="text-align:center;color:var(--muted);font-size:13px;">Your wishlist is empty. <a href="/our-craft" style="color:var(--gold);font-weight:700;">Browse garments →</a></div>';
+        return;
+      }
+      var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;">';
+      items.forEach(function(it){
+        var badges = '';
+        var curPrice = parseFloat(it.price), oldPrice = parseFloat(it.price_snapshot);
+        if (!isNaN(curPrice) && !isNaN(oldPrice) && curPrice < oldPrice) {
+          badges += '<span style="display:inline-block;background:#1f7a3d;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;margin-right:4px;">PRICE DROP &#8595; ₹'+Math.round(oldPrice-curPrice)+'</span>';
+        }
+        if (typeof it.stock_qty === 'number' && it.stock_qty >= 0) {
+          var wasOut = (it.stock_snapshot === 0);
+          if (it.stock_qty === 0) {
+            badges += '<span style="display:inline-block;background:#9c1f1f;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;">OUT OF STOCK</span>';
+          } else if (wasOut && it.stock_qty > 0) {
+            badges += '<span style="display:inline-block;background:#1f7a3d;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;">BACK IN STOCK</span>';
+          } else if (it.stock_qty <= 5) {
+            badges += '<span style="display:inline-block;background:#b8780f;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;">ONLY '+it.stock_qty+' LEFT</span>';
+          }
+        }
+        var outOfStock = (it.stock_qty === 0);
+        html += '<div class="acctpg-card" style="padding:10px;">' +
+          '<img src="'+esc(it.image_url||'')+'" style="width:100%;height:120px;object-fit:cover;border-radius:6px;background:#f3ece1;" onerror="this.style.display='none'">' +
+          '<div style="font-size:12.5px;font-weight:700;margin-top:8px;">'+esc(it.name)+'</div>' +
+          '<div style="font-size:12px;color:var(--gold);font-weight:700;">₹'+esc(it.price)+'</div>' +
+          (badges ? '<div style="margin-top:5px;">'+badges+'</div>' : '') +
+          '<div style="display:flex;gap:6px;margin-top:8px;">' +
+            '<a href="'+esc(it.item_url||'/our-craft')+'" style="flex:1;text-align:center;font-size:11.5px;padding:7px;background:var(--dark);color:#fff;border-radius:6px;text-decoration:none;font-weight:700;">'+(outOfStock?'View':'Order Now')+'</a>' +
+            (!outOfStock ? '<button onclick="addToCartFromWishlist('+it.item_id+')" style="padding:7px 10px;border:1.5px solid var(--border);border-radius:6px;background:#fff;cursor:pointer;font-size:13px;">🛒</button>' : '') +
+          '</div>' +
+        '</div>';
+      });
+      html += '</div>';
+      pane.innerHTML = html;
+    });
+  }
+  window.addToCartFromWishlist = function(itemId){
+    fetch('/api/cart/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({item_id:itemId,qty:1})})
+      .then(function(r){return r.json();}).then(function(d){
+        if(d.ok){ if(typeof refreshCartCount==='function')refreshCartCount(); alert('Added to cart!'); }
+      });
+  };
+
+  // ── Payments ─────────────────────────────────────────────────────────────
+  function acctPgRenderPayments(pane){
+    fetch('/api/account/payment-methods').then(function(r){ return r.json(); }).then(function(d){
+      var methods = d.methods || [];
+      var html = '<div class="acctpg-card"><p style="font-size:12.5px;color:var(--muted);margin-bottom:1rem;">'+
+        'These are saved here just for your own reference — Uttam Tailors does not have online payment yet, so orders are still settled via WhatsApp/cash/UPI directly. We never ask for or store your CVV or full card number.</p>';
+      if (!methods.length) {
+        html += '<div style="color:var(--muted);font-size:13px;margin-bottom:1rem;">No payment info saved.</div>';
+      }
+      methods.forEach(function(m){
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">' +
+          '<span style="font-size:13.5px;">'+esc(m.label||m.type||'Card')+'</span>' +
+          '<button onclick="acctPgDeletePayment('+m.id+')" style="font-size:11px;color:#dc2626;background:none;border:none;cursor:pointer;">Remove</button>' +
+        '</div>';
+      });
+      html += '<div style="margin-top:1rem;display:flex;gap:8px;">' +
+        '<input id="pmLabel" placeholder="Label e.g. UPI/HDFC card" style="flex:1;padding:9px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;">' +
+        '<button class="btn-primary" style="padding:9px 16px;font-size:13px;" onclick="acctPgAddPayment()">Save</button>' +
+        '</div>';
+      html += '</div>';
+      pane.innerHTML = html;
+    });
+  }
+  window.acctPgDeletePayment = function(id){
+    fetch('/api/account/payment-methods/'+id+'/delete',{method:'POST'}).then(function(){acctPgRenderPayments(document.getElementById('acctPgPane'));});
+  };
+  window.acctPgAddPayment = function(){
+    var label = document.getElementById('pmLabel').value.trim();
+    if(!label) return;
+    fetch('/api/account/payment-methods/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({label:label,type:'other'})})
+      .then(function(r){return r.json();}).then(function(d){if(d.ok)acctPgRenderPayments(document.getElementById('acctPgPane'));});
+  };
+
+  // ── Settings ─────────────────────────────────────────────────────────────
+  function acctPgRenderSettings(pane){
+    var a = acctPgState.acc;
+    pane.innerHTML = '<div class="acctpg-card">' +
+      '<h3 style="font-size:15px;font-weight:700;margin-bottom:1rem;">Account Settings</h3>' +
+      '<div style="margin-bottom:1.25rem;">' +
+        '<label style="font-size:12px;font-weight:700;display:block;margin-bottom:6px;">Change Password</label>' +
+        '<input id="acctPgPwOld" type="password" placeholder="Current password" class="acctpg-input" style="margin-bottom:6px;">' +
+        '<input id="acctPgPwNew" type="password" placeholder="New password (min 6 chars)" class="acctpg-input" style="margin-bottom:6px;">' +
+        '<button class="btn-primary" style="padding:9px 20px;font-size:13px;" onclick="acctPgChangePassword()">Update Password</button>' +
+      '</div>' +
+      '<div style="border-top:1px solid var(--border);padding-top:1.25rem;">' +
+        '<h4 style="color:#dc2626;font-size:13px;font-weight:700;margin-bottom:.5rem;">Danger Zone</h4>' +
+        '<p style="font-size:12.5px;color:var(--muted);margin-bottom:.75rem;">Permanently delete your account and all data. This cannot be undone.</p>' +
+        '<button onclick="acctPgDeleteAccount()" style="background:#dc2626;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;cursor:pointer;font-weight:700;">Delete My Account</button>' +
+      '</div>' +
+    '</div>';
+  }
+  window.acctPgChangePassword = function(){
+    var old_pw = document.getElementById('acctPgPwOld').value;
+    var new_pw = document.getElementById('acctPgPwNew').value;
+    if(!old_pw||!new_pw){alert('Please fill both fields.');return;}
+    if(new_pw.length<6){alert('New password must be at least 6 characters.');return;}
+    fetch('/api/account/change-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({old_password:old_pw,new_password:new_pw})})
+      .then(function(r){return r.json();}).then(function(d){
+        if(d.ok){alert('Password updated!');}else{alert(d.error||'Failed to update password.');}
+      });
+  };
+  window.acctPgDeleteAccount = function(){
+    if(!confirm('Are you sure? This will permanently delete your account.')) return;
+    if(!confirm('This CANNOT be undone. Confirm delete?')) return;
+    fetch('/api/account/delete',{method:'POST'}).then(function(r){return r.json();}).then(function(d){
+      if(d.ok){ alert('Account deleted.'); window.location.href='/'; }
+      else { alert(d.error||'Error deleting account.'); }
+    });
+  };
+
+  // ── Init ─────────────────────────────────────────────────────────────────
+  (function init(){
+    var loading = document.getElementById('acctPgLoading');
+    var content = document.getElementById('acctPgContent');
+    fetch('/api/account/me').then(function(r){return r.json();}).then(function(d){
+      if(d.ok){
+        acctPgState.acc = d.account;
+        if(loading) loading.style.display='none';
+        if(content) content.style.display='block';
+        // Read tab from URL hash
+        var hash = window.location.hash.replace('#','');
+        var validTabs = ACCTPG_TABS;
+        acctPgSetTab(validTabs.indexOf(hash)>-1 ? hash : 'profile');
+      } else {
+        if(loading) loading.innerHTML='<div style="color:var(--muted);font-size:13px;">Please <a href="/account" style="color:var(--gold);font-weight:700;">log in</a> to view your account.</div>';
+      }
+    }).catch(function(){
+      if(loading) loading.innerHTML='<div style="color:var(--muted);font-size:13px;">Unable to load account.</div>';
+    });
+  })();
+})();
+</script>
+{% endblock %}

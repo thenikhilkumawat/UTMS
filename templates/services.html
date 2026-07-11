@@ -1,0 +1,257 @@
+{% extends "website/base.html" %}
+{% set active = "services" %}
+{% block title %}Our Craft &mdash; Shirts, Suits, Kurta &amp; More &mdash; Uttam Tailors{% endblock %}
+
+{% block head %}
+<style>
+/* ── Filter Bar ── */
+.filter-bar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:1.25rem 3rem;background:rgba(247,240,230,.97);border-bottom:1px solid var(--border);position:sticky;top:106px;z-index:100;backdrop-filter:blur(12px);box-shadow:0 2px 12px rgba(28,15,6,.07);}
+.filter-left{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.cat-pill{padding:6px 14px;border:1px solid var(--border);border-radius:999px;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;background:var(--bg2);transition:all .15s;white-space:nowrap;}
+.cat-pill.active{background:var(--dark);color:#fff;border-color:var(--dark);}
+.cat-pill:hover:not(.active){border-color:var(--gold);color:var(--gold);}
+.filter-right{display:flex;align-items:center;gap:10px;}
+.sort-select{padding:7px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--dark);background:var(--bg2);cursor:pointer;outline:none;}
+.view-btns{display:flex;gap:4px;}
+.view-btn{width:34px;height:34px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--muted);transition:all .15s;}
+.view-btn.active{background:var(--dark);color:#fff;border-color:var(--dark);}
+.results-count{font-size:12px;color:var(--muted);white-space:nowrap;}
+
+/* ── Grid view override ── */
+.svc-list.grid-view{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;padding:2rem 3rem;}
+.svc-list.grid-view .svc-card{display:flex;flex-direction:column;}
+.svc-list.grid-view .svc-img-wrap{height:220px;}
+.svc-list.grid-view .svc-img-wrap img{width:100%;height:100%;object-fit:cover;}
+.svc-list.grid-view .svc-body{padding:1rem;}
+.svc-list.grid-view .svc-desc{display:none;}
+.svc-list.grid-view .svc-turnaround{display:none;}
+.svc-list.grid-view .svc-tags{margin-bottom:.5rem;}
+
+/* ── Hidden card ── */
+.svc-card.hidden{display:none!important;}
+
+@media(max-width:900px){
+  .filter-bar{padding:1rem 1.25rem;}
+  .svc-list.grid-view{grid-template-columns:1fr 1fr;padding:1.5rem 1.25rem;}
+}
+@media(max-width:600px){
+  .svc-list.grid-view{grid-template-columns:1fr;}
+  .filter-left{display:none;}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<section class="page-hero">
+  <div class="page-hero-img"><img src="https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=1400&q=80" alt="Our craft" loading="eager"></div>
+  <div class="page-hero-overlay"></div>
+  <div class="page-hero-content">
+    <p class="kicker" style="color:var(--gold-l);">Our craft</p>
+    <h1 class="page-hero-title">Every garment we make.<br>Every price we charge.</h1>
+    <p class="page-hero-sub" style="color:rgba(250,240,228,.65);">No surprises. Prices shown are stitching charges only.</p>
+  </div>
+</section>
+
+<!-- FILTER BAR -->
+<div class="filter-bar">
+  <div class="filter-left">
+    <button class="cat-pill active" onclick="filterCat('all',this)">All</button>
+    {% if services %}
+      {% for cat, items in services %}
+        {% if items %}
+        <button class="cat-pill" onclick="filterCat('{{ cat.name|lower|replace(' ','-') }}',this)">{{ cat.name }}</button>
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+  </div>
+  <div class="filter-right">
+    <span class="results-count" id="resultsCount"></span>
+    <select class="sort-select" onchange="sortCards(this.value)" id="sortSelect">
+      <option value="default">Default order</option>
+      <option value="price-asc">Price: Low to High</option>
+      <option value="price-desc">Price: High to Low</option>
+      <option value="name-asc">Name: A → Z</option>
+    </select>
+    <div class="view-btns">
+      <button class="view-btn" id="listBtn" onclick="setView('list')" title="List view">☰</button>
+      <button class="view-btn active" id="gridBtn" onclick="setView('grid')" title="Grid view">⊞</button>
+    </div>
+  </div>
+</div>
+
+<div class="svc-list grid-view" id="svcList">
+  {% if services %}
+    {% for cat, items in services %}
+      {% for item in items %}
+  <div class="svc-card"
+    data-cat="{{ cat.name|lower|replace(' ','-') }}"
+    data-price="{{ item.price }}"
+    data-name="{{ item.name|lower }}"
+    id="svc-{{ item.name|lower|replace(' ','-') }}">
+    <div class="svc-img-wrap">
+      {% set _m = item_media.get(item.id, {}) %}
+      {% set _imgs = _m.get('images', []) %}
+      {% set _vid = _m.get('video', '') %}
+      {% if _vid %}
+      <video src="{{ _vid }}" autoplay loop muted playsinline style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;"></video>
+      {% elif _imgs %}
+      <img src="{{ _imgs[0] }}" alt="{{ item.name }}" loading="lazy">
+      {% elif item.image_url %}
+      <img src="{{ item.image_url }}" alt="{{ item.name }}" loading="lazy">
+      {% else %}
+      <img src="https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=680&q=82" alt="{{ item.name }}" loading="lazy">
+      {% endif %}
+      {% if _imgs|length > 1 %}
+      <div class="svc-img-dots">{% for img in _imgs %}<span class="svc-dot {% if loop.first %}active{% endif %}" data-src="{{ img }}"></span>{% endfor %}</div>
+      {% endif %}
+      <div class="svc-badge">Rs. {{ item.price }}</div>
+    </div>
+    <div class="svc-body">
+      <div class="svc-name-row">
+        <h2 class="svc-name">{{ item.name }}</h2>
+        <span class="svc-range">Rs. {{ item.price }}</span>
+      </div>
+      <p class="svc-desc">{% if item.subtitle %}{{ item.subtitle }}. {% endif %}Custom-stitched to your exact measurements. Every detail confirmed before we cut.</p>
+      <div class="svc-tags">
+        <span class="svc-tag">{{ cat.name }}</span>
+        <span class="svc-tag">Custom fit</span>
+      </div>
+      <p class="svc-turnaround">Ready in 5&ndash;14 days</p>
+      <div class="svc-actions">
+        <a href="{{ url_for('website.commission') }}?garment={{ item.name|urlencode }}" class="btn-primary">Order this &rarr;</a>
+        <a href="{{ url_for('website.our_services') }}" class="btn-ghost">Full price list</a>
+      </div>
+    </div>
+  </div>
+      {% endfor %}
+    {% endfor %}
+  {% else %}
+  {% for val, name, from_p, range_p, days, img, desc, tags in [
+    ("shirt","Formal Shirt","Rs. " ~ prices.shirt,"Rs. " ~ prices.shirt,"5&ndash;7 days","photo-1596755094514-f87e34085b2c","The garment you wear every working day.",["Regular collar","Button-down","Mandarin","Full sleeve","Half sleeve"]),
+    ("pant","Pants","Rs. " ~ prices.pant,"Rs. " ~ prices.pant,"5&ndash;7 days","photo-1473966968600-fa801b869a1a","Pants that break perfectly at the shoe.",["Flat-front","Single pleat","Double pleat"]),
+    ("suit","Two-Piece Suit","Rs. " ~ prices.suit,"Rs. " ~ prices.suit,"10&ndash;14 days","photo-1507679799987-c73779587ccf","The garment that changes how a room treats you.",["Notch lapel","Peak lapel","Single-breasted"]),
+    ("blazer","Blazer","Rs. " ~ prices.blazer,"Rs. " ~ prices.blazer ~ "+","7&ndash;10 days","photo-1617127365659-c47fa864d8bc","Over a shirt, over a kurta.",["Notch lapel","1 button","2 buttons"]),
+    ("kurta","Kurta &amp; Pajama","Rs. " ~ prices.kurtaset,"Rs. " ~ prices.kurta ~ " / Rs. " ~ prices.kurtaset ~ " (set)","5&ndash;7 days","photo-1583391733956-3750e0ff4e8b","From Eid prayers to family functions.",["Mandarin neck","V-neck","Round neck"]),
+  ] %}
+  <div class="svc-card" data-cat="all" data-price="{{ from_p|replace('Rs. ','') }}" data-name="{{ name|lower }}" id="svc-{{ val }}">
+    <div class="svc-img-wrap">
+      <img src="https://images.unsplash.com/{{ img }}?w=680&q=82" alt="{{ name }}" loading="lazy">
+      <div class="svc-badge">{{ from_p }}</div>
+    </div>
+    <div class="svc-body">
+      <div class="svc-name-row"><h2 class="svc-name">{{ name }}</h2><span class="svc-range">{{ range_p }}</span></div>
+      <p class="svc-desc">{{ desc }}</p>
+      <div class="svc-tags">{% for t in tags[:4] %}<span class="svc-tag">{{ t }}</span>{% endfor %}</div>
+      <p class="svc-turnaround">Ready in {{ days }}</p>
+      <div class="svc-actions">
+        <a href="{{ url_for('website.commission') }}?garment={{ val }}" class="btn-primary">Order this &rarr;</a>
+        <a href="{{ url_for('website.our_services') }}" class="btn-ghost">Full price list</a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+  {% endif %}
+</div>
+
+<section class="ref-section">
+  <div class="ref-inner">
+    <div style="padding-bottom:3rem;">
+      <p class="kicker">The easiest measurement method</p>
+      <h2 class="section-title" style="color:#FAF0E4;">Have a garment that fits you perfectly?</h2>
+    </div>
+    <p class="ref-body">Give it to us &mdash; we replicate it exactly. Same fit, same measurements, same feel. In your new fabric.</p>
+    <div class="ref-steps">
+      <div class="ref-step"><span class="ref-n">1</span><div><strong>Drop at our shop</strong><span>Subhash Chowk, Sikar &middot; Mon &ndash; Sat, 9am &ndash; 7pm</span></div></div>
+      <div class="ref-step"><span class="ref-n" style="color:rgba(250,240,228,.3);font-size:20px;">or</span></div>
+      <div class="ref-step"><span class="ref-n">1</span><div><strong>We pick up from you</strong><span>Sikar city only &middot; Rs. 50 charge</span></div></div>
+      <div class="ref-step"><span class="ref-n">2</span><div><strong>We measure every detail</strong><span>Chest, waist, shoulder, length, sleeve &mdash; all noted precisely.</span></div></div>
+      <div class="ref-step"><span class="ref-n">3</span><div><strong>New garment stitched and delivered with yours</strong><span>Your reference returned with the new garment.</span></div></div>
+    </div>
+    <a href="{{ url_for('website.commission') }}?method=reference" class="btn-gold" style="margin-top:2.5rem;display:inline-flex;">Use this method &rarr;</a>
+  </div>
+</section>
+
+<section class="big-cta">
+  <div class="big-cta-img"><img src="https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=1920&q=80" alt="" aria-hidden="true" loading="lazy"></div>
+  <div class="big-cta-overlay"></div>
+  <div class="big-cta-inner">
+    <h2 class="big-cta-title">Every garment above can<br>be yours in 7 days.</h2>
+    <a href="{{ url_for('website.commission') }}" class="btn-gold btn-xl">Customise Your Garment &rarr;</a>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+var _activeCat = 'all';
+var _sortMode = 'default';
+
+function getAllCards() {
+  return Array.from(document.querySelectorAll('#svcList .svc-card'));
+}
+
+function filterCat(cat, btn) {
+  _activeCat = cat;
+  document.querySelectorAll('.cat-pill').forEach(function(p){ p.classList.remove('active'); });
+  btn.classList.add('active');
+  applyFiltersAndSort();
+}
+
+function sortCards(val) {
+  _sortMode = val;
+  applyFiltersAndSort();
+}
+
+function applyFiltersAndSort() {
+  var list = document.getElementById('svcList');
+  var cards = getAllCards();
+
+  // Filter
+  var visible = [];
+  cards.forEach(function(c) {
+    var catMatch = _activeCat === 'all' || c.dataset.cat === _activeCat;
+    if (catMatch) { c.classList.remove('hidden'); visible.push(c); }
+    else c.classList.add('hidden');
+  });
+
+  // Sort visible cards
+  visible.sort(function(a, b) {
+    if (_sortMode === 'price-asc') return parseInt(a.dataset.price||0) - parseInt(b.dataset.price||0);
+    if (_sortMode === 'price-desc') return parseInt(b.dataset.price||0) - parseInt(a.dataset.price||0);
+    if (_sortMode === 'name-asc') return (a.dataset.name||'').localeCompare(b.dataset.name||'');
+    return 0;
+  });
+
+  // Re-append in sorted order
+  visible.forEach(function(c) { list.appendChild(c); });
+
+  // Update count
+  var countEl = document.getElementById('resultsCount');
+  if (countEl) countEl.textContent = visible.length + ' garment' + (visible.length !== 1 ? 's' : '');
+}
+
+function setView(mode) {
+  var list = document.getElementById('svcList');
+  var listBtn = document.getElementById('listBtn');
+  var gridBtn = document.getElementById('gridBtn');
+  if (mode === 'grid') {
+    list.classList.add('grid-view');
+    gridBtn.classList.add('active');
+    listBtn.classList.remove('active');
+  } else {
+    list.classList.remove('grid-view');
+    listBtn.classList.add('active');
+    gridBtn.classList.remove('active');
+  }
+}
+
+// Init count on load
+document.addEventListener('DOMContentLoaded', function(){
+  var count = getAllCards().length;
+  var countEl = document.getElementById('resultsCount');
+  if (countEl) countEl.textContent = count + ' garment' + (count !== 1 ? 's' : '');
+});
+</script>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends "website/base.html" %}
+{% set page_meta = {"title": "Page Not Found — Uttam Tailors", "desc": "", "robots": "noindex,nofollow", "og_image": "", "canonical": ""} %}
+{% set breadcrumbs = [] %}
+
+{% block content %}
+<div style="min-height:60vh;display:flex;align-items:center;justify-content:center;padding:4rem 2rem;text-align:center;">
+  <div style="max-width:480px;">
+    <div style="font-family:var(--fd);font-size:clamp(80px,12vw,120px);font-weight:300;color:var(--gold);line-height:1;margin-bottom:1rem;opacity:.4;">404</div>
+    <h1 style="font-family:var(--fd);font-size:clamp(24px,4vw,32px);font-weight:400;color:var(--dark);margin-bottom:1rem;">This page doesn't exist</h1>
+    <p style="font-size:14px;color:var(--muted);margin-bottom:2.5rem;line-height:1.7;">The page you're looking for may have moved or the URL may be incorrect. Let us help you find what you need.</p>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <a href="/" style="display:inline-flex;align-items:center;gap:8px;padding:14px 28px;background:var(--dark);color:var(--bg);font-family:var(--fm);font-size:11px;letter-spacing:.12em;text-transform:uppercase;border-radius:var(--r);text-decoration:none;">Go Home</a>
+      <a href="/our-craft" style="display:inline-flex;align-items:center;gap:8px;padding:14px 28px;background:var(--bg2);color:var(--dark);font-family:var(--fm);font-size:11px;letter-spacing:.12em;text-transform:uppercase;border-radius:var(--r);border:1px solid var(--border);text-decoration:none;">Our Craft</a>
+      <a href="/commission" style="display:inline-flex;align-items:center;gap:8px;padding:14px 28px;background:var(--gold);color:#fff;font-family:var(--fm);font-size:11px;letter-spacing:.12em;text-transform:uppercase;border-radius:var(--r);text-decoration:none;">Order Now</a>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin-top:2rem;">Est. 1987 &middot; Sikar, Rajasthan</p>
+  </div>
+</div>
+{% endblock %}

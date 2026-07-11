@@ -32,34 +32,71 @@
         {% if order.address and order.address != '—' %}
         <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">📍 {{ order.address }}</div>
         {% endif %}
-        {% if order.note %}
-        <div style="margin-top:10px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:8px 12px;font-size:13px;color:#92400e;">📝 {{ order.note }}</div>
+        {% if order.customer_note %}
+        <div style="margin-top:10px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:8px 12px;font-size:13px;color:#92400e;">📝 <strong>Customer's note:</strong> {{ order.customer_note }}</div>
         {% endif %}
       </div>
     </div>
 
     <!-- Garments + Measurements -->
     <div class="card">
-      <div class="card-header"><span class="card-title">👕 Garments & Measurements</span></div>
+      <div class="card-header"><span class="card-title">👕 Garments &amp; Measurements</span></div>
       <div class="card-body" style="padding:0;">
         {% for g in garments %}
-        <div style="padding:14px 16px;{% if not loop.last %}border-bottom:1px solid var(--border);{% endif %}">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-            <div style="font-size:15px;font-weight:800;">{{ g.type }} <span style="color:var(--text-muted);font-size:13px;">×{{ g.qty }}</span></div>
-            <div style="font-size:14px;font-weight:700;color:var(--accent);">₹{{ g.amount|int }}</div>
+        <div style="padding:18px 20px;{% if not loop.last %}border-bottom:8px solid #f4f1ec;{% endif %}">
+
+          <!-- Garment title row -->
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;">
+            <div>
+              <div style="font-size:17px;font-weight:800;color:#1a0e06;letter-spacing:.01em;">{{ g.type }}</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:1px;">Quantity: <strong>{{ g.qty }}</strong></div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#b9ad9d;">Stitching</div>
+              <div style="font-size:17px;font-weight:800;color:var(--accent);">₹{{ g.amount|int }}</div>
+            </div>
           </div>
+
           {% if g.measurements %}
-          <div style="display:flex;flex-wrap:wrap;gap:6px;">
-            {% for k,v in g.measurements.items() %}{% if v %}
-            <span style="background:#f1f5f9;border-radius:6px;padding:3px 10px;font-size:12px;font-weight:600;">
-              <span style="color:var(--text-muted);">{{ k }}:</span> <strong>{{ v }}</strong>
-            </span>
-            {% endif %}{% endfor %}
+          <div style="margin-bottom:12px;">
+            <div style="font-size:9.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#9ca3af;margin-bottom:6px;">📐 Measurements</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;">
+              {% for k,v in g.measurements.items() %}{% if v %}
+              <span style="background:#eef2f7;border-radius:6px;padding:4px 11px;font-size:12.5px;font-weight:600;color:#374151;">
+                <span style="color:#94a3b8;">{{ k }}</span> <strong style="color:#1e293b;">{{ v }}</strong>
+              </span>
+              {% endif %}{% endfor %}
+            </div>
           </div>
           {% endif %}
-          {% if g.notes %}
-          <div style="margin-top:6px;font-size:12px;color:var(--text-muted);">Style: {{ g.notes }}</div>
+
+          {% if g.style and g.style.summary %}
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;">
+            {% for s in g.style.summary %}
+            <span style="background:#fff;border:1px solid #e3d4bd;border-radius:6px;padding:4px 11px;font-size:12px;font-weight:700;color:#7a5a36;">
+              {% if s.label %}{{ s.label }}: {% endif %}{{ s.value }}
+            </span>
+            {% endfor %}
+          </div>
           {% endif %}
+
+          {% if g.style and g.style.choices %}
+          <div style="background:linear-gradient(180deg,#fdf8f1,#faf2e7);border:1px solid #ecdfca;border-radius:10px;padding:14px 16px;">
+            <div style="display:flex;align-items:center;gap:7px;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#A9763D;margin-bottom:10px;">
+              <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#C8903A;"></span>
+              Style chosen by customer — stitch exactly as below
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:4px 20px;">
+              {% for c in g.style.choices %}
+              <div style="display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:6px 0;border-bottom:1px dashed #e2cfae;">
+                <span style="color:#9a8a78;font-weight:600;">{{ c.label }}</span>
+                <span style="font-weight:800;color:#2e1a0e;text-align:right;">{{ c.value }}</span>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+
         </div>
         {% endfor %}
       </div>
@@ -108,14 +145,37 @@
     <div class="card">
       <div class="card-header"><span class="card-title">💰 Payment</span></div>
       <div class="card-body">
+        {% if order.bill_rows %}
+        <div style="background:#fafaf8;border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:10px;">
+          <div style="font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#9ca3af;margin-bottom:6px;">Bill breakdown</div>
+          {% for r in order.bill_rows %}
+          <div style="display:flex;justify-content:space-between;font-size:12.5px;padding:3px 0;">
+            <span style="color:var(--text-muted);">{{ r.label }}</span>
+            <span style="font-weight:700;color:{% if '-' in r.amount %}#16a34a{% else %}#374151{% endif %};">{{ r.amount }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
         <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
           <span style="color:var(--text-muted);">Total Bill</span>
           <span style="font-weight:700;">₹{{ order.total_amount|int }}</span>
         </div>
         {% if order.extra_charges > 0 %}
         <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
-          <span style="color:var(--text-muted);">Extra Charges</span>
+          <span style="color:var(--text-muted);">Urgent Surcharge</span>
           <span style="font-weight:700;">₹{{ order.extra_charges|int }}</span>
+        </div>
+        {% endif %}
+        {% if order.coupon_code %}
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);background:#f0fdf4;margin:0 -2px;padding:8px 4px;border-radius:4px;">
+          <span style="color:#16a34a;font-weight:700;">🎟 Coupon: {{ order.coupon_code }}</span>
+          <span style="font-weight:700;color:#16a34a;">-₹{{ order.coupon_amt }}</span>
+        </div>
+        {% endif %}
+        {% if order.gift_for %}
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;">
+          <span style="color:var(--text-muted);">🎁 Gift for</span>
+          <span style="font-weight:700;">{{ order.gift_for }}</span>
         </div>
         {% endif %}
         <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
@@ -163,7 +223,7 @@
         <div style="display:flex;flex-wrap:wrap;gap:10px;">
           {% for img in images %}
           <img src="{{ img }}" onclick="openOverlay('{{ img }}')"
-            style="width:100px;height:100px;object-fit:cover;border-radius:10px;border:2px solid var(--border);cursor:zoom-in;transition:transform 0.15s;" onclick="openZoomModal(this.src,'Order Image')"
+            style="width:100px;height:100px;object-fit:cover;border-radius:10px;border:2px solid var(--border);cursor:zoom-in;transition:transform 0.15s;"
             onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
           {% endfor %}
         </div>

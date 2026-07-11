@@ -1,0 +1,1727 @@
+{% extends 'base.html' %}
+{% block title %}Website Admin -- Uttam Tailors{% endblock %}
+{% block content %}
+<style>
+.wa{padding:20px 24px;width:100%;box-sizing:border-box;min-height:400px;}
+.wa-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px;}
+.wa-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;}
+.wa-stat{background:#fff;border:1px solid #e8e0d4;border-radius:10px;padding:14px 16px;text-align:center;}
+.wa-stat-n{font-size:26px;font-weight:900;color:#C8903A;}
+.wa-stat-l{font-size:10px;color:#7a6a58;text-transform:uppercase;letter-spacing:.07em;margin-top:3px;}
+.wa-tabs{display:flex;flex-wrap:wrap;border-bottom:2px solid #e8e0d4;margin-bottom:18px;gap:0;}
+.wa-tab{padding:8px 12px;font-size:12px;font-weight:600;border:none;background:none;cursor:pointer;color:#7a6a58;border-bottom:3px solid transparent;white-space:nowrap;}
+.wa-tab.active{color:#C8903A;border-bottom-color:#C8903A;}
+.wa-pnl{display:none;}
+.wa-pnl.active{display:block;min-height:200px;}
+.wa-card{background:#fff;border:1px solid #e8e0d4;border-radius:10px;padding:18px;margin-bottom:14px;}
+.wa-card-title{font-size:13px;font-weight:800;color:#1a0e06;margin-bottom:14px;}
+.wa-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.wa-lbl{font-size:10px;font-weight:700;color:#7a6a58;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;}
+.wa-in{width:100%;padding:9px 12px;border:1.5px solid #e8e0d4;border-radius:7px;font-size:13px;outline:none;font-family:inherit;background:#fafaf8;}
+.wa-in:focus{border-color:#C8903A;background:#fff;}
+.wa-ta{width:100%;padding:9px 12px;border:1.5px solid #e8e0d4;border-radius:7px;font-size:13px;outline:none;font-family:inherit;resize:vertical;background:#fafaf8;}
+.wa-ta:focus{border-color:#C8903A;}
+.wa-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;}
+.wa-btn.dark{background:#1a0e06;color:#f7f0e6;}
+.wa-btn.gold{background:#C8903A;color:#1a0e06;}
+.wa-btn.red{background:#dc2626;color:#fff;}
+.wa-btn.ghost{background:transparent;color:#7a6a58;border:1.5px solid #e8e0d4;}
+.wa-tbl{width:100%;border-collapse:collapse;font-size:12px;}
+.wa-tbl th{padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:#7a6a58;border-bottom:2px solid #e8e0d4;}
+.wa-tbl td{padding:10px 12px;border-bottom:1px solid #f0ebe4;vertical-align:middle;}
+.wa-tbl tr:hover td{background:#faf7f4;}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;}
+.badge.online{background:#dbeafe;color:#1e40af;}
+.wa-fab-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:12px;}
+.wa-fab-card{border:1.5px solid #e8e0d4;border-radius:8px;overflow:hidden;background:#fff;}
+.wa-fab-img{height:85px;background:#f0e8dc;overflow:hidden;display:flex;align-items:center;justify-content:center;}
+.wa-fab-img img{width:100%;height:100%;object-fit:cover;}
+.wa-fab-body{padding:8px 10px;}
+.ps{border:1px solid #e8e0d4;border-radius:8px;overflow:hidden;margin-bottom:10px;}
+.ps-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#fafaf8;cursor:pointer;border-bottom:1px solid #e8e0d4;}
+.ps-hdr h4{margin:0;font-size:13px;font-weight:700;color:#1a0e06;}
+.ps-body{padding:16px;display:none;}
+.ps-body.open{display:block;}
+.wa-toast{position:fixed;bottom:20px;right:20px;background:#1a0e06;color:#f7f0e6;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;}
+.wa-toast.show{opacity:1;}
+.srow{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid #f0ebe4;gap:16px;}
+.srow:last-child{border-bottom:none;}
+.acc-card{background:#fff;border:1px solid #e8e0d4;border-radius:10px;margin-bottom:10px;overflow:hidden;}
+.acc-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;cursor:pointer;user-select:none;background:#fafaf8;transition:background .15s;}
+.acc-hdr:hover{background:#f3ede5;}
+.acc-title{font-size:13px;font-weight:800;color:#1a0e06;}
+.acc-chevron{font-size:14px;color:#7a6a58;transition:transform .25s;flex-shrink:0;line-height:1;}
+.acc-card.open>.acc-hdr>.acc-chevron{transform:rotate(180deg);}
+.acc-body{display:none;padding:18px;border-top:1px solid #e8e0d4;}
+.acc-card.open>.acc-body{display:block;}
+@media(max-width:1100px){.wa-stats{grid-template-columns:1fr 1fr 1fr 1fr;}}
+@media(max-width:900px){.wa-stats{grid-template-columns:1fr 1fr;}.wa-row{grid-template-columns:1fr;}.wa-tabs{font-size:11px;}}
+@media(max-width:768px){.wa-stats{grid-template-columns:1fr 1fr;}.wa-row{grid-template-columns:1fr;}.wa{padding:12px;}.wa-tab{padding:8px 12px;font-size:11px;}}
+</style>
+
+<div class="wa">
+  <div class="wa-hdr">
+    <div>
+      <h2 style="font-size:18px;font-weight:800;color:#1a0e06;margin:0;">Website Admin <span style="font-size:11px;font-weight:400;color:#7a6a58;">uttamtailors.in</span></h2>
+      <div style="font-size:11px;color:#7a6a58;margin-top:3px;">Manage online orders, page content, fabrics, prices and offers</div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <a href="/" target="_blank" class="wa-btn ghost">View Website</a>
+      <a href="/owner/dashboard" class="wa-btn ghost">Back to Dashboard</a>
+    </div>
+  </div>
+  <div class="wa-stats">
+    <div class="wa-stat"><div class="wa-stat-n">{{ total_web|default(0) }}</div><div class="wa-stat-l">Online Orders</div></div>
+    <div class="wa-stat"><div class="wa-stat-n">{{ today_web|default(0) }}</div><div class="wa-stat-l">Today</div></div>
+    <div class="wa-stat"><div class="wa-stat-n">{{ pending_web|default(0) }}</div><div class="wa-stat-l">Pending</div></div>
+    <div class="wa-stat"><div class="wa-stat-n">{{ fabric_count|default(0) }}</div><div class="wa-stat-l">Fabrics</div></div>
+  </div>
+  <div class="wa-tabs">
+    <button class="wa-tab active" onclick="waTab('orders',this)">Orders</button>
+    <button class="wa-tab" onclick="waTab('accounts',this)">&#128100; Accounts</button>
+    <button class="wa-tab" onclick="waTab('content',this)">Page Content</button>
+    <button class="wa-tab" onclick="waTab('fabrics',this)">Fabrics</button>
+    <button class="wa-tab" onclick="waTab('products',this)">&#9998; Products</button>
+    <button class="wa-tab" onclick="waTab('story',this)">Our Story</button>
+    <button class="wa-tab" onclick="waTab('offers',this)">Offers and Popups</button>
+    <button class="wa-tab" onclick="waTab('coupons',this)">🎟 Coupons</button>
+    <button class="wa-tab" onclick="waTab('sizes',this)">📏 Sizes</button>
+    <button class="wa-tab" onclick="waTab('navfooter',this)">🔗 Header &amp; Footer</button>
+    <button class="wa-tab" onclick="window.location.href='/owner/website/homepage'">🏠 Homepage</button>
+    <button class="wa-tab" onclick="waTab('settings',this)">Settings</button>
+    <button class="wa-tab" onclick="waTab('commission',this)">✂ Commission Page</button>
+    <button class="wa-tab" onclick="waTab('stitch_tracker',this)">📍 Stitch Tracker</button>
+    <button class="wa-tab" onclick="waTab('style_requests',this)">🎨 Inspo Requests</button>
+    <button class="wa-tab" onclick="waTab('support_chats',this)">💬 Support Chat</button>
+    <button class="wa-tab" onclick="waTab('daily_craft',this)">📸 Daily Craft</button>
+  </div>
+
+  <!-- ORDERS -->
+  <div class="wa-pnl active" id="wp-orders">
+    <div class="wa-card">
+      <div class="wa-card-title">Online Orders (click any row to manage in UTMS)</div>
+      <div style="overflow-x:auto;">
+        <table class="wa-tbl">
+          <thead><tr><th>Order</th><th>Customer</th><th>Details</th><th>Total</th><th>Advance</th><th>Status</th><th>Date</th></tr></thead>
+          <tbody>
+            {% for o in web_orders %}
+            <tr onclick="window.location='/owner/orders/detail/{{ o.order_code }}'" style="cursor:pointer;">
+              <td><span style="font-weight:800;color:#C8903A;">#{{ o.order_code }}</span><br><span class="badge online">ONLINE</span></td>
+              <td><div style="font-weight:600;">{{ o.cname }}</div><div style="font-size:11px;color:#7a6a58;">{{ o.mobile }}</div></td>
+              <td style="font-size:11px;color:#7a6a58;max-width:180px;">{{ (o.note or '')[:70] }}</td>
+              <td style="font-weight:700;">Rs. {{ o.payable_amount|int }}</td>
+              <td style="color:#C8903A;font-weight:600;">Rs. {{ o.advance_paid|int }}</td>
+              <td><span class="badge {{ o.status }}" style="padding:3px 8px;border-radius:12px;font-size:10px;font-weight:700;letter-spacing:.05em;background:{%if o.status=='received' or o.status=='Pending payment'%}#fef3c7;color:#92400e;{%elif o.status=='in_progress'%}#dbeafe;color:#1e40af;{%elif o.status=='ready'%}#d1fae5;color:#065f46;{%elif o.status=='delivered'%}#f3f4f6;color:#374151;{%else%}#fee2e2;color:#991b1b;{%endif%}">{%if o.status=='received'%}New Order{%elif o.status=='Pending payment'%}⏳ Awaiting Payment{%elif o.status=='in_progress'%}✂ In Progress{%elif o.status=='ready'%}✅ Ready{%elif o.status=='delivered'%}📦 Delivered{%else%}{{ o.status }}{%endif%}</span></td>
+              <td style="font-size:11px;color:#7a6a58;">{{ o.order_date }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7" style="text-align:center;color:#7a6a58;padding:40px 0;">No online orders yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACCOUNTS -->
+  <div class="wa-pnl" id="wp-accounts">
+    <div class="wa-card">
+      <div class="wa-card-title">Registered Website Accounts ({{ web_accounts|length }})</div>
+      <p style="font-size:11px;color:#7a6a58;margin:-4px 0 12px;">Customers who created an account on the website — name, contact info, saved address, orders placed, AI previews used, and account status.</p>
+      <div style="overflow-x:auto;">
+        <table class="wa-tbl">
+          <thead><tr><th>Name</th><th>Mobile</th><th>Email</th><th>Address</th><th>Orders</th><th>AI Previews</th><th>Status</th><th>Account Created</th></tr></thead>
+          <tbody>
+            {% for a in web_accounts %}
+            <tr>
+              <td style="font-weight:600;">{{ a.name }}</td>
+              <td style="color:#7a6a58;">{{ a.mobile }}</td>
+              <td style="color:#7a6a58;">{{ a.email or '—' }}</td>
+              <td style="font-size:11px;color:#7a6a58;max-width:220px;">
+                {%- if a.address_line1 -%}
+                  {{ a.address_line1 }}{% if a.address_line2 %}, {{ a.address_line2 }}{% endif %}{% if a.address_city %}, {{ a.address_city }}{% endif %}{% if a.address_state %}, {{ a.address_state }}{% endif %}{% if a.address_pincode %} - {{ a.address_pincode }}{% endif %}
+                {%- else -%}—{%- endif -%}
+              </td>
+              <td><span style="background:#eef2ff;border:1px solid #c7d2fe;border-radius:12px;padding:3px 10px;font-size:11px;font-weight:700;color:#4338ca;">{{ a.order_count or 0 }}</span></td>
+              <td><span style="background:#fdf6ee;border:1px solid #e8d9c5;border-radius:12px;padding:3px 10px;font-size:11px;font-weight:700;color:#C8903A;">{{ a.preview_count or 0 }}</span></td>
+              <td>
+                {% if a.deleted_at %}
+                  <span style="background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:3px 10px;font-size:11px;font-weight:700;color:#b91c1c;">Deleted</span>
+                {% elif a.is_active == 0 %}
+                  <span style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:3px 10px;font-size:11px;font-weight:700;color:#92400e;">Inactive</span>
+                {% else %}
+                  <span style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:3px 10px;font-size:11px;font-weight:700;color:#16a34a;">Active</span>
+                {% endif %}
+              </td>
+              <td style="font-size:11px;color:#7a6a58;">{{ a.created_at }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="8" style="text-align:center;color:#7a6a58;padding:40px 0;">No accounts created yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="wa-pnl" id="wp-content">
+    <p style="font-size:12px;color:#7a6a58;margin-bottom:12px;">Edit text, headlines, images shown on each page. Click a section to expand.</p>
+    <div class="ps">
+      <div class="ps-hdr" onclick="togglePs(this)"><h4>Homepage - Hero / Banner Section</h4><span style="font-size:12px;color:#C8903A;">Edit</span></div>
+      <div class="ps-body">
+        <p style="font-size:12px;color:#7a6a58;margin:0 0 12px;">The hero banner (headline, subtext, button text &amp; links, desktop image, mobile image, and everything else on the homepage) is now edited from the dedicated <strong>Homepage Editor</strong> — it's more complete and changes show up live immediately.</p>
+        <a href="{{ url_for('owner.homepage_admin') }}#hero" class="wa-btn gold" style="text-decoration:none;display:inline-flex;">✨ Open Homepage Editor — Hero &amp; Banner</a>
+      </div>
+    </div>
+    <div class="ps">
+      <div class="ps-hdr" onclick="togglePs(this)"><h4>Homepage - Customer Reviews</h4><span style="font-size:12px;color:#C8903A;">Edit</span></div>
+      <div class="ps-body">
+        <label class="wa-lbl">Reviews (JSON)</label>
+        <textarea class="wa-ta" id="c_reviews" rows="6" placeholder='[{"name":"Ramesh Kumar","text":"Perfect shirt","rating":5}]'>{{ web_settings.get('web_reviews','') }}</textarea>
+        <p style="font-size:11px;color:#7a6a58;margin-top:4px;">Format: name, text, rating (1-5). Must be valid JSON.</p>
+        <button class="wa-btn gold" style="margin-top:10px;" onclick="saveSetting('web_reviews', document.getElementById('c_reviews').value)">Save Reviews</button>
+      </div>
+    </div>
+    <div class="ps">
+      <div class="ps-hdr" onclick="togglePs(this)"><h4>Contact Page Info</h4><span style="font-size:12px;color:#C8903A;">Edit</span></div>
+      <div class="ps-body">
+        <div class="wa-row"><div><label class="wa-lbl">Phone / WhatsApp</label><input class="wa-in" id="c_phone" value="{{ web_settings.get('web_shop_phone','+91 XXXXX XXXXX') }}"></div><div><label class="wa-lbl">Email</label><input class="wa-in" id="c_email" value="{{ web_settings.get('web_shop_email','info.uttamtailors@gmail.com') }}"></div></div>
+        <div class="wa-row"><div><label class="wa-lbl">Address line 1</label><input class="wa-in" id="c_a1" value="{{ web_settings.get('web_addr1','Subhash Chowk, Sikar') }}"></div><div><label class="wa-lbl">Address line 2</label><input class="wa-in" id="c_a2" value="{{ web_settings.get('web_addr2','Rajasthan - 332001') }}"></div></div>
+        <div class="wa-row"><div><label class="wa-lbl">Shop hours</label><input class="wa-in" id="c_hrs" value="{{ web_settings.get('web_shop_hours','Monday - Saturday, 9am - 7pm') }}"></div><div><label class="wa-lbl">WhatsApp link</label><input class="wa-in" id="c_wa" value="{{ web_settings.get('web_whatsapp_link','https://wa.me/91XXXXXXXXXX') }}"></div></div>
+        <div class="wa-row"><div><label class="wa-lbl">Shop WhatsApp Number <small style="color:#aaa;">(digits only, with country code — used on website)</small></label><input class="wa-in" id="c_wa_num" placeholder="e.g. 918000684346" value="{{ web_settings.get('web_whatsapp_number','918000684346') }}"></div></div>
+        <button class="wa-btn gold" style="margin-top:10px;" onclick="saveSection({web_shop_phone:'c_phone',web_shop_email:'c_email',web_addr1:'c_a1',web_addr2:'c_a2',web_shop_hours:'c_hrs',web_whatsapp_link:'c_wa',web_whatsapp_number:'c_wa_num'})">Save Contact Info</button>
+      </div>
+    </div>
+    <div class="ps">
+      <div class="ps-hdr" onclick="togglePs(this,true)"><h4>Our Story Page</h4><span style="font-size:12px;color:#C8903A;">Edit</span></div>
+      <div class="ps-body">
+        <div style="font-size:11px;font-weight:700;color:#7a6a58;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Hero Section</div>
+        <div class="wa-row"><div><label class="wa-lbl">Hero Kicker</label><input class="wa-in" id="s_hero_kicker" value="{{ web_settings.get('about_hero_kicker','Our story') }}" onblur="saveSetting('about_hero_kicker',this.value)"></div><div><label class="wa-lbl">Hero Title</label><input class="wa-in" id="s_hero_title" value="{{ web_settings.get('about_hero_title','The hands that built this shop.') }}" onblur="saveSetting('about_hero_title',this.value)"></div></div>
+        <div class="wa-row"><div><label class="wa-lbl">Hero Subtitle</label><input class="wa-in" id="s_hero_sub" value="{{ web_settings.get('about_hero_sub','Three generations. One craft. Never outsourced.') }}" onblur="saveSetting('about_hero_sub',this.value)"></div><div><label class="wa-lbl">Hero Background Image URL</label><input class="wa-in" id="s_hero_img" value="{{ web_settings.get('about_hero_img','') }}" placeholder="https://..." onblur="saveSetting('about_hero_img',this.value)"></div></div>
+        <div style="font-size:11px;font-weight:700;color:#7a6a58;text-transform:uppercase;letter-spacing:.08em;margin:16px 0 10px;padding-top:12px;border-top:1px solid #e8d9c5;">Timeline Entries</div>
+        <div id="timelineList"></div>
+        <button class="wa-btn gold" style="margin-top:8px;" onclick="openAddTimeline()">+ Add Entry</button>
+        <div id="addTimelineBox" style="display:none;background:#fdf6ee;border:1px solid #e8d9c5;border-radius:10px;padding:14px;margin-top:10px;">
+          <div style="display:grid;grid-template-columns:100px 1fr;gap:8px;margin-bottom:8px;"><input class="wa-in" id="tl_year" placeholder="Year"><input class="wa-in" id="tl_title" placeholder="Title"></div>
+          <textarea class="wa-in" id="tl_body" placeholder="Description..." style="width:100%;min-height:70px;resize:vertical;margin-bottom:8px;"></textarea>
+          <div style="display:flex;gap:8px;"><button class="wa-btn gold" onclick="addTimeline()">Add</button><button class="wa-btn" onclick="document.getElementById('addTimelineBox').style.display='none'">Cancel</button></div>
+        </div>
+        <div style="font-size:11px;font-weight:700;color:#7a6a58;text-transform:uppercase;letter-spacing:.08em;margin:16px 0 10px;padding-top:12px;border-top:1px solid #e8d9c5;">Our Promises (4 cards)</div>
+        {% for i in range(1,5) %}
+        <div style="background:#fdf6ee;border:1px solid #e8d9c5;border-radius:8px;padding:10px;margin-bottom:6px;">
+          <div style="font-size:10px;color:#7a6a58;font-weight:700;margin-bottom:6px;">Promise 0{{ i }}</div>
+          <div class="wa-row" style="margin:0;"><input class="wa-in" id="p{{i}}_title" value="{{ web_settings.get('about_promise'~i~'_title', '') }}" placeholder="Promise title" onblur="saveSetting('about_promise{{i}}_title',this.value)"><input class="wa-in" id="p{{i}}_body" value="{{ web_settings.get('about_promise'~i~'_body', '') }}" placeholder="Promise description" onblur="saveSetting('about_promise{{i}}_body',this.value)"></div>
+        </div>
+        {% endfor %}
+        <div style="font-size:11px;font-weight:700;color:#7a6a58;text-transform:uppercase;letter-spacing:.08em;margin:16px 0 10px;padding-top:12px;border-top:1px solid #e8d9c5;">Bottom CTA</div>
+        <div class="wa-row"><div><label class="wa-lbl">CTA Heading</label><input class="wa-in" id="s_cta_title" value="{{ web_settings.get('about_cta_title','35 years of craft.') }}" onblur="saveSetting('about_cta_title',this.value)"></div><div><label class="wa-lbl">CTA Subtext</label><input class="wa-in" id="s_cta_sub" value="{{ web_settings.get('about_cta_sub','Your garment is next.') }}" onblur="saveSetting('about_cta_sub',this.value)"></div></div>
+        <button class="wa-btn gold" style="margin-top:10px;" onclick="loadTimeline()">🔄 Load Timeline</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FABRICS -->
+  <div class="wa-pnl" id="wp-fabrics">
+    <div class="wa-card">
+      <div class="wa-card-title">Add New Fabric</div>
+      <div class="wa-row"><div><label class="wa-lbl">Fabric name *</label><input class="wa-in" id="fn" placeholder="e.g. Navy Blue Gabardine"></div><div><label class="wa-lbl">Price / metre (Rs.) *</label><input class="wa-in" type="number" id="fp" placeholder="85"></div></div>
+      <div class="wa-row"><div><label class="wa-lbl">Stock (metres)</label><input class="wa-in" type="number" id="fst" placeholder="20"></div><div><label class="wa-lbl">Type tag (shirt / pant / suit / kurta)</label><input class="wa-in" id="ft" placeholder="shirt"></div></div>
+      <div style="margin-bottom:12px;"><label class="wa-lbl">Fabric Image</label><div style="display:flex;gap:8px;align-items:center;"><input class="wa-in" id="fi" placeholder="Paste image URL..." style="flex:1;"><label style="cursor:pointer;"><input type="file" id="fi_file" accept="image/*" style="display:none;" onchange="previewFabricImg(this)"><span class="wa-btn" style="white-space:nowrap;">&#128247; Upload</span></label></div><div id="fi_preview" style="margin-top:6px;display:none;"><img id="fi_preview_img" style="width:80px;height:80px;object-fit:cover;border-radius:6px;border:1px solid #e8d9c5;"></div></div>
+      <button class="wa-btn gold" onclick="addFabric()">Add to Catalog</button>
+    </div>
+    <div class="wa-card"><div class="wa-card-title">Current Fabrics</div><div class="wa-fab-grid" id="fabricAdminGrid"><p style="color:#7a6a58;font-size:13px;padding:20px 0;text-align:center;grid-column:1/-1;">Loading...</p></div></div>
+  </div>
+
+  <!-- PRODUCTS -->
+  <div class="wa-pnl" id="wp-products">
+    <div style="display:grid;grid-template-columns:280px 1fr;gap:16px;min-height:600px;">
+      <div class="wa-card" style="padding:12px;overflow-y:auto;max-height:80vh;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;"><div style="font-size:13px;font-weight:700;color:#1a0e06;">All Garments</div><button class="wa-btn gold" style="font-size:11px;padding:5px 10px;" onclick="toggleAddProdForm()">+ Add Garment</button></div>
+        <div id="addProdForm" style="display:none;background:#fdf6ee;border:1px solid #e8d9c5;border-radius:8px;padding:10px;margin-bottom:10px;">
+          <div style="margin-bottom:8px;"><label class="wa-lbl">Garment Name *</label><input class="wa-in" id="np_name" placeholder="e.g. White Shirt with Lining" style="width:100%;font-size:12px;"></div>
+          <div style="margin-bottom:8px;"><label class="wa-lbl">Category *</label><select class="wa-in" id="np_category" style="width:100%;font-size:12px;"></select></div>
+          <div style="display:flex;gap:6px;"><button class="wa-btn gold" style="flex:1;font-size:12px;" onclick="createNewProduct()">Create</button><button class="wa-btn" style="flex:1;font-size:12px;background:#e8d9c5;" onclick="toggleAddProdForm(false)">Cancel</button></div>
+        </div>
+        <input class="wa-in" id="prodSearch" placeholder="Search..." style="width:100%;margin-bottom:10px;font-size:12px;" oninput="filterProdList()">
+        <div id="prodList" style="display:flex;flex-direction:column;gap:3px;"></div>
+      </div>
+      <div class="wa-card" id="prodEditor" style="display:none;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;"><div style="font-size:15px;font-weight:700;color:#1a0e06;" id="prodEditorTitle">Editing Garment</div><div style="display:flex;gap:8px;align-items:center;"><a id="prodLiveLink" href="#" target="_blank" style="font-size:11px;color:#C8903A;font-family:monospace;">View live page &#8599;</a><button class="wa-btn" onclick="closeProdEditor()" style="padding:6px 12px;font-size:11px;">&#x2715; Close</button></div></div>
+        <div style="background:#fdf6ee;border-radius:8px;padding:14px;margin-bottom:14px;"><div style="font-size:11px;font-weight:700;color:#7a6a58;margin-bottom:10px;letter-spacing:.08em;">BASIC INFO</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;"><div><label class="wa-lbl">Garment Name *</label><input class="wa-in" id="pe_name" placeholder="e.g. Formal Shirt" onblur="saveProdField('name')"></div><div><label class="wa-lbl">Subtitle</label><input class="wa-in" id="pe_subtitle" placeholder="e.g. Regular / Linen / Cotton" onblur="saveProdField('subtitle')"></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;"><div><label class="wa-lbl">Price (Rs.)</label><input class="wa-in" id="pe_price" type="text" onblur="saveProdField('price')"></div><div><label class="wa-lbl">Category</label><select class="wa-in" id="pe_category" onchange="saveProdField('category')"></select></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><div><label class="wa-lbl">Ready-made Stock Qty <span style="font-size:10px;color:#7a6a58;">(leave -1 for made-to-order, no stock limit)</span></label><input class="wa-in" id="pe_stock" type="text" placeholder="-1" onblur="saveProdField('stock')"></div><div><label class="wa-lbl">Display Order on Our Craft page <span style="font-size:10px;color:#7a6a58;">(lower number = shown first)</span></label><input class="wa-in" id="pe_sort_order" type="text" placeholder="0" onblur="saveProdField('sort')"></div></div><div style="margin-top:10px;"><label class="wa-lbl">Delivery Estimate <span style="font-size:10px;color:#7a6a58;">(shown on product page, e.g. "5–7 days")</span></label><input class="wa-in" id="pe_delivery" type="text" placeholder="5–7 days" style="width:100%;" onblur="saveProdField('delivery')"></div></div>
+        <div style="background:#fdf6ee;border-radius:8px;padding:14px;margin-bottom:14px;"><div style="font-size:11px;font-weight:700;color:#7a6a58;margin-bottom:10px;letter-spacing:.08em;">DESCRIPTION (shown on product page)</div><div style="margin-bottom:8px;"><label class="wa-lbl">Short Description</label><input class="wa-in" id="pe_description" placeholder="1-2 line summary" style="width:100%;" onblur="saveProdField('desc')"></div><div><label class="wa-lbl">Detailed Description</label><textarea class="wa-in" id="pe_long_desc" rows="4" placeholder="Fabric details, occasion, style notes..." style="width:100%;resize:vertical;" onblur="saveProdField('desc')"></textarea></div></div>
+        <div style="background:#eef6ee;border-radius:8px;padding:14px;margin-bottom:14px;border:1px solid #b8dfb8;"><div style="font-size:11px;font-weight:700;color:#2d6a2d;margin-bottom:10px;letter-spacing:.08em;">SEO - Search Engine Fields</div><div style="margin-bottom:8px;"><label class="wa-lbl">URL Slug <span style="font-size:10px;color:#7a6a58;">(auto-generated)</span></label><div style="display:flex;align-items:center;gap:6px;"><span style="font-size:11px;color:#7a6a58;white-space:nowrap;">uttamtailors.in/garment/</span><input class="wa-in" id="pe_slug" placeholder="e.g. formal-shirt-sikar" style="flex:1;" onblur="saveProdSeo()"></div></div><div style="margin-bottom:8px;"><label class="wa-lbl">Meta Title <span style="font-size:10px;color:#7a6a58;">(50-60 chars ideal)</span></label><input class="wa-in" id="pe_meta_title" placeholder="Formal Shirt - Custom Stitching Sikar | Uttam Tailors" style="width:100%;" oninput="seoCount('pe_meta_title','pe_tc',60)" onblur="saveProdSeo()"><div id="pe_tc" style="font-size:10px;color:#7a6a58;margin-top:2px;"></div></div><div><label class="wa-lbl">Meta Description <span style="font-size:10px;color:#7a6a58;">(150-160 chars ideal)</span></label><textarea class="wa-in" id="pe_meta_desc" rows="2" style="width:100%;resize:vertical;" oninput="seoCount('pe_meta_desc','pe_dc',160)" onblur="saveProdSeo()"></textarea><div id="pe_dc" style="font-size:10px;color:#7a6a58;margin-top:2px;"></div></div></div>
+        <div style="background:#fdf6ee;border-radius:8px;padding:14px;margin-bottom:14px;"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;"><div style="font-size:11px;font-weight:700;color:#7a6a58;letter-spacing:.08em;">PHOTOS &amp; VIDEOS (unlimited)</div><div style="display:flex;gap:6px;"><label style="cursor:pointer;"><input type="file" id="pe_media_file" accept="image/*,video/*" multiple style="display:none;" onchange="uploadProdMedia(this)"><span class="wa-btn gold" style="font-size:11px;padding:5px 10px;">📁 Upload Files</span></label></div></div><div id="pe_drop_zone" style="border:2px dashed #e8d9c5;border-radius:8px;padding:20px;text-align:center;font-size:12px;color:#7a6a58;margin-bottom:10px;cursor:pointer;" onclick="document.getElementById('pe_media_file').click()" ondragover="event.preventDefault();this.style.borderColor='#C8903A';" ondrop="handleProdDrop(event)" ondragleave="this.style.borderColor='#e8d9c5';">Click or drag &amp; drop photos/videos here</div><div style="display:flex;gap:8px;margin-bottom:10px;"><input class="wa-in" id="pe_media_url" placeholder="Or paste image/video URL..." style="flex:1;font-size:12px;"><button class="wa-btn gold" onclick="addProdMediaUrl()" style="font-size:11px;padding:5px 10px;">+ Add URL</button></div><div id="pe_media_grid" style="display:flex;flex-wrap:wrap;gap:8px;min-height:50px;"></div></div>
+        <div style="background:#fdf6ee;border-radius:8px;padding:14px;margin-bottom:14px;"><div style="font-size:11px;font-weight:700;color:#7a6a58;margin-bottom:10px;letter-spacing:.08em;">FABRIC PREVIEW IMAGE <span style="font-size:10px;font-weight:400;text-transform:none;">(shown when customer clicks &ldquo;Fabric&rdquo; toggle on product listing)</span></div><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;"><div id="pe_fabric_img_preview" style="width:72px;height:72px;border-radius:8px;border:1px solid #e8d9c5;background:#f0e8dc;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:#9a8a78;text-align:center;">No<br>image</div><div style="flex:1;min-width:200px;"><label style="cursor:pointer;display:block;margin-bottom:6px;"><input type="file" id="pe_fabric_file" accept="image/*" style="display:none;" onchange="uploadFabricPreviewImg(this)"><span class="wa-btn gold" style="font-size:11px;padding:5px 12px;">&#128247; Upload Fabric Swatch</span></label><input class="wa-in" id="pe_fabric_url" placeholder="Or paste fabric swatch URL..." style="font-size:12px;width:100%;" onblur="saveFabricUrlDirect()"><div style="font-size:10px;color:#9a8a78;margin-top:4px;">Flat-lay or close-up of the fabric texture — not the model photo.</div></div></div></div>
+        <div style="background:#fdf6ee;border-radius:8px;padding:14px;margin-bottom:14px;"><div style="font-size:11px;font-weight:700;color:#7a6a58;margin-bottom:10px;letter-spacing:.08em;">CUSTOMER REVIEWS</div><div id="pe_reviews_list" style="margin-bottom:12px;"></div><div style="border:1px solid #e8d9c5;border-radius:8px;padding:12px;background:#fff;"><div style="font-size:11px;font-weight:700;color:#7a6a58;margin-bottom:8px;">ADD REVIEW</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;"><input class="wa-in" id="pe_rev_name" placeholder="Customer name *" style="font-size:12px;"><select class="wa-in" id="pe_rev_rating" style="font-size:12px;"><option value="5">★★★★★ 5 stars</option><option value="4">★★★★☆ 4 stars</option><option value="3">★★★☆☆ 3 stars</option><option value="2">★★☆☆☆ 2 stars</option><option value="1">★☆☆☆☆ 1 star</option></select></div><textarea class="wa-in" id="pe_rev_text" rows="2" placeholder="Review text..." style="width:100%;font-size:12px;resize:vertical;margin-bottom:8px;"></textarea><button class="wa-btn gold" onclick="addProdReview()" style="width:100%;">+ Add Review</button></div></div>
+        <div style="background:#f9f5ef;border-radius:8px;padding:14px;margin-bottom:14px;"><div style="font-size:11px;font-weight:700;color:#7a6a58;margin-bottom:8px;letter-spacing:.08em;">✂ TRUST TILES (shown below price)</div><div id="tilesWrap_curr" style="margin-bottom:8px;"></div><div style="display:flex;gap:8px;"><button class="wa-btn" style="background:#e8d9c5;font-size:11px;" onclick="addTileRowBtn()">+ Add Tile</button><button class="wa-btn gold" style="font-size:11px;" onclick="saveTilesBtn()">Save Tiles</button></div></div>
+        <div style="background:#f9f5ef;border-radius:8px;padding:14px;margin-bottom:14px;"><div style="font-size:11px;font-weight:700;color:#7a6a58;margin-bottom:8px;letter-spacing:.08em;">📌 DESCRIPTION BULLET POINTS</div><div id="bulletsWrap_curr" style="margin-bottom:8px;"></div><div style="display:flex;gap:8px;"><button class="wa-btn" style="background:#e8d9c5;font-size:11px;" onclick="addBulletRowBtn()">+ Add Bullet</button><button class="wa-btn gold" style="font-size:11px;" onclick="saveBulletsBtn()">Save Bullets</button></div></div>
+        <div style="background:#f9f5ef;border-radius:8px;padding:14px;margin-bottom:14px;"><div style="font-size:11px;font-weight:700;color:#7a6a58;margin-bottom:8px;letter-spacing:.08em;">❓ FAQ (shown below reviews)</div><div id="faqWrap_curr" style="margin-bottom:8px;"></div><div style="display:flex;gap:8px;"><button class="wa-btn" style="background:#e8d9c5;font-size:11px;" onclick="addFaqRowBtn()">+ Add FAQ</button><button class="wa-btn gold" style="font-size:11px;" onclick="saveFaqBtn()">Save FAQ</button></div></div>
+
+        <!-- CUSTOMER Q&A — public ask-a-question submissions, answer to publish -->
+        <div style="background:#fdf6ee;border-radius:8px;padding:14px;margin-bottom:14px;">
+          <div style="font-size:11px;font-weight:700;color:#7a6a58;margin-bottom:4px;letter-spacing:.08em;">💬 CUSTOMER Q&amp;A</div>
+          <div style="font-size:10px;color:#7a6a58;margin-bottom:10px;">Questions customers ask on the product page. Answer to publish — only answered questions show publicly.</div>
+          <div id="pe_qa_list" style="display:flex;flex-direction:column;gap:10px;"></div>
+        </div>
+
+        <!-- COMPLETE THE LOOK — admin-curated cross-sell picks, shown on the cart & product page -->
+        <div style="background:#f9f5ef;border-radius:8px;padding:14px;margin-bottom:14px;">
+          <div style="font-size:11px;font-weight:700;color:#7a6a58;margin-bottom:4px;letter-spacing:.08em;">✨ COMPLETE THE LOOK</div>
+          <div style="font-size:10px;color:#7a6a58;margin-bottom:10px;">Pick other garments to suggest alongside this one in the cart's "Complete Your Look" section.</div>
+          <input class="wa-in" id="pe_related_search" placeholder="Search garments..." style="width:100%;margin-bottom:8px;font-size:12px;" oninput="filterRelatedList()">
+          <div id="pe_related_list" style="max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:2px;margin-bottom:10px;border:1px solid #e8d9c5;border-radius:6px;padding:6px;background:#fff;"></div>
+          <button class="wa-btn gold" style="font-size:11px;" onclick="saveRelatedItemsBtn()">Save Complete the Look</button>
+        </div>
+
+        <!-- STYLE OPTIONS — for the style chooser drawer -->
+        <div style="background:#f0ede8;border:2px solid #2e1a0e;border-radius:8px;padding:14px;margin-bottom:14px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+            <div>
+              <div style="font-size:12px;font-weight:800;color:#2e1a0e;letter-spacing:.06em;">✂ STYLE OPTIONS (Chooser Drawer)</div>
+              <div style="font-size:10px;color:#7a6a58;margin-top:2px;">When customer selects this garment, these options appear in the style popup.</div>
+            </div>
+            <button class="wa-btn" style="background:#2e1a0e;color:#f7f0e6;font-size:11px;padding:6px 12px;" onclick="addStyleGroupUI()">+ Add Group</button>
+          </div>
+          <!-- Add Group Form -->
+          <div id="addStyleGroupForm" style="display:none;background:#fff;border:1px solid #e8d9c5;border-radius:8px;padding:12px;margin-bottom:12px;">
+            <div style="font-size:11px;font-weight:700;color:#7a6a58;margin-bottom:8px;">NEW STYLE GROUP</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+              <div>
+                <label class="wa-lbl">Group Name (e.g. Collar, Sleeves)</label>
+                <input class="wa-in" id="sg_group_name" placeholder="Collar Style" style="width:100%;">
+              </div>
+              <div>
+                <label class="wa-lbl">Label shown to customer</label>
+                <input class="wa-in" id="sg_group_label" placeholder="Choose collar type" style="width:100%;">
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+              <input type="checkbox" id="sg_required" style="width:16px;height:16px;">
+              <label style="font-size:12px;color:#1a0e06;cursor:pointer;" for="sg_required">Required — customer must select before adding</label>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button class="wa-btn gold" onclick="saveNewStyleGroup()">Add Group</button>
+              <button class="wa-btn" style="background:#e8d9c5;" onclick="document.getElementById('addStyleGroupForm').style.display='none'">Cancel</button>
+            </div>
+          </div>
+          <!-- Groups list -->
+          <div id="styleGroupsList"><p style="font-size:12px;color:#7a6a58;text-align:center;padding:16px 0;">Loading style groups...</p></div>
+        </div>
+      </div>
+      <div class="wa-card" id="prodEditorPlaceholder" style="display:flex;align-items:center;justify-content:center;color:#7a6a58;font-size:13px;">← Select a garment to edit</div>
+    </div>
+  </div>
+
+  <!-- STORY -->
+  <div class="wa-pnl" id="wp-story">
+    <div class="wa-card">
+      <div class="wa-card-title">Our Story Timeline</div>
+      <div id="storyList"><p style="color:#7a6a58;padding:20px;text-align:center;">Loading...</p></div>
+      <div style="margin-top:14px;border-top:1px solid #e8d9c5;padding-top:14px;">
+        <div style="font-size:12px;font-weight:700;color:#7a6a58;margin-bottom:8px;">ADD NEW ENTRY</div>
+        <div style="display:grid;grid-template-columns:100px 1fr;gap:8px;margin-bottom:8px;"><input class="wa-in" id="newStoryYear" placeholder="Year" type="number"><input class="wa-in" id="newStoryTitle" placeholder="Title e.g. Shop Founded"></div>
+        <textarea class="wa-in" id="newStoryBody" rows="2" style="width:100%;margin-bottom:8px;"></textarea>
+        <button class="wa-btn gold" onclick="addStoryEntry()">+ Add Entry</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- OFFERS -->
+  <div class="wa-pnl" id="wp-offers">
+    <div class="wa-card">
+      <div class="wa-card-title">📢 Announcement Bar (scrolling ticker)</div>
+      <p style="font-size:12px;color:#7a6a58;margin-bottom:14px;">These texts scroll across the top dark bar on every page. Add up to 8 items.</p>
+      <div id="annItemsList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;"></div>
+      <div style="display:flex;gap:8px;"><input class="wa-in" id="newAnnItem" placeholder="e.g. Free delivery within Sikar city" style="flex:1;" onkeydown="if(event.key==='Enter')addAnnItem()"><button class="wa-btn gold" onclick="addAnnItem()">+ Add</button></div>
+      <div style="margin-top:12px;display:flex;align-items:center;gap:10px;">
+        <label style="font-size:11px;font-weight:700;color:#7a6a58;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;">Scroll speed</label>
+        <select class="wa-in" id="s_web_ann_speed" style="width:180px;" onchange="saveSetting('web_ann_speed',this.value)">
+          <option value="20" {% if web_settings.get('web_ann_speed','55')=='20' %}selected{% endif %}>Very Fast</option>
+          <option value="35" {% if web_settings.get('web_ann_speed','55')=='35' %}selected{% endif %}>Fast</option>
+          <option value="55" {% if web_settings.get('web_ann_speed','55') in ('55','') or not web_settings.get('web_ann_speed') %}selected{% endif %}>Normal (default)</option>
+          <option value="90" {% if web_settings.get('web_ann_speed','55')=='90' %}selected{% endif %}>Slow</option>
+          <option value="140" {% if web_settings.get('web_ann_speed','55')=='140' %}selected{% endif %}>Very Slow</option>
+        </select>
+        <span style="font-size:11px;color:#9a8a78;">Changes apply on next page load</span>
+      </div>
+      <button class="wa-btn gold" style="margin-top:12px;width:100%;" onclick="saveAnnItems()">💾 Save Announcement Bar</button>
+    </div>
+    <div class="wa-card">
+      <div class="wa-card-title">Discount Popup (shows to new visitors)</div>
+      <div style="margin-bottom:12px;display:flex;align-items:center;gap:10px;"><input type="checkbox" id="pop_on" {% if web_settings.get('web_popup_enabled')=='1' %}checked{% endif %} onchange="saveSetting('web_popup_enabled',this.checked?'1':'0')"><label style="font-size:13px;color:#1a0e06;cursor:pointer;" for="pop_on">Enable popup</label></div>
+      <div class="wa-row"><div><label class="wa-lbl">Popup headline</label><input class="wa-in" id="s_web_popup_title" value="{{ web_settings.get('web_popup_title','Get Rs. 100 off your first order!') }}"></div><div><label class="wa-lbl">Coupon code (optional)</label><input class="wa-in" id="s_web_popup_code" value="{{ web_settings.get('web_popup_code','FIRST100') }}"></div></div>
+      <div style="margin-bottom:10px;"><label class="wa-lbl">Popup body text</label><textarea class="wa-ta" id="s_web_popup_body" rows="2">{{ web_settings.get('web_popup_body','Order your first custom garment and get Rs. 100 off. Valid for new customers only.') }}</textarea></div>
+      <div class="wa-row"><div><label class="wa-lbl">Button text</label><input class="wa-in" id="s_web_popup_btn" value="{{ web_settings.get('web_popup_btn','Claim My Discount') }}"></div><div><label class="wa-lbl">Show after (seconds)</label><input class="wa-in" type="number" id="s_web_popup_delay" value="{{ web_settings.get('web_popup_delay','5') }}"></div></div>
+      <button class="wa-btn gold" style="margin-top:10px;" onclick="saveGroup(['web_popup_title','web_popup_code','web_popup_body','web_popup_btn','web_popup_delay','web_popup_enabled'])">Save Popup</button>
+    </div>
+    <div class="wa-card">
+      <div class="wa-card-title">Special Offer Banner (homepage)</div>
+      <div style="margin-bottom:12px;display:flex;align-items:center;gap:10px;"><input type="checkbox" id="off_on" {% if web_settings.get('web_offer_enabled')=='1' %}checked{% endif %} onchange="saveSetting('web_offer_enabled',this.checked?'1':'0')"><label style="font-size:13px;color:#1a0e06;cursor:pointer;" for="off_on">Show offer banner on homepage</label></div>
+      <div class="wa-row"><div><label class="wa-lbl">Offer headline</label><input class="wa-in" id="s_web_offer_title" value="{{ web_settings.get('web_offer_title','') }}" placeholder="Eid Special: 10% off all suits"></div><div><label class="wa-lbl">Expiry date</label><input class="wa-in" type="date" id="s_web_offer_expiry" value="{{ web_settings.get('web_offer_expiry','') }}"></div></div>
+      <div style="margin-bottom:10px;"><label class="wa-lbl">Offer details</label><textarea class="wa-ta" id="s_web_offer_body" rows="2">{{ web_settings.get('web_offer_body','') }}</textarea></div>
+      <button class="wa-btn gold" onclick="saveGroup(['web_offer_title','web_offer_expiry','web_offer_body','web_offer_enabled'])">Save Offer Banner</button>
+    </div>
+  </div>
+
+  <!-- COUPONS -->
+  <div class="wa-pnl" id="wp-coupons">
+    <div class="wa-card">
+      <div class="wa-card-title">Coupon Codes</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;"><div><label class="wa-lbl">Code</label><input class="wa-in" id="cpCode" placeholder="e.g. SUMMER20" style="text-transform:uppercase;"></div><div><label class="wa-lbl">Type</label><select class="wa-in" id="cpType"><option value="fixed">Fixed (Rs.)</option><option value="percent">Percent (%)</option></select></div><div><label class="wa-lbl">Value</label><input class="wa-in" id="cpValue" type="number" placeholder="100"></div><div><label class="wa-lbl">Min Order (Rs.)</label><input class="wa-in" id="cpMin" type="number" placeholder="0"></div><div><label class="wa-lbl">Max Uses (0=unlimited)</label><input class="wa-in" id="cpMaxUses" type="number" placeholder="0"></div><div><label class="wa-lbl">Expires On</label><input class="wa-in" id="cpExpires" type="date"></div></div>
+      <div style="margin-bottom:14px;"><label class="wa-lbl">Description</label><input class="wa-in" id="cpDesc" placeholder="e.g. 20% off summer sale" style="width:100%;"></div>
+      <button class="wa-btn gold" onclick="addCoupon()">+ Add Coupon</button>
+      <div id="couponList" style="margin-top:16px;"></div>
+    </div>
+  </div>
+
+  <!-- SIZES -->
+  <div class="wa-pnl" id="wp-sizes">
+    <div class="wa-card">
+      <div class="wa-card-title">Standard Size Measurements</div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;"><select class="wa-in" id="sizeCategory" onchange="loadSizeTable()" style="width:160px;"><option value="shirt">Shirt</option><option value="pant">Pant</option><option value="suit">Suit / Blazer</option><option value="kurta">Kurta / Ethnic</option></select><select class="wa-in" id="sizeLabel" onchange="loadSizeRow()" style="width:80px;"><option>S</option><option>M</option><option selected>L</option><option>XL</option><option>XXL</option><option>3XL</option></select></div>
+      <div id="sizeEditor" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;"></div>
+      <div style="margin-top:12px;padding:10px;background:#f9f5ef;border-radius:8px;max-width:260px;">
+        <label style="font-size:11px;color:#7a6a58;display:block;margin-bottom:2px;">Fabric needed for this size (metres)</label>
+        <input class="wa-in" id="sizeFabricMetres" placeholder="e.g. 1.4" type="number" step="0.1" min="0">
+        <div style="font-size:10px;color:#9a8a78;margin-top:4px;">Used to show "fabric needed" to customers and to calculate fabric cost in their order summary.</div>
+      </div>
+      <button class="wa-btn gold" style="margin-top:12px;" onclick="saveSize()">Save Measurements</button>
+      <div id="sizeSaveMsg" style="font-size:11px;color:green;margin-top:6px;display:none;">&#10003; Saved</div>
+    </div>
+  </div>
+
+  <!-- HEADER & FOOTER -->
+  <div class="wa-pnl" id="wp-navfooter">
+    <div class="wa-card">
+      <div class="wa-card-title">🔝 Header</div>
+      <div class="wa-row"><div><label class="wa-lbl">Shop name (logo text)</label><input class="wa-in" id="web_shop_name" value="{{ web_settings.get('web_shop_name','Uttam Tailors') }}"></div><div><label class="wa-lbl">Tagline below logo</label><input class="wa-in" id="web_shop_est" value="{{ web_settings.get('web_shop_est','EST. 1987 · SIKAR') }}"></div></div>
+      <div class="wa-row"><div><label class="wa-lbl">CTA Button Text</label><input class="wa-in" id="web_header_cta_text" value="{{ web_settings.get('web_header_cta_text','Customise Your Garment') }}"></div><div><label class="wa-lbl">CTA Button URL</label><input class="wa-in" id="web_header_cta_url" value="{{ web_settings.get('web_header_cta_url','/commission') }}"></div></div>
+      <div style="margin-top:14px;"><div class="wa-lbl" style="margin-bottom:8px;">Navigation Links</div><div id="navItemsList">{% for item in nav_items %}<div class="nav-item-row" style="display:flex;gap:8px;align-items:center;padding:8px;background:#f9f5ef;border-radius:8px;margin-bottom:6px;" data-id="{{ item.id }}"><input class="wa-in nav-lbl-in" style="flex:1;" value="{{ item.label }}" placeholder="Label"><input class="wa-in nav-url-in" style="flex:1.5;" value="{{ item.url }}" placeholder="URL"><select class="wa-in" style="width:110px;"><option value="0" {% if not item.open_new_tab %}selected{% endif %}>Same tab</option><option value="1" {% if item.open_new_tab %}selected{% endif %}>New tab</option></select><button class="wa-btn gold" style="padding:5px 10px;" onclick="updateNavItem({{ item.id }},this)">Save</button><button class="wa-btn red" style="padding:5px 8px;" onclick="deleteNavItem({{ item.id }},this)">&#x2715;</button></div>{% endfor %}</div><div style="display:flex;gap:8px;margin-top:8px;padding:8px;background:#f9f5ef;border-radius:8px;"><input class="wa-in" id="newNavLabel" placeholder="Label e.g. Blog" style="flex:1;"><input class="wa-in" id="newNavUrl" placeholder="URL e.g. /blog" style="flex:1.5;"><button class="wa-btn" style="background:#1a0e06;color:#fff;padding:7px 14px;" onclick="addNavItem()">+ Add</button></div></div>
+      <div style="margin-top:12px;text-align:right;"><button class="wa-btn gold" onclick="saveHeaderSettings()">Save Header</button></div>
+    </div>
+    <div class="wa-card">
+      <div class="wa-card-title">📞 Footer — Contact &amp; Brand</div>
+      <div class="wa-row"><div><label class="wa-lbl">Footer tagline</label><input class="wa-in" id="web_footer_tagline" value="{{ web_settings.get('web_footer_tagline','Measured to the thread. Since 1987.') }}"></div><div><label class="wa-lbl">Address</label><input class="wa-in" id="web_footer_address" value="{{ web_settings.get('web_footer_address','Subhash Chowk, Sikar — 332001, Rajasthan') }}"></div></div>
+      <div class="wa-row"><div><label class="wa-lbl">Opening hours</label><input class="wa-in" id="web_footer_hours" value="{{ web_settings.get('web_footer_hours','Mon – Sat · 9am – 7pm') }}"></div><div><label class="wa-lbl">Phone number</label><input class="wa-in" id="web_footer_phone" value="{{ web_settings.get('web_footer_phone','+91 XXXXX XXXXX') }}"></div></div>
+      <div class="wa-row"><div><label class="wa-lbl">WhatsApp (digits only)</label><input class="wa-in" id="web_footer_whatsapp" value="{{ web_settings.get('web_footer_whatsapp','91XXXXXXXXXX') }}"></div><div><label class="wa-lbl">Email address</label><input class="wa-in" id="web_footer_email" value="{{ web_settings.get('web_footer_email','info.uttamtailors@gmail.com') }}"></div></div>
+      <div class="wa-row"><div><label class="wa-lbl">Google Maps URL</label><input class="wa-in" id="web_footer_maps_url" value="{{ web_settings.get('web_footer_maps_url','') }}"></div><div><label class="wa-lbl">Bulk orders email</label><input class="wa-in" id="web_footer_bulk_email" value="{{ web_settings.get('web_footer_bulk_email','info.uttamtailors@gmail.com') }}"></div></div>
+      <div class="wa-row"><div><label class="wa-lbl">Copyright text</label><input class="wa-in" id="web_footer_copyright" value="{{ web_settings.get('web_footer_copyright','© 2025 Uttam Tailors, Sikar. All rights reserved.') }}"></div><div><label class="wa-lbl">Bottom right text</label><input class="wa-in" id="web_footer_est" value="{{ web_settings.get('web_footer_est','Est. 1987 · Handcrafted in Rajasthan') }}"></div></div>
+      <div style="margin-top:12px;text-align:right;"><button class="wa-btn gold" onclick="saveFooterContact()">Save Contact</button></div>
+    </div>
+    <div class="wa-card">
+      <div class="wa-card-title">✂ Footer — "We Make" Column</div>
+      <div id="makeItemsList">{% for item in footer_make %}<div class="make-item-row" style="display:flex;gap:8px;margin-bottom:6px;"><input class="wa-in" style="flex:1;" placeholder="Label" value="{{ item.label }}"><input class="wa-in" style="flex:.8;" placeholder="URL (optional)" value="{{ item.url }}"><button class="wa-btn red" style="padding:5px 8px;" onclick="this.closest('.make-item-row').remove()">&#x2715;</button></div>{% endfor %}</div>
+      <div style="display:flex;gap:8px;margin-top:8px;"><button class="wa-btn" style="background:#e8d9c5;" onclick="addMakeItem()">+ Add item</button><button class="wa-btn gold" onclick="saveMakeItems()">Save</button></div>
+    </div>
+    <div class="wa-card">
+      <div class="wa-card-title" style="display:flex;justify-content:space-between;">📄 Pages (Privacy Policy, Terms, etc.) <button class="wa-btn" style="background:#1a0e06;color:#fff;padding:5px 12px;font-size:11px;" onclick="document.getElementById('newPageForm').style.display=document.getElementById('newPageForm').style.display==='none'?'block':'none'">+ New Page</button></div>
+      <p style="font-size:11px;color:#7a6a58;margin-bottom:12px;">Pages appear in footer automatically when "Show in footer" is enabled.</p>
+      <div id="newPageForm" style="display:none;background:#f9f5ef;border-radius:10px;padding:14px;margin-bottom:14px;"><div class="wa-row" style="margin-bottom:8px;"><div><label class="wa-lbl">Page title</label><input class="wa-in" id="newPageTitle" placeholder="e.g. Privacy Policy"></div><div style="display:flex;align-items:center;gap:8px;padding-top:18px;"><input type="checkbox" id="newPageFooter" checked style="width:16px;height:16px;"><label class="wa-lbl" style="margin:0;">Show in footer</label></div></div><label class="wa-lbl">Content</label><textarea class="wa-ta" id="newPageContent" rows="4" style="margin-bottom:8px;" placeholder="Page content..."></textarea><div style="display:flex;gap:8px;"><button class="wa-btn gold" onclick="createPage()">Create Page</button><button class="wa-btn" onclick="document.getElementById('newPageForm').style.display='none'">Cancel</button></div></div>
+      <div id="pagesList">{% for page in pages %}<div style="border:1px solid #e8d9c5;border-radius:8px;margin-bottom:8px;overflow:hidden;"><div style="background:#f5ede0;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='block'?'none':'block'"><div><b style="font-size:13px;">{{ page.title }}</b><span style="font-size:11px;color:#7a6a58;margin-left:10px;">/page/{{ page.slug }}</span>{% if page.show_in_footer %}<span style="font-size:10px;background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:10px;margin-left:6px;">Footer</span>{% endif %}</div><div style="display:flex;gap:6px;"><a href="/page/{{ page.slug }}" target="_blank" class="wa-btn" style="padding:3px 8px;font-size:10px;">Preview</a><button class="wa-btn red" style="padding:3px 8px;font-size:10px;" onclick="event.stopPropagation();deletePage({{ page.id }})">Delete</button></div></div><div style="display:none;padding:14px;" id="page-{{ page.id }}"><div class="wa-row" style="margin-bottom:8px;"><div><label class="wa-lbl">Title</label><input class="wa-in page-title-in" value="{{ page.title }}"></div><div style="display:flex;align-items:center;gap:8px;padding-top:18px;"><input type="checkbox" class="page-footer-in" {% if page.show_in_footer %}checked{% endif %} style="width:16px;height:16px;"><label class="wa-lbl" style="margin:0;">Show in footer</label></div></div><label class="wa-lbl">Content</label><textarea class="wa-ta page-content-in" rows="6" style="margin-bottom:8px;">{{ page.content }}</textarea><button class="wa-btn gold" onclick="updatePage({{ page.id }},this)">Save Page</button></div></div>{% else %}<p style="font-size:12px;color:#7a6a58;text-align:center;padding:16px;">No pages yet.</p>{% endfor %}</div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="wa-pnl" id="wp-settings">
+    <div class="wa-card">
+      <div class="wa-card-title">Delivery and Order Settings</div>
+      {% for key, label, desc in [
+        ('web_delivery_charge',    'Home delivery charge (Rs.)',   'Charged on home delivery orders'),
+        ('web_free_delivery_above','Free delivery above (Rs.)',    'Orders above this get free delivery'),
+        ('web_homevisit_charge',   'Home visit charge (Rs.)',      'Tailor home visit fee'),
+        ('web_turnaround_days',    'Default turnaround days',      'Default ready date shown to customer'),
+        ('web_advance_percent',    'Advance percentage (%)',       'Percentage taken at order time'),
+        ('web_order_start_number', 'Starting order number',        'Orders will be numbered UT-0001, UT-0002... starting from this'),
+      ] %}
+      <div class="srow">
+        <div><div style="font-weight:600;font-size:13px;color:#1a0e06;">{{ label }}</div><div style="font-size:11px;color:#7a6a58;">{{ desc }}</div></div>
+        <div style="display:flex;align-items:center;gap:8px;"><input class="wa-in" id="s_{{ key }}" value="{{ web_settings.get(key,'') }}" style="width:110px;"><button class="wa-btn dark" onclick="saveSetting('{{ key }}',document.getElementById('s_{{ key }}').value)" style="padding:7px 12px;font-size:11px;">Save</button></div>
+      </div>
+      {% endfor %}
+    </div>
+    <!-- ─── Engagement & Retention Features ─── -->
+    <div class="wa-card" style="border-left:4px solid #C8903A;">
+      <div class="wa-card-title">🚀 Engagement & Retention Features</div>
+      <p style="font-size:12px;color:#7a6a58;margin-bottom:16px;">Order emails, abandoned cart recovery, social proof, and personalised recommendations — sab yahan se control karo.</p>
+
+      <!-- 1. Order Confirmation Email -->
+      <div style="margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid #e8d9c5;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <div>
+            <div style="font-weight:700;font-size:13px;color:#1a0e06;">📧 Order Confirmation Email</div>
+            <div style="font-size:11px;color:#7a6a58;">Customer ko order place hone ke baad automatic email bhejta hai with order details.</div>
+          </div>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <input type="checkbox" id="tog_web_order_email_enabled" {% if web_settings.get('web_order_email_enabled','1')=='1' %}checked{% endif %} onchange="saveSetting('web_order_email_enabled',this.checked?'1':'0')">
+            <span style="font-size:12px;font-weight:600;">{{ 'ON' if web_settings.get('web_order_email_enabled','1')=='1' else 'OFF' }}</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- 2. Abandoned Cart Recovery -->
+      <div style="margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid #e8d9c5;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div>
+            <div style="font-weight:700;font-size:13px;color:#1a0e06;">🛒 Abandoned Cart Recovery</div>
+            <div style="font-size:11px;color:#7a6a58;">Jo customers cart mein item add karke order nahi karte unhe reminder email bhejta hai.</div>
+          </div>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <input type="checkbox" id="tog_web_abandoned_cart_enabled" {% if web_settings.get('web_abandoned_cart_enabled','1')=='1' %}checked{% endif %} onchange="saveSetting('web_abandoned_cart_enabled',this.checked?'1':'0')">
+            <span style="font-size:12px;font-weight:600;">{{ 'ON' if web_settings.get('web_abandoned_cart_enabled','1')=='1' else 'OFF' }}</span>
+          </label>
+        </div>
+        <div class="srow" style="margin-bottom:8px;">
+          <div><div style="font-size:12px;font-weight:600;color:#1a0e06;">Reminder delay (hours)</div><div style="font-size:11px;color:#7a6a58;">Cart item add hone ke kitne ghante baad email bheje</div></div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <input class="wa-in" id="s_web_abandoned_cart_hours" value="{{ web_settings.get('web_abandoned_cart_hours','2') }}" style="width:80px;">
+            <button class="wa-btn dark" onclick="saveSetting('web_abandoned_cart_hours',document.getElementById('s_web_abandoned_cart_hours').value)" style="padding:7px 12px;font-size:11px;">Save</button>
+          </div>
+        </div>
+        <div style="margin-bottom:10px;">
+          <label class="wa-lbl">Recovery email message (optional custom text)</label>
+          <textarea class="wa-in" id="s_web_abandoned_cart_msg" rows="2" style="width:100%;resize:vertical;" placeholder="e.g. Your cart is waiting! Complete your order and get Rs. 50 off.">{{ web_settings.get('web_abandoned_cart_msg','') }}</textarea>
+          <button class="wa-btn dark" style="margin-top:6px;padding:6px 12px;font-size:11px;" onclick="saveSetting('web_abandoned_cart_msg',document.getElementById('s_web_abandoned_cart_msg').value)">Save Message</button>
+        </div>
+        <button class="wa-btn gold" style="font-size:12px;" onclick="sendAbandonedCartNow()">📤 Send Recovery Emails Now</button>
+        <div id="abandonedCartResult" style="font-size:11px;margin-top:6px;color:green;display:none;"></div>
+      </div>
+
+      <!-- 3. Social Proof ("X people viewing") -->
+      <div style="margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid #e8d9c5;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div>
+            <div style="font-weight:700;font-size:13px;color:#1a0e06;">👁 Social Proof — "X people viewing"</div>
+            <div style="font-size:11px;color:#7a6a58;">Product page pe real-time viewer count dikhata hai. Minimum floor set karo.</div>
+          </div>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <input type="checkbox" id="tog_web_social_proof_enabled" {% if web_settings.get('web_social_proof_enabled','1')=='1' %}checked{% endif %} onchange="saveSetting('web_social_proof_enabled',this.checked?'1':'0')">
+            <span style="font-size:12px;font-weight:600;">{{ 'ON' if web_settings.get('web_social_proof_enabled','1')=='1' else 'OFF' }}</span>
+          </label>
+        </div>
+        <div class="srow">
+          <div><div style="font-size:12px;font-weight:600;color:#1a0e06;">Minimum viewer count (floor)</div><div style="font-size:11px;color:#7a6a58;">Real count agar is se kam ho toh badge nahi dikhega (0 = disabled)</div></div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <input class="wa-in" id="s_web_social_proof_min" value="{{ web_settings.get('web_social_proof_min','2') }}" style="width:80px;">
+            <button class="wa-btn dark" onclick="saveSetting('web_social_proof_min',document.getElementById('s_web_social_proof_min').value)" style="padding:7px 12px;font-size:11px;">Save</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Personalised Recommendations -->
+      <div style="margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid #e8d9c5;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div style="font-weight:700;font-size:13px;color:#1a0e06;">⭐ Personalised Recommendations</div>
+            <div style="font-size:11px;color:#7a6a58;">Homepage aur product pages pe "Recommended For You" section dikhata hai — order history ya popularity pe based.</div>
+          </div>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <input type="checkbox" id="tog_web_recommend_enabled" {% if web_settings.get('web_recommend_enabled','1')=='1' %}checked{% endif %} onchange="saveSetting('web_recommend_enabled',this.checked?'1':'0')">
+            <span style="font-size:12px;font-weight:600;">{{ 'ON' if web_settings.get('web_recommend_enabled','1')=='1' else 'OFF' }}</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- 5. Cart Sync (info only) -->
+      <div style="background:#fdf6ee;border-radius:8px;padding:12px 14px;">
+        <div style="font-weight:700;font-size:13px;color:#1a0e06;margin-bottom:4px;">🔄 Server-Side Cart Sync</div>
+        <div style="font-size:11px;color:#7a6a58;">Logged-in customers ka cart automatically server pe sync hota hai jab woh login karte hain. Yeh abandoned-cart recovery ka foundation hai. Koi setting nahi chahiye — automatically kaam karta hai.</div>
+      </div>
+    </div>
+    <!-- ─── /Engagement Features ─── -->
+
+    <div class="wa-card">
+      <div class="wa-card-title">SEO Settings</div>
+      <div class="wa-row">
+      <div class="wa-card" style="margin-bottom:16px;">
+        <div class="wa-hdr"><span style="font-size:15px;font-weight:700;color:#1a0e06;">Pages SEO</span></div>
+        <p style="font-size:12px;color:#7a6a58;margin-bottom:12px;">Set Google title and description for each public page.</p>
+        <div id="staticSeoList"><p style="font-size:12px;color:#7a6a58;">Loading...</p></div>
+      </div>
+      <div class="wa-card" style="margin-bottom:16px;border-top:3px solid #C8903A;">
+        <div class="wa-hdr"><span style="font-size:15px;font-weight:700;color:#1a0e06;">&#127912; AI Style Preview (Replicate)</span></div>
+        <p style="font-size:12px;color:#7a6a58;margin-bottom:14px;">Customer garment select kare aur "Generate AI Preview" click kare — AI ek realistic photo banayega. API key <strong>replicate.com/account/api-tokens</strong> se milegi.</p>
+        <div style="background:#fdf6ee;border-radius:8px;padding:14px;margin-bottom:12px;">
+          <label class="wa-lbl">Replicate API Key</label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input class="wa-in" id="tr_replicate_api_key" type="password" value="{{ web_settings.get('replicate_api_key','') }}" placeholder="r8_xxxxxxxxxxxxxxxxxxxx" style="flex:1;font-family:monospace;">
+            <button class="wa-btn" style="background:#2e1a0e;color:#f7f0e6;white-space:nowrap;" onclick="toggleApiKeyVisibility()">&#128065; Show</button>
+          </div>
+          <div style="font-size:11px;color:#7a6a58;margin-top:6px;">&#9888; API key kisi ko mat dikhao. Replicate pe free $5 credits milte hain (~1600 images).</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="wa-btn gold" onclick="saveReplicateKey()">Save API Key</button>
+          <button class="wa-btn ghost" onclick="testReplicateKey()">Test Connection</button>
+          <span id="replicateTestResult" style="font-size:12px;"></span>
+        </div>
+      </div>
+      <div class="wa-card" style="margin-bottom:16px;">
+        <div class="wa-hdr"><span style="font-size:15px;font-weight:700;color:#1a0e06;">&#128241; SMS Notifications (Fast2SMS)</span></div>
+        <p style="font-size:12px;color:#7a6a58;margin-bottom:14px;">Customers ko order confirmation, status updates aur OTP automatically SMS milenge. Free API key <strong>fast2sms.com</strong> pe signup karke milegi (Settings → Dev API).</p>
+        <div style="background:#fdf6ee;border-radius:8px;padding:14px;margin-bottom:12px;">
+          <label class="wa-lbl">Fast2SMS API Key</label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input class="wa-in" id="tr_fast2sms_key" type="password" value="{{ web_settings.get('fast2sms_key','') }}" placeholder="Paste your Fast2SMS API key here" style="flex:1;font-family:monospace;">
+            <button class="wa-btn" style="background:#2e1a0e;color:#f7f0e6;white-space:nowrap;" onclick="toggleSmsKeyVisibility()">&#128065; Show</button>
+          </div>
+          <div style="font-size:11px;color:#7a6a58;margin-top:6px;">&#9888; SMS key kisi ko mat batao. Free tier me ~500 OTPs ya ~200 transactional SMS milte hain.</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="wa-btn gold" onclick="saveSmsKey()">Save SMS Key</button>
+          <span id="smsKeySaveResult" style="font-size:12px;"></span>
+        </div>
+      </div>
+      <div class="wa-card" style="margin-bottom:16px;">
+        <div class="wa-hdr"><span style="font-size:15px;font-weight:700;color:#1a0e06;">&#128140; Email Notifications (GoDaddy SMTP)</span></div>
+        <p style="font-size:12px;color:#7a6a58;margin-bottom:14px;">Email notifications are <strong>active</strong> using <code>info@uttamtailors.in</code> via GoDaddy SMTP. Order confirmations sent from <code>order@uttamtailors.in</code>, status updates from <code>update@uttamtailors.in</code>. No setup needed — works automatically for logged-in customers with email.</p>
+        <div style="background:#e8f5e9;border-radius:8px;padding:12px;font-size:12px;color:#2e7d32;">
+          &#9989; Email system is configured and ready. Restart server to activate.
+        </div>
+      </div>
+      <div class="wa-card" style="margin-bottom:16px;">
+        <div class="wa-hdr"><span style="font-size:15px;font-weight:700;color:#1a0e06;">&#128273; FCM Push Notifications (Firebase)</span></div>
+        <p style="font-size:12px;color:#7a6a58;margin-bottom:14px;">Push notifications for customers who visit your website and allow notifications. <strong>Free, no per-message cost.</strong></p>
+        <div style="background:#fdf6ee;border-radius:8px;padding:14px;margin-bottom:12px;">
+          <label class="wa-lbl">Firebase Service Account JSON</label>
+          <textarea class="wa-in" id="tr_fcm_service_account" rows="4" style="width:100%;font-family:monospace;font-size:11px;resize:vertical;" placeholder='Paste your Firebase service account JSON here (from Firebase Console → Project Settings → Service Accounts → Generate new private key)'>{{ web_settings.get('fcm_service_account','') }}</textarea>
+          <div style="font-size:11px;color:#7a6a58;margin-top:6px;">&#9432; Go to <strong>console.firebase.google.com</strong> → Your Project → Project Settings → Service Accounts → Generate new private key → paste the entire JSON here.</div>
+        </div>
+        <div style="background:#fdf6ee;border-radius:8px;padding:14px;margin-bottom:12px;">
+          <label class="wa-lbl">Firebase Web App Config (JSON)</label>
+          <textarea class="wa-in" id="tr_fcm_web_config" rows="5" style="width:100%;font-family:monospace;font-size:11px;resize:vertical;" placeholder='{"apiKey":"...","authDomain":"...","projectId":"...","storageBucket":"...","messagingSenderId":"...","appId":"..."}'>{{ web_settings.get('fcm_web_config','') }}</textarea>
+          <div style="font-size:11px;color:#7a6a58;margin-top:6px;">&#9432; Firebase Console → Project Settings → General → Your apps → Web app → Config object.</div>
+        </div>
+        <div style="background:#fdf6ee;border-radius:8px;padding:14px;margin-bottom:12px;">
+          <label class="wa-lbl">VAPID Key (Web Push Certificate)</label>
+          <input class="wa-in" id="tr_fcm_vapid_key" type="text" value="{{ web_settings.get('fcm_vapid_key','') }}" placeholder="VAPID public key from Firebase Cloud Messaging settings" style="width:100%;font-family:monospace;">
+          <div style="font-size:11px;color:#7a6a58;margin-top:6px;">&#9432; Firebase Console → Project Settings → Cloud Messaging → Web Push certificates → Generate key pair → copy the Key pair value.</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="wa-btn gold" onclick="saveFcmConfig()">Save Firebase Config</button>
+          <span id="fcmSaveResult" style="font-size:12px;"></span>
+        </div>
+      </div>
+      <div class="wa-card" style="margin-bottom:16px;">
+        <div class="wa-hdr"><span style="font-size:15px;font-weight:700;color:#1a0e06;">Tracking &amp; Analytics</span></div>
+        <p style="font-size:12px;color:#7a6a58;margin-bottom:14px;">Paste your IDs — they apply to every page automatically.</p>
+        <div style="display:grid;gap:10px;">
+          <div><label class="wa-lbl">Google Analytics 4 ID</label><input class="wa-in" id="tr_tracking_ga4_id" value="{{ web_settings.get('tracking_ga4_id','') }}" placeholder="G-XXXXXXXXXX" style="width:100%;font-family:monospace;"></div>
+          <div><label class="wa-lbl">Google Tag Manager ID <span style="font-size:10px;color:#7a6a58;">(if using GTM, leave GA4 blank)</span></label><input class="wa-in" id="tr_tracking_gtm_id" value="{{ web_settings.get('tracking_gtm_id','') }}" placeholder="GTM-XXXXXXX" style="width:100%;font-family:monospace;"></div>
+          <div><label class="wa-lbl">Meta / Facebook Pixel ID</label><input class="wa-in" id="tr_tracking_meta_pixel" value="{{ web_settings.get('tracking_meta_pixel','') }}" placeholder="1234567890" style="width:100%;font-family:monospace;"></div>
+          <div><label class="wa-lbl">Google Search Console Verification Code</label><input class="wa-in" id="tr_tracking_gsc_meta" value="{{ web_settings.get('tracking_gsc_meta','') }}" placeholder="verification-code-here" style="width:100%;font-family:monospace;"></div>
+          <div><label class="wa-lbl">Robots.txt <span style="font-size:10px;color:#7a6a58;">(leave blank for smart default)</span></label><textarea class="wa-in" id="tr_robots_txt" rows="5" style="width:100%;font-family:monospace;resize:vertical;">{{ web_settings.get('robots_txt','') }}</textarea></div>
+        </div>
+        <button class="wa-btn gold" style="margin-top:12px;" onclick="saveTracking()">Save Tracking Codes</button>
+      </div>
+        <div><label class="wa-lbl">Site title (browser tab)</label><input class="wa-in" id="s_web_seo_title" value="{{ web_settings.get('web_seo_title','Uttam Tailors - Custom Tailoring, Sikar') }}"></div>
+        <div><label class="wa-lbl">Meta description (Google preview)</label><input class="wa-in" id="s_web_seo_desc" value="{{ web_settings.get('web_seo_desc','Custom tailoring in Sikar since 1987.') }}"></div>
+      </div>
+      <button class="wa-btn gold" style="margin-top:10px;" onclick="saveGroup(['web_seo_title','web_seo_desc'])">Save SEO</button>
+    <div class="wa-card" style="margin-top:14px;border:2px dashed #e8d9c5;">
+      <div class="wa-card-title" style="color:#7a6a58;">⚙ Database Migrations</div>
+      <p style="font-size:12px;color:#7a6a58;margin-bottom:10px;">Run this once after deploying to create any missing database tables.</p>
+      <button class="wa-btn" style="background:#1a0e06;color:#fff;" onclick="runMigrations()">Run Migrations</button>
+      <div id="migrationResult" style="font-size:11px;margin-top:8px;color:green;display:none;"></div>
+    </div>
+    </div>
+  </div><!-- /wp-settings -->
+
+  <!-- ═══════════════ COMMISSION PAGE ADMIN ═══════════════ -->
+  <div class="wa-pnl" id="wp-commission">
+
+    <!-- STEP 1 — GARMENT STYLE OPTIONS -->
+    <div class="acc-card" id="acc_step1">
+      <div class="acc-hdr" onclick="toggleAcc('acc_step1')">
+        <div>
+          <div class="acc-title">&#9986; Step 1 &#8212; Garment Style Options</div>
+          <div style="font-size:11px;color:#7a6a58;margin-top:2px;">Garment select karo &#8594; style options add karo &#8594; customer ko popup mein dikhengi</div>
+        </div>
+        <span class="acc-chevron">&#9660;</span>
+      </div>
+      <div class="acc-body">
+        <p style="font-size:12px;color:#7a6a58;margin-bottom:14px;">
+          <strong>Kaise kaam karta hai:</strong> Customer commission page pe shirt select kare toh ek popup khulta hai jisme ye saare styling options dikhte hain. Neeche kisi bhi garment ke liye options add karo.
+        </p>
+        <div style="margin-bottom:14px;">
+          <label class="wa-lbl">Garment select karo</label>
+          <div id="styleGarmentList" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;"><span style="font-size:12px;color:#7a6a58;">Loading...</span></div>
+        </div>
+        <div id="styleEditor" style="display:none;">
+          <div style="background:#2e1a0e;color:#f7f0e6;border-radius:8px;padding:10px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+            <div><b id="styleEditorName" style="font-size:14px;"></b><span id="styleEditorPrice" style="font-size:11px;color:#C8903A;margin-left:10px;"></span></div>
+            <div style="display:flex;gap:8px;">
+              <button class="wa-btn gold" onclick="seedDefaultStyles()" style="font-size:11px;padding:6px 14px;">&#128640; Add Default Styles</button>
+              <button onclick="document.getElementById('styleEditor').style.display='none'" style="background:none;border:none;color:#f7f0e6;font-size:20px;cursor:pointer;line-height:1;">&#x2715;</button>
+            </div>
+          </div>
+          <div style="background:#f0f7ee;border:1px solid #b8dfb8;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#2d6a2d;">
+            <strong>&#128640; Add Default Styles</strong> &#8212; ek click mein Collar, Sleeves, Front Placket, Buttons, aur Hem ke saare standard options add ho jaayenge Formal Shirt ke liye. Phir aap inke photos bhi upload kar sakte ho.
+          </div>
+          <div style="background:#fdf6ee;border-radius:8px;padding:12px;margin-bottom:12px;border:1px solid #e8d9c5;">
+            <div style="font-size:11px;font-weight:700;color:#7a6a58;margin-bottom:8px;text-transform:uppercase;letter-spacing:.07em;">New Group Add Karo</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
+              <div style="flex:1;min-width:130px;"><label class="wa-lbl">Group name</label><input class="wa-in" id="newGrpName" placeholder="e.g. Pocket Style" style="width:100%;"></div>
+              <div style="flex:1;min-width:130px;"><label class="wa-lbl">Label (customer dekhe)</label><input class="wa-in" id="newGrpLabel" placeholder="Choose pocket style" style="width:100%;"></div>
+              <div style="display:flex;align-items:center;gap:5px;padding-bottom:2px;"><input type="checkbox" id="newGrpReq" style="width:14px;height:14px;"><label style="font-size:12px;" for="newGrpReq">Required</label></div>
+              <button class="wa-btn gold" onclick="addGrpFromCommission()" style="padding:9px 14px;">+ Add</button>
+            </div>
+          </div>
+          <div id="commStyleGroups"><p style="font-size:12px;color:#7a6a58;text-align:center;padding:16px 0;">Loading style groups...</p></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="acc-card" id="acc_hdr">
+      <div class="acc-hdr" onclick="toggleAcc('acc_hdr')">
+        <div class="acc-title">🖼 Page Header (Kicker, Title, Image)</div>
+        <span class="acc-chevron">&#9660;</span>
+      </div>
+      <div class="acc-body">
+        <div class="wa-row">
+          <div><label class="wa-lbl">Kicker text (small line above title)</label><input class="wa-in" id="c_hdr_kicker" value="Customise your garment"></div>
+          <div><label class="wa-lbl">Main heading</label><input class="wa-in" id="c_hdr_title" value="Place your order"></div>
+        </div>
+        <div style="margin-top:10px;"><label class="wa-lbl">Subtitle / subheading</label><input class="wa-in" id="c_hdr_sub" value="Bring your fabric — we craft the perfect fit. WhatsApp updates at every step."></div>
+        <div style="margin-top:14px;">
+          <label class="wa-lbl">Header background image</label>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <div id="c_hdr_img_preview" style="width:180px;height:80px;background:#f0e8dc;border:1px solid #d8c9b4;border-radius:4px;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:11px;color:#7a6a58;">No image</div>
+            <div>
+              <input type="file" id="c_hdr_img_file" accept="image/*" style="display:none;" onchange="uploadCommissionHeaderImg(this)">
+              <button class="wa-btn" onclick="document.getElementById('c_hdr_img_file').click()" style="margin-bottom:6px;display:block;">Upload Image</button>
+              <button class="wa-btn" style="background:#dc2626;color:#fff;font-size:11px;" onclick="clearCommissionHeaderImg()">Remove Image</button>
+            </div>
+          </div>
+          <input type="hidden" id="c_hdr_img_url">
+        </div>
+        <div style="margin-top:12px;text-align:right;"><button class="wa-btn gold" onclick="saveCommissionHeader()">Save Header</button></div>
+      </div>
+    </div>
+
+    <!-- STEPS 2-6 TITLES -->
+    <div class="acc-card" id="acc_steps">
+      <div class="acc-hdr" onclick="toggleAcc('acc_steps')">
+        <div class="acc-title">📋 Steps 2–6 — Headings &amp; Subtitles</div>
+        <span class="acc-chevron">&#9660;</span>
+      </div>
+      <div class="acc-body">
+        <p style="font-size:11px;color:#7a6a58;margin-bottom:12px;">Har step card ke upar jo heading aur subtitle dikhti hai usse edit karo.</p>
+        <div style="display:flex;flex-direction:column;gap:10px;" id="c_steps_container">
+          <div style="border:1px solid #e8d9c5;border-radius:4px;padding:12px;"><div style="font-size:11px;font-weight:700;color:#C8903A;margin-bottom:8px;text-transform:uppercase;">Step 2 — Your style picks (fabric + style recap)</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"><div><label class="wa-lbl">Heading</label><input class="wa-in" id="c_step3_title" value="Your style picks"></div><div><label class="wa-lbl">Subtitle</label><input class="wa-in" id="c_step3_sub" value="Here's a recap of the fabric and look you chose for each garment — tap to revise anytime."></div></div></div>
+          <div style="border:1px solid #e8d9c5;border-radius:4px;padding:12px;"><div style="font-size:11px;font-weight:700;color:#C8903A;margin-bottom:8px;text-transform:uppercase;">Step 3 — Measurements</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"><div><label class="wa-lbl">Heading</label><input class="wa-in" id="c_step2_title" value="How shall we measure you?"></div><div><label class="wa-lbl">Subtitle</label><input class="wa-in" id="c_step2_sub" value="Choose the method easiest for you."></div></div></div>
+          <div style="border:1px solid #e8d9c5;border-radius:4px;padding:12px;"><div style="font-size:11px;font-weight:700;color:#C8903A;margin-bottom:8px;text-transform:uppercase;">Step 4 — Delivery</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"><div><label class="wa-lbl">Heading</label><input class="wa-in" id="c_step5_title" value="Delivery preference &amp; date"></div><div><label class="wa-lbl">Subtitle</label><input class="wa-in" id="c_step5_sub" value="Pick when you need it."></div></div></div>
+          <div style="border:1px solid #e8d9c5;border-radius:4px;padding:12px;"><div style="font-size:11px;font-weight:700;color:#C8903A;margin-bottom:8px;text-transform:uppercase;">Step 5 — Contact</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"><div><label class="wa-lbl">Heading</label><input class="wa-in" id="c_step6_title" value="Your contact details"></div><div><label class="wa-lbl">Subtitle</label><input class="wa-in" id="c_step6_sub" value="No account needed. We send updates on WhatsApp."></div></div></div>
+        </div>
+        <p style="font-size:10.5px;color:#a08a72;margin-top:10px;">Note: the standalone "Fabric" and "Style" steps were merged into Step 2 ("Your style picks") as part of the new streamlined purchase flow — the fabric source is now chosen via a popup right after picking a garment.</p>
+        <div style="margin-top:14px;text-align:right;"><button class="wa-btn gold" onclick="saveCommissionSteps()">Save All Steps</button></div>
+      </div>
+    </div>
+
+    <!-- ORDER SUMMARY -->
+    <div class="acc-card" id="acc_summary">
+      <div class="acc-hdr" onclick="toggleAcc('acc_summary')">
+        <div class="acc-title">🧾 Order Summary — Advance % &amp; Trust Points</div>
+        <span class="acc-chevron">&#9660;</span>
+      </div>
+      <div class="acc-body">
+        <div class="wa-row">
+          <div><label class="wa-lbl">Panel heading</label><input class="wa-in" id="c_summary_title" value="Order Summary"></div>
+          <div>
+            <label class="wa-lbl">Advance payment %</label>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <input class="wa-in" id="c_advance_pct" type="number" min="0" max="100" value="30" style="width:90px;">
+              <span style="font-size:12px;color:#7a6a58;">% (30 = 30% abhi, baaki delivery pe)</span>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:12px;">
+          <label class="wa-lbl">Trust points (✓ bullet list)</label>
+          <div style="display:flex;flex-direction:column;gap:7px;margin-top:6px;">
+            <input class="wa-in" id="c_trust_1" value="Free alteration if fit is not right">
+            <input class="wa-in" id="c_trust_2" value="WhatsApp updates at every step">
+            <input class="wa-in" id="c_trust_3" value="35+ years of master craft">
+            <input class="wa-in" id="c_trust_4" value="Rs. 100 off your first order">
+          </div>
+        </div>
+        <div style="margin-top:12px;text-align:right;"><button class="wa-btn gold" onclick="saveCommissionSummary()">Save Summary</button></div>
+      </div>
+    </div>
+
+    <!-- URGENT -->
+    <div class="acc-card" id="acc_urgent">
+      <div class="acc-hdr" onclick="toggleAcc('acc_urgent')">
+        <div class="acc-title">⚡ Urgent Order Box</div>
+        <span class="acc-chevron">&#9660;</span>
+      </div>
+      <div class="acc-body">
+        <div class="wa-row">
+          <div><label class="wa-lbl">Title</label><input class="wa-in" id="c_urgent_title" value="Urgent order"></div>
+          <div><label class="wa-lbl">Subtitle</label><input class="wa-in" id="c_urgent_sub" value="+Rs. 99 extra • Delivered in 1–3 days"></div>
+        </div>
+        <div style="margin-top:12px;text-align:right;"><button class="wa-btn gold" onclick="saveCommissionUrgent()">Save Urgent</button></div>
+      </div>
+    </div>
+
+    <!-- GARMENTS PREVIEW -->
+    <div class="acc-card" id="acc_garments">
+      <div class="acc-hdr" onclick="toggleAcc('acc_garments')">
+        <div class="acc-title">👔 Garments Listed on Commission Page</div>
+        <span class="acc-chevron">&#9660;</span>
+      </div>
+      <div class="acc-body">
+        <p style="font-size:11px;color:#7a6a58;margin-bottom:12px;">Yeh garments Products tab se aate hain. Add/edit karne ke liye <strong>✎ Products</strong> tab use karo.</p>
+        <div id="c_garments_preview" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;"><div style="color:#7a6a58;font-size:12px;">Loading...</div></div>
+        <div style="margin-top:12px;"><a href="#" onclick="document.querySelector('[onclick*=\'products\']').click();return false;" class="wa-btn" style="font-size:12px;">Go to Products tab →</a></div>
+      </div>
+    </div>
+
+  </div><!-- /wp-commission -->
+
+<div class="wa-toast" id="waToast"></div>
+  <!-- STITCH TRACKER PANEL -->
+  <div class="wa-pnl" id="wp-stitch_tracker">
+    <div class="wa-card">
+      <div class="wa-card-title">Live Stitch Tracker - Update Order Stage</div>
+      <p style="font-size:12.5px;color:#7a6a58;margin-bottom:1rem;">Enter an order code, load its stage, then update. Customer sees it live on their order page.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:1rem;">
+        <input class="wa-in" id="st_order_code" placeholder="Order code e.g. 3601" style="max-width:200px;">
+        <button class="wa-btn" style="background:#1a0e06;color:#fff;" onclick="loadStitchOrders()">Load Stage</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1rem;">
+        <div>
+          <label class="wa-lbl">Stage</label>
+          <select id="st_stage_sel" class="wa-in">
+            <option value="1">1 - Order Received</option>
+            <option value="2">2 - Fabric Cut</option>
+            <option value="3">3 - Stitching</option>
+            <option value="4">4 - Quality Check</option>
+            <option value="5">5 - Ready</option>
+          </select>
+        </div>
+        <div>
+          <label class="wa-lbl">Note for customer (optional)</label>
+          <input class="wa-in" id="st_note" placeholder="e.g. Starting stitching tomorrow">
+        </div>
+      </div>
+      <button class="wa-btn gold" onclick="saveStitchStage()">Save Stage Update</button>
+    </div>
+  </div>
+
+  <!-- STYLE REQUESTS (INSPO) PANEL -->
+  <div class="wa-pnl" id="wp-style_requests">
+    <div class="wa-card">
+      <div class="wa-card-title" style="display:flex;justify-content:space-between;align-items:center;">
+        <span>Inspo Requests</span>
+        <button class="wa-btn" style="background:#1a0e06;color:#fff;padding:7px 14px;" onclick="loadStyleRequests()">Refresh</button>
+      </div>
+      <div id="sr_list" style="margin-top:1rem;"><div style="color:#7a6a58;font-size:13px;">Click Refresh to load.</div></div>
+    </div>
+    <div id="sr_chat_wrap" style="display:none;" class="wa-card">
+      <div class="wa-card-title">Chat with Customer</div>
+      <div id="sr_chat" style="min-height:160px;max-height:320px;overflow-y:auto;background:#f9f5ef;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;margin-bottom:12px;"></div>
+      <div style="display:flex;gap:8px;">
+        <input class="wa-in" id="sr_reply_input" placeholder="Type your reply..." onkeydown="if(event.key==='Enter')sendSrReply()" style="flex:1;">
+        <button class="wa-btn gold" onclick="sendSrReply()">Send</button>
+      </div>
+      <button class="wa-btn ghost" style="margin-top:8px;font-size:11px;" onclick="fetchSrChat()">Refresh Chat</button>
+    </div>
+  </div>
+
+  <!-- SUPPORT CHATS PANEL -->
+  <div class="wa-pnl" id="wp-support_chats">
+    <div class="wa-card">
+      <div class="wa-card-title" style="display:flex;justify-content:space-between;align-items:center;">
+        <span>Support Chats</span>
+        <button class="wa-btn" style="background:#1a0e06;color:#fff;padding:7px 14px;" onclick="loadSupportChats()">Refresh list</button>
+      </div>
+      <div id="sc_list" style="margin-top:1rem;"><div style="color:#7a6a58;font-size:13px;">Click "Refresh list" to load.</div></div>
+    </div>
+    <div id="sc_chat_wrap" style="display:none;" class="wa-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem;">
+        <div>
+          <div class="wa-card-title" style="margin:0;" id="sc_chat_title">Chat</div>
+          <div id="sc_chat_meta" style="font-size:11px;color:#7a6a58;margin-top:2px;"></div>
+        </div>
+        <button id="sc_close_btn" class="wa-btn red" style="padding:6px 12px;font-size:11px;display:none;" onclick="closeSupportChat()">Close Chat</button>
+      </div>
+      <div id="sc_chat" style="min-height:160px;max-height:320px;overflow-y:auto;background:#f9f5ef;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;margin-bottom:12px;"></div>
+      <div id="sc_upload_bar" style="height:3px;background:#C8903A;border-radius:2px;width:0%;display:none;margin-bottom:4px;transition:width .2s;"></div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button onclick="document.getElementById('sc_file_input').click()" title="Attach image, PDF or video" style="background:none;border:1.5px solid #e8d9c4;border-radius:7px;padding:6px 9px;cursor:pointer;font-size:15px;line-height:1;color:#7a6a58;">&#128206;</button>
+        <input type="file" id="sc_file_input" accept="image/*,.pdf,video/*" style="display:none" onchange="sendScFile(this)">
+        <input class="wa-in" id="sc_reply_input" placeholder="Type reply..." onkeydown="if(event.key==='Enter')sendScReply()" style="flex:1;">
+        <button class="wa-btn gold" onclick="sendScReply()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ DAILY CRAFT PANEL ══ -->
+  <div class="wa-pnl" id="wp-daily_craft">
+    <div class="wa-card">
+      <div class="wa-card-title">📸 Daily Craft — Fresh From The Workshop</div>
+      <p style="font-size:13px;color:#7a6a58;margin-bottom:1.25rem;">Upload photos of garments stitched today. These appear on the homepage "Fresh From The Workshop" section and on the <a href="/our-work" target="_blank" style="color:#C8903A;">/our-work</a> gallery page.</p>
+      <!-- Upload form -->
+      <div style="background:#fdf6ee;border:1.5px dashed #e8d9c5;border-radius:12px;padding:1.5rem;margin-bottom:1.5rem;">
+        <div class="wa-row">
+          <div>
+            <label class="wa-lbl">Photo *</label>
+            <input type="file" id="dc_image" accept="image/*" class="wa-in" style="padding:6px;">
+          </div>
+          <div>
+            <label class="wa-lbl">Tag (shirt / kurta / suit / pant…)</label>
+            <input class="wa-in" id="dc_tag" placeholder="e.g. Kurta" maxlength="60">
+          </div>
+        </div>
+        <div style="margin-bottom:12px;">
+          <label class="wa-lbl">Caption</label>
+          <input class="wa-in" id="dc_caption" placeholder="e.g. Navy blue linen kurta with embroidered collar" maxlength="200" style="width:100%;">
+        </div>
+        <div id="dc_upload_bar" style="height:3px;background:#C8903A;border-radius:2px;width:0%;display:none;margin-bottom:8px;transition:width .2s;"></div>
+        <button class="wa-btn gold" onclick="dcUpload()">Upload Photo</button>
+      </div>
+      <!-- Grid -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+        <span class="wa-card-title" style="margin:0;font-size:14px;">All Photos <span id="dc_total" style="font-size:12px;color:#7a6a58;"></span></span>
+        <button class="wa-btn" style="padding:6px 14px;font-size:11px;" onclick="loadDcList()">↻ Refresh</button>
+      </div>
+      <div id="dc_grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;">
+        <div style="font-size:13px;color:#7a6a58;padding:1rem;">Click Refresh to load photos.</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+function waTab(n,b){try{document.querySelectorAll('.wa-tab').forEach(function(t){t.classList.remove('active');});document.querySelectorAll('.wa-pnl').forEach(function(p){p.classList.remove('active');});b.classList.add('active');var panel=document.getElementById('wp-'+n);if(panel){panel.classList.add('active');}else{console.error('Panel not found: wp-'+n);return;}if(n==='fabrics')loadFabricList();else if(n==='coupons')loadCoupons();else if(n==='sizes')loadSizeTable();else if(n==='navfooter'){}else if(n==='prices'){}else if(n==='offers')loadAnnItems();else if(n==='products')loadProductAdmin();else if(n==='settings')loadStaticSeoUI();else if(n==='commission')loadCommissionAdmin();else if(n==='story')loadStoryTab();else if(n==='stitch_tracker'){}else if(n==='style_requests')loadStyleRequests();else if(n==='support_chats')loadSupportChats();else if(n==='daily_craft')loadDcList();}catch(e){console.error('waTab error:',e);}}
+function apiFetch(url,opts){return fetch(url,opts).then(function(r){if(r.status===401||r.status===403){toast('Session expired. Please login again.',true);setTimeout(function(){window.location='/owner/login';},2000);throw new Error('Unauthorized');}return r;});}
+function toast(m,e){var t=document.getElementById('waToast');t.textContent=m;t.style.background=e?'#dc2626':'#1a0e06';t.classList.add('show');setTimeout(function(){t.classList.remove('show');},3000);}
+function saveSetting(k,v){apiFetch('/owner/website/settings/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:k,value:v})}).then(function(r){return r.json();}).then(function(d){if(d.ok)toast('Saved!');else toast(d.error||'Error',true);}).catch(function(){toast('Error',true);});}
+function saveSection(map){Object.entries(map).forEach(function(e){var el=document.getElementById(e[1]);if(el)saveSetting(e[0],el.value);});toast('Saved!');}
+function saveGroup(keys){keys.forEach(function(k){var el=document.getElementById('s_'+k);if(el)saveSetting(k,el.value);});toast('Saved!');}
+function togglePs(h){var b=h.nextElementSibling;b.classList.toggle('open');h.querySelector('span').textContent=b.classList.contains('open')?'Close':'Edit';}
+function toggleAcc(id){
+  var el=document.getElementById(id);
+  if(!el) return;
+  el.classList.toggle('open');
+}
+
+// Announcement Bar
+var _annItems=[];var DEFAULT_ANN=['Rs. 100 off on your first order','Free delivery within Sikar city','Free alteration if fit is off','Ready in 5-7 days','Now shipping across India'];
+function loadAnnItems(){apiFetch('/owner/website/settings/all').then(function(r){return r.json();}).then(function(d){var raw=(d.settings||{})['web_ann_items']||'';_annItems=raw?raw.split('||').map(function(s){return s.trim();}).filter(Boolean):DEFAULT_ANN.slice();renderAnnItems();});}
+function renderAnnItems(){var list=document.getElementById('annItemsList');if(!_annItems.length){list.innerHTML='<p style="font-size:12px;color:#7a6a58;">No items. Add below.</p>';return;}list.innerHTML=_annItems.map(function(item,i){return '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#fdf6ee;border:1px solid #e8d9c5;border-radius:8px;"><span style="font-size:14px;color:#7a6a58;flex-shrink:0;">☀</span><input class="wa-in" value="'+escAnn(item)+'" id="ann_'+i+'" style="flex:1;" onblur="_annItems['+i+']=this.value"><button onclick="removeAnn('+i+')" style="background:none;border:none;color:#dc2626;font-size:18px;cursor:pointer;flex-shrink:0;">&times;</button></div>';}).join('');}
+function escAnn(s){return (s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+function addAnnItem(){var inp=document.getElementById('newAnnItem');var v=inp.value.trim();if(!v){toast('Enter announcement text',true);return;}if(_annItems.length>=8){toast('Maximum 8 items',true);return;}_annItems.push(v);inp.value='';renderAnnItems();}
+function removeAnn(i){_annItems.splice(i,1);renderAnnItems();}
+function saveAnnItems(){_annItems=_annItems.map(function(item,i){var el=document.getElementById('ann_'+i);return el?el.value.trim():item;}).filter(Boolean);var val=_annItems.join('||');apiFetch('/owner/website/settings/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'web_ann_items',value:val})}).then(function(r){return r.json();}).then(function(d){if(d.ok)toast('Announcement bar saved! Refresh website to see changes.');else toast('Error saving',true);});}
+// Our Story
+function escHtml(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+var DEFAULT_TIMELINE=[{year:'1987',title:'The first stitch',body:'Uttam Tailors opens at Subhash Chowk, Sikar. One machine. One measuring tape.'},{year:'1995',title:'Papa builds the empire',body:'My father mastered every garment. Lakhs of garments delivered. Thousands of families served.'},{year:'2020',title:'Papa left us',body:'In 2020, we lost Late Mr. Narendra Kumawat. I took over with one mission: to carry his standard forward.'},{year:'2025',title:'Taking it online',body:'Uttam Tailors goes online. Bringing the quality of master tailoring to every home in India.'}];
+function loadTimeline(){apiFetch('/owner/website/story/timeline').then(function(r){return r.json();}).then(function(d){var e=d.entries||[];if(!e.length){seedTimeline();return;}renderTimeline(e);});}
+function seedTimeline(){var done=0;DEFAULT_TIMELINE.forEach(function(e){apiFetch('/owner/website/story/timeline/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(e)}).then(function(){done++;if(done===DEFAULT_TIMELINE.length){toast('Original story content loaded!');loadTimeline();}});});}
+function renderTimeline(entries){var list=document.getElementById('timelineList');if(!entries.length){list.innerHTML='<p style="font-size:12px;color:#7a6a58;padding:8px;">No entries. Add one below.</p>';return;}list.innerHTML=entries.map(function(e){return '<div style="border:1px solid #e8d9c5;border-radius:10px;overflow:hidden;margin-bottom:8px;"><div style="background:#f5ede0;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;"><span style="font-size:13px;font-weight:700;color:#C8903A;">'+e.year+' — '+e.title+'</span><div style="display:flex;gap:6px;"><button onclick="toggleTlEdit('+e.id+')" style="background:none;border:1px solid #c8a87a;border-radius:6px;color:#7a6a58;font-size:11px;padding:3px 10px;cursor:pointer;">Edit</button><button onclick="deleteTimeline('+e.id+')" style="background:none;border:none;color:#dc2626;font-size:18px;cursor:pointer;padding:0 2px;">&times;</button></div></div><div id="tledit_'+e.id+'" style="display:none;padding:12px;background:#fdf6ee;"><div style="display:grid;grid-template-columns:100px 1fr;gap:8px;margin-bottom:8px;"><input class="wa-in" id="tl_y_'+e.id+'" value="'+e.year+'" placeholder="Year"><input class="wa-in" id="tl_t_'+e.id+'" value="'+escHtml(e.title)+'" placeholder="Title"></div><textarea class="wa-in" id="tl_b_'+e.id+'" style="width:100%;min-height:90px;resize:vertical;margin-bottom:8px;">'+escHtml(e.body)+'</textarea><div style="display:flex;gap:8px;"><button class="wa-btn gold" onclick="saveTlEntry('+e.id+')">Save</button><button class="wa-btn" onclick="toggleTlEdit('+e.id+')">Cancel</button></div></div></div>';}).join('');}
+function toggleTlEdit(id){var el=document.getElementById('tledit_'+id);if(el)el.style.display=el.style.display==='none'?'block':'none';}
+function saveTlEntry(id){var year=document.getElementById('tl_y_'+id).value.trim();var title=document.getElementById('tl_t_'+id).value.trim();var body=document.getElementById('tl_b_'+id).value.trim();if(!year||!title){toast('Year and title required',true);return;}apiFetch('/owner/website/story/timeline/update/'+id,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({year:year,title:title,body:body})}).then(function(r){return r.json();}).then(function(d){if(d.ok){toast('Entry saved!');loadTimeline();}else toast(d.error||'Error',true);});}
+function openAddTimeline(){document.getElementById('addTimelineBox').style.display='block';document.getElementById('tl_year').focus();}
+function addTimeline(){var year=document.getElementById('tl_year').value.trim();var title=document.getElementById('tl_title').value.trim();var body=document.getElementById('tl_body').value.trim();if(!year||!title){toast('Enter year and title',true);return;}apiFetch('/owner/website/story/timeline/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({year:year,title:title,body:body})}).then(function(r){return r.json();}).then(function(d){if(d.ok){['tl_year','tl_title','tl_body'].forEach(function(id){document.getElementById(id).value='';});document.getElementById('addTimelineBox').style.display='none';toast('Entry added!');loadTimeline();}else toast(d.error||'Error',true);});}
+function deleteTimeline(id){if(!confirm('Delete this timeline entry?'))return;apiFetch('/owner/website/story/timeline/delete/'+id,{method:'POST'}).then(function(r){return r.json();}).then(function(d){if(d.ok){toast('Deleted');loadTimeline();}});}
+// Story Tab
+function loadStoryTab(){var list=document.getElementById('storyList');if(!list)return;list.innerHTML='<p style="text-align:center;color:#7a6a58;padding:16px;">Loading...</p>';apiFetch('/owner/website/story/timeline').then(function(r){return r.json();}).then(function(d){var entries=d.entries||[];if(!entries.length){list.innerHTML='<p style="font-size:12px;color:#7a6a58;padding:8px;">No timeline entries yet. Add one below.</p>';return;}list.innerHTML=entries.map(function(e){return '<div style="border:1px solid #e8d9c5;border-radius:10px;overflow:hidden;margin-bottom:8px;" id="story-'+e.id+'"><div style="background:#f5ede0;padding:10px 14px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><div style="display:flex;gap:6px;flex:1;"><input class="wa-in" style="width:80px;font-weight:700;" value="'+e.year+'" id="sy-'+e.id+'" placeholder="Year"><input class="wa-in" style="flex:1;font-weight:700;" value="'+e.title+'" id="st-'+e.id+'" placeholder="Title"></div><button onclick="deleteStoryEntry('+e.id+')" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:18px;margin-left:8px;" title="Delete">&times;</button></div><textarea class="wa-in" rows="2" id="sb-'+e.id+'" style="width:100%;resize:vertical;">'+e.body+'</textarea><button class="wa-btn gold" style="margin-top:6px;" onclick="updateStoryEntry('+e.id+')">Save</button></div></div>';}).join('');}).catch(function(){list.innerHTML='<p style="color:#dc2626;padding:8px;font-size:12px;">Could not load story data.</p>';});}
+function addStoryEntry(){var year=document.getElementById('newStoryYear').value.trim();var title=document.getElementById('newStoryTitle').value.trim();var body=document.getElementById('newStoryBody').value.trim();if(!year||!title){toast('Year and title are required',true);return;}apiFetch('/owner/website/story/timeline/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({year:year,title:title,body:body})}).then(function(r){return r.json();}).then(function(d){if(d.ok){document.getElementById('newStoryYear').value='';document.getElementById('newStoryTitle').value='';document.getElementById('newStoryBody').value='';toast('Entry added!');loadStoryTab();}else toast(d.error||'Error',true);});}
+function updateStoryEntry(id){var year=(document.getElementById('sy-'+id)||{}).value||'';var title=(document.getElementById('st-'+id)||{}).value||'';var body=(document.getElementById('sb-'+id)||{}).value||'';if(!year||!title){toast('Year and title required',true);return;}apiFetch('/owner/website/story/timeline/update/'+id,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({year:year,title:title,body:body})}).then(function(r){return r.json();}).then(function(d){if(d.ok)toast('Saved!');else toast(d.error||'Error',true);});}
+function deleteStoryEntry(id){if(!confirm('Delete this timeline entry?'))return;apiFetch('/owner/website/story/timeline/delete/'+id,{method:'POST'}).then(function(r){return r.json();}).then(function(d){if(d.ok){toast('Deleted');loadStoryTab();}else toast(d.error||'Error',true);});}
+// Fabrics
+function previewFabricImg(input){
+  if(!input||!input.files||!input.files[0])return;
+  var file=input.files[0];
+  // Show an instant local preview while it uploads
+  var prev=document.getElementById('fi_preview'), pimg=document.getElementById('fi_preview_img');
+  if(prev&&pimg){var reader=new FileReader();reader.onload=function(e){pimg.src=e.target.result;prev.style.display='block';};reader.readAsDataURL(file);}
+  var fd=new FormData();fd.append('image',file);
+  toast('Uploading image...');
+  apiFetch('/owner/website/fabric/upload-temp-image',{method:'POST',body:fd}).then(function(r){return r.json();}).then(function(d){
+    if(d.ok&&d.url){
+      var fi=document.getElementById('fi'); if(fi) fi.value=d.url;
+      if(pimg) pimg.src=d.url;
+      toast('Image uploaded — ready to add to catalog!');
+    } else {
+      toast(d.error||'Upload failed',true);
+    }
+  }).catch(function(){toast('Upload error',true);});
+  input.value='';
+}
+function addFabric(){var n=document.getElementById('fn').value.trim();var p=parseFloat(document.getElementById('fp').value)||0;if(!n||!p){toast('Enter name and price.',true);return;}apiFetch('/owner/website/fabric/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,price:p,stock:parseFloat(document.getElementById('fst').value)||0,image_url:document.getElementById('fi').value.trim(),fabric_type:document.getElementById('ft').value.trim()})}).then(function(r){return r.json();}).then(function(d){if(d.ok){toast('Fabric added!');['fn','fp','fst','fi','ft'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});var prev=document.getElementById('fi_preview');if(prev)prev.style.display='none';loadFabricList();}else toast(d.error||'Error',true);}).catch(function(){toast('Error adding fabric',true);});}
+function delFabric(id){if(!confirm('Remove this fabric?'))return;apiFetch('/owner/website/fabric/delete/'+id,{method:'POST'}).then(function(r){return r.json();}).then(function(d){if(d.ok){toast('Fabric removed.');loadFabricList();}else toast(d.error||'Error',true);}).catch(function(){toast('Delete failed',true);});}
+function uploadFabricImg(fid,input){if(!input||!input.files||!input.files[0])return;var fd=new FormData();fd.append('image',input.files[0]);toast('Uploading...');apiFetch('/owner/website/fabric/upload-image/'+fid,{method:'POST',body:fd}).then(function(r){return r.json();}).then(function(d){if(d.ok){toast('Image uploaded!');loadFabricList();}else toast(d.error||'Upload failed',true);}).catch(function(){toast('Upload error',true);});}
+function loadFabricList(){apiFetch('/owner/website/fabrics/list').then(function(r){return r.json();}).then(function(d){var grid=document.getElementById('fabricAdminGrid');if(!grid)return;var fabrics=d.fabrics||[];if(!fabrics.length){grid.innerHTML='<p style="color:#7a6a58;font-size:13px;padding:20px 0;text-align:center;">No fabrics added yet.</p>';return;}grid.innerHTML=fabrics.map(function(f){var imgHtml=f.image_url?'<img src="'+f.image_url+'" style="width:100%;height:100%;object-fit:cover;" alt="">':'<div style="background:#e8dcc8;width:100%;height:100%;display:flex;align-items:center;justify-content:center;"><small style="font-size:9px;color:#7a6a58;">No photo</small></div>';return '<div class="wa-fab-card" id="fc-'+f.id+'"><div class="wa-fab-img">'+imgHtml+'</div><div class="wa-fab-body"><span style="font-weight:700;font-size:12px;color:#1a0e06;display:block;">'+f.name+'</span><span style="font-size:11px;color:#C8903A;display:block;">Rs. '+f.price_per_metre+'/m</span><span style="font-size:10px;color:#7a6a58;display:block;margin-top:2px;">'+f.stock_metres+'m in stock</span><div style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap;"><label style="cursor:pointer;flex:1;"><input type="file" accept="image/*" style="display:none;" onchange="uploadFabricImg('+f.id+',this)"><span class="wa-btn" style="display:block;text-align:center;padding:4px 8px;font-size:10px;">&#128247; Cover</span></label><button class="wa-btn" style="padding:4px 8px;font-size:10px;flex:1;" onclick="toggleFabricGallery('+f.id+')">&#128247; Gallery</button><button class="wa-btn red" style="padding:4px 8px;font-size:10px;" onclick="delFabric('+f.id+')">Remove</button></div><div id="fgal-'+f.id+'" style="display:none;margin-top:10px;border-top:1px dashed #e8d9c5;padding-top:8px;"><div style="font-size:10px;color:#7a6a58;margin-bottom:6px;">Extra photos (up to 4 shown to customers, incl. cover)</div><div id="fgal-grid-'+f.id+'" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;"></div><label style="cursor:pointer;"><input type="file" accept="image/*" style="display:none;" onchange="uploadFabricGalleryImg('+f.id+',this)"><span class="wa-btn gold" style="display:inline-block;padding:4px 10px;font-size:10px;">+ Add photo</span></label></div></div></div>';}).join('');}).catch(function(){});}
+function toggleFabricGallery(fid){var box=document.getElementById('fgal-'+fid);if(!box)return;var open=box.style.display!=='none';box.style.display=open?'none':'block';if(!open)loadFabricGallery(fid);}
+function loadFabricGallery(fid){var grid=document.getElementById('fgal-grid-'+fid);if(!grid)return;grid.innerHTML='<small style="color:#7a6a58;font-size:10px;">Loading...</small>';apiFetch('/owner/website/fabric/media/list/'+fid).then(function(r){return r.json();}).then(function(d){var media=d.media||[];if(!media.length){grid.innerHTML='<small style="color:#7a6a58;font-size:10px;">No extra photos yet — cover image is shown by default.</small>';return;}grid.innerHTML=media.map(function(m){return '<div style="position:relative;width:54px;height:54px;border-radius:8px;overflow:hidden;border:1px solid #e8d9c5;"><img src="'+m.url+'" style="width:100%;height:100%;object-fit:cover;" alt=""><button onclick="delFabricGalleryImg('+m.id+','+fid+')" title="Remove" style="position:absolute;top:1px;right:1px;background:rgba(220,38,38,.9);color:#fff;border:none;border-radius:50%;width:16px;height:16px;font-size:10px;line-height:16px;cursor:pointer;padding:0;">&times;</button></div>';}).join('');}).catch(function(){grid.innerHTML='<small style="color:#dc2626;font-size:10px;">Could not load photos.</small>';});}
+function uploadFabricGalleryImg(fid,input){if(!input||!input.files||!input.files[0])return;var fd=new FormData();fd.append('image',input.files[0]);toast('Uploading...');apiFetch('/owner/website/fabric/media/upload/'+fid,{method:'POST',body:fd}).then(function(r){return r.json();}).then(function(d){if(d.ok){toast('Photo added!');loadFabricGallery(fid);}else toast(d.error||'Upload failed',true);input.value='';}).catch(function(){toast('Upload error',true);});}
+function delFabricGalleryImg(mid,fid){if(!confirm('Remove this photo?'))return;apiFetch('/owner/website/fabric/media/delete/'+mid,{method:'POST'}).then(function(r){return r.json();}).then(function(d){if(d.ok){toast('Removed.');loadFabricGallery(fid);}else toast(d.error||'Error',true);});}
+// Coupons
+function loadCoupons(){apiFetch('/owner/website/coupons').then(function(r){return r.json();}).then(function(d){var list=document.getElementById('couponList');if(!list)return;if(!d.coupons||!d.coupons.length){list.innerHTML='<p style="font-size:12px;color:#7a6a58;">No coupons yet.</p>';return;}list.innerHTML='<table class="wa-tbl"><thead><tr><th>Code</th><th>Discount</th><th>Min Order</th><th>Uses</th><th>Expires</th><th>Status</th><th>Actions</th></tr></thead><tbody>'+d.coupons.map(function(c){return '<tr><td><b>'+c.code+'</b><div style="font-size:10px;color:#7a6a58;">'+c.description+'</div></td><td>'+(c.discount_type==='percent'?c.discount_value+'%':'Rs.'+c.discount_value)+'</td><td>Rs.'+c.min_order+'</td><td>'+c.used_count+(c.max_uses?'/'+c.max_uses:'/∞')+'</td><td style="font-size:10px;">'+(c.expires_on||'No expiry')+'</td><td><span style="font-size:10px;padding:2px 8px;border-radius:10px;background:'+(c.active?'#d1fae5':'#fee2e2')+';color:'+(c.active?'#065f46':'#991b1b')+';">'+(c.active?'Active':'Inactive')+'</span></td><td style="display:flex;gap:4px;"><button class="wa-btn" style="padding:3px 8px;font-size:10px;" onclick="toggleCoupon('+c.id+')">'+(c.active?'Disable':'Enable')+'</button><button class="wa-btn red" style="padding:3px 8px;font-size:10px;" onclick="deleteCoupon('+c.id+')">Del</button></td></tr>';}).join('')+'</tbody></table>';});}
+function addCoupon(){var code=document.getElementById('cpCode').value.trim().toUpperCase();var type=document.getElementById('cpType').value;var val=parseFloat(document.getElementById('cpValue').value)||0;var min=parseFloat(document.getElementById('cpMin').value)||0;var mu=parseInt(document.getElementById('cpMaxUses').value)||0;var exp=document.getElementById('cpExpires').value;var desc=document.getElementById('cpDesc').value;if(!code||!val){toast('Enter code and value',true);return;}apiFetch('/owner/website/coupon/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:code,discount_type:type,discount_value:val,min_order:min,max_uses:mu,expires_on:exp,description:desc})}).then(function(r){return r.json();}).then(function(d){if(d.ok){toast('Coupon added!');loadCoupons();}else toast(d.error||'Error',true);});}
+function toggleCoupon(id){apiFetch('/owner/website/coupon/toggle/'+id,{method:'POST'}).then(function(r){return r.json();}).then(function(d){if(d.ok)loadCoupons();});}
+function deleteCoupon(id){if(!confirm('Delete this coupon?'))return;apiFetch('/owner/website/coupon/delete/'+id,{method:'POST'}).then(function(r){return r.json();}).then(function(d){if(d.ok){toast('Deleted');loadCoupons();}});}
+// Sizes
+var _sizeData={};
+function loadSizeTable(){var cat=document.getElementById('sizeCategory').value;apiFetch('/owner/website/sizes').then(function(r){return r.json();}).then(function(d){_sizeData={};(d.sizes||[]).forEach(function(s){if(s.garment_category===cat){try{_sizeData[s.size_label]=JSON.parse(s.measurements);}catch(e){}}});loadSizeRow();});}
+function loadSizeRow(){var sz=document.getElementById('sizeLabel').value;var meas=_sizeData[sz]||{};var editor=document.getElementById('sizeEditor');if(!editor)return;var fields=Object.keys(meas).filter(function(k){return k!=='fabric_metres';});if(!fields.length)fields=['chest','waist','hip','shoulder','sleeve','length'];editor.innerHTML=fields.map(function(k){return '<div><label style="font-size:11px;color:#7a6a58;display:block;margin-bottom:2px;">'+k.replace(/_/g,' ')+'</label><input class="wa-in" data-field="'+k+'" value="'+(meas[k]||'')+'" placeholder="inches"></div>';}).join('');var fmEl=document.getElementById('sizeFabricMetres');if(fmEl)fmEl.value=meas.fabric_metres||'';}
+function saveSize(){var cat=document.getElementById('sizeCategory').value;var sz=document.getElementById('sizeLabel').value;var meas={};document.querySelectorAll('#sizeEditor .wa-in').forEach(function(inp){if(inp.value)meas[inp.dataset.field]=inp.value;});var fmEl=document.getElementById('sizeFabricMetres');if(fmEl&&fmEl.value)meas.fabric_metres=parseFloat(fmEl.value)||fmEl.value;apiFetch('/owner/website/sizes/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({garment_category:cat,size_label:sz,measurements:meas})}).then(function(r){return r.json();}).then(function(d){if(d.ok){var msg=document.getElementById('sizeSaveMsg');if(msg){msg.style.display='block';setTimeout(function(){msg.style.display='none';},2000);}_sizeData[sz]=meas;toast('Size saved!');}else toast(d.error||'Error',true);});}
+// Header & Footer
+function saveHeaderSettings(){var d={web_shop_name:document.getElementById('web_shop_name').value,web_shop_est:document.getElementById('web_shop_est').value,web_header_cta_text:document.getElementById('web_header_cta_text').value,web_header_cta_url:document.getElementById('web_header_cta_url').value};apiFetch('/owner/website/nav-footer/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).then(function(r){return r.json();}).then(function(r){toast(r.ok?'Header saved!':'Error',!r.ok);});}
+function saveFooterContact(){var ids=['web_footer_tagline','web_footer_address','web_footer_hours','web_footer_phone','web_footer_whatsapp','web_footer_email','web_footer_maps_url','web_footer_bulk_email','web_footer_copyright','web_footer_est'];var d={};ids.forEach(function(f){var e=document.getElementById(f);if(e)d[f]=e.value;});apiFetch('/owner/website/nav-footer/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).then(function(r){return r.json();}).then(function(r){toast(r.ok?'Contact saved!':'Error',!r.ok);});}
+function updateNavItem(id,btn){var row=btn.closest('[data-id]');var label=row.querySelector('.nav-lbl-in').value;var url=row.querySelector('.nav-url-in').value;var tab=row.querySelector('select').value;apiFetch('/owner/website/nav/item/update/'+id,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({label:label,url:url,open_new_tab:tab,active:1})}).then(function(r){return r.json();}).then(function(r){toast(r.ok?'Saved!':'Error',!r.ok);});}
+function deleteNavItem(id,btn){if(!confirm('Remove?'))return;apiFetch('/owner/website/nav/item/delete/'+id,{method:'POST'}).then(function(r){return r.json();}).then(function(r){if(r.ok){btn.closest('[data-id]').remove();toast('Removed');}});}
+function addNavItem(){var label=document.getElementById('newNavLabel').value.trim();var url=document.getElementById('newNavUrl').value.trim();if(!label||!url){toast('Enter label and URL',true);return;}apiFetch('/owner/website/nav/item/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({label:label,url:url,open_new_tab:0})}).then(function(r){return r.json();}).then(function(r){if(r.ok){toast('Link added — refresh to see');document.getElementById('newNavLabel').value='';document.getElementById('newNavUrl').value='';}else toast(r.error||'Error',true);});}
+function addMakeItem(){var div=document.createElement('div');div.className='make-item-row';div.style.cssText='display:flex;gap:8px;margin-bottom:6px;';div.innerHTML='<input class="wa-in" style="flex:1;" placeholder="Label"><input class="wa-in" style="flex:.8;" placeholder="URL (optional)"><button class="wa-btn red" style="padding:5px 8px;" onclick="this.parentNode.remove()">&#x2715;</button>';document.getElementById('makeItemsList').appendChild(div);}
+function saveMakeItems(){var items=[];document.querySelectorAll('#makeItemsList .make-item-row').forEach(function(r){var ins=r.querySelectorAll('input');var lbl=(ins[0]||{}).value||'';var url=(ins[1]||{}).value||'';if(lbl)items.push({label:lbl,url:url});});apiFetch('/owner/website/footer/make/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items:items})}).then(function(r){return r.json();}).then(function(r){toast(r.ok?'Saved!':'Error',!r.ok);});}
+function createPage(){var title=document.getElementById('newPageTitle').value.trim();var content=document.getElementById('newPageContent').value;var footer=document.getElementById('newPageFooter').checked?1:0;if(!title){toast('Title required',true);return;}apiFetch('/owner/website/page/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:title,content:content,show_in_footer:footer})}).then(function(r){return r.json();}).then(function(r){if(r.ok){toast('Page created!');location.reload();}else toast(r.error||'Error',true);});}
+function updatePage(id,btn){var wrap=document.getElementById('page-'+id);var title=wrap.querySelector('.page-title-in').value;var content=wrap.querySelector('.page-content-in').value;var footer=wrap.querySelector('.page-footer-in').checked?1:0;apiFetch('/owner/website/page/update/'+id,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:title,content:content,show_in_footer:footer})}).then(function(r){return r.json();}).then(function(r){toast(r.ok?'Page saved!':'Error',!r.ok);});}
+function deletePage(id){if(!confirm('Delete page permanently?'))return;apiFetch('/owner/website/page/delete/'+id,{method:'POST'}).then(function(r){return r.json();}).then(function(r){if(r.ok){location.reload();toast('Deleted');}});}
+// Tiles/Bullets/FAQ
+function addTileRowBtn(){var w=document.getElementById('tilesWrap_curr');if(!w)return;var d=document.createElement('div');d.className='tile-row';d.style.cssText='display:flex;gap:6px;margin-bottom:5px;';d.innerHTML='<input class="wa-in" style="width:48px;" placeholder="✂"><input class="wa-in" style="flex:1;" placeholder="Tile text"><button class="wa-btn red" style="padding:4px 8px;" onclick="this.parentNode.remove()">&#x2715;</button>';w.appendChild(d);}
+function saveTilesBtn(){if(!_prodItem){toast('Select a product first',true);return;}var tiles=[];document.querySelectorAll('#tilesWrap_curr .tile-row').forEach(function(r){var ins=r.querySelectorAll('input');var emoji=(ins[0]||{}).value||'';var text=(ins[1]||{}).value||'';if(text)tiles.push({emoji:emoji,text:text});});apiFetch('/owner/website/item/tiles/'+_prodItem.id+'/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tiles:tiles})}).then(function(r){return r.json();}).then(function(d){toast(d.ok?'Tiles saved!':'Error',!d.ok);});}
+function addBulletRowBtn(){var w=document.getElementById('bulletsWrap_curr');if(!w)return;var d=document.createElement('div');d.className='bullet-row';d.style.cssText='display:flex;gap:6px;margin-bottom:5px;';d.innerHTML='<input class="wa-in" style="flex:1;" placeholder="Bullet point"><button class="wa-btn red" style="padding:4px 8px;" onclick="this.parentNode.remove()">&#x2715;</button>';w.appendChild(d);}
+function saveBulletsBtn(){if(!_prodItem){toast('Select a product first',true);return;}var bullets=[];document.querySelectorAll('#bulletsWrap_curr .bullet-row input').forEach(function(inp){if(inp.value.trim())bullets.push(inp.value.trim());});apiFetch('/owner/website/item/bullets/'+_prodItem.id+'/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bullets:bullets})}).then(function(r){return r.json();}).then(function(d){toast(d.ok?'Bullets saved!':'Error',!d.ok);});}
+function addFaqRowBtn(){var w=document.getElementById('faqWrap_curr');if(!w)return;var d=document.createElement('div');d.className='faq-row';d.style.cssText='margin-bottom:8px;padding:8px;background:#fff;border-radius:6px;border:1px solid #e8d9c5;';d.innerHTML='<input class="wa-in faq-q" style="width:100%;margin-bottom:6px;" placeholder="Question"><textarea class="wa-in faq-a" rows="2" style="width:100%;resize:vertical;margin-bottom:4px;" placeholder="Answer"></textarea><button class="wa-btn red" style="padding:3px 10px;font-size:11px;" onclick="this.parentNode.remove()">Remove</button>';w.appendChild(d);}
+function saveFaqBtn(){if(!_prodItem){toast('Select a product first',true);return;}var faq=[];document.querySelectorAll('#faqWrap_curr .faq-row').forEach(function(r){var qi=r.querySelector('.faq-q')||r.querySelector('input');var ai=r.querySelector('.faq-a')||r.querySelector('textarea');var q=qi?qi.value:'';var a=ai?ai.value:'';if(q.trim()&&a.trim())faq.push({question:q.trim(),answer:a.trim()});});apiFetch('/owner/website/item/faq/'+_prodItem.id+'/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({faq:faq})}).then(function(r){return r.json();}).then(function(d){if(d.ok)toast('FAQ saved!');else toast('Error: '+(d.error||'unknown'),true);});}
+function loadItemTiles(iid){apiFetch('/owner/website/item/tiles/'+iid).then(function(r){return r.json();}).then(function(d){var wrap=document.getElementById('tilesWrap_curr');if(!wrap)return;wrap.innerHTML=(d.tiles||[]).map(function(t){return '<div class="tile-row" style="display:flex;gap:6px;margin-bottom:5px;"><input class="wa-in" style="width:48px;" value="'+t.emoji+'" placeholder="✂"><input class="wa-in" style="flex:1;" value="'+t.text+'" placeholder="Tile text"><button class="wa-btn red" style="padding:4px 8px;" onclick="this.parentNode.remove()">&#x2715;</button></div>';}).join('');}).catch(function(){});}
+function loadItemBullets(iid){apiFetch('/owner/website/item/bullets/'+iid).then(function(r){return r.json();}).then(function(d){var wrap=document.getElementById('bulletsWrap_curr');if(!wrap)return;wrap.innerHTML=(d.bullets||[]).map(function(b){return '<div class="bullet-row" style="display:flex;gap:6px;margin-bottom:5px;"><input class="wa-in" style="flex:1;" value="'+b.bullet+'" placeholder="Bullet point"><button class="wa-btn red" style="padding:4px 8px;" onclick="this.parentNode.remove()">&#x2715;</button></div>';}).join('');}).catch(function(){});}
+function loadItemFaq(iid){apiFetch('/owner/website/item/faq/'+iid).then(function(r){return r.json();}).then(function(d){var wrap=document.getElementById('faqWrap_curr');if(!wrap)return;wrap.innerHTML=(d.faq||[]).map(function(f){return '<div class="faq-row" style="margin-bottom:8px;padding:8px;background:#fff;border-radius:6px;border:1px solid #e8d9c5;"><input class="wa-in faq-q" style="width:100%;margin-bottom:6px;" value="'+f.question+'" placeholder="Question"><textarea class="wa-in faq-a" rows="2" style="width:100%;resize:vertical;margin-bottom:4px;" placeholder="Answer">'+f.answer+'</textarea><button class="wa-btn red" style="padding:3px 10px;font-size:11px;" onclick="this.parentNode.parentNode.remove()">Remove</button></div>';}).join('');}).catch(function(){});}
+// Complete the Look (related items)
+var _relatedIds=[];
+function loadItemRelated(iid){
+  apiFetch('/owner/website/services/item/related/'+iid).then(function(r){return r.json();}).then(function(d){
+    _relatedIds=(d.related_ids||[]).slice();
+    renderRelatedList();
+  }).catch(function(){_relatedIds=[];renderRelatedList();});
+}
+function renderRelatedList(){
+  var wrap=document.getElementById('pe_related_list');if(!wrap||!_prodItem)return;
+  var q=(document.getElementById('pe_related_search')||{}).value||'';
+  var qlc=q.toLowerCase();
+  var others=_items.filter(function(i){return i.id!==_prodItem.id && (!qlc || i.name.toLowerCase().includes(qlc));});
+  if(!others.length){wrap.innerHTML='<div style="font-size:12px;color:#7a6a58;padding:6px;">No other garments found.</div>';return;}
+  wrap.innerHTML=others.map(function(i){
+    var checked=_relatedIds.indexOf(i.id)>-1?' checked':'';
+    return '<label style="display:flex;align-items:center;gap:8px;padding:5px 6px;font-size:12.5px;color:#1a0e06;cursor:pointer;border-radius:5px;" onmouseover="this.style.background=\'#fdf6ee\'" onmouseout="this.style.background=\'transparent\'">'
+      +'<input type="checkbox" data-related-id="'+i.id+'"'+checked+' onchange="toggleRelatedId('+i.id+',this.checked)">'
+      +'<span style="flex:1;">'+i.name+'</span><span style="color:#C8903A;font-size:11px;">Rs. '+i.price+'</span></label>';
+  }).join('');
+}
+function toggleRelatedId(id,checked){
+  var idx=_relatedIds.indexOf(id);
+  if(checked && idx===-1)_relatedIds.push(id);
+  else if(!checked && idx>-1)_relatedIds.splice(idx,1);
+}
+function filterRelatedList(){renderRelatedList();}
+function saveRelatedItemsBtn(){
+  if(!_prodItem){toast('Select a product first',true);return;}
+  apiFetch('/owner/website/services/item/related/'+_prodItem.id,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({related_ids:_relatedIds})})
+    .then(function(r){return r.json();}).then(function(d){toast(d.ok?'Complete the Look saved!':(d.error||'Error'),!d.ok);}).catch(function(){toast('Error saving',true);});
+}
+// SEO
+function seoCount(fid,cid,lim){var el=document.getElementById(fid),ci=document.getElementById(cid);if(!el||!ci)return;var n=el.value.length;ci.textContent=n+'/'+lim;ci.style.color=n>lim?'#dc2626':n>lim*.85?'#d97706':'#7a6a58';}
+function saveProdSeo(){if(!_prodItem||!_prodItem.id)return;var id=_prodItem.id;var slug=(document.getElementById('pe_slug').value||'').trim().toLowerCase().replace(/[^a-z0-9-]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'');var mt=(document.getElementById('pe_meta_title').value||'').trim();var md=(document.getElementById('pe_meta_desc').value||'').trim();document.getElementById('pe_slug').value=slug;apiFetch('/owner/website/seo/item/'+id,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({slug:slug,meta_title:mt,meta_desc:md})}).then(function(r){return r.json();}).then(function(d){if(d.ok){_prodItem.slug=slug;_prodItem.meta_title=mt;_prodItem.meta_desc=md;toast('SEO saved');}else toast(d.error||'Save error',true);}).catch(function(){toast('Error saving SEO',true);});}
+function saveStaticSeo(key){var wrap=document.getElementById('staticSeoList');var ti=wrap?wrap.querySelector('.sso-t[data-key="'+key+'"]'):null;var di=wrap?wrap.querySelector('.sso-d[data-key="'+key+'"]'):null;apiFetch('/owner/website/seo/static/'+key,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({meta_title:ti?ti.value:'',meta_desc:di?di.value:''})}).then(function(r){return r.json();}).then(function(d){if(d.ok)toast('Saved');else toast('Error',true);}).catch(function(){toast('Error',true);});}
+function saveTracking(){var keys=['tracking_ga4_id','tracking_gtm_id','tracking_meta_pixel','tracking_gsc_meta','robots_txt'];var data={};keys.forEach(function(k){var el=document.getElementById('tr_'+k);if(el)data[k]=el.value||'';});apiFetch('/owner/website/seo/tracking',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}).then(function(r){return r.json();}).then(function(d){if(d.ok)toast('Tracking codes saved');else toast('Error',true);}).catch(function(){toast('Error',true);});}
+function loadStaticSeoUI(){var pages=[{key:'home',name:'Homepage'},{key:'our_craft',name:'Our Craft'},{key:'our_services',name:'Our Services'},{key:'about',name:'Our Story'},{key:'contact',name:'Contact'},{key:'commission',name:'Order / Commission'}];apiFetch('/owner/website/seo/all-static').then(function(r){return r.json();}).then(function(res){var map={};(res.pages||[]).forEach(function(p){map[p.page_key]=p;});var h='';pages.forEach(function(p){var ex=map[p.key]||{};h+='<div style="background:#fafaf8;border:1px solid #e8d9c5;border-radius:8px;padding:12px;margin-bottom:10px;"><div style="font-weight:700;font-size:13px;color:#1a0e06;margin-bottom:8px;">'+p.name+'</div><label class="wa-lbl">Meta Title <span style="font-weight:400;font-size:10px;color:#7a6a58;">(50-60 chars)</span></label><input class="wa-in sso-t" data-key="'+p.key+'" value="'+(ex.meta_title||'')+'" placeholder="Title for Google..." style="width:100%;margin-bottom:2px;"><div class="sso-tc" data-key="'+p.key+'" style="font-size:10px;color:#7a6a58;margin-bottom:8px;"></div><label class="wa-lbl">Meta Description <span style="font-weight:400;font-size:10px;color:#7a6a58;">(150-160 chars)</span></label><textarea class="wa-in sso-d" data-key="'+p.key+'" rows="2" placeholder="Description for Google..." style="width:100%;resize:vertical;">'+(ex.meta_desc||'')+'</textarea><div class="sso-dc" data-key="'+p.key+'" style="font-size:10px;color:#7a6a58;margin-bottom:6px;"></div><button class="wa-btn gold sso-save" data-key="'+p.key+'" style="padding:6px 16px;margin-top:6px;">Save</button></div>';});var wrap=document.getElementById('staticSeoList');wrap.innerHTML=h;wrap.querySelectorAll('.sso-t').forEach(function(el){el.oninput=function(){var n=this.value.length,k=this.dataset.key;var cd=wrap.querySelector('.sso-tc[data-key="'+k+'"]');if(cd){cd.textContent=n+'/60';cd.style.color=n>60?'#dc2626':n>51?'#d97706':'#7a6a58';}};});wrap.querySelectorAll('.sso-d').forEach(function(el){el.oninput=function(){var n=this.value.length,k=this.dataset.key;var cd=wrap.querySelector('.sso-dc[data-key="'+k+'"]');if(cd){cd.textContent=n+'/160';cd.style.color=n>160?'#dc2626':n>136?'#d97706':'#7a6a58';}};});wrap.querySelectorAll('.sso-save').forEach(function(btn){btn.onclick=function(){saveStaticSeo(this.dataset.key);};});}).catch(function(){document.getElementById('staticSeoList').innerHTML='<p style="color:#dc2626;padding:10px;">Could not load pages.</p>';});}
+// Product Admin
+var _cats=[],_items=[],_prodItem=null;
+function loadProductAdmin(){Promise.all([apiFetch('/owner/website/services/categories').then(function(r){return r.json();}),apiFetch('/owner/website/services/items').then(function(r){return r.json();})]).then(function(res){_cats=res[0].categories||[];_items=res[1].items||[];renderProdList();populateNewProdCategorySelect();});}
+function populateNewProdCategorySelect(){var sel=document.getElementById('np_category');if(!sel)return;sel.innerHTML=_cats.map(function(c){return '<option value="'+c.id+'">'+c.name+'</option>';}).join('');}
+function toggleAddProdForm(show){var f=document.getElementById('addProdForm');if(!f)return;var willShow=(show===undefined)?(f.style.display==='none'):show;f.style.display=willShow?'block':'none';if(willShow){populateNewProdCategorySelect();var inp=document.getElementById('np_name');if(inp){inp.value='';inp.focus();}}}
+function createNewProduct(){
+  var name=(document.getElementById('np_name').value||'').trim();
+  var catSel=document.getElementById('np_category');
+  var catId=catSel?parseInt(catSel.value):null;
+  if(!name){toast('Garment ka naam likho',true);return;}
+  if(!catId){toast('Pehle ek category banao (Categories tab mein)',true);return;}
+  apiFetch('/owner/website/services/item/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({category_id:catId,name:name})})
+    .then(function(r){return r.json();}).then(function(d){
+      if(d.ok){
+        toast('Garment add ho gaya!');
+        toggleAddProdForm(false);
+        loadProductAdmin();
+        setTimeout(function(){ if(d.id) openProdEditor(d.id); else if(d.item_id) openProdEditor(d.item_id); }, 400);
+      } else toast(d.error||'Error',true);
+    });
+}
+function renderProdList(){var list=document.getElementById('prodList');if(!list)return;var q=(document.getElementById('prodSearch')||{}).value||'';var filtered=_items.filter(function(i){return !q||i.name.toLowerCase().includes(q.toLowerCase());});var html='';_cats.forEach(function(cat){var items=filtered.filter(function(i){return i.category_id===cat.id;});if(!items.length)return;html+='<div style="font-size:10px;font-weight:700;color:#7a6a58;letter-spacing:.08em;padding:8px 6px 4px;text-transform:uppercase;">'+cat.name+'</div>';items.forEach(function(item){var active=_prodItem&&_prodItem.id===item.id;html+='<div onclick="openProdEditor('+item.id+')" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;cursor:pointer;background:'+(active?'#f5ede0':'transparent')+';transition:background .15s;" data-prod-id="'+item.id+'">'+(item.image_url?'<img src="'+item.image_url+'" style="width:36px;height:36px;border-radius:5px;object-fit:cover;flex-shrink:0;">':'<div style="width:36px;height:36px;background:#e8d9c5;border-radius:5px;flex-shrink:0;"></div>')+'<div style="min-width:0;flex:1;"><div style="font-size:13px;font-weight:600;color:#1a0e06;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+item.name+'</div><div style="font-size:11px;color:#C8903A;">Rs. '+item.price+'</div></div></div>';});});list.innerHTML=html||'<div style="font-size:12px;color:#7a6a58;padding:8px;">No garments found.</div>';}
+function filterProdList(){renderProdList();}
+function openProdEditor(id){_prodItem=_items.find(function(i){return i.id===id;});if(!_prodItem)return;renderProdList();document.getElementById('prodEditor').style.display='block';document.getElementById('prodEditorPlaceholder').style.display='none';document.getElementById('prodEditorTitle').textContent=_prodItem.name;document.getElementById('prodLiveLink').href='/garment/'+id;document.getElementById('pe_name').value=_prodItem.name||'';document.getElementById('pe_subtitle').value=_prodItem.subtitle||'';document.getElementById('pe_price').value=_prodItem.price||'';if(document.getElementById('pe_stock'))document.getElementById('pe_stock').value=(_prodItem.stock_qty===undefined||_prodItem.stock_qty===null)?'-1':_prodItem.stock_qty;if(document.getElementById('pe_sort_order'))document.getElementById('pe_sort_order').value=(_prodItem.sort_order===undefined||_prodItem.sort_order===null)?'0':_prodItem.sort_order;if(document.getElementById('pe_delivery'))document.getElementById('pe_delivery').value=_prodItem.delivery_estimate||'';document.getElementById('pe_description').value=_prodItem.description||'';document.getElementById('pe_long_desc').value=_prodItem.long_desc||'';if(document.getElementById('pe_slug')){document.getElementById('pe_slug').value=_prodItem.slug||'';document.getElementById('pe_meta_title').value=_prodItem.meta_title||'';document.getElementById('pe_meta_desc').value=_prodItem.meta_desc||'';seoCount('pe_meta_title','pe_tc',60);seoCount('pe_meta_desc','pe_dc',160);}var sel=document.getElementById('pe_category');sel.innerHTML=_cats.map(function(c){return '<option value="'+c.id+'"'+(c.id===_prodItem.category_id?' selected':'')+'>'+c.name+'</option>';}).join('');loadProdMedia(id);loadProdReviews(id);loadItemTiles(id);loadItemBullets(id);loadItemFaq(id);loadItemQa(id);loadItemRelated(id);loadStyleOptions(id);if(document.getElementById('pe_fabric_url')){document.getElementById('pe_fabric_url').value=_prodItem.fabric_image_url||'';_showFabricPreview(_prodItem.fabric_image_url||'');}}
+function closeProdEditor(){_prodItem=null;document.getElementById('prodEditor').style.display='none';document.getElementById('prodEditorPlaceholder').style.display='flex';renderProdList();}
+function saveProdField(field){if(!_prodItem)return;var id=_prodItem.id;if(field==='name'){var val=document.getElementById('pe_name').value.trim();if(!val){toast('Name required',true);return;}apiFetch('/owner/website/services/item/name/'+id,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:val})}).then(function(r){return r.json();}).then(function(d){if(d.ok){_prodItem.name=val;_items.forEach(function(i){if(i.id===id)i.name=val;});toast('Name saved!');document.getElementById('prodEditorTitle').textContent=val;}else toast(d.error||'Error',true);});}else if(field==='subtitle'||field==='price'){var price=document.getElementById('pe_price').value.trim();apiFetch('/owner/website/services/item/price/'+id,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({price:price})}).then(function(r){return r.json();}).then(function(d){if(d.ok){_prodItem.price=price;_items.forEach(function(i){if(i.id===id)i.price=price;});toast('Saved!');}else toast(d.error||'Error',true);});}else if(field==='desc'){var desc=document.getElementById('pe_description').value;var ldesc=document.getElementById('pe_long_desc').value;apiFetch('/owner/website/services/item/desc/'+id,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({description:desc,long_desc:ldesc})}).then(function(r){return r.json();}).then(function(d){if(d.ok)toast('Description saved!');});}else if(field==='category'){var catId=parseInt(document.getElementById('pe_category').value);apiFetch('/owner/website/services/item/category/'+id,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({category_id:catId})}).then(function(r){return r.json();}).then(function(d){if(d.ok){_prodItem.category_id=catId;_items.forEach(function(i){if(i.id===id)i.category_id=catId;});toast('Category updated!');}});}else if(field==='stock'){var stockVal=parseInt(document.getElementById('pe_stock').value);if(isNaN(stockVal))stockVal=-1;apiFetch('/owner/website/services/item/stock/'+id,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({stock_qty:stockVal})}).then(function(r){return r.json();}).then(function(d){if(d.ok){_prodItem.stock_qty=stockVal;_items.forEach(function(i){if(i.id===id)i.stock_qty=stockVal;});toast('Stock updated!');}else toast(d.error||'Error',true);});}else if(field==='sort'){var sortVal=parseInt(document.getElementById('pe_sort_order').value);if(isNaN(sortVal))sortVal=0;apiFetch('/owner/website/services/item/sort/'+id,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sort_order:sortVal})}).then(function(r){return r.json();}).then(function(d){if(d.ok){_prodItem.sort_order=sortVal;_items.forEach(function(i){if(i.id===id)i.sort_order=sortVal;});toast('Display order updated!');}else toast(d.error||'Error',true);});}else if(field==='delivery'){var delVal=document.getElementById('pe_delivery').value.trim();apiFetch('/owner/website/services/item/delivery/'+id,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({delivery_estimate:delVal})}).then(function(r){return r.json();}).then(function(d){if(d.ok){_prodItem.delivery_estimate=delVal;_items.forEach(function(i){if(i.id===id)i.delivery_estimate=delVal;});toast('Delivery estimate saved!');}else toast(d.error||'Error',true);});}}
+function escapeHtmlAdmin(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function loadItemQa(iid){var wrap=document.getElementById('pe_qa_list');if(!wrap)return;wrap.innerHTML='<span style="font-size:11px;color:#7a6a58;">Loading...</span>';apiFetch('/owner/website/item/questions/'+iid).then(function(r){return r.json();}).then(function(d){if(!d.ok||!d.questions||!d.questions.length){wrap.innerHTML='<div style="font-size:12px;color:#7a6a58;padding:8px 0;">No questions yet.</div>';return;}wrap.innerHTML=d.questions.map(function(q){var pending=q.status!=='answered';return '<div class="qa-row" data-qid="'+q.id+'" style="border:1px solid '+(pending?'#e8b86b':'#e8d9c5')+';border-radius:8px;padding:10px;background:#fff;">'+'<div style="font-size:12px;font-weight:600;color:#3a2a18;margin-bottom:2px;">'+(q.name?escapeHtmlAdmin(q.name):'Anonymous')+(pending?' <span style="color:#b8780f;font-size:10px;font-weight:700;">PENDING</span>':'')+'</div>'+'<div style="font-size:12px;color:#5a4a38;margin-bottom:8px;">'+escapeHtmlAdmin(q.question)+'</div>'+(pending?'<textarea class="wa-in qa-ans-input" rows="2" style="width:100%;font-size:12px;resize:vertical;margin-bottom:6px;" placeholder="Type your answer..."></textarea><div style="display:flex;gap:6px;"><button class="wa-btn gold" style="padding:5px 12px;font-size:11px;" onclick="answerItemQa('+q.id+',this)">Answer &amp; Publish</button><button class="wa-btn red" style="padding:5px 12px;font-size:11px;" onclick="deleteItemQa('+q.id+')">Delete</button></div>':'<div style="font-size:12px;color:#1f7a3d;background:#eef7ef;border-radius:6px;padding:8px;"><strong>Answer:</strong> '+escapeHtmlAdmin(q.answer)+'</div><button class="wa-btn red" style="padding:4px 10px;font-size:10px;margin-top:6px;" onclick="deleteItemQa('+q.id+')">Delete</button>')+'</div>';}).join('');});}
+function answerItemQa(qid,btn){var card=btn.closest('.qa-row');var ta=card?card.querySelector('.qa-ans-input'):null;var answer=ta?ta.value.trim():'';if(!answer){toast('Write an answer first',true);return;}apiFetch('/owner/website/item/questions/'+qid+'/answer',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({answer:answer})}).then(function(r){return r.json();}).then(function(d){if(d.ok){toast('Answer published!');if(_prodItem)loadItemQa(_prodItem.id);}else toast(d.error||'Error',true);});}
+function deleteItemQa(qid){if(!confirm('Delete this question?'))return;apiFetch('/owner/website/item/questions/'+qid+'/delete',{method:'POST'}).then(function(r){return r.json();}).then(function(d){if(d.ok){toast('Deleted');if(_prodItem)loadItemQa(_prodItem.id);}});}
+function loadProdMedia(id){var grid=document.getElementById('pe_media_grid');if(!grid)return;grid.innerHTML='<span style="font-size:11px;color:#7a6a58;">Loading...</span>';apiFetch('/owner/website/services/item/media/list/'+id).then(function(r){return r.json();}).then(function(d){if(!d.ok||!d.media||!d.media.length){grid.innerHTML='<span style="font-size:11px;color:#7a6a58;padding:8px;">No media yet.</span>';return;}grid.innerHTML=d.media.map(function(m){var isVid=m.media_type==='video';var thumb=isVid?'<video src="'+m.url+'" style="width:80px;height:80px;object-fit:cover;border-radius:8px;" muted></video>':'<img src="'+m.url+'" style="width:80px;height:80px;object-fit:cover;object-position:top;border-radius:8px;" loading="lazy">';return '<div style="position:relative;flex-shrink:0;">'+thumb+(isVid?'<span style="position:absolute;top:3px;left:3px;background:#1a0e06;color:#fff;font-size:8px;padding:1px 4px;border-radius:3px;">&#9654;</span>':'')+'<button onclick="deleteProdMedia('+m.id+')" style="position:absolute;top:-4px;right:-4px;width:20px;height:20px;border-radius:50%;background:#dc2626;color:#fff;border:none;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;">&times;</button></div>';}).join('');});}
+function _showFabricPreview(url){var prev=document.getElementById('pe_fabric_img_preview');if(!prev)return;if(url){prev.innerHTML='<img src="'+url+'" style="width:100%;height:100%;object-fit:cover;" alt="Fabric">';}else{prev.innerHTML='No<br>image';}}
+function uploadFabricPreviewImg(input){if(!_prodItem||!input.files||!input.files[0])return;var fd=new FormData();fd.append('image',input.files[0]);toast('Uploading fabric image...');apiFetch('/owner/website/services/item/upload-fabric-image/'+_prodItem.id,{method:'POST',body:fd}).then(function(r){return r.json();}).then(function(d){if(d.ok){_prodItem.fabric_image_url=d.url;document.getElementById('pe_fabric_url').value=d.url;_showFabricPreview(d.url);toast('Fabric image saved!');}else toast(d.error||'Upload failed',true);}).catch(function(){toast('Upload error',true);});input.value='';}
+function saveFabricUrlDirect(){if(!_prodItem)return;var url=(document.getElementById('pe_fabric_url').value||'').trim();apiFetch('/owner/website/services/item/upload-fabric-image/'+_prodItem.id,{method:'POST',body:(function(){var fd=new FormData();return fd;})()}).then(function(){}).catch(function(){});/* Just save url directly */apiFetch('/owner/website/services/item/fabric-url/'+_prodItem.id,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fabric_image_url:url})}).then(function(r){return r.json();}).then(function(d){if(d.ok){_prodItem.fabric_image_url=url;_showFabricPreview(url);toast('Fabric URL saved!');}else toast(d.error||'Error',true);});}
+function uploadProdMedia(input){if(!_prodItem||!input.files||!input.files.length)return;var id=_prodItem.id;var files=Array.from(input.files);var uploaded=0;toast('Uploading '+files.length+' file(s)...');files.forEach(function(file){var fd=new FormData();fd.append('file',file);apiFetch('/owner/website/services/item/media/upload/'+id,{method:'POST',body:fd}).then(function(r){return r.json();}).then(function(d){uploaded++;if(d.ok){if(uploaded===files.length){toast('Uploaded!');loadProdMedia(id);loadProductAdmin();}}else toast(d.error||'Upload failed',true);});});input.value='';}
+function handleProdDrop(e){e.preventDefault();document.getElementById('pe_drop_zone').style.borderColor='#e8d9c5';if(!_prodItem)return;var files=Array.from(e.dataTransfer.files);if(!files.length)return;uploadProdMedia({files:files,value:''});}
+function addProdMediaUrl(){if(!_prodItem)return;var url=(document.getElementById('pe_media_url').value||'').trim();if(!url){toast('Enter a URL',true);return;}var isVid=/\.(mp4|webm|mov)$/i.test(url)||url.includes('youtube')||url.includes('vimeo');apiFetch('/owner/website/services/item/media/add/'+_prodItem.id,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:url,type:isVid?'video':'image'})}).then(function(r){return r.json();}).then(function(d){if(d.ok){document.getElementById('pe_media_url').value='';toast('Added!');loadProdMedia(_prodItem.id);}else toast(d.error||'Error',true);});}
+function deleteProdMedia(mid){if(!_prodItem||!confirm('Remove this media?'))return;apiFetch('/owner/website/services/item/media/delete/'+mid,{method:'POST'}).then(function(r){return r.json();}).then(function(d){if(d.ok){toast('Removed');loadProdMedia(_prodItem.id);}});}
+function loadProdReviews(id){var el=document.getElementById('pe_reviews_list');if(!el)return;apiFetch('/owner/website/reviews/list/'+id).then(function(r){return r.json();}).then(function(d){if(!d.ok||!d.reviews||!d.reviews.length){el.innerHTML='<div style="font-size:12px;color:#7a6a58;padding:8px 0;">No reviews yet.</div>';return;}el.innerHTML=d.reviews.map(function(r){var stars='★'.repeat(r.rating)+'☆'.repeat(5-r.rating);return '<div style="display:flex;align-items:flex-start;gap:10px;padding:8px 10px;background:#fff;border-radius:8px;margin-bottom:6px;"><div style="flex:1;"><div style="font-size:12px;font-weight:600;color:#1a0e06;">'+r.reviewer_name+'</div><div style="font-size:12px;color:#f59e0b;margin:1px 0;">'+stars+'</div>'+(r.review_text?'<div style="font-size:12px;color:#5a4a3a;">'+r.review_text+'</div>':'')+'</div><button onclick="deleteProdReview('+r.id+')" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:16px;padding:2px;" title="Delete">&times;</button></div>';}).join('');});}
+function addProdReview(){if(!_prodItem)return;var name=document.getElementById('pe_rev_name').value.trim();var text=document.getElementById('pe_rev_text').value.trim();var rating=parseInt(document.getElementById('pe_rev_rating').value)||5;if(!name){toast('Customer name required',true);return;}apiFetch('/owner/website/reviews/add/'+_prodItem.id,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({reviewer_name:name,review_text:text,rating:rating})}).then(function(r){return r.json();}).then(function(d){if(d.ok){document.getElementById('pe_rev_name').value='';document.getElementById('pe_rev_text').value='';toast('Review added!');loadProdReviews(_prodItem.id);}else toast(d.error||'Error',true);});}
+function deleteProdReview(rid){if(!confirm('Delete this review?'))return;apiFetch('/owner/website/reviews/delete/'+rid,{method:'POST'}).then(function(r){return r.json();}).then(function(d){if(d.ok){toast('Deleted');loadProdReviews(_prodItem.id);}});}
+function sendAbandonedCartNow(){
+  var btn=event.target; btn.textContent='Sending...'; btn.disabled=true;
+  var res=document.getElementById('abandonedCartResult');
+  apiFetch('/api/admin/send-abandoned-cart',{method:'POST'}).then(function(r){return r.json();}).then(function(d){
+    btn.textContent='📤 Send Recovery Emails Now'; btn.disabled=false;
+    if(res){res.style.display='block'; res.style.color=d.ok?'green':'#dc2626'; res.textContent=d.ok?'✅ Sent to '+d.sent+' customer(s)':(d.error||'Error');}
+    toast(d.ok?'Abandoned cart emails sent!':'Error',!d.ok);
+  }).catch(function(){btn.textContent='📤 Send Recovery Emails Now';btn.disabled=false;toast('Error',true);});
+}
+function runMigrations(){var btn=event.target;btn.textContent='Running...';btn.disabled=true;apiFetch('/owner/website/run-migrations',{method:'POST'}).then(function(r){return r.json();}).then(function(d){btn.textContent='Run Migrations';btn.disabled=false;var res=document.getElementById('migrationResult');if(res){res.style.display='block';var ok=d.results?d.results.filter(function(r){return r.ok;}).length:0;var errs=d.results?d.results.filter(function(r){return r.error;}):[]; res.innerHTML='✅ '+ok+' tables ready'+(errs.length?' | ⚠ '+errs.map(function(e){return e.error;}).join(', '):'');res.style.color=errs.length?'#dc2626':'green';}toast(d.ok?'Migrations complete!':'Error running migrations',!d.ok);}).catch(function(){btn.textContent='Run Migrations';btn.disabled=false;toast('Connection error',true);});}
+// ══════════ COMMISSION ADMIN (Change 2: loads c_advance_pct) ══════════
+var _commissionData={};
+
+function seedDefaultStyles(){
+  if(!_styleItemId){toast('Pehle garment select karo',true);return;}
+  var btn=event.currentTarget;
+  var origText=btn.textContent;
+  btn.disabled=true;btn.textContent='Adding...';
+  var gtype=(_styleItemName||'').toLowerCase();
+  var type='shirt';
+  if(/kurta|pathani/.test(gtype)) type='kurta';
+  else if(/suit|blazer/.test(gtype)) type='suit';
+  else if(/pant|jean|trouser/.test(gtype)) type='pant';
+  apiFetch('/owner/website/services/item/seed-default-styles/'+_styleItemId,{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({type:type})
+  }).then(function(r){return r.json();}).then(function(d){
+    btn.disabled=false;btn.textContent=origText;
+    if(d.ok){toast('Default styles added! Ab photos upload kar sakte ho.');loadStyleOptions(_styleItemId);}
+    else toast('Error: '+(d.error||''),true);
+  }).catch(function(){btn.disabled=false;btn.textContent=origText;toast('Error',true);});
+}
+
+var _styleItemId=0, _styleItemName='';
+
+function selectStyleGarment(itemId, name, price){
+  _styleItemId=itemId; _styleItemName=name;
+  // Ensure Step 1 accordion is open
+  var acc1 = document.getElementById('acc_step1');
+  if(acc1 && !acc1.classList.contains('open')) acc1.classList.add('open');
+  // Show the editor
+  var editor = document.getElementById('styleEditor');
+  if(editor) { editor.style.display='block'; editor.style.visibility='visible'; }
+  document.getElementById('styleEditorName').textContent=name;
+  document.getElementById('styleEditorPrice').textContent='Rs. '+price;
+  document.querySelectorAll('.style-garment-btn').forEach(function(b){
+    var active = (b.dataset.id == itemId);
+    b.style.background=active?'#2e1a0e':'var(--color-background-secondary,#fafaf8)';
+    b.style.color=active?'#f7f0e6':'var(--color-text-primary,#1a0e06)';
+    b.style.borderColor=active?'#2e1a0e':'var(--color-border-tertiary,#e8ddd0)';
+  });
+  // Scroll editor into view
+  if(editor) { setTimeout(function(){ editor.scrollIntoView({behavior:'smooth',block:'nearest'}); }, 100); }
+  toast(name + ' selected!');
+  loadStyleOptions(itemId);
+}
+
+function loadCommissionAdmin(){
+  // Load garments for style editor
+  apiFetch('/owner/website/services/items').then(function(r){return r.json();}).then(function(d){
+    var list=document.getElementById('styleGarmentList');
+    if(!list) return;
+    var items=d.items||[];
+    if(!items.length){list.innerHTML='<span style="font-size:12px;color:#7a6a58;">No garments. Add in Products tab.</span>';return;}
+    list.innerHTML=items.map(function(item){
+      var imgHtml=item.image_url?'<img src="'+item.image_url+'" style="width:28px;height:28px;object-fit:cover;border-radius:4px;margin-right:6px;flex-shrink:0;" alt="">':'';
+      return '<button class="style-garment-btn" data-id="'+item.id+'" data-name="'+item.name.replace(/"/g,'&quot;')+'" data-price="'+item.price+'" onclick="selectStyleGarment(parseInt(this.dataset.id),this.dataset.name,parseInt(this.dataset.price))" style="display:flex;align-items:center;padding:6px 12px;border-radius:20px;font-size:12px;cursor:pointer;border:1.5px solid #e8ddd0;background:#fafaf8;color:#1a0e06;font-weight:600;white-space:nowrap;font-family:inherit;">'+imgHtml+item.name+'</button>';
+    }).join('');
+  }).catch(function(){});
+  apiFetch('/owner/website/commission/settings').then(function(r){return r.json();}).then(function(d){
+    var s=(d.ok&&d.settings)?d.settings:{};
+    _commissionData=s;
+    var fields={
+      'c_hdr_kicker':   s.commission_header_kicker,
+      'c_hdr_title':    s.commission_header_title,
+      'c_hdr_sub':      s.commission_header_sub,
+      'c_hdr_img_url':  s.commission_header_image,
+      'c_summary_title':s.commission_summary_title,
+      'c_advance_pct':  s.commission_advance_pct,
+      'c_trust_1':      s.commission_trust_1,
+      'c_trust_2':      s.commission_trust_2,
+      'c_trust_3':      s.commission_trust_3,
+      'c_trust_4':      s.commission_trust_4,
+      'c_urgent_title': s.commission_urgent_title,
+      'c_urgent_sub':   s.commission_urgent_sub,
+    };
+    for(var id in fields){if(fields[id]!==undefined&&fields[id]!==null){var el=document.getElementById(id);if(el)el.value=fields[id];}}
+    for(var i=1;i<=6;i++){var t=s['commission_step'+i+'_title'],sb=s['commission_step'+i+'_sub'];if(t){var el=document.getElementById('c_step'+i+'_title');if(el)el.value=t;}if(sb){var el=document.getElementById('c_step'+i+'_sub');if(el)el.value=sb;}}
+    if(s.commission_header_image)updateCommissionImgPreview(s.commission_header_image);
+  }).catch(function(){});
+  loadCommissionGarmentsPreview();
+}
+function updateCommissionImgPreview(url){var prev=document.getElementById('c_hdr_img_preview');if(!prev)return;if(url){prev.innerHTML='<img src="'+url+'" style="width:100%;height:100%;object-fit:cover;">';}else{prev.innerHTML='<span style="font-size:11px;color:#7a6a58;">No image</span>';}}
+function uploadCommissionHeaderImg(input){var file=input.files[0];if(!file)return;var formData=new FormData();formData.append('image',file);toast('Uploading...');apiFetch('/owner/website/commission/upload-header-image',{method:'POST',body:formData}).then(function(r){return r.json();}).then(function(d){if(d.ok){document.getElementById('c_hdr_img_url').value=d.url;updateCommissionImgPreview(d.url);toast('Image uploaded!');}else{toast('Upload failed',true);}}).catch(function(){toast('Upload error',true);});}
+function clearCommissionHeaderImg(){document.getElementById('c_hdr_img_url').value='';updateCommissionImgPreview('');toast('Image removed');}
+function getVal(id){var el=document.getElementById(id);return el?el.value:'';}
+function saveCommissionHeader(){var pairs={commission_header_kicker:getVal('c_hdr_kicker'),commission_header_title:getVal('c_hdr_title'),commission_header_sub:getVal('c_hdr_sub'),commission_header_image:getVal('c_hdr_img_url')};apiFetch('/owner/website/settings/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(pairs)}).then(function(r){return r.json();}).then(function(d){toast(d.ok?'Header saved!':'Error',!d.ok);});}
+function saveCommissionSteps(){var pairs={};[2,3,5,6].forEach(function(i){var tEl=document.getElementById('c_step'+i+'_title'),sEl=document.getElementById('c_step'+i+'_sub');if(tEl)pairs['commission_step'+i+'_title']=tEl.value;if(sEl)pairs['commission_step'+i+'_sub']=sEl.value;});apiFetch('/owner/website/settings/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(pairs)}).then(function(r){return r.json();}).then(function(d){toast(d.ok?'Steps saved!':'Error',!d.ok);});}
+// Change 3: saveCommissionSummary saves commission_advance_pct
+function saveCommissionSummary(){
+  var pairs={
+    commission_summary_title: getVal('c_summary_title'),
+    commission_advance_pct:   getVal('c_advance_pct'),
+    commission_trust_1: getVal('c_trust_1'),
+    commission_trust_2: getVal('c_trust_2'),
+    commission_trust_3: getVal('c_trust_3'),
+    commission_trust_4: getVal('c_trust_4'),
+  };
+  apiFetch('/owner/website/settings/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(pairs)}).then(function(r){return r.json();}).then(function(d){toast(d.ok?'Saved!':'Error',!d.ok);});
+}
+function saveCommissionUrgent(){var pairs={commission_urgent_title:getVal('c_urgent_title'),commission_urgent_sub:getVal('c_urgent_sub')};apiFetch('/owner/website/settings/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(pairs)}).then(function(r){return r.json();}).then(function(d){toast(d.ok?'Saved!':'Error',!d.ok);});}
+function loadCommissionGarmentsPreview(){apiFetch('/owner/website/commission/garments').then(function(r){return r.json();}).then(function(d){var c=document.getElementById('c_garments_preview');if(!c)return;if(!d.garments||!d.garments.length){c.innerHTML='<p style="font-size:12px;color:#7a6a58;">No garments. Add in Products tab.</p>';return;}c.innerHTML=d.garments.map(function(g){var img=g.image_url?'<img src="'+g.image_url+'" style="width:100%;height:72px;object-fit:cover;border-radius:3px;">':'<div style="width:100%;height:72px;background:#f0e8dc;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:20px;">🧵</div>';return '<div style="border:1px solid #e8d9c5;border-radius:4px;padding:8px;text-align:center;">'+img+'<div style="font-size:11px;font-weight:600;color:#1a0e06;margin-top:5px;">'+escHtml(g.name)+'</div><div style="font-size:11px;color:#C8903A;">Rs. '+g.price+'</div></div>';}).join('');}).catch(function(){var c=document.getElementById('c_garments_preview');if(c)c.innerHTML='<p style="font-size:12px;color:#7a6a58;">Garments load failed.</p>';});}
+function renderCommissionDefaults(){}
+
+// ══════════════════════════════════════════════
+// STYLE OPTIONS ADMIN — for garment style drawer
+// ══════════════════════════════════════════════
+function addStyleGroupUI(){
+  document.getElementById('addStyleGroupForm').style.display='block';
+  document.getElementById('sg_group_name').focus();
+}
+function saveNewStyleGroup(){
+  if(!_prodItem){toast('Select a product first',true);return;}
+  var gname=document.getElementById('sg_group_name').value.trim();
+  var glabel=document.getElementById('sg_group_label').value.trim();
+  var req=document.getElementById('sg_required').checked?1:0;
+  if(!gname||!glabel){toast('Enter group name and label',true);return;}
+  apiFetch('/owner/website/services/item/style-options/add/'+_prodItem.id,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({option_group:gname,option_label:glabel,is_required:req})})
+    .then(function(r){return r.json();}).then(function(d){
+      if(d.ok){
+        document.getElementById('sg_group_name').value='';
+        document.getElementById('sg_group_label').value='';
+        document.getElementById('sg_required').checked=false;
+        document.getElementById('addStyleGroupForm').style.display='none';
+        toast('Style group added!');
+        loadStyleOptions(_prodItem.id);
+      } else toast(d.error||'Error',true);
+    });
+}
+function loadStyleOptions(iid){
+  var wrap=document.getElementById('commStyleGroups')||document.getElementById('styleGroupsList');
+  if(!wrap)return;
+  wrap.innerHTML='<p style="font-size:12px;color:#7a6a58;text-align:center;padding:12px;">Loading...</p>';
+  apiFetch('/owner/website/services/item/style-options/'+iid)
+    .then(function(r){return r.json();}).then(function(d){
+      var opts=d.options||[];
+      if(!opts.length){
+        wrap.innerHTML='<div style="text-align:center;padding:20px;"><div style="font-size:13px;color:#7a6a58;margin-bottom:10px;">No style groups yet.</div>'
+          +'<div style="font-size:11px;color:#a08878;">Click "+ Add Group" to add collar, sleeves, placket, etc.</div>'
+          +'<div style="margin-top:12px;background:#fdf6ee;border-radius:8px;padding:12px;text-align:left;">'
+          +'<div style="font-size:11px;font-weight:700;color:#2e1a0e;margin-bottom:6px;">Quick setup for Shirts:</div>'
+          +'<div style="display:flex;flex-wrap:wrap;gap:6px;">'
+          +['Collar Style','Front Placket','Sleeves','Cuff Style','Cuff Buttons','Curved Hem','Buttons / Colour'].map(function(g){
+            return '<button onclick="quickAddGroup(\''+g+'\')" style="font-size:11px;background:#e8ddd0;border:none;border-radius:20px;padding:4px 10px;cursor:pointer;color:#2e1a0e;font-weight:600;">+ '+g+'</button>';
+          }).join('')
+          +'</div></div></div>';
+        return;
+      }
+      renderStyleGroups(opts, iid);
+    }).catch(function(){wrap.innerHTML='<p style="color:#dc2626;font-size:12px;padding:10px;">Failed to load.</p>';});
+}
+function quickAddGroup(gname){
+  var iid=_styleItemId||(_prodItem&&_prodItem.id);
+  if(!iid){toast('Pehle garment select karo',true);return;}
+  var labelMap={'Collar Style':'Choose collar type','Front Placket':'Choose placket style','Sleeves':'Sleeve length','Curved Hem':'Hem style','Buttons / Colour':'Button style & colour'};
+  var glabel=labelMap[gname]||gname;
+  apiFetch('/owner/website/services/item/style-options/add/'+iid,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({option_group:gname,option_label:glabel,is_required:0})})
+    .then(function(r){return r.json();}).then(function(d){
+      if(d.ok){toast(gname+' added!');loadStyleOptions(iid);}
+      else toast(d.error||'Error',true);
+    });
+}
+function addGrpFromCommission(){
+  var iid=_styleItemId;
+  if(!iid){toast('Pehle garment select karo',true);return;}
+  var gname=(document.getElementById('newGrpName')||{}).value||'';
+  var glabel=(document.getElementById('newGrpLabel')||{}).value||'';
+  var req=(document.getElementById('newGrpReq')||{}).checked?1:0;
+  if(!gname||!glabel){toast('Group name aur label dono chahiye',true);return;}
+  apiFetch('/owner/website/services/item/style-options/add/'+iid,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({option_group:gname,option_label:glabel,is_required:req})})
+    .then(function(r){return r.json();}).then(function(d){
+      if(d.ok){
+        document.getElementById('newGrpName').value='';
+        document.getElementById('newGrpLabel').value='';
+        document.getElementById('newGrpReq').checked=false;
+        toast('Group added!');
+        loadStyleOptions(iid);
+      } else toast(d.error||'Error',true);
+    });
+}
+function renderStyleGroups(opts, iid){
+  var wrap=document.getElementById('commStyleGroups')||document.getElementById('styleGroupsList');
+  if(!wrap)return;
+  var html='<div style="display:flex;flex-direction:column;gap:12px;">';
+  opts.forEach(function(grp){
+    html+='<div style="background:#fff;border:1px solid #e8d9c5;border-radius:8px;overflow:hidden;" id="sgrp_'+grp.id+'">';
+    html+='<div style="background:#f5ede0;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">'
+      +'<div><span style="font-weight:700;font-size:13px;color:#2e1a0e;">'+esc(grp.option_group)+'</span>'
+      +(grp.is_required?'<span style="font-size:10px;background:#fee2e2;color:#dc2626;padding:1px 7px;border-radius:10px;margin-left:8px;">Required</span>':'')
+      +'<span style="font-size:11px;color:#7a6a58;margin-left:8px;">'+esc(grp.option_label)+'</span></div>'
+      +'<button class="wa-btn red" style="padding:3px 10px;font-size:11px;" onclick="deleteStyleGroup('+grp.id+','+iid+')">Delete Group</button>'
+      +'</div>';
+    html+='<div style="padding:12px;">';
+    // Values grid
+    html+='<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;" id="sgrpvals_'+grp.id+'">';
+    var vals=grp.values||[];
+    if(!vals.length){
+      html+='<div style="font-size:12px;color:#7a6a58;padding:8px;">No options yet — add below.</div>';
+    } else {
+      vals.forEach(function(v){
+        var imgHtml=v.image_url
+          ?'<img src="'+v.image_url+'" style="width:100%;height:100%;object-fit:cover;" alt="">'
+          :'<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:24px;color:#c8a87a;">✂</div>';
+        var hasAi=!!(v.ai_prompt&&v.ai_prompt.trim());
+        var aiDot='<span title="'+(hasAi?'AI instruction set — this exact text is sent to the paid AI generator':'No AI instruction set yet — AI generation will guess from the label, which can be inaccurate')+'" style="position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:'+(hasAi?'#16a34a':'#dc2626')+';border:1px solid #fff;"></span>';
+        html+='<div style="width:90px;border:1.5px solid #e8d9c5;border-radius:8px;overflow:hidden;position:relative;" id="sv_'+v.id+'">'
+          +aiDot
+          +'<div style="height:70px;background:#f7f0e6;overflow:hidden;">'+imgHtml+'</div>'
+          +'<div style="padding:4px 6px;font-size:10px;font-weight:600;color:#1a0e06;text-align:center;">'+esc(v.value_label)+'</div>'
+          +'<div style="display:flex;gap:3px;padding:4px 6px 6px;flex-wrap:wrap;">'
+          +'<label style="flex:1;cursor:pointer;" title="Upload image from computer"><input type="file" accept="image/*" style="display:none;" onchange="uploadStyleValueImg('+v.id+','+grp.id+','+iid+',this)"><span style="display:block;text-align:center;font-size:9px;font-weight:600;background:#e8d9c5;border-radius:4px;padding:2px 0;color:#2e1a0e;cursor:pointer;">📷</span></label>'
+          +'<button onclick="setStyleValueImgUrl('+v.id+','+grp.id+','+iid+')" title="Paste image URL" style="flex:1;background:#e8d9c5;border:none;border-radius:4px;font-size:9px;cursor:pointer;color:#2e1a0e;font-weight:600;padding:2px 0;">🔗</button>'
+          +'<button onclick="setStyleValueAiPrompt('+v.id+','+grp.id+','+iid+','+jsq(v.ai_prompt||'')+')" title="Set the exact instruction sent to the AI image generator for this option" style="flex:1;background:'+(hasAi?'#dcfce7':'#fef3c7')+';border:none;border-radius:4px;font-size:9px;cursor:pointer;color:#2e1a0e;font-weight:600;padding:2px 0;">🤖</button>'
+          +'<button onclick="deleteStyleValue('+v.id+','+grp.id+','+iid+')" style="flex:1;background:#fee2e2;border:none;border-radius:4px;font-size:9px;cursor:pointer;color:#dc2626;font-weight:600;padding:2px 0;">✕</button>'
+          +'</div></div>';
+      });
+    }
+    html+='</div>';
+    // Add value form
+    html+='<div style="display:flex;gap:6px;align-items:center;">'
+      +'<input class="wa-in" id="sv_newlabel_'+grp.id+'" placeholder="Option label e.g. Full Sleeve" style="flex:1;font-size:12px;" onkeydown="if(event.key===\'Enter\')addStyleValue('+grp.id+','+iid+')">'
+      +'<button class="wa-btn gold" style="font-size:11px;padding:7px 12px;white-space:nowrap;" onclick="addStyleValue('+grp.id+','+iid+')">+ Add Option</button>'
+      +'</div>';
+    html+='</div></div>';
+  });
+  html+='</div>';
+  wrap.innerHTML=html;
+}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function jsq(s){return JSON.stringify(String(s||''));}
+function setStyleValueAiPrompt(vid, grpId, iid, current){
+  var txt=prompt('AI instruction for this option — this exact text is sent to the paid AI image generator, so be specific (e.g. "exactly TWO patch pockets on the chest, symmetrical, both clearly visible"). Leave blank to fall back to automatic guessing from the label.', current||'');
+  if(txt===null)return;
+  apiFetch('/owner/website/services/item/style-value/update/'+vid,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ai_prompt:txt.trim()})})
+    .then(function(r){return r.json();}).then(function(d){
+      if(d.ok){toast('AI instruction saved!');loadStyleOptions(iid);}
+      else toast(d.error||'Error',true);
+    });
+}
+function addStyleValue(grpId, iid){
+  var inp=document.getElementById('sv_newlabel_'+grpId);
+  var label=(inp||{}).value||'';
+  if(!label.trim()){toast('Enter option label',true);return;}
+  apiFetch('/owner/website/services/item/style-value/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({option_id:grpId,value_label:label.trim()})})
+    .then(function(r){return r.json();}).then(function(d){
+      if(d.ok){if(inp)inp.value='';toast('Option added!');loadStyleOptions(iid);}
+      else toast(d.error||'Error',true);
+    });
+}
+function deleteStyleValue(vid, grpId, iid){
+  if(!confirm('Delete this style option?'))return;
+  apiFetch('/owner/website/services/item/style-value/delete/'+vid,{method:'POST'})
+    .then(function(r){return r.json();}).then(function(d){
+      if(d.ok){toast('Deleted');loadStyleOptions(iid);}
+    });
+}
+function deleteStyleGroup(grpId, iid){
+  if(!confirm('Delete this entire style group and all its options?'))return;
+  apiFetch('/owner/website/services/item/style-options/delete/'+grpId,{method:'POST'})
+    .then(function(r){return r.json();}).then(function(d){
+      if(d.ok){toast('Group deleted');loadStyleOptions(iid);}
+    });
+}
+function uploadStyleValueImg(vid, grpId, iid, input){
+  if(!input||!input.files||!input.files[0])return;
+  var fd=new FormData();fd.append('image',input.files[0]);
+  toast('Uploading...');
+  apiFetch('/owner/website/services/item/style-value/upload-image/'+vid,{method:'POST',body:fd})
+    .then(function(r){return r.json();}).then(function(d){
+      if(d.ok){toast('Image uploaded!');loadStyleOptions(iid);}
+      else toast(d.error||'Upload failed',true);
+    });
+}
+function setStyleValueImgUrl(vid, grpId, iid){
+  var url=prompt('Image ka URL paste karo (https://...)');
+  if(url===null)return;
+  url=url.trim();
+  if(!url){toast('URL khaali hai',true);return;}
+  apiFetch('/owner/website/services/item/style-value/set-image-url/'+vid,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:url})})
+    .then(function(r){return r.json();}).then(function(d){
+      if(d.ok){toast('Image URL set!');loadStyleOptions(iid);}
+      else toast(d.error||'Error',true);
+    });
+}
+
+// ── Fast2SMS API Key ──
+function toggleSmsKeyVisibility(){
+  var inp=document.getElementById('tr_fast2sms_key');
+  var btn=event.currentTarget;
+  if(!inp)return;
+  if(inp.type==='password'){inp.type='text';btn.textContent='Hide';}
+  else{inp.type='password';btn.textContent='👁 Show';}
+}
+function saveSmsKey(){
+  var val=(document.getElementById('tr_fast2sms_key')||{}).value||'';
+  var res=document.getElementById('smsKeySaveResult');
+  if(!val.trim()){toast('SMS API key empty hai',true);return;}
+  apiFetch('/owner/website/settings/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'fast2sms_key',value:val.trim()})})
+    .then(function(r){return r.json();}).then(function(d){
+      if(d.ok){toast('SMS API key saved! ✅');if(res)res.textContent='Saved ✓';}
+      else{toast(d.error||'Save failed',true);if(res)res.textContent='Error';}
+    }).catch(function(){toast('Network error',true);});
+}
+
+// ── Firebase FCM Config ──
+function saveFcmConfig(){
+  var sa   = (document.getElementById('tr_fcm_service_account')||{}).value||'';
+  var wc   = (document.getElementById('tr_fcm_web_config')||{}).value||'';
+  var vapid= (document.getElementById('tr_fcm_vapid_key')||{}).value||'';
+  var res  = document.getElementById('fcmSaveResult');
+  var saves= [];
+  if(sa.trim())   saves.push(apiFetch('/owner/website/settings/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'fcm_service_account',value:sa.trim()})}));
+  if(wc.trim())   saves.push(apiFetch('/owner/website/settings/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'fcm_web_config',value:wc.trim()})}));
+  if(vapid.trim())saves.push(apiFetch('/owner/website/settings/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'fcm_vapid_key',value:vapid.trim()})}));
+  if(!saves.length){toast('Kuch fill karo pehle',true);return;}
+  Promise.all(saves).then(function(){
+    toast('Firebase config saved! ✅ Restart server to activate push notifications.');
+    if(res)res.textContent='Saved ✓';
+  }).catch(function(){toast('Save error',true);});
+}
+
+// ── Replicate API Key ──
+function toggleApiKeyVisibility(){
+  var inp=document.getElementById('tr_replicate_api_key');
+  var btn=event.currentTarget;
+  if(!inp)return;
+  if(inp.type==='password'){inp.type='text';btn.textContent='Hide';}
+  else{inp.type='password';btn.textContent='Show';}
+}
+function saveReplicateKey(){
+  var val=(document.getElementById('tr_replicate_api_key')||{}).value||'';
+  if(!val.trim()){toast('API key empty hai',true);return;}
+  apiFetch('/owner/website/settings/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'replicate_api_key',value:val.trim()})})
+    .then(function(r){return r.json();}).then(function(d){
+      if(d.ok)toast('API key saved!');
+      else toast('Error: '+(d.error||''),true);
+    });
+}
+function testReplicateKey(){
+  var res=document.getElementById('replicateTestResult');
+  if(res){res.textContent='Testing connection...';res.style.color='#7a6a58';}
+  // First save the current key
+  var val=(document.getElementById('tr_replicate_api_key')||{}).value||'';
+  if(!val.trim()){toast('Pehle API key enter karo',true);return;}
+  apiFetch('/owner/website/settings/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'replicate_api_key',value:val.trim()})})
+    .then(function(){
+      return apiFetch('/api/generate-style-preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({garment:'Formal Shirt',styles:{Collar:'Spread',Sleeves:'Full Sleeve'}})});
+    })
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.ok&&d.image_url){
+        if(res){res.innerHTML='<span style="color:green">&#10003; Connected! Image generated successfully.</span>';}
+        toast('API key working!');
+      } else {
+        var msg=d.error||'Unknown error';
+        if(res){res.innerHTML='<span style="color:#dc2626">&#10007; Failed: '+msg+'</span>';}
+        toast('API key test failed: '+msg,true);
+      }
+    }).catch(function(e){
+      if(res){res.innerHTML='<span style="color:#dc2626">&#10007; Error: '+String(e)+'</span>';}
+    });
+}
+
+// Stitch Tracker admin
+function loadStitchOrders(){
+  var code=document.getElementById('st_order_code').value.trim();
+  if(!code){alert('Enter an order code');return;}
+  apiFetch('/api/order/stage/'+code).then(function(r){return r.json();}).then(function(d){
+    if(!d.ok){alert('Not found');return;}
+    document.getElementById('st_stage_sel').value=d.stage;
+    document.getElementById('st_note').value=d.note||'';
+  });
+}
+function saveStitchStage(){
+  var code=document.getElementById('st_order_code').value.trim();
+  var stage=parseInt(document.getElementById('st_stage_sel').value);
+  var note=document.getElementById('st_note').value.trim();
+  if(!code){alert('Enter order code');return;}
+  apiFetch('/api/admin/order/stage',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({order_code:code,stage:stage,note:note})})
+    .then(function(r){return r.json();})
+    .then(function(d){d.ok?toast('Stage updated!'):toast('Error',true);});
+}
+
+// Style Requests admin
+var _srCurrentId=null;
+function _esc(s){var d=document.createElement('div');d.textContent=s||'';return d.innerHTML;}
+function loadStyleRequests(){
+  var list=document.getElementById('sr_list');
+  list.innerHTML='<div style="padding:1rem;color:#7a6a58;font-size:13px;">Loading...</div>';
+  apiFetch('/api/admin/style-requests/list').then(function(r){return r.json();}).then(function(d){
+    var reqs=d.requests||[];
+    if(!reqs.length){list.innerHTML='<div style="padding:1rem;color:#7a6a58;font-size:13px;">No requests yet.</div>';return;}
+    var html='';
+    reqs.forEach(function(r){
+      var sc=r.status==='active'?'#15803d;background:#dcfce7':r.status==='closed'?'#64748b;background:#f1f5f9':'#b45309;background:#fef3c7';
+      html+='<div class="wa-card" style="cursor:pointer;margin-bottom:10px;" onclick="openStyleRequest('+r.id+')">'+
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:6px;">'+
+          '<div>'+
+            '<strong>#'+r.id+' - '+_esc(r.customer_name||'Guest')+'</strong>'+
+            (r.customer_mobile?'<span style="font-size:11px;color:#7a6a58;margin-left:8px;">'+_esc(r.customer_mobile)+'</span>':'')+
+            '<div style="font-size:12px;color:#7a6a58;margin-top:2px;">'+_esc(r.garment_type)+(r.stitching_type?' - '+_esc(r.stitching_type):'')+'</div>'+
+            (r.last_message?'<div style="font-size:11.5px;color:#5a3e1b;margin-top:3px;font-style:italic;">"'+_esc(r.last_message.substring(0,60))+(r.last_message.length>60?'...':'')+'"</div>':'')+
+          '</div>'+
+          '<div style="text-align:right;">'+
+            '<span style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:10px;color:'+sc+';">'+r.status.toUpperCase()+'</span>'+
+            '<div style="font-size:10px;color:#7a6a58;margin-top:3px;">'+_esc(r.updated_at||r.created_at||'')+'</div>'+
+          '</div>'+
+        '</div>'+
+        (r.image_url?'<img src="'+_esc(r.image_url)+'" style="width:70px;height:70px;object-fit:cover;border-radius:8px;margin-top:8px;">':'')+
+      '</div>';
+    });
+    list.innerHTML=html;
+  });
+}
+function openStyleRequest(id){
+  _srCurrentId=id;
+  var chat=document.getElementById('sr_chat');
+  chat.innerHTML='<div style="color:#7a6a58;font-size:13px;padding:1rem;">Loading...</div>';
+  document.getElementById('sr_chat_wrap').style.display='block';
+  document.getElementById('sr_reply_input').value='';
+  fetchSrChat();
+}
+function fetchSrChat(){
+  if(!_srCurrentId) return;
+  apiFetch('/api/style-request/'+_srCurrentId+'/messages').then(function(r){return r.json();}).then(function(d){
+    if(!d.ok) return;
+    var area=document.getElementById('sr_chat');
+    var html='';
+    (d.messages||[]).forEach(function(m){
+      var isA=m.sender==='admin';
+      html+='<div style="display:flex;flex-direction:column;align-items:'+(isA?'flex-end':'flex-start')+';margin-bottom:8px;">';
+      html+='<div style="max-width:75%;padding:9px 13px;border-radius:12px;font-size:13px;'+(isA?'background:#C8903A;color:#fff;':'background:#fff;border:1px solid #e8d9c4;')+'">'+_esc(m.message)+'</div>';
+      if(m.image_url)html+='<img src="'+_esc(m.image_url)+'" style="max-width:150px;border-radius:6px;margin-top:4px;">';
+      html+='<div style="font-size:10px;color:#7a6a58;margin-top:2px;">'+_esc(m.created_at||'')+'</div>';
+      html+='</div>';
+    });
+    area.innerHTML=html||'<div style="color:#7a6a58;font-size:13px;text-align:center;padding:1rem;">No messages yet.</div>';
+    area.scrollTop=area.scrollHeight;
+  });
+}
+function sendSrReply(){
+  var msg=document.getElementById('sr_reply_input').value.trim();
+  if(!msg||!_srCurrentId) return;
+  document.getElementById('sr_reply_input').value='';
+  apiFetch('/api/style-request/'+_srCurrentId+'/send',{method:'POST',
+    headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg})})
+    .then(function(r){return r.json();}).then(function(d){if(d.ok)fetchSrChat();});
+}
+
+// Support Chats admin
+var _scCurrentId=null;
+var _scPollTimer=null;
+var _scLastMsgCount=0;
+var _scChatsData={};
+
+function loadSupportChats(){
+  var list=document.getElementById('sc_list');
+  list.innerHTML='<div style="padding:1rem;color:#7a6a58;font-size:13px;">Loading...</div>';
+  apiFetch('/api/admin/support/list').then(function(r){return r.json();}).then(function(d){
+    var chats=d.chats||[];
+    _scChatsData={};
+    chats.forEach(function(c){ _scChatsData[c.id]=c; });
+    if(!chats.length){list.innerHTML='<div style="padding:1rem;color:#7a6a58;font-size:13px;">No chats yet.</div>';return;}
+    var html='';
+    chats.forEach(function(c){
+      var isOpen=c.status==='open';
+      var meta=[];
+      if(c.customer_mobile) meta.push(c.customer_mobile);
+      if(c.customer_email)  meta.push(c.customer_email);
+      html+='<div class="wa-card" style="cursor:pointer;margin-bottom:8px;" onclick="openSupportChat('+c.id+')">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">'+
+          '<div>'+
+            '<strong>'+_esc(c.customer_name||'Guest')+'</strong>'+
+            (meta.length?'<span style="font-size:11px;color:#7a6a58;margin-left:8px;">'+_esc(meta.join(' · '))+'</span>':'')+
+            (c.last_message?'<div style="font-size:11.5px;color:#5a3e1b;margin-top:2px;font-style:italic;">"'+_esc(c.last_message.substring(0,60))+(c.last_message.length>60?'...':'')+'"</div>':'')+
+          '</div>'+
+          '<span style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:10px;'+(isOpen?'color:#15803d;background:#dcfce7':'color:#64748b;background:#f1f5f9')+';">'+(isOpen?'OPEN':'CLOSED')+'</span>'+
+        '</div>'+
+      '</div>';
+    });
+    list.innerHTML=html;
+  });
+}
+function openSupportChat(id){
+  // Clear previous poll
+  if(_scPollTimer) clearInterval(_scPollTimer);
+  _scCurrentId=id; _scLastMsgCount=0;
+  var chat=document.getElementById('sc_chat');
+  chat.innerHTML='<div style="color:#7a6a58;font-size:13px;padding:1rem;">Loading...</div>';
+  document.getElementById('sc_chat_wrap').style.display='block';
+  document.getElementById('sc_reply_input').value='';
+  // Show customer info in header
+  var c=_scChatsData[id]||{};
+  var meta=[];
+  if(c.customer_mobile) meta.push(c.customer_mobile);
+  if(c.customer_email)  meta.push(c.customer_email);
+  document.getElementById('sc_chat_title').textContent=(c.customer_name||'Guest');
+  document.getElementById('sc_chat_meta').textContent=meta.join(' · ');
+  fetchScChat();
+  // Auto-poll every 4 seconds
+  _scPollTimer=setInterval(fetchScChat,4000);
+}
+function fetchScChat(){
+  if(!_scCurrentId) return;
+  apiFetch('/api/support/'+_scCurrentId+'/messages').then(function(r){return r.json();}).then(function(d){
+    if(!d.ok) return;
+    var msgs=d.messages||[];
+    if(msgs.length===_scLastMsgCount) return; // no new msgs
+    _scLastMsgCount=msgs.length;
+    var area=document.getElementById('sc_chat');
+    var atBottom=area.scrollHeight-area.scrollTop<=area.clientHeight+40;
+    var html='';
+    msgs.forEach(function(m){
+      var isA=m.sender==='admin';
+      var bubbleStyle='max-width:75%;padding:9px 13px;border-radius:12px;font-size:13px;'+(isA?'background:#C8903A;color:#fff;':'background:#fff;border:1px solid #e8d9c4;');
+      var body='';
+      if(m.message) body+=_esc(m.message);
+      if(m.attachment_url){
+        var url=_esc(m.attachment_url);
+        if(m.attachment_type==='image'){
+          body+='<img src="'+url+'" style="max-width:100%;border-radius:8px;margin-top:4px;display:block;cursor:pointer;" onclick="window.open(this.src)" loading="lazy">';
+        } else if(m.attachment_type==='pdf'){
+          body+='<a href="'+url+'" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;margin-top:4px;padding:5px 9px;background:rgba(0,0,0,.1);border-radius:5px;font-size:12px;text-decoration:none;color:inherit;">&#128196; View PDF</a>';
+        } else if(m.attachment_type==='video'){
+          body+='<video src="'+url+'" controls preload="metadata" style="max-width:100%;border-radius:8px;margin-top:4px;display:block;"></video>';
+        }
+      }
+      html+='<div style="display:flex;flex-direction:column;align-items:'+(isA?'flex-end':'flex-start')+';margin-bottom:8px;">';
+      html+='<div style="'+bubbleStyle+'">'+body+'</div>';
+      html+='<div style="font-size:10px;color:#7a6a58;margin-top:2px;">'+_esc(m.created_at||'')+'</div>';
+      html+='</div>';
+    });
+    area.innerHTML=html||'<div style="color:#7a6a58;font-size:13px;text-align:center;padding:1rem;">No messages yet.</div>';
+    if(atBottom) area.scrollTop=area.scrollHeight;
+    document.getElementById('sc_close_btn').style.display=d.status==='open'?'inline-block':'none';
+  });
+}
+function sendScReply(){
+  var msg=document.getElementById('sc_reply_input').value.trim();
+  if(!msg||!_scCurrentId) return;
+  document.getElementById('sc_reply_input').value='';
+  apiFetch('/api/support/'+_scCurrentId+'/send',{method:'POST',
+    headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg})})
+    .then(function(r){return r.json();}).then(function(d){if(d.ok)fetchScChat();});
+}
+function sendScFile(inp){
+  var file=inp.files[0]; inp.value='';
+  if(!file||!_scCurrentId) return;
+  var bar=document.getElementById('sc_upload_bar');
+  bar.style.display='block'; bar.style.width='0%';
+  var fd=new FormData(); fd.append('file',file);
+  var xhr=new XMLHttpRequest();
+  xhr.open('POST','/api/support/'+_scCurrentId+'/upload');
+  xhr.upload.onprogress=function(e){ if(e.lengthComputable) bar.style.width=Math.round(e.loaded/e.total*100)+'%'; };
+  xhr.onload=function(){
+    bar.style.width='100%';
+    setTimeout(function(){bar.style.display='none';bar.style.width='0%';},400);
+    try{ var d=JSON.parse(xhr.responseText); if(d.ok){_scLastMsgCount=0;fetchScChat();}else{alert(d.error||'Upload failed');} }catch(e){alert('Upload error');}
+  };
+  xhr.onerror=function(){bar.style.display='none';alert('Upload failed');};
+  xhr.send(fd);
+}
+function closeSupportChat(){
+  if(!_scCurrentId) return;
+  if(_scPollTimer){clearInterval(_scPollTimer);_scPollTimer=null;}
+  apiFetch('/api/support/'+_scCurrentId+'/close',{method:'POST'}).then(function(r){return r.json();}).then(function(d){
+    if(d.ok){toast('Chat closed');fetchScChat();loadSupportChats();}
+  });
+}
+
+/* ── Daily Craft ── */
+function loadDcList(){
+  var grid = document.getElementById('dc_grid');
+  if(!grid) return;
+  grid.innerHTML = '<div style="font-size:13px;color:#7a6a58;padding:1rem;">Loading…</div>';
+  apiFetch('/owner/api/daily-craft').then(function(r){return r.json();}).then(function(d){
+    if(!d.ok){ grid.innerHTML='<div style="color:#dc2626;font-size:13px;padding:1rem;">Failed to load</div>'; return; }
+    var el = document.getElementById('dc_total');
+    if(el) el.textContent = '('+d.total+' total)';
+    if(!d.items.length){ grid.innerHTML='<div style="font-size:13px;color:#7a6a58;padding:1rem;">No photos yet. Upload one above.</div>'; return; }
+    var html = '';
+    d.items.forEach(function(it){
+      var pub = it.is_published===1||it.is_published==='1';
+      html += '<div style="border-radius:10px;overflow:hidden;background:#f9f5ef;border:1.5px solid #e8d9c5;">';
+      if(it.image_url){
+        html += '<img src="'+it.image_url+'" style="width:100%;height:140px;object-fit:cover;display:block;" loading="lazy">';
+      } else {
+        html += '<div style="width:100%;height:140px;background:#e8e2da;display:flex;align-items:center;justify-content:center;font-size:28px;opacity:.3;">✂</div>';
+      }
+      html += '<div style="padding:8px 10px;">';
+      if(it.tag) html += '<div style="font-size:9px;font-weight:700;color:#C8903A;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px;">'+it.tag+'</div>';
+      if(it.caption) html += '<div style="font-size:12px;color:#3a2a1a;font-weight:500;margin-bottom:6px;line-height:1.4;">'+it.caption+'</div>';
+      html += '<div style="font-size:10px;color:#aaa;margin-bottom:8px;">'+it.posted_date+'</div>';
+      html += '<div style="display:flex;gap:6px;">';
+      html += '<button onclick="dcToggle('+it.id+')" style="flex:1;padding:5px 8px;border-radius:6px;border:1px solid #e8d9c5;font-size:10px;font-weight:600;cursor:pointer;background:'+(pub?'#e8f5e9':'#f5e8e8')+';color:'+(pub?'#2d6a4f':'#c0392b')+'">'+(pub?'Published':'Hidden')+'</button>';
+      html += '<button onclick="dcDelete('+it.id+')" style="padding:5px 8px;border-radius:6px;border:1px solid #e8d9c5;font-size:12px;cursor:pointer;background:#fff;color:#dc2626;">&times;</button>';
+      html += '</div></div></div>';
+    });
+    grid.innerHTML = html;
+  }).catch(function(){ grid.innerHTML='<div style="color:#dc2626;font-size:13px;padding:1rem;">Error loading</div>'; });
+}
+
+function dcUpload(){
+  var fileInp = document.getElementById('dc_image');
+  var file = fileInp && fileInp.files[0];
+  if(!file){ toast('Please choose a photo',true); return; }
+  var tag = (document.getElementById('dc_tag').value||'').trim();
+  var cap = (document.getElementById('dc_caption').value||'').trim();
+  var bar = document.getElementById('dc_upload_bar');
+  bar.style.display='block'; bar.style.width='0%';
+  var fd = new FormData();
+  fd.append('image', file);
+  fd.append('tag', tag);
+  fd.append('caption', cap);
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', '/owner/api/daily-craft/upload');
+  xhr.upload.onprogress = function(e){ if(e.lengthComputable) bar.style.width=Math.round(e.loaded/e.total*100)+'%'; };
+  xhr.onload = function(){
+    bar.style.width='100%';
+    setTimeout(function(){ bar.style.display='none'; bar.style.width='0%'; }, 400);
+    try{
+      var d = JSON.parse(xhr.responseText);
+      if(d.ok){ toast('Photo uploaded!'); fileInp.value=''; document.getElementById('dc_tag').value=''; document.getElementById('dc_caption').value=''; loadDcList(); }
+      else toast(d.error||'Upload failed',true);
+    }catch(e){ toast('Upload error',true); }
+  };
+  xhr.onerror = function(){ bar.style.display='none'; toast('Upload failed',true); };
+  xhr.send(fd);
+}
+
+function dcToggle(id){
+  apiFetch('/owner/api/daily-craft/'+id+'/toggle',{method:'POST'}).then(function(r){return r.json();}).then(function(d){
+    if(d.ok){ toast(d.is_published?'Published on website':'Hidden from website'); loadDcList(); }
+    else toast(d.error||'Error',true);
+  });
+}
+
+function dcDelete(id){
+  if(!confirm('Delete this photo permanently?')) return;
+  apiFetch('/owner/api/daily-craft/'+id+'/delete',{method:'POST'}).then(function(r){return r.json();}).then(function(d){
+    if(d.ok){ toast('Deleted'); loadDcList(); }
+    else toast(d.error||'Error',true);
+  });
+}
+</script>
+{% endblock %}
+</body>
+</html>

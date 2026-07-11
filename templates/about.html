@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% set active = "about" %}
+{% block title %}Our Story &mdash; Uttam Tailors, Sikar{% endblock %}
+{% block content %}
+
+<section class="page-hero">
+  <div class="page-hero-img"><img src="https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=1400&q=80" alt="The craft" loading="eager"></div>
+  <div class="page-hero-overlay"></div>
+  <div class="page-hero-content">
+    <p class="kicker" style="color:var(--gold-l);">Our story</p>
+    <h1 class="page-hero-title">The hands that built this shop.</h1>
+    <p class="page-hero-sub" style="color:rgba(250,240,228,.65);">Three generations. One craft. Never outsourced.</p>
+  </div>
+</section>
+
+<section class="timeline" style="background:var(--bg);">
+  <div class="tl-line" aria-hidden="true"></div>
+  <div class="tl-item tl-left">
+    <div class="tl-year">1987</div>
+    <div class="tl-dot" aria-hidden="true"></div>
+    <div class="tl-card">
+      <h3 class="tl-title">The first stitch</h3>
+      <p class="tl-body">Uttam Tailors opens at Subhash Chowk, Sikar. One machine. One measuring tape. My grandfather laid the foundation &mdash; but it was my father who built the empire. The rule from day one: if the garment fits perfectly, the customer always comes back.</p>
+    </div>
+  </div>
+  <div class="tl-item tl-right">
+    <div class="tl-year">1995</div>
+    <div class="tl-dot" aria-hidden="true"></div>
+    <div class="tl-card">
+      <h3 class="tl-title">Papa builds the empire</h3>
+      <p class="tl-body">My father mastered every garment &mdash; shirts, suits, kurta, blazers, pathani. He trained tailors with patience most people do not have. Lakhs of garments delivered. Thousands of families served. Not one shortcut, ever.</p>
+    </div>
+  </div>
+  <div class="tl-item tl-left">
+    <div class="tl-year">2008</div>
+    <div class="tl-dot" aria-hidden="true"></div>
+    <div class="tl-card">
+      <h3 class="tl-title">The shop grows</h3>
+      <p class="tl-body">More tailors, more machines, more garments delivered across Sikar and beyond. But the same rule from 1987: every measurement taken by hand, every garment checked before delivery. My father trained each new tailor personally.</p>
+    </div>
+  </div>
+  <div class="tl-item tl-right">
+    <div class="tl-year">2020</div>
+    <div class="tl-dot tl-dot--gold" aria-hidden="true"></div>
+    <div class="tl-card tl-card--gold">
+      <h3 class="tl-title">Papa left us</h3>
+      <p class="tl-body">In 2020, we lost the man who built all of this. I took over with one mission: to carry his standard forward and bring his craft to every home in India &mdash; not just Sikar.</p>
+    </div>
+  </div>
+  <div class="tl-item tl-left">
+    <div class="tl-year">2025</div>
+    <div class="tl-dot tl-dot--gold" aria-hidden="true"></div>
+    <div class="tl-card tl-card--gold">
+      <h3 class="tl-title">Taking it online &mdash; all of India</h3>
+      <p class="tl-body">In 2025, Uttam Tailors goes online. Our goal: bring the quality of master tailoring to every city in India. Not just Sikar. Order from home, get measured at your door, receive your garment anywhere in the country. Papa's craft &mdash; now for all of India.</p>
+      <a href="{{ url_for('website.commission') }}" class="btn-primary" style="margin-top:1.75rem;display:inline-flex;">Customise Your Garment &rarr;</a>
+    </div>
+  </div>
+</section>
+
+<section class="promise-section">
+  <div class="section-header section-header--center">
+    <p class="kicker">What we promise</p>
+    <h2 class="section-title">Rules we never break.</h2>
+  </div>
+  <div class="promise-grid">
+    <div class="promise-card"><span class="promise-num">01</span><h3 class="promise-title">Your measurements, saved forever</h3><p class="promise-body">Visit once. Every future order uses your saved measurements. No repeat visits, no re-measuring, no mistakes.</p></div>
+    <div class="promise-card"><span class="promise-num">02</span><h3 class="promise-title">Free alteration if fit is off</h3><p class="promise-body">If a garment does not fit as expected, we alter it at no charge. We made it &mdash; we fix it.</p></div>
+    <div class="promise-card"><span class="promise-num">03</span><h3 class="promise-title">Every stitch made in Sikar</h3><p class="promise-body">We do not outsource. Every garment is cut and stitched by our tailors, in our shop, always.</p></div>
+    <div class="promise-card"><span class="promise-num">04</span><h3 class="promise-title">Quality across India</h3><p class="promise-body">Our 2025 mission: bring the quality of 35 years of Sikar craftsmanship to every home in India. Fast, reliable, guaranteed.</p></div>
+  </div>
+</section>
+
+<section class="big-cta">
+  <div class="big-cta-img"><img src="https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=1920&q=80" alt="" aria-hidden="true" loading="lazy"></div>
+  <div class="big-cta-overlay"></div>
+  <div class="big-cta-inner">
+    <h2 class="big-cta-title">35 years of craft.<br>Your garment is next.</h2>
+    <a href="{{ url_for('website.commission') }}" class="btn-gold btn-xl">Customise Your Garment &rarr;</a>
+  </div>
+</section>
+
+{% endblock %}

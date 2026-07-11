@@ -55,11 +55,15 @@
         📝 <span class="lang-en">Log Work</span><span class="lang-hi" style="display:none;">काम दर्ज करें</span>
       </div>
 
-      <!-- Work type tabs -->
+      <!-- Work type tabs — small and clean -->
       <div id="work-tabs" style="display:flex;gap:6px;margin-bottom:12px;background:#f1f5f9;border-radius:12px;padding:4px;">
-        <button id="tab-mc" onclick="setTab('mc')"
+        <button id="tab-measure" onclick="setTab('measure')"
           style="flex:1;padding:8px 6px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:800;color:var(--text-muted);background:transparent;display:flex;align-items:center;justify-content:center;gap:4px;transition:all 0.15s;">
-          📐✂️ <span class="lang-en">Measure & Cut</span><span class="lang-hi" style="display:none;">नाप+कटाई</span>
+          📐 <span class="lang-en">Measure</span><span class="lang-hi" style="display:none;">नाप</span>
+        </button>
+        <button id="tab-cut" onclick="setTab('cut')"
+          style="flex:1;padding:8px 6px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:800;color:var(--text-muted);background:transparent;display:flex;align-items:center;justify-content:center;gap:4px;transition:all 0.15s;">
+          ✂️ <span class="lang-en">Cutting</span><span class="lang-hi" style="display:none;">कटाई</span>
         </button>
         <button id="tab-stitch" onclick="setTab('stitch')"
           style="flex:1;padding:8px 6px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:800;color:var(--text-muted);background:transparent;display:flex;align-items:center;justify-content:center;gap:4px;transition:all 0.15s;">
@@ -117,9 +121,6 @@
               <button onclick="changeQty(1)" style="width:44px;height:44px;border-radius:10px;border:2px solid var(--border);background:#f1f5f9;font-size:22px;font-weight:700;cursor:pointer;">+</button>
             </div>
           </div>
-
-          <!-- Combined Measure & Cut table (shown for mc tab) -->
-          <div id="mc-garments-table" style="display:none;"></div>
 
           <!-- Submit -->
           <button id="wl-submit" onclick="submitLog()" style="display:none;width:100%;padding:14px;border:none;border-radius:12px;font-size:15px;font-weight:900;cursor:pointer;color:#fff;">
@@ -199,12 +200,9 @@ var orderData    = null;
 var codeTimer    = null;
 
 var TAB_CONFIG = {
-  mc:     { bg:"#4f46e5", icon:"📐✂️", en:"Measure & Cut", hi:"नाप+कटाई",
-             sub_en:"₹{{ work_rates.measure }}/naap · ₹{{ work_rates.cutting }}/cut",
-             sub_hi:"₹{{ work_rates.measure }}/नाप · ₹{{ work_rates.cutting }}/कटाई",
-             rate_measure: {{ work_rates.measure }}, rate_cut: {{ work_rates.cutting }} },
-  stitch: { bg:"#16a34a", icon:"🪡", en:"Stitching", hi:"सिलाई",
-             sub_en:"Rate as per garment", sub_hi:"कपड़े के अनुसार दर", rate: null }
+  measure: { bg:"#4f46e5", icon:"📐", en:"Measurement", hi:"नाप",  sub_en:"₹{{ work_rates.measure }}/piece", sub_hi:"₹{{ work_rates.measure }}/कपड़ा", rate: {{ work_rates.measure }} },
+  cut:     { bg:"#ea580c", icon:"✂️", en:"Cutting",    hi:"कटाई", sub_en:"₹{{ work_rates.cutting }}/piece", sub_hi:"₹{{ work_rates.cutting }}/कपड़ा", rate: {{ work_rates.cutting }} },
+  stitch:  { bg:"#16a34a", icon:"🪡", en:"Stitching",  hi:"सिलाई",sub_en:"Rate as per garment", sub_hi:"कपड़े के अनुसार दर", rate: null }
 };
 
 function isHindi() { return typeof currentLang !== "undefined" && currentLang === "hi"; }
@@ -231,7 +229,7 @@ function translateWorkType(gt) {
   // Stitch garment types - translate common ones
   var garmentMap = {
     "Shirt":"कमीज़", "Pant":"पैंट", "Suit":"सूट", "Kurta":"कुर्ता",
-    "Pajama":"पजामा", "Coat":"कोट", "Blazer":"ब्लेज़र", "Sherwani":"शेरवानी",
+    "Pajama":"पजामा", "Coat":"कोट", "Blazer":"ब्लेज़र",
     "Waistcoat":"वेस्टकोट", "Blouse":"ब्लाउज़", "Salwar":"सलवार", "Kameez":"कमीज़"
   };
   return garmentMap[gt] || gt;
@@ -247,25 +245,25 @@ function selectEmployee(id, name, skills) {
   var sel = document.getElementById("emp-btn-" + id);
   if (sel) sel.classList.add("active");
 
-  // Show/hide combined Measure & Cut tab
+  // Show/hide measure+cut tabs
   var showAll = (skills === "all");
-  var mcTab = document.getElementById("tab-mc");
-  if (mcTab) mcTab.style.display = showAll ? "" : "none";
+  document.getElementById("tab-measure").style.display = showAll ? "" : "none";
+  document.getElementById("tab-cut").style.display     = showAll ? "" : "none";
 
   document.getElementById("stats-emp-name").textContent = name;
   document.getElementById("wl-placeholder").style.display = "none";
   document.getElementById("work-area").style.display = "grid";
 
-  setTab(showAll ? "mc" : "stitch");
+  setTab(showAll ? "measure" : "stitch");
   loadStats();
 }
 
 function setTab(tab) {
   CURRENT_TAB = tab;
-  var cfg = TAB_CONFIG[tab] || TAB_CONFIG["stitch"];
+  var cfg = TAB_CONFIG[tab];
 
-  // Active tab highlight
-  ["mc","stitch"].forEach(function(t) {
+  // Active tab style
+  ["measure","cut","stitch"].forEach(function(t) {
     var btn = document.getElementById("tab-" + t);
     if (!btn) return;
     btn.style.background = (t===tab) ? "#fff" : "transparent";
@@ -273,20 +271,17 @@ function setTab(tab) {
     btn.style.boxShadow  = (t===tab) ? "0 1px 4px rgba(0,0,0,0.1)" : "none";
   });
 
-  // Form header gradient
+  // Form header
   var fh = document.getElementById("form-header");
-  fh.style.background = (tab === "mc")
-    ? "linear-gradient(135deg,#4f46e5,#ea580c)"
-    : "linear-gradient(135deg," + cfg.bg + "," + cfg.bg + "cc)";
+  fh.style.background = "linear-gradient(135deg," + cfg.bg + "," + cfg.bg + "cc)";
   document.getElementById("form-icon").textContent  = cfg.icon;
   document.getElementById("form-title").textContent = isHindi() ? cfg.hi : cfg.en;
   document.getElementById("form-sub").textContent   = isHindi() ? cfg.sub_hi : cfg.sub_en;
 
   var sb = document.getElementById("wl-submit");
-  if (sb) sb.style.background = (tab === "mc") ? "#4f46e5" : cfg.bg;
+  if (sb) sb.style.background = cfg.bg;
 
-  // Show garment dropdown only for stitch; mc uses its own table
-  document.getElementById("garment-row").style.display = (tab === "stitch") ? "block" : "none";
+  document.getElementById("garment-row").style.display = "block";  // show for all tabs
   resetForm();
 }
 
@@ -318,31 +313,43 @@ function lookupCode() {
         + (resolvedCode !== code ? '<span style="font-size:11px;color:#4f46e5;margin-left:8px;font-weight:700;">(customer #'+code+')</span>' : '')
         + '<span style="font-size:11px;color:var(--text-muted);margin-left:8px;">'+data.delivery_date_fmt+(data.is_urgent?' 🔥':'')+'</span></div>';
 
-      if (CURRENT_TAB === "mc") {
-        // Combined Measure & Cut view
-        renderMCTable(data.items || []);
-        document.getElementById("wl-log-all-btn").style.display = "none";
-        document.getElementById("wl-submit").style.display = "none";
-        document.getElementById("wl-reset-btn").style.display = "block";
-      } else {
-        // Stitch — standard garment dropdown
-        var sel = document.getElementById("wl-garment");
-        sel.innerHTML = '<option value="">-- कपड़ा चुनें --</option>';
-        (data.items||[]).forEach(function(item) {
-          var opt = document.createElement("option");
-          opt.value = item.garment_type;
-          opt.dataset.req    = item.required;
-          opt.dataset.logged = item.logged;
-          opt.dataset.naap   = item.naap_done  || 0;
-          opt.dataset.cut    = item.cut_done   || 0;
-          opt.dataset.stitch = item.stitch_done|| 0;
+      var sel = document.getElementById("wl-garment");
+      sel.innerHTML = '<option value="">-- कपड़ा चुनें --</option>';
+      (data.items||[]).forEach(function(item) {
+        var opt = document.createElement("option");
+        opt.value = item.garment_type;
+        opt.dataset.req    = item.required;
+        opt.dataset.logged = item.logged;
+        opt.dataset.naap   = item.naap_done  || 0;
+        opt.dataset.cut    = item.cut_done   || 0;
+        opt.dataset.stitch = item.stitch_done|| 0;
+        if (CURRENT_TAB === "stitch") {
           var rem = Math.max(0, item.required - (item.stitch_done||item.logged||0));
           opt.disabled    = (rem===0);
           opt.textContent = item.garment_type + " — " + (item.stitch_done||0) + "/" + item.required + (rem>0?" ("+rem+" बाकी)":" ✅ सिला");
-          sel.appendChild(opt);
+        } else if (CURRENT_TAB === "measure") {
+          var done = item.naap_done || 0;
+          opt.disabled    = (done >= item.required);
+          opt.textContent = item.garment_type + (done>=item.required ? " ✅ नाप हो गया" : " — नाप बाकी");
+        } else if (CURRENT_TAB === "cut") {
+          var done = item.cut_done || 0;
+          opt.disabled    = (done >= item.required);
+          opt.textContent = item.garment_type + (done>=item.required ? " ✅ कटाई हो गई" : " — कटाई बाकी");
+        }
+        sel.appendChild(opt);
+      });
+      // Show "Log All" button for naap/cutting if there are remaining items
+      var logAllBtn = document.getElementById("wl-log-all-btn");
+      if (CURRENT_TAB !== "stitch") {
+        var hasRemaining = (data.items||[]).some(function(item){
+          if (CURRENT_TAB === "measure") return (item.naap_done||0) < item.required;
+          if (CURRENT_TAB === "cut") return (item.cut_done||0) < item.required;
+          return false;
         });
-        document.getElementById("wl-log-all-btn").style.display = "none";
+        logAllBtn.style.display = hasRemaining ? "block" : "none";
         document.getElementById("wl-reset-btn").style.display = "block";
+      } else {
+        logAllBtn.style.display = "none";
       }
     });
 }
@@ -482,96 +489,12 @@ function logAllRemaining() {
   logNext();
 }
 
-function renderMCTable(items) {
-  var tbl = document.getElementById("mc-garments-table");
-  if (!tbl) return;
-  if (!items.length) {
-    tbl.innerHTML = "<div style='padding:12px;color:var(--text-muted);font-size:13px;'>कोई कपड़ा नहीं मिला</div>";
-    tbl.style.display = "block"; return;
-  }
-  var rows = items.map(function(item) {
-    var req     = item.required  || 0;
-    var naapDone= item.naap_done || 0;
-    var cutDone = item.cut_done  || 0;
-    var naapRem = Math.max(0, req - naapDone);
-    var cutRem  = Math.max(0, req - cutDone);
-    var naapCell = (naapDone >= req)
-      ? '<span style="color:#16a34a;font-weight:800;font-size:12px;">✅ हो गया</span>'
-      : '<input type="number" id="mc-naap-' + item.garment_type + '" value="' + naapRem + '" min="0" max="' + naapRem + '" style="width:58px;text-align:center;padding:4px;border:1.5px solid #c7d2fe;border-radius:8px;font-size:14px;font-weight:700;">';
-    var cutCell = (cutDone >= req)
-      ? '<span style="color:#16a34a;font-weight:800;font-size:12px;">✅ हो गया</span>'
-      : '<input type="number" id="mc-cut-' + item.garment_type + '" value="' + cutRem + '" min="0" max="' + cutRem + '" style="width:58px;text-align:center;padding:4px;border:1.5px solid #fed7aa;border-radius:8px;font-size:14px;font-weight:700;">';
-    return '<tr style="border-bottom:1px solid var(--border);">'
-      + '<td style="padding:10px 8px;font-size:13px;font-weight:700;">' + item.garment_type + '<br><span style="font-size:10px;color:var(--text-muted);">×' + req + '</span></td>'
-      + '<td style="padding:10px 8px;text-align:center;"><div style="font-size:10px;color:#4f46e5;font-weight:700;margin-bottom:4px;">📐 नाप (' + naapDone + '/' + req + ')</div>' + naapCell + '</td>'
-      + '<td style="padding:10px 8px;text-align:center;"><div style="font-size:10px;color:#ea580c;font-weight:700;margin-bottom:4px;">✂️ कटाई (' + cutDone + '/' + req + ')</div>' + cutCell + '</td>'
-      + '</tr>';
-  }).join('');
-  var hasRemaining = items.some(function(i) { return (i.naap_done||0) < i.required || (i.cut_done||0) < i.required; });
-  tbl.innerHTML = '<table style="width:100%;border-collapse:collapse;">'
-    + '<thead><tr style="background:#f1f5f9;"><th style="padding:8px;text-align:left;font-size:11px;color:var(--text-muted);">कपड़ा</th>'
-    + '<th style="padding:8px;text-align:center;font-size:11px;color:#4f46e5;">📐 नाप</th>'
-    + '<th style="padding:8px;text-align:center;font-size:11px;color:#ea580c;">✂️ कटाई</th></tr></thead>'
-    + '<tbody>' + rows + '</tbody></table>';
-  if (hasRemaining) {
-    tbl.innerHTML += '<button onclick="logAllMeasureCut()" style="width:100%;margin-top:10px;padding:12px;border:none;border-radius:12px;font-size:14px;font-weight:900;cursor:pointer;color:#fff;background:linear-gradient(135deg,#4f46e5,#ea580c);">⚡ Log All — नाप + कटाई</button>';
-  } else {
-    tbl.innerHTML += '<div style="text-align:center;padding:10px;color:#16a34a;font-weight:800;font-size:13px;">✅ सब हो गया!</div>';
-  }
-  tbl.style.display = "block";
-}
-
-function logAllMeasureCut() {
-  if (!SEL_EMP_ID || !orderData) { showToast("कर्मचारी और ऑर्डर चुनें","warning"); return; }
-  var code = document.getElementById("wl-code").value.trim().replace("#","");
-  var items = orderData.items || [];
-  var rateM = TAB_CONFIG["mc"].rate_measure;
-  var rateC = TAB_CONFIG["mc"].rate_cut;
-  var pending = [];
-  items.forEach(function(item) {
-    var naapInput = document.getElementById("mc-naap-" + item.garment_type);
-    var cutInput  = document.getElementById("mc-cut-"  + item.garment_type);
-    var naapQty   = naapInput ? (parseInt(naapInput.value) || 0) : 0;
-    var cutQty    = cutInput  ? (parseInt(cutInput.value)  || 0) : 0;
-    if (naapQty > 0) pending.push({ garment_type: item.garment_type, qty: naapQty, notes: "Naap — "   + item.garment_type, rate: rateM });
-    if (cutQty  > 0) pending.push({ garment_type: item.garment_type, qty: cutQty,  notes: "Kataai — " + item.garment_type, rate: rateC });
-  });
-  if (!pending.length) { showToast("कोई बाकी काम नहीं!","success"); return; }
-  var summary = pending.map(function(p) {
-    return (p.notes.indexOf("Naap")===0 ? "📐 " : "✂️ ") + p.garment_type + " ×" + p.qty;
-  }).join(", ");
-  if (!confirm("दर्ज करें?\n\n" + summary)) return;
-  var logBtn = document.querySelector("#mc-garments-table button");
-  if (logBtn) { logBtn.disabled = true; logBtn.textContent = "दर्ज हो रहा है..."; }
-  var done = 0;
-  function logNext() {
-    if (done >= pending.length) {
-      showToast("✅ " + pending.length + " entries दर्ज हुईं!", "success");
-      lookupCode();
-      setTimeout(loadStats, 400);
-      return;
-    }
-    var p = pending[done];
-    fetch("/api/work-log/add", {
-      method: "POST", headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({ order_code: code, garment_type: p.garment_type, qty_done: p.qty,
-        employee_id: SEL_EMP_ID, employee_name: SEL_EMP_NAME, notes: p.notes,
-        rate_override: p.rate, is_non_stitch: true })
-    }).then(function(r) { return r.json(); }).then(function(d) {
-      done++;
-      if (d.ok) logNext(); else { showToast("Error: " + d.error, "error"); }
-    });
-  }
-  logNext();
-}
-
 function resetForm() {
-  orderData = null;
-  document.getElementById("wl-code").value = "";
-  document.getElementById("wl-qty").value = "1";
-  document.getElementById("wl-lookup-result").innerHTML = "";
-  var wg = document.getElementById("wl-garment"); if (wg) wg.innerHTML = '<option value="">-- चुनें --</option>';
-  var mct = document.getElementById("mc-garments-table"); if (mct) { mct.innerHTML = ""; mct.style.display = "none"; }
+  orderData=null;
+  document.getElementById("wl-code").value="";
+  document.getElementById("wl-qty").value="1";
+  document.getElementById("wl-lookup-result").innerHTML="";
+  var wg=document.getElementById("wl-garment"); if(wg) wg.innerHTML='<option value="">-- चुनें --</option>';
   hideQtyAndSubmit();
 }
 
@@ -599,99 +522,37 @@ function renderStats(data) {
     box.innerHTML='<div style="padding:36px;text-align:center;color:var(--text-muted);font-size:13px;">इस अवधि में कोई काम नहीं</div>';
     return;
   }
-
-  function getWorkType(notes) {
-    var n=(notes||"").trim();
-    if(n.indexOf("Naap")!==-1||n.indexOf("Measurement")!==-1) return "naap";
-    if(n.indexOf("Kataai")!==-1||n.indexOf("Cutting")!==-1)   return "kataai";
-    return "silai";
-  }
-
-  var WORK = {
-    naap:   {icon:"📐", label:"नाप",   bg:"#eef2ff", col:"#4338ca", ids:[]},
-    kataai: {icon:"✂️", label:"कटाई",  bg:"#fff7ed", col:"#c2410c", ids:[]},
-    silai:  {icon:"🪡", label:"सिलाई", bg:"#f0fdf4", col:"#15803d", ids:[]}
-  };
-
-  box.innerHTML = data.daily.map(function(day) {
-    // Group by order_code
-    var byOrder = {};
-    day.entries.forEach(function(e) {
-      if (!byOrder[e.order_code]) byOrder[e.order_code] = [];
-      byOrder[e.order_code].push(e);
-    });
-
-    var orderCards = Object.keys(byOrder).map(function(code) {
-      var entries = byOrder[code];
-      var totalQty  = entries.reduce(function(s,e){return s+e.qty_done;},0);
-      var totalEarn = entries.reduce(function(s,e){return s+e.earnings;},0);
-
-      // Group entries by work type
-      var byType = {naap:[], kataai:[], silai:[]};
-      entries.forEach(function(e){ byType[getWorkType(e.notes||"")].push(e); });
-
-      // Build one row per work type (with all garments + delete buttons)
-      var typeRows = ["naap","kataai","silai"].filter(function(t){return byType[t].length>0;}).map(function(t) {
-        var cfg = WORK[t];
-        var items = byType[t];
-        var typeQty  = items.reduce(function(s,e){return s+e.qty_done;},0);
-        var typeEarn = items.reduce(function(s,e){return s+e.earnings;},0);
-
-        // Garments: "Pant×1, Shirt×4" comma-joined
-        var garmentStr = items.map(function(e){
-          return '<span style="background:#f1f5f9;border-radius:6px;padding:1px 7px;font-size:12px;font-weight:700;color:#374151;white-space:nowrap;">'
-            +e.garment_type+' <span style="color:#6366f1;font-weight:900;">×'+e.qty_done+'</span></span>';
-        }).join(' ');
-
-        // Delete buttons (one per entry, small)
-        var delBtns = items.map(function(e){
-          return '<button onclick="deleteWorkLog('+e.id+')" title="Delete #'+e.id+'" '
-            +'style="background:#fee2e2;color:#dc2626;border:none;border-radius:5px;'
-            +'width:20px;height:20px;font-size:11px;cursor:pointer;flex-shrink:0;line-height:1;">×</button>';
-        }).join('');
-
-        return '<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-top:1px solid #f1f5f9;flex-wrap:wrap;">'
-          +'<span style="background:'+cfg.bg+';color:'+cfg.col+';font-size:11px;font-weight:800;'
-          +'padding:3px 9px;border-radius:20px;white-space:nowrap;flex-shrink:0;">'+cfg.icon+' '+cfg.label+'</span>'
-          +'<div style="display:flex;gap:4px;flex-wrap:wrap;flex:1;">'+garmentStr+'</div>'
-          +'<div style="display:flex;align-items:center;gap:4px;margin-left:auto;">'
-          +(typeEarn>0?'<span style="font-size:12px;font-weight:900;color:#16a34a;white-space:nowrap;">₹'+typeEarn+'</span>':'')
-          +delBtns
-          +'</div>'
-          +'</div>';
-      }).join("");
-
-      return '<div style="background:#fff;border:1.5px solid #e5e7eb;border-radius:12px;overflow:hidden;margin-bottom:8px;">'
-        +'<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:linear-gradient(135deg,#f8faff,#eef2ff);">'
-        +'<span style="font-size:15px;font-weight:900;color:#4338ca;">#'+code+'</span>'
-        +'<div style="display:flex;align-items:center;gap:8px;">'
-        +'<span style="background:#4338ca;color:#fff;font-size:11px;font-weight:800;padding:2px 8px;border-radius:20px;">'+totalQty+' pcs</span>'
-        +(totalEarn>0?'<span style="font-size:13px;font-weight:900;color:#16a34a;">₹'+totalEarn+'</span>':'')
-        +'</div></div>'
-        +typeRows
-        +'</div>';
-    }).join("");
-
-    return '<div style="margin-bottom:16px;">'
-      +'<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 4px;margin-bottom:8px;border-bottom:2px solid #e5e7eb;">'
-      +'<span style="font-size:15px;font-weight:900;color:#1e1b4b;">📅 '+day.date_fmt+'</span>'
-      +'<span style="font-size:12px;font-weight:800;background:#f1f5f9;padding:4px 10px;border-radius:20px;color:#374151;">'
-      +day.total_qty+' pcs · <span style="color:#16a34a;">₹'+day.day_earnings+'</span></span>'
+  box.innerHTML = data.daily.map(function(day){
+    return '<div style="border-bottom:1px solid var(--border);">'
+      +'<div style="display:flex;justify-content:space-between;padding:8px 14px;background:#f9fafb;">'
+      +'<span style="font-size:13px;font-weight:800;">'+day.date_fmt+'</span>'
+      +'<span style="font-size:12px;font-weight:900;color:#4f46e5;">'+day.total_qty+' '+(isHindi()?'कपड़े':'piece')+' · <span style="color:#16a34a;">₹'+day.day_earnings+'</span></span>'
       +'</div>'
-      +orderCards+'</div>';
+      +day.entries.map(function(e){
+        return '<div style="display:flex;align-items:center;gap:10px;padding:9px 14px 9px 22px;">'
+          +'<div style="flex:1;">'
+          +'<span style="font-size:13px;font-weight:900;color:#4f46e5;">#'+e.order_code+'</span>'
+          +getWorkBadge(e.garment_type, e.notes||'')
+          +'</div>'
+          +'<div style="display:flex;align-items:center;gap:8px;">'
+          +'<div style="text-align:right;">'
+          +'<div style="font-size:20px;font-weight:900;">'+e.qty_done+'</div>'
+          +(e.earnings>0?'<div style="font-size:11px;color:#16a34a;font-weight:800;">₹'+e.earnings+'</div>':'')
+          +'</div>'
+          +'<button onclick="deleteWorkLog('+e.id+')" title="Delete" style="background:#fee2e2;color:#dc2626;border:none;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:800;cursor:pointer;">✕</button>'
+          +'</div></div>';
+      }).join("")+'</div>';
   }).join("");
 }
 
-async function deleteWorkLog(logId) {
-  if (!confirm("Yeh work log entry delete karein?")) return;
-  try {
-    var r = await fetch("/api/work-log/delete/" + logId, {method: "POST"});
-    var d = await r.json();
-    if (d.ok) { showToast("🗑️ Entry deleted", "success"); setTimeout(loadStats, 300); }
-    else { showToast(d.error || "Delete failed", "error"); }
-  } catch(e) {
-    showToast("Network error — dobara try karo", "error");
-  }
+function deleteWorkLog(logId) {
+  if (!confirm("Delete this work log entry?")) return;
+  fetch("/api/work-log/delete/"+logId, {method:"POST"})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if (d.ok) { showToast("🗑️ Entry deleted","success"); setTimeout(loadStats,300); }
+      else showToast(d.error||"Error","error");
+    });
 }
 
 function cleanupPastOrderLogs() {
@@ -704,28 +565,4 @@ function cleanupPastOrderLogs() {
     });
 }
 </script>
-
-<!-- PIN Confirmation Modal -->
-<div id="pin-modal-wl" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
-  <div style="background:#fff;border-radius:20px;padding:32px 28px;width:300px;box-shadow:0 20px 60px rgba(0,0,0,0.35);text-align:center;">
-    <div style="font-size:36px;margin-bottom:12px;">🔐</div>
-    <h3 style="margin:0 0 6px;font-size:18px;color:#1e1b4b;">Owner PIN Required</h3>
-    <p style="font-size:13px;color:#6b7280;margin:0 0 20px;">Work log entry delete karne ke liye PIN daalo</p>
-    <input type="password" id="pin-input-wl" maxlength="6" placeholder="● ● ● ●"
-      onkeydown="if(event.key==='Enter') confirmPinDelete()"
-      style="width:100%;padding:14px;font-size:22px;text-align:center;letter-spacing:8px;border:2px solid #e5e7eb;border-radius:12px;outline:none;box-sizing:border-box;margin-bottom:10px;"
-      onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#e5e7eb'">
-    <div id="pin-error-wl" style="font-size:12px;font-weight:700;color:#dc2626;min-height:18px;margin-bottom:14px;"></div>
-    <div style="display:flex;gap:10px;">
-      <button onclick="closePinModal()"
-        style="flex:1;padding:12px;background:#f3f4f6;color:#374151;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">
-        Cancel
-      </button>
-      <button id="pin-confirm-btn-wl" onclick="confirmPinDelete()"
-        style="flex:1;padding:12px;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">
-        Confirm Delete
-      </button>
-    </div>
-  </div>
-</div>
 {% endblock %}

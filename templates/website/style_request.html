@@ -1,0 +1,456 @@
+{% extends "website/base.html" %}
+{% block title %}Bring Your Inspo — Uttam Tailors{% endblock %}
+{% block head %}
+<style>
+/* ── Page shell ───────────────────────────────── */
+.inspo-hero{background:linear-gradient(135deg,var(--dark) 0%,#2c1a0e 100%);padding:120px 1rem 3rem;text-align:center;color:#fff;}
+.inspo-hero h1{font-family:var(--fd);font-size:clamp(2rem,5vw,3.2rem);font-weight:300;margin-bottom:.5rem;}
+.inspo-hero p{font-size:15px;opacity:.8;max-width:500px;margin:0 auto;}
+.inspo-body{max-width:780px;margin:0 auto;padding:2.5rem 1rem 5rem;}
+
+/* ── Step form ───────────────────────────────── */
+.inspo-steps-bar{display:flex;gap:0;margin-bottom:2rem;}
+.inspo-step-dot{flex:1;text-align:center;position:relative;}
+.inspo-step-dot::before{content:'';position:absolute;top:14px;left:-50%;width:100%;height:2px;background:var(--border);z-index:0;}
+.inspo-step-dot:first-child::before{display:none;}
+.inspo-step-dot.done::before,.inspo-step-dot.active::before{background:var(--gold);}
+.isd-circle{width:30px;height:30px;border-radius:50%;border:2px solid var(--border);background:#fff;margin:0 auto 6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--muted);position:relative;z-index:1;}
+.inspo-step-dot.done .isd-circle{background:var(--gold);border-color:var(--gold);color:#fff;}
+.inspo-step-dot.active .isd-circle{border-color:var(--gold);color:var(--gold);}
+.isd-label{font-size:10px;color:var(--muted);font-weight:600;}
+.inspo-step-dot.active .isd-label{color:var(--dark);font-weight:800;}
+
+.inspo-card{background:#fff;border:1px solid var(--border);border-radius:16px;padding:2rem;margin-bottom:1.5rem;}
+.inspo-card-title{font-size:13px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--gold);margin-bottom:1.25rem;}
+
+/* ── Upload zone ─────────────────────────────── */
+.upload-zone{border:2px dashed var(--border);border-radius:12px;padding:2.5rem 1rem;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg2);}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--gold);background:#fdf6ee;}
+.upload-zone svg{opacity:.4;margin-bottom:.75rem;}
+.upload-zone p{font-size:13px;color:var(--muted);margin:0;}
+.uz-preview{width:100%;max-height:260px;object-fit:cover;border-radius:10px;margin-top:1rem;}
+
+/* ── Style chips ─────────────────────────────── */
+.chip-group{display:flex;flex-wrap:wrap;gap:8px;margin-top:.5rem;}
+.chip{padding:7px 14px;border-radius:20px;border:1.5px solid var(--border);font-size:12.5px;cursor:pointer;background:#fff;transition:all .18s;user-select:none;}
+.chip.sel{background:var(--gold);border-color:var(--gold);color:#fff;font-weight:700;}
+
+/* ── Stitch options ──────────────────────────── */
+.stitch-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-top:.5rem;}
+.stitch-card{border:1.5px solid var(--border);border-radius:10px;padding:14px 12px;cursor:pointer;background:#fff;transition:all .18s;}
+.stitch-card.sel{border-color:var(--gold);background:#fffbf2;}
+.stitch-card strong{display:block;font-size:13px;margin-bottom:3px;}
+.stitch-card span{font-size:11px;color:var(--muted);}
+
+/* ── Chat area ───────────────────────────────── */
+.chat-area{background:var(--bg2);border-radius:12px;padding:1rem;min-height:200px;max-height:420px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;}
+.chat-msg{max-width:72%;padding:9px 13px;border-radius:14px;font-size:13.5px;line-height:1.45;}
+.chat-msg.customer{align-self:flex-end;background:var(--gold);color:#fff;border-bottom-right-radius:3px;}
+.chat-msg.admin{align-self:flex-start;background:#fff;border:1px solid var(--border);border-bottom-left-radius:3px;}
+.chat-msg img{max-width:180px;border-radius:8px;display:block;margin-top:6px;}
+.chat-msg .chat-time{font-size:10px;opacity:.65;margin-top:4px;}
+.chat-input-row{display:flex;gap:8px;margin-top:.75rem;}
+.chat-input-row input{flex:1;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;}
+.chat-input-row button{padding:10px 18px;background:var(--gold);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;}
+
+/* ── Status badge ───────────────────────────── */
+.req-status-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700;}
+.rsb-pending{background:#fef9c3;color:#854d0e;}
+.rsb-active{background:#dcfce7;color:#15803d;}
+.rsb-closed{background:#f1f5f9;color:var(--muted);}
+
+/* Responsive */
+@media(max-width:600px){
+  .inspo-card{padding:1.25rem;}
+  .stitch-grid{grid-template-columns:1fr 1fr;}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="inspo-hero">
+  <h1>Bring Your Inspo</h1>
+  <p>Upload your inspiration image and tell us what you want — we'll bring it to life, stitch by stitch.</p>
+</section>
+
+<div class="inspo-body">
+
+  <!-- Step indicator -->
+  <div class="inspo-steps-bar" id="inspoStepsBar">
+    <div class="inspo-step-dot active" id="sdot1"><div class="isd-circle">1</div><div class="isd-label">Upload</div></div>
+    <div class="inspo-step-dot" id="sdot2"><div class="isd-circle">2</div><div class="isd-label">Customise</div></div>
+    <div class="inspo-step-dot" id="sdot3"><div class="isd-circle">3</div><div class="isd-label">Submit</div></div>
+    <div class="inspo-step-dot" id="sdot4"><div class="isd-circle">4</div><div class="isd-label">Chat</div></div>
+  </div>
+
+  <!-- ── PHASE 1: Upload + Basic Info ─────────────────────────────── -->
+  <div id="phaseUpload">
+
+    <div class="inspo-card">
+      <div class="inspo-card-title">Your inspiration image</div>
+      <div class="upload-zone" id="uploadZone" onclick="document.getElementById('inspoFileInput').click()">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <p>Tap to upload a photo from your gallery, Instagram screenshot, or Pinterest save</p>
+      </div>
+      <input type="file" id="inspoFileInput" accept="image/*" style="display:none" onchange="onInspoFileChosen(this)">
+      <img id="inspoPreview" class="uz-preview" style="display:none" alt="Your inspo image">
+    </div>
+
+    <div class="inspo-card">
+      <div class="inspo-card-title">Your details</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        <div>
+          <label style="font-size:12px;font-weight:700;display:block;margin-bottom:5px;">Your Name</label>
+          <input id="inspoName" type="text" placeholder="Full name" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:700;display:block;margin-bottom:5px;">WhatsApp Number</label>
+          <input id="inspoMobile" type="tel" placeholder="10-digit mobile" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;">
+        </div>
+      </div>
+    </div>
+
+    <div class="inspo-card">
+      <div class="inspo-card-title">Garment type</div>
+      <div class="chip-group" id="garmentChips">
+        <div class="chip sel" data-val="Sherwani" onclick="selChip(this,'garmentChips')">Sherwani</div>
+        <div class="chip" data-val="Kurta" onclick="selChip(this,'garmentChips')">Kurta</div>
+        <div class="chip" data-val="Suit" onclick="selChip(this,'garmentChips')">Suit</div>
+        <div class="chip" data-val="Blazer" onclick="selChip(this,'garmentChips')">Blazer</div>
+        <div class="chip" data-val="Pant" onclick="selChip(this,'garmentChips')">Pant</div>
+        <div class="chip" data-val="Shirt" onclick="selChip(this,'garmentChips')">Shirt</div>
+        <div class="chip" data-val="Bandhgala" onclick="selChip(this,'garmentChips')">Bandhgala</div>
+        <div class="chip" data-val="Other" onclick="selChip(this,'garmentChips')">Other</div>
+      </div>
+    </div>
+
+    <div style="text-align:right;">
+      <button class="btn-primary" onclick="goPhase2()" style="padding:13px 32px;">Next: Customise →</button>
+    </div>
+  </div><!-- /phaseUpload -->
+
+  <!-- ── PHASE 2: Style Options ────────────────────────────────────── -->
+  <div id="phaseCustomise" style="display:none;">
+
+    <div class="inspo-card">
+      <div class="inspo-card-title">Collar style</div>
+      <div class="chip-group" id="collarChips">
+        <div class="chip sel" data-val="Mandarin" onclick="selChip(this,'collarChips')">Mandarin</div>
+        <div class="chip" data-val="Band" onclick="selChip(this,'collarChips')">Band</div>
+        <div class="chip" data-val="Lapel" onclick="selChip(this,'collarChips')">Lapel</div>
+        <div class="chip" data-val="Round" onclick="selChip(this,'collarChips')">Round</div>
+        <div class="chip" data-val="V-Neck" onclick="selChip(this,'collarChips')">V-Neck</div>
+        <div class="chip" data-val="Same as inspo" onclick="selChip(this,'collarChips')">Same as inspo</div>
+      </div>
+    </div>
+
+    <div class="inspo-card">
+      <div class="inspo-card-title">Fit preference</div>
+      <div class="chip-group" id="fitChips">
+        <div class="chip sel" data-val="Slim fit" onclick="selChip(this,'fitChips')">Slim fit</div>
+        <div class="chip" data-val="Regular fit" onclick="selChip(this,'fitChips')">Regular fit</div>
+        <div class="chip" data-val="Relaxed fit" onclick="selChip(this,'fitChips')">Relaxed fit</div>
+        <div class="chip" data-val="Fitted" onclick="selChip(this,'fitChips')">Fitted</div>
+      </div>
+    </div>
+
+    <div class="inspo-card">
+      <div class="inspo-card-title">Embroidery / Detailing</div>
+      <div class="chip-group" id="embChips">
+        <div class="chip sel" data-val="Minimal" onclick="selChip(this,'embChips')">Minimal</div>
+        <div class="chip" data-val="Thread embroidery" onclick="selChip(this,'embChips')">Thread embroidery</div>
+        <div class="chip" data-val="Zari work" onclick="selChip(this,'embChips')">Zari work</div>
+        <div class="chip" data-val="Mirror work" onclick="selChip(this,'embChips')">Mirror work</div>
+        <div class="chip" data-val="No embroidery" onclick="selChip(this,'embChips')">No embroidery</div>
+        <div class="chip" data-val="Same as inspo" onclick="selChip(this,'embChips')">Same as inspo</div>
+      </div>
+    </div>
+
+    <div class="inspo-card">
+      <div class="inspo-card-title">Sleeve length</div>
+      <div class="chip-group" id="sleeveChips">
+        <div class="chip sel" data-val="Full sleeve" onclick="selChip(this,'sleeveChips')">Full sleeve</div>
+        <div class="chip" data-val="3/4 sleeve" onclick="selChip(this,'sleeveChips')">3/4 sleeve</div>
+        <div class="chip" data-val="Half sleeve" onclick="selChip(this,'sleeveChips')">Half sleeve</div>
+        <div class="chip" data-val="Sleeveless" onclick="selChip(this,'sleeveChips')">Sleeveless</div>
+      </div>
+    </div>
+
+    <div class="inspo-card">
+      <div class="inspo-card-title">Any additional notes?</div>
+      <textarea id="inspoNotes" rows="3" placeholder="Tell us anything specific — fabric colour preference, occasion, timeline…"
+        style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;resize:vertical;"></textarea>
+    </div>
+
+    <div style="display:flex;gap:12px;justify-content:space-between;">
+      <button class="btn-outline" onclick="goPhase1()" style="padding:12px 24px;">← Back</button>
+      <button class="btn-primary" onclick="goPhase3()" style="padding:13px 32px;">Next: Stitching →</button>
+    </div>
+  </div><!-- /phaseCustomise -->
+
+  <!-- ── PHASE 3: Stitching Type + Submit ──────────────────────────── -->
+  <div id="phaseSubmit" style="display:none;">
+
+    <div class="inspo-card">
+      <div class="inspo-card-title">Choose stitching service</div>
+      <div class="stitch-grid">
+        <div class="stitch-card sel" data-val="standard" onclick="selStitch(this)">
+          <strong>Standard</strong>
+          <span>Regular stitching, 7–10 days</span>
+        </div>
+        <div class="stitch-card" data-val="manual" onclick="selStitch(this)">
+          <strong>Manual / Hand Stitch</strong>
+          <span>Premium hand finish, 12–15 days</span>
+        </div>
+        <div class="stitch-card" data-val="home_delivery" onclick="selStitch(this)">
+          <strong>Home Delivery</strong>
+          <span>We deliver to your doorstep</span>
+        </div>
+        <div class="stitch-card" data-val="bring_to_shop" onclick="selStitch(this)">
+          <strong>Bring Fabric to Shop</strong>
+          <span>You supply the fabric</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="inspo-card" id="summaryCard">
+      <div class="inspo-card-title">Review your request</div>
+      <div id="summaryBody" style="font-size:13px;color:var(--muted);line-height:2;"></div>
+    </div>
+
+    <div style="display:flex;gap:12px;justify-content:space-between;">
+      <button class="btn-outline" onclick="goPhase2()" style="padding:12px 24px;">← Back</button>
+      <button class="btn-primary" id="submitInspoBtn" onclick="submitInspo()" style="padding:13px 32px;">Submit Request →</button>
+    </div>
+  </div><!-- /phaseSubmit -->
+
+  <!-- ── PHASE 4: Chat ─────────────────────────────────────────────── -->
+  <div id="phaseChat" style="display:none;">
+
+    <div class="inspo-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:1rem;">
+        <div>
+          <div class="inspo-card-title" style="margin:0;">Your Style Request</div>
+          <div id="chatReqId" style="font-size:11px;color:var(--muted);"></div>
+        </div>
+        <span id="chatStatusBadge" class="req-status-badge rsb-pending">Pending review</span>
+      </div>
+      <div class="chat-area" id="chatArea"></div>
+      <div class="chat-input-row" id="chatInputRow">
+        <input type="text" id="chatMsgInput" placeholder="Type a message…" onkeydown="if(event.key==='Enter')sendChat()">
+        <button onclick="sendChat()">Send</button>
+      </div>
+      <div style="margin-top:.5rem;font-size:11.5px;color:var(--muted);">We usually reply within a few hours during shop hours (9am–8pm).</div>
+    </div>
+
+  </div><!-- /phaseChat -->
+
+</div><!-- /inspo-body -->
+
+<script>
+var _inspoFile = null;
+var _reqId = null;
+var _chatPollTimer = null;
+var _lastMsgCount = 0;
+
+// ── Chip / stitch selectors ─────────────────────────────────────────
+function selChip(el, groupId){
+  document.querySelectorAll('#'+groupId+' .chip').forEach(function(c){c.classList.remove('sel');});
+  el.classList.add('sel');
+}
+function selStitch(el){
+  document.querySelectorAll('.stitch-card').forEach(function(c){c.classList.remove('sel');});
+  el.classList.add('sel');
+  renderSummary();
+}
+function getChipVal(groupId){
+  var sel = document.querySelector('#'+groupId+' .chip.sel');
+  return sel ? sel.dataset.val : '';
+}
+
+// ── File upload ─────────────────────────────────────────────────────
+function onInspoFileChosen(input){
+  var file = input.files[0];
+  if(!file) return;
+  _inspoFile = file;
+  var prev = document.getElementById('inspoPreview');
+  prev.src = URL.createObjectURL(file);
+  prev.style.display = 'block';
+  document.querySelector('.upload-zone p').textContent = file.name;
+}
+
+// ── Drag-and-drop ───────────────────────────────────────────────────
+(function(){
+  var zone = document.getElementById('uploadZone');
+  zone.addEventListener('dragover',function(e){e.preventDefault();zone.classList.add('drag');});
+  zone.addEventListener('dragleave',function(){zone.classList.remove('drag');});
+  zone.addEventListener('drop',function(e){
+    e.preventDefault(); zone.classList.remove('drag');
+    var f = e.dataTransfer.files[0];
+    if(f && f.type.startsWith('image/')){
+      _inspoFile = f;
+      var prev = document.getElementById('inspoPreview');
+      prev.src = URL.createObjectURL(f);
+      prev.style.display='block';
+      document.querySelector('.upload-zone p').textContent = f.name;
+    }
+  });
+})();
+
+// ── Phase navigation ────────────────────────────────────────────────
+function showPhase(n){
+  ['phaseUpload','phaseCustomise','phaseSubmit','phaseChat'].forEach(function(id,i){
+    document.getElementById(id).style.display = (i+1===n) ? '' : 'none';
+  });
+  for(var i=1;i<=4;i++){
+    var dot = document.getElementById('sdot'+i);
+    dot.classList.toggle('active', i===n);
+    dot.classList.toggle('done', i<n);
+  }
+}
+function goPhase1(){ showPhase(1); }
+function goPhase2(){
+  if(!_inspoFile){ alert('Please upload an inspiration image first.'); return; }
+  var name = document.getElementById('inspoName').value.trim();
+  if(!name){ alert('Please enter your name.'); return; }
+  showPhase(2);
+}
+function goPhase3(){ renderSummary(); showPhase(3); }
+
+function renderSummary(){
+  var stitch = document.querySelector('.stitch-card.sel');
+  var stitchLabel = stitch ? stitch.querySelector('strong').textContent : '';
+  var lines = [
+    ['Garment', getChipVal('garmentChips')],
+    ['Collar', getChipVal('collarChips')],
+    ['Fit', getChipVal('fitChips')],
+    ['Embroidery', getChipVal('embChips')],
+    ['Sleeve', getChipVal('sleeveChips')],
+    ['Stitching', stitchLabel],
+    ['Notes', document.getElementById('inspoNotes').value.trim() || '—'],
+  ];
+  var html = '';
+  lines.forEach(function(l){
+    html += '<div style="display:flex;gap:8px;"><span style="min-width:90px;font-weight:700;color:var(--dark);">'+l[0]+'</span><span>'+l[1]+'</span></div>';
+  });
+  document.getElementById('summaryBody').innerHTML = html;
+}
+
+// ── Submit ──────────────────────────────────────────────────────────
+function submitInspo(){
+  var btn = document.getElementById('submitInspoBtn');
+  btn.disabled = true; btn.textContent = 'Submitting…';
+  var stitch = document.querySelector('.stitch-card.sel');
+  var styleNotes = [
+    'Collar: '+getChipVal('collarChips'),
+    'Fit: '+getChipVal('fitChips'),
+    'Embroidery: '+getChipVal('embChips'),
+    'Sleeve: '+getChipVal('sleeveChips'),
+    document.getElementById('inspoNotes').value.trim()
+  ].filter(Boolean).join(' | ');
+  var fd = new FormData();
+  if(_inspoFile) fd.append('image', _inspoFile);
+  fd.append('customer_name', document.getElementById('inspoName').value.trim());
+  fd.append('customer_mobile', document.getElementById('inspoMobile').value.trim());
+  fd.append('garment_type', getChipVal('garmentChips'));
+  fd.append('stitching_type', stitch ? stitch.dataset.val : 'standard');
+  fd.append('style_notes', styleNotes);
+  fetch('/api/style-request/start', {method:'POST', body:fd})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.ok){
+        _reqId = d.request_id;
+        document.getElementById('chatReqId').textContent = 'Request #'+_reqId;
+        showPhase(4);
+        startChatPoll();
+      } else {
+        alert('Something went wrong. Please try again.');
+        btn.disabled=false; btn.textContent='Submit Request →';
+      }
+    }).catch(function(){
+      alert('Network error. Please try again.');
+      btn.disabled=false; btn.textContent='Submit Request →';
+    });
+}
+
+// ── Chat ────────────────────────────────────────────────────────────
+function esc(s){ var d=document.createElement('div');d.textContent=s||'';return d.innerHTML; }
+
+function renderChatMessages(msgs, status){
+  var area = document.getElementById('chatArea');
+  if(msgs.length === _lastMsgCount) return;
+  _lastMsgCount = msgs.length;
+  var badge = document.getElementById('chatStatusBadge');
+  if(status==='active'){ badge.className='req-status-badge rsb-active'; badge.textContent='Active'; }
+  else if(status==='closed'){ badge.className='req-status-badge rsb-closed'; badge.textContent='Closed'; }
+  var html = '';
+  msgs.forEach(function(m){
+    var cls = m.sender==='customer' ? 'customer' : 'admin';
+    var senderLabel = m.sender==='admin' ? '<div style="font-size:10px;font-weight:700;margin-bottom:3px;opacity:.8;">Uttam Tailors</div>' : '';
+    html += '<div class="chat-msg '+cls+'">' + senderLabel +
+      (m.message ? '<div>'+esc(m.message)+'</div>' : '') +
+      (m.image_url ? '<img src="'+esc(m.image_url)+'" loading="lazy">' : '') +
+      '<div class="chat-time">'+esc(m.created_at||'')+'</div>' +
+    '</div>';
+  });
+  area.innerHTML = html || '<div style="color:var(--muted);font-size:13px;text-align:center;margin-top:1rem;">Your request has been submitted. We will respond shortly.</div>';
+  area.scrollTop = area.scrollHeight;
+}
+
+function fetchChat(){
+  if(!_reqId) return;
+  fetch('/api/style-request/'+_reqId+'/messages')
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.ok) renderChatMessages(d.messages||[], d.status||'pending');
+    }).catch(function(){});
+}
+
+function startChatPoll(){
+  fetchChat();
+  if(_chatPollTimer) clearInterval(_chatPollTimer);
+  _chatPollTimer = setInterval(fetchChat, 5000);
+}
+
+function sendChat(){
+  var input = document.getElementById('chatMsgInput');
+  var msg = input.value.trim();
+  if(!msg || !_reqId) return;
+  input.value = '';
+  fetch('/api/style-request/'+_reqId+'/send', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({message: msg})
+  }).then(function(r){return r.json();}).then(function(d){
+    if(d.ok) fetchChat();
+  });
+}
+
+// ── Restore existing open request (if user returns) ─────────────────
+(function(){
+  var stored = sessionStorage.getItem('inspo_req_id');
+  if(stored){
+    _reqId = parseInt(stored);
+    // Try to load it; if accessible, go to chat phase
+    fetch('/api/style-request/'+_reqId+'/messages')
+      .then(function(r){return r.json();})
+      .then(function(d){
+        if(d.ok){
+          document.getElementById('chatReqId').textContent = 'Request #'+_reqId;
+          showPhase(4);
+          startChatPoll();
+        }
+      }).catch(function(){});
+  }
+})();
+
+// Store req_id on submit for page-reload recovery
+var _origSubmit = submitInspo;
+submitInspo = function(){
+  _origSubmit();
+  if(_reqId) sessionStorage.setItem('inspo_req_id', _reqId);
+};
+// Fix: store after successful submit
+var _origFetch = window.fetch;
+</script>
+{% endblock %}

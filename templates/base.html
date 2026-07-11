@@ -2,16 +2,9 @@
 <html lang="hi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<link rel="manifest" href="/static/manifest.json">
-<meta name="theme-color" content="#6366f1">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Uttam UTMS">
-<link rel="apple-touch-icon" href="/static/img/pwa-icon-192.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{% block title %}Uttam Tailors{% endblock %}</title>
-<link rel="stylesheet" href="{{ asset_v('css/main.css') }}">
+<link rel="stylesheet" href="/static/css/main.css">
 {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -42,7 +35,7 @@
     <!-- Employee Nav -->
     <div class="sidebar-nav" id="emp-nav">
       <div class="nav-section-label">Employee</div>
-      <a href="/" class="nav-link {% if active_page == 'dashboard' %}active{% endif %}" onclick="employeeNav()">
+      <a href="/manage/" class="nav-link {% if active_page == 'dashboard' %}active{% endif %}">
         <span class="nav-icon">🏠</span><span data-t="dashboard">Dashboard</span>
       </a>
       <a href="/new-order" class="nav-link {% if active_page == 'new_order' %}active{% endif %}" onclick="employeeNav()">
@@ -66,12 +59,6 @@
       </a>
       <a href="/finance" class="nav-link {% if active_page == 'finance' %}active{% endif %}" onclick="employeeNav()">
         <span class="nav-icon">💰</span><span data-t="finance">Finance</span>
-      </a>
-      <a href="/owner/past-orders" class="nav-link {% if active_page == 'past_orders' %}active{% endif %}" onclick="employeeNav()">
-        <span class="nav-icon">📝</span><span>Past Orders</span>
-      </a>
-      <a href="/owner/measurement-book" class="nav-link {% if active_page == 'measurement_book' %}active{% endif %}" onclick="employeeNav()">
-        <span class="nav-icon">📖</span><span>Diary</span>
       </a>
     </div>
 
@@ -107,15 +94,11 @@
       <a href="/owner/past-orders" class="nav-link {% if active_page == 'past_orders' %}active{% endif %}">
         <span class="nav-icon">📝</span><span>Past Orders</span>
       </a>
-      <a href="/owner/bulk-import" class="nav-link {% if active_page == 'bulk_import' %}active{% endif %}">
-        <span class="nav-icon">📥</span><span>Bulk Import</span>
+      <a href="/owner/website" class="nav-link {% if active_page == 'website_admin' %}active{% endif %}">
+        <span class="nav-icon">🌐</span><span>Website Admin</span>
       </a>
-      <a href="/owner/measurement-book" class="nav-link {% if active_page == 'measurement_book' %}active{% endif %}">
-        <span class="nav-icon">📖</span><span>Diary</span>
-      </a>
-
-      <a href="/owner/garments" class="nav-link {% if active_page == 'garments' %}active{% endif %}">
-        <span class="nav-icon">🧵</span><span>Garments</span>
+      <a href="/owner/backup/excel" class="nav-link" style="color:#fbbf24;" title="Download Full Excel Backup">
+        <span class="nav-icon">💾</span><span>Backup Excel</span>
       </a>
       <a href="/owner/settings" class="nav-link {% if active_page == 'settings' %}active{% endif %}">
         <span class="nav-icon">⚙️</span><span data-t="settings">Settings</span>
@@ -124,16 +107,6 @@
     {% endif %}
 
     <div class="sidebar-footer">
-      <!-- Dark Mode Toggle -->
-      <button id="dark-toggle" onclick="toggleDarkMode()" title="Toggle Dark Mode">
-        <span class="toggle-icon" id="dark-icon">🌙</span>
-        <span class="lang-en">Dark Mode</span>
-        <span class="lang-hi" style="display:none;">डार्क मोड</span>
-        <div class="dark-toggle-track" id="dark-track">
-          <div class="dark-toggle-thumb"></div>
-        </div>
-      </button>
-
       {% if session.get('owner_logged_in') %}
         <a href="/owner/logout" class="owner-btn danger-btn" style="display:flex;">
           <span>🔓</span><span data-t="logout">Logout Owner</span>
@@ -149,105 +122,11 @@
   <div class="main-content">{% block content %}{% endblock %}</div>
 </div>
 
-<!-- ── BOTTOM NAV — Mobile Only ── -->
-<nav class="bottom-nav" id="bottomNav">
-  <a href="/" class="bnav-item {% if active_page == 'dashboard' %}active{% endif %}">
-    <span class="bnav-icon">🏠</span>
-    <span class="bnav-label lang-en">Home</span><span class="bnav-label lang-hi" style="display:none;">होम</span>
-  </a>
-  <a href="/new-order" class="bnav-item {% if active_page == 'new_order' %}active{% endif %}">
-    <span class="bnav-icon">➕</span>
-    <span class="bnav-label lang-en">Order</span><span class="bnav-label lang-hi" style="display:none;">ऑर्डर</span>
-  </a>
-  <a href="/order-status" class="bnav-item {% if active_page == 'order_status' %}active{% endif %}">
-    <span class="bnav-icon">📋</span>
-    <span class="bnav-label lang-en">Status</span><span class="bnav-label lang-hi" style="display:none;">स्थिति</span>
-  </a>
-  <a href="/work-log" class="bnav-item {% if active_page == 'work_log' %}active{% endif %}">
-    <span class="bnav-icon">✂️</span>
-    <span class="bnav-label lang-en">Work</span><span class="bnav-label lang-hi" style="display:none;">काम</span>
-  </a>
-  <a href="/pickup" class="bnav-item {% if active_page == 'pickup' %}active{% endif %}">
-    <span class="bnav-icon">🚚</span>
-    <span class="bnav-label lang-en">Pickup</span><span class="bnav-label lang-hi" style="display:none;">डिलीवरी</span>
-  </a>
-</nav>
-
 {% if show_voice %}
-<div class="voice-fab-container" id="voice-fab-container">
+<div class="voice-fab-container">
   <div id="voice-hint">Tap a field first</div>
-  <button id="voice-fab" onclick="toggleVoice()" title="Voice Input — drag to move">🎤</button>
+  <button id="voice-fab" onclick="toggleVoice()" title="Voice Input">🎤</button>
 </div>
-
-<script>
-(function() {
-  var fab = document.getElementById("voice-fab-container");
-  if (!fab) return;
-
-  // Restore saved position
-  var saved = localStorage.getItem("voice_fab_pos");
-  if (saved) {
-    try {
-      var p = JSON.parse(saved);
-      fab.style.bottom = p.bottom + "px";
-      fab.style.right  = p.right  + "px";
-      fab.style.top    = "auto";
-      fab.style.left   = "auto";
-    } catch(e) {}
-  }
-
-  // Drag state
-  var dragging = false, startY, startBottom;
-
-  fab.addEventListener("mousedown", function(e) {
-    if (e.target.id === "voice-fab" || e.target.closest("#voice-fab")) {
-      dragging = true;
-      startY      = e.clientY;
-      startBottom = parseInt(fab.style.bottom) || 22;
-      fab.style.transition = "none";
-      fab.style.userSelect = "none";
-      e.preventDefault();
-    }
-  });
-
-  // Touch support
-  fab.addEventListener("touchstart", function(e) {
-    dragging = true;
-    startY      = e.touches[0].clientY;
-    startBottom = parseInt(fab.style.bottom) || 22;
-    fab.style.transition = "none";
-  }, {passive: true});
-
-  document.addEventListener("mousemove", function(e) {
-    if (!dragging) return;
-    var delta   = startY - e.clientY;
-    var newBot  = Math.max(8, Math.min(window.innerHeight - 80, startBottom + delta));
-    fab.style.bottom = newBot + "px";
-  });
-
-  document.addEventListener("touchmove", function(e) {
-    if (!dragging) return;
-    var delta  = startY - e.touches[0].clientY;
-    var newBot = Math.max(8, Math.min(window.innerHeight - 80, startBottom + delta));
-    fab.style.bottom = newBot + "px";
-  }, {passive: true});
-
-  function stopDrag() {
-    if (!dragging) return;
-    dragging = false;
-    fab.style.transition = "";
-    fab.style.userSelect = "";
-    // Save position
-    localStorage.setItem("voice_fab_pos", JSON.stringify({
-      bottom: parseInt(fab.style.bottom) || 22,
-      right:  parseInt(fab.style.right)  || 22
-    }));
-  }
-
-  document.addEventListener("mouseup",   stopDrag);
-  document.addEventListener("touchend",  stopDrag);
-})();
-</script>
 {% endif %}
 
 <div class="toast-container" id="toastContainer"></div>
@@ -262,54 +141,7 @@
   {% endif %}
 {% endwith %}
 
-<script src="{{ asset_v('js/lang.js') }}"></script>
-<script src="{{ asset_v('js/name-autocorrect.js') }}"></script>
-
-<!-- ── DARK MODE ── -->
-<script>
-(function() {
-  var saved = localStorage.getItem('utms-theme');
-  if (saved === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
-})();
-
-// Register Service Worker (PWA) — force update check every load
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function() {
-    navigator.serviceWorker.register('/static/sw.js').then(function(reg) {
-      reg.update(); // force check for new sw.js immediately, don't wait for browser's own schedule
-    }).catch(function(){});
-  });
-}
-
-function toggleDarkMode() {
-  var html  = document.documentElement;
-  var isDark = html.getAttribute('data-theme') === 'dark';
-  var icon  = document.getElementById('dark-icon');
-  var track = document.getElementById('dark-track');
-  if (isDark) {
-    html.removeAttribute('data-theme');
-    localStorage.setItem('utms-theme', 'light');
-    if (icon)  icon.textContent = '🌙';
-    if (track) track.classList.remove('on');
-  } else {
-    html.setAttribute('data-theme', 'dark');
-    localStorage.setItem('utms-theme', 'dark');
-    if (icon)  icon.textContent = '☀️';
-    if (track) track.classList.add('on');
-  }
-}
-
-// Sync toggle button state on load
-document.addEventListener('DOMContentLoaded', function() {
-  var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  var icon   = document.getElementById('dark-icon');
-  var track  = document.getElementById('dark-track');
-  if (isDark) {
-    if (icon)  icon.textContent = '☀️';
-    if (track) track.classList.add('on');
-  }
-});
-</script>
+<script src="/static/js/lang.js"></script>
 <script>
 // Font size controller - loads from localStorage
 (function applyFontSize() {
@@ -336,7 +168,7 @@ function setFontSize(size) {
   location.reload();
 }
 </script>
-{% if show_voice %}<script src="{{ asset_v('js/voice.js') }}"></script>{% endif %}
+{% if show_voice %}<script src="/static/js/voice.js"></script>{% endif %}
 <script>
 function openSidebar()  { document.getElementById("sidebar").classList.add("open");    document.getElementById("sidebarOverlay").classList.add("show"); }
 function closeSidebar() { document.getElementById("sidebar").classList.remove("open"); document.getElementById("sidebarOverlay").classList.remove("show"); }
@@ -400,110 +232,5 @@ fetch("/api/settings/logo").then(r=>r.json()).then(d=>{
   window.addEventListener("resize", update);
 })();
 </script>
-<!-- ── GLOBAL IMAGE ZOOM MODAL ─────────────────────────────────── -->
-<div id="g-img-modal"
-  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:99999;
-         flex-direction:column;align-items:center;justify-content:center;gap:10px;">
-  <div id="g-img-modal-label" style="font-size:13px;font-weight:700;color:#a5b4fc;"></div>
-  <img id="g-img-modal-img"
-    style="max-width:92vw;max-height:78vh;border-radius:10px;object-fit:contain;
-           transition:transform 0.1s;transform-origin:center center;user-select:none;"
-    draggable="false">
-  <div style="display:flex;gap:10px;align-items:center;" onclick="event.stopPropagation()">
-    <button onclick="gZoom(-0.25)"
-      style="width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.15);
-             color:#fff;border:2px solid rgba(255,255,255,0.3);font-size:22px;font-weight:700;
-             cursor:pointer;display:flex;align-items:center;justify-content:center;">−</button>
-    <span id="g-zoom-label"
-      style="font-size:13px;font-weight:700;color:#a5b4fc;min-width:44px;text-align:center;">100%</span>
-    <button onclick="gZoom(0.25)"
-      style="width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.15);
-             color:#fff;border:2px solid rgba(255,255,255,0.3);font-size:22px;font-weight:700;
-             cursor:pointer;display:flex;align-items:center;justify-content:center;">+</button>
-    <button onclick="gResetZoom()"
-      style="padding:8px 14px;border-radius:20px;background:rgba(255,255,255,0.1);
-             color:#94a3b8;border:1.5px solid rgba(255,255,255,0.2);font-size:12px;font-weight:700;cursor:pointer;">Reset</button>
-    <button onclick="gCloseImg()"
-      style="padding:8px 14px;border-radius:20px;background:rgba(239,68,68,0.3);
-             color:#fca5a5;border:1.5px solid rgba(239,68,68,0.4);font-size:12px;font-weight:700;cursor:pointer;">✕ Close</button>
-  </div>
-  <div style="font-size:11px;color:#475569;">Scroll to zoom · Drag to pan · Tap outside to close</div>
-</div>
-
-<script>
-(function(){
-  var z=1, px=0, py=0, dr=false, dx=0, dy=0, px0=0, py0=0;
-
-  function applyT(){
-    var img=document.getElementById("g-img-modal-img");
-    img.style.transform="scale("+z+") translate("+(px/z)+"px,"+(py/z)+"px)";
-    document.getElementById("g-zoom-label").textContent=Math.round(z*100)+"%";
-    img.style.cursor=z>1?"grab":"default";
-  }
-
-  window.openZoomModal = function(src, label){
-    z=1;px=0;py=0;
-    var img=document.getElementById("g-img-modal-img");
-    img.src=src; applyT();
-    document.getElementById("g-img-modal-label").textContent=label||"";
-    var modal=document.getElementById("g-img-modal");
-    modal.style.display="flex";
-    document.body.style.overflow="hidden";
-  };
-
-  window.gCloseImg = function(){
-    document.getElementById("g-img-modal").style.display="none";
-    document.body.style.overflow="";
-    z=1;px=0;py=0;
-  };
-
-  window.gZoom = function(d){
-    z=Math.max(0.25,Math.min(6,z+d)); applyT();
-  };
-
-  window.gResetZoom = function(){
-    z=1;px=0;py=0; applyT();
-  };
-
-  // Click outside to close
-  document.getElementById("g-img-modal").addEventListener("click",function(e){
-    if(e.target===this) gCloseImg();
-  });
-
-  // Scroll to zoom
-  document.getElementById("g-img-modal-img").addEventListener("wheel",function(e){
-    e.preventDefault(); gZoom(e.deltaY<0?0.2:-0.2);
-  },{passive:false});
-
-  // Mouse drag
-  var img=document.getElementById("g-img-modal-img");
-  img.addEventListener("mousedown",function(e){
-    if(z<=1)return; dr=true; dx=e.clientX; dy=e.clientY; px0=px; py0=py;
-    img.style.cursor="grabbing"; e.preventDefault();
-  });
-  document.addEventListener("mousemove",function(e){
-    if(!dr)return; px=px0+(e.clientX-dx); py=py0+(e.clientY-dy); applyT();
-  });
-  document.addEventListener("mouseup",function(){
-    if(dr){dr=false; document.getElementById("g-img-modal-img").style.cursor=z>1?"grab":"default";}
-  });
-
-  // Touch drag
-  img.addEventListener("touchstart",function(e){
-    if(e.touches.length===1&&z>1){dr=true;dx=e.touches[0].clientX;dy=e.touches[0].clientY;px0=px;py0=py;}
-  },{passive:true});
-  img.addEventListener("touchmove",function(e){
-    if(!dr||e.touches.length!==1)return;
-    px=px0+(e.touches[0].clientX-dx); py=py0+(e.touches[0].clientY-dy); applyT();
-  },{passive:true});
-  img.addEventListener("touchend",function(){dr=false;});
-
-  // Escape key
-  document.addEventListener("keydown",function(e){
-    if(e.key==="Escape") gCloseImg();
-  });
-})();
-</script>
-
 </body>
 </html>

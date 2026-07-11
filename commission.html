@@ -1,0 +1,1098 @@
+{% extends "website/base.html" %}
+{% set active = "commission" %}
+{% block title %}Customise Your Garment -- Uttam Tailors{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/commission.css') }}?v=11">
+<style>
+body{overflow-x:clip!important}
+.garment-panel { display: none; }
+.garment-panel.active { display: block; }
+.step-card { background: #f7f0e6 !important; }
+.cat-tabs {
+  display: flex; gap: 4px; margin-bottom: 1.25rem;
+  background: #e8ddd0; border-radius: 6px; padding: 4px;
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; flex-wrap: nowrap;
+}
+.cat-tabs::-webkit-scrollbar { display: none; }
+.cat-tab {
+  flex: 1 0 auto; text-align: center; padding: .5rem .95rem;
+  font-size: 13px; font-family: var(--fd); color: #7a6858;
+  cursor: pointer; border-radius: 4px; white-space: nowrap;
+  transition: background .18s, color .18s;
+  user-select: none; border: none; background: none;
+}
+.cat-tab.active { background: #2e1a0e; color: #fff; font-weight: 600; }
+.cat-tab:hover:not(.active) { background: #ddd2c8; }
+.coupon-wrap { background: #f7f0e6; border-radius: 6px; padding: .9rem 1rem; margin-bottom: 1rem; }
+.coupon-label { font-size: 13px; font-weight: 600; color: var(--dark); margin: 0 0 .6rem; display: block; }
+.coupon-row { display: flex; gap: 8px; align-items: center; }
+.coupon-row .field-input { flex: 1; font-size: 13px; background: #fff; border: 1px solid #d8cfc6 !important; border-radius: 6px !important; }
+.coupon-apply-btn { flex-shrink: 0; background: #2e1a0e; color: #fff; border: none; border-radius: 6px; padding: 0 1.1rem; height: 38px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background .15s; white-space: nowrap; }
+.coupon-apply-btn:hover { background: #1e0e06; }
+#couponMsg { font-size: 12px; margin-top: .45rem; min-height: 1em; }
+.qty-rows > div { border-radius: 6px !important; }
+
+/* ── STYLE MODAL ── */
+#styleModalOverlay { display:none; position:fixed; inset:0; background:rgba(10,5,2,.72); z-index:900; align-items:center; justify-content:center; padding:12px; overflow-y:auto; }
+#styleModalOverlay.open { display:flex; }
+#styleModal { background:#fff; border-radius:16px; width:100%; max-width:880px; max-height:92vh; display:flex; flex-direction:column; box-shadow:0 24px 64px rgba(0,0,0,.35); animation:smIn .25s ease; }
+@keyframes smIn { from{opacity:0;transform:scale(.96)} to{opacity:1;transform:scale(1)} }
+.sm-head { background:#2e1a0e; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; border-radius:16px 16px 0 0; flex-shrink:0; }
+.sm-body { display:flex; flex:1; min-height:0; overflow:hidden; }
+.sm-left { width:42%; background:#f7f0e6; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:20px 16px; border-right:1px solid #e8ddd0; flex-shrink:0; overflow-y:auto; gap:10px; }
+.sm-right { flex:1; overflow-y:auto; padding:20px; }
+.sm-foot { padding:12px 20px; border-top:1px solid #e8ddd0; display:flex; gap:10px; flex-shrink:0; background:#fff; border-radius:0 0 16px 16px; }
+.sm-grp { margin-bottom:18px; }
+.sm-grp-title { font-size:11px; font-weight:800; color:#7a6a58; text-transform:uppercase; letter-spacing:.08em; margin-bottom:8px; }
+.sm-opt { padding:6px 14px; border-radius:20px; font-size:12px; font-weight:600; cursor:pointer; border:1.5px solid #e8ddd0; background:#fafaf8; color:#1a0e06; transition:all .15s; font-family:inherit; }
+.sm-opt:hover { border-color:#C8903A; }
+.sm-opt.sel { background:#2e1a0e; color:#f7f0e6; border-color:#2e1a0e; }
+.sm-opt-card { flex:0 0 calc(33.33% - 5px); border:2px solid #e8ddd0; border-radius:8px; overflow:hidden; cursor:pointer; text-align:center; background:#fff; transition:border-color .15s; }
+.sm-opt-card:hover { border-color:#C8903A; }
+.sm-opt-card.sel { border-color:#2e1a0e; }
+.sm-opts { display:flex; flex-wrap:wrap; gap:6px; }
+.ai-placeholder { width:100%; aspect-ratio:3/4; background:#ede5d5; border-radius:10px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; border:2px dashed #c8a882; color:#7a6a58; text-align:center; padding:16px; }
+.ai-loading { width:100%; aspect-ratio:3/4; background:#ede5d5; border-radius:10px; display:none; flex-direction:column; align-items:center; justify-content:center; gap:10px; }
+.ai-spinner { width:36px; height:36px; border:3px solid #e8ddd0; border-top-color:#2e1a0e; border-radius:50%; animation:spin 1s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+@media(max-width:640px){ .sm-body{flex-direction:column;} .sm-left{width:100%;border-right:none;border-bottom:1px solid #e8ddd0;} }
+
+</style>
+{% endblock %}
+{% block content %}
+
+<header class="com-header">
+  <div class="com-header-bg">
+    {% if cs.header_image %}<img src="{{ cs.header_image }}" alt="" aria-hidden="true" onerror="this.style.display='none'">{% endif %}
+  </div>
+  <div class="com-header-inner">
+    <p class="kicker">{{ cs.header_kicker }}</p>
+    <h1 class="com-title">{{ cs.header_title }}</h1>
+    <p class="com-sub">{{ cs.header_sub }}</p>
+  </div>
+  <div class="com-header-divider"></div>
+</header>
+
+<main class="com-main">
+  <form id="commissionForm" action="{{ url_for('website.create_order') }}" method="POST" novalidate>
+    <input type="hidden" name="language" value="en">
+    <div class="com-layout">
+      <div class="com-steps">
+
+        <!-- STEP 01 — GARMENT -->
+        <div class="step-card">
+          <div class="step-head">
+            <div class="step-badge">1</div>
+            <div class="step-info">
+              <h2 class="step-title">{{ cs.step1_title }}</h2>
+              <p class="step-sub">{{ cs.step1_sub }}</p>
+            </div>
+          </div>
+
+          {% if categories %}
+          <div class="cat-tabs">
+            {% for c in categories %}
+            <div class="cat-tab {% if loop.first %}active{% endif %}" onclick="showCat('{{ c.id }}',this)">{{ c.name }}</div>
+            {% endfor %}
+          </div>
+          {% for c in categories %}
+          <div class="garment-panel {% if loop.first %}active{% endif %}" id="panel-{{ c.id }}">
+            <div class="garment-grid">
+              {% for item in c.garments %}
+              <label class="g-card">
+                <input type="checkbox" name="garment_type[]" value="{{ item.name|e }}" data-price="{{ item.price }}" data-label="{{ item.name|e }}" data-item-id="{{ item.id }}" onchange="garmentChanged(this)">
+                <div class="g-inner">
+                  {% if item.image_url %}<span class="g-icon"><img src="{{ item.image_url }}" alt="{{ item.name }}" class="g-img"></span>{% endif %}
+                  <span class="g-name">{{ item.name }}</span>
+                  <span class="g-price">Rs. {{ item.price }}</span>
+                </div>
+              </label>
+              {% endfor %}
+            </div>
+          </div>
+          {% endfor %}
+          {% else %}
+          <div class="garment-grid" id="garmentGrid">
+            {% for item in db_items %}
+            <label class="g-card">
+              <input type="checkbox" name="garment_type[]" value="{{ item.name|e }}" data-price="{{ item.price }}" data-label="{{ item.name|e }}" data-item-id="{{ item.id }}" onchange="garmentChanged(this)">
+              <div class="g-inner">
+                {% if item.image_url %}<span class="g-icon"><img src="{{ item.image_url }}" alt="{{ item.name }}" class="g-img"></span>{% endif %}
+                <span class="g-name">{{ item.name }}</span>
+                <span class="g-price">Rs. {{ item.price }}</span>
+              </div>
+            </label>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          <p class="hint-line">&#10003; Select multiple garments for a combined order</p>
+          <div id="garmentQtyRows" class="qty-rows"></div>
+        </div>
+
+        <!-- STEP 02 — MEASUREMENTS -->
+        <div class="step-card">
+          <div class="step-head">
+            <div class="step-badge">2</div>
+            <div class="step-info">
+              <h2 class="step-title">{{ cs.step2_title }}</h2>
+              <p class="step-sub">{{ cs.step2_sub }}</p>
+            </div>
+          </div>
+          <input type="hidden" name="measure_method" id="meth_val" value="{{ preselect_method or 'size' }}">
+          <div class="meth-tabs">
+            <button type="button" class="meth-tab {% if not preselect_method or preselect_method=='size' %}active{% endif %}" onclick="setMeth('size',this)">Standard Size</button>
+            <button type="button" class="meth-tab {% if preselect_method=='manual' %}active{% endif %}" onclick="setMeth('manual',this)">Enter Manually</button>
+            <button type="button" class="meth-tab {% if preselect_method=='reference' %}active{% endif %}" onclick="setMeth('reference',this)">Reference Garment</button>
+            <button type="button" class="meth-tab {% if preselect_method=='locker' %}active{% endif %}" onclick="setMeth('locker',this)">Saved Measurements</button>
+            <button type="button" class="meth-tab {% if preselect_method=='homevisit' %}active{% endif %}" onclick="setMeth('homevisit',this)">Home Visit</button>
+          </div>
+
+          <div class="meth-panel {% if not preselect_method or preselect_method=='size' %}active{% endif %}" id="mp-size">
+            <div class="size-layout">
+              <div>
+                <div class="size-btns">
+                  <button type="button" class="sz-btn" onclick="pickSz('S',this)">S</button>
+                  <button type="button" class="sz-btn" onclick="pickSz('M',this)">M</button>
+                  <button type="button" class="sz-btn" onclick="pickSz('L',this)">L</button>
+                  <button type="button" class="sz-btn" onclick="pickSz('XL',this)">XL</button>
+                  <button type="button" class="sz-btn" onclick="pickSz('XXL',this)">XXL</button>
+                </div>
+                <input type="hidden" name="size_standard" id="sz_val">
+                <div class="fit-row">
+                  <button type="button" class="fit-btn" onclick="pickFit('slim',this)">Slim</button>
+                  <button type="button" class="fit-btn active" onclick="pickFit('regular',this)">Regular</button>
+                  <button type="button" class="fit-btn" onclick="pickFit('loose',this)">Loose</button>
+                </div>
+                <input type="hidden" name="size_fit" id="fit_val" value="regular">
+                <p style="margin-top:.6rem;font-size:12px;"><a href="#" onclick="openSizeGuide(event)" class="link-accent">View full size guide &rarr;</a></p>
+                <details class="adj-toggle">
+                  <summary>Fine-tune measurements (optional)</summary>
+                  <div class="adj-grid">
+                    <div class="adj-row"><label>Chest (inches)</label><input type="number" name="adj_chest" class="field-input" step="0.5" placeholder="e.g. 38"></div>
+                    <div class="adj-row"><label>Waist (inches)</label><input type="number" name="adj_waist" class="field-input" step="0.5" placeholder="e.g. 32"></div>
+                    <div class="adj-row"><label>Shoulder (inches)</label><input type="number" name="adj_shoulder" class="field-input" step="0.5" placeholder="e.g. 17"></div>
+                    <div class="adj-row"><label>Shirt length</label><input type="number" name="adj_length" class="field-input" step="0.5" placeholder="e.g. 29"></div>
+                    <div class="adj-row"><label>Pant length</label><input type="number" name="adj_trouser" class="field-input" step="0.5" placeholder="e.g. 40"></div>
+                  </div>
+                </details>
+              </div>
+              <div class="figure-wrap">
+                <svg class="body-svg" viewBox="0 0 200 340" xmlns="http://www.w3.org/2000/svg">
+                  <ellipse cx="100" cy="32" rx="25" ry="26" fill="none" stroke="rgba(46,26,13,.3)" stroke-width="1.5"/>
+                  <path d="M70 62 Q58 105 60 185 L140 185 Q142 105 130 62 Q118 56 100 56 Q82 56 70 62Z" fill="none" stroke="rgba(46,26,13,.3)" stroke-width="1.5"/>
+                  <path d="M70 68 Q44 94 42 152" fill="none" stroke="rgba(46,26,13,.3)" stroke-width="1.5"/>
+                  <path d="M130 68 Q156 94 158 152" fill="none" stroke="rgba(46,26,13,.3)" stroke-width="1.5"/>
+                  <path d="M76 185 Q74 255 75 330" fill="none" stroke="rgba(46,26,13,.3)" stroke-width="1.5"/>
+                  <path d="M124 185 Q126 255 125 330" fill="none" stroke="rgba(46,26,13,.3)" stroke-width="1.5"/>
+                  <line x1="58" y1="106" x2="142" y2="106" stroke="#2e1a0d" stroke-width=".8" stroke-dasharray="3,2"/>
+                  <text x="100" y="100" text-anchor="middle" font-size="8" fill="#2e1a0d" font-family="DM Mono,monospace">Chest</text>
+                  <line x1="61" y1="138" x2="139" y2="138" stroke="#7a9a6a" stroke-width=".8" stroke-dasharray="3,2"/>
+                  <text x="100" y="132" text-anchor="middle" font-size="8" fill="#7a9a6a" font-family="DM Mono,monospace">Waist</text>
+                  <line x1="70" y1="66" x2="130" y2="66" stroke="#7A4A30" stroke-width=".8" stroke-dasharray="3,2"/>
+                  <text x="100" y="60" text-anchor="middle" font-size="8" fill="#7A4A30" font-family="DM Mono,monospace">Shoulder</text>
+                </svg>
+                <div class="size-detail" id="sizeDetail"><p class="size-hint">Select a size above</p></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="meth-panel {% if preselect_method=='manual' %}active{% endif %}" id="mp-manual">
+            <p class="meth-intro">Enter your measurements in inches. Ask someone to help for accuracy.</p>
+            <div class="manual-grid" id="manualGrid"></div>
+          </div>
+
+          <div class="meth-panel {% if preselect_method=='reference' %}active{% endif %}" id="mp-reference">
+            <p class="meth-intro">Give us a garment that fits you perfectly and we make an exact copy in your new fabric.</p>
+            <div class="ref-options">
+              <label class="ref-opt"><input type="radio" name="ref_dropoff" value="dropoff" checked>
+                <div class="ref-opt-inner"><strong>Drop at our shop</strong><span>Subhash Chowk, Sikar</span></div>
+              </label>
+              <label class="ref-opt"><input type="radio" name="ref_dropoff" value="pickup">
+                <div class="ref-opt-inner"><strong>We pick it up</strong><span>Sikar city &bull; Rs. 50 charge</span></div>
+              </label>
+            </div>
+            <div id="ref-pickup-addr" style="display:none;margin-top:1rem;">
+              <label class="field-label">Pickup address</label>
+              <textarea name="ref_pickup_address" class="field-textarea" rows="2" placeholder="House, street, area, Sikar"></textarea>
+            </div>
+            <div class="field-group" style="margin-top:1rem;">
+              <label class="field-label">Type of garment</label>
+              <select name="ref_garment_type" class="field-select">
+                <option value="shirt">Shirt</option>
+                <option value="pant">Pant</option>
+                <option value="kurta">Kurta</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div class="field-group" style="margin-top:.7rem;">
+              <label class="field-label">Special notes</label>
+              <textarea name="ref_notes" class="field-textarea" rows="2" placeholder="e.g. make collar 0.5 inch wider"></textarea>
+            </div>
+          </div>
+
+          <div class="meth-panel {% if preselect_method=='locker' %}active{% endif %}" id="mp-locker">
+            <p class="meth-intro">Visited our shop before? Enter your phone and we load your saved measurements.</p>
+            <div class="phone-row">
+              <span class="phone-pre">+91</span>
+              <input type="tel" id="locker_phone" class="field-input" placeholder="10-digit phone" maxlength="10">
+              <button type="button" class="fetch-btn" onclick="fetchLocker()">Fetch</button>
+            </div>
+            <div id="locker-otp" style="display:none;margin-top:1rem;">
+              <div class="phone-row">
+                <input type="text" id="locker_otp" class="field-input" placeholder="6-digit OTP" maxlength="6">
+                <button type="button" class="fetch-btn" onclick="verifyLocker()">Verify</button>
+              </div>
+            </div>
+            <div id="locker-found" style="display:none;" class="locker-found"></div>
+            <input type="hidden" name="locker_customer_id" id="locker_cid">
+          </div>
+
+          <div class="meth-panel {% if preselect_method=='homevisit' %}active{% endif %}" id="mp-homevisit">
+            <div class="homevisit-box">
+              <h3 class="hv-title">Our tailor comes to you</h3>
+              <p class="hv-desc">Our tailor visits your home, takes measurements, saves them for all future orders.</p>
+              <p class="hv-charge">Visit charge: Rs. 100 (adjusted against your order)</p>
+              <div class="hv-fields">
+                <div class="field-group"><label class="field-label">Preferred date</label><input type="date" name="homevisit_date" class="field-input" min="{{ min_date }}"></div>
+                <div class="field-group"><label class="field-label">Preferred time</label>
+                  <select name="homevisit_slot" class="field-select">
+                    <option value="9-11">9am to 11am</option>
+                    <option value="11-1">11am to 1pm</option>
+                    <option value="2-4">2pm to 4pm</option>
+                    <option value="4-6">4pm to 6pm</option>
+                  </select>
+                </div>
+                <div class="field-group" style="grid-column:1/-1;"><label class="field-label">Your address in Sikar</label><textarea name="homevisit_address" class="field-textarea" rows="2" placeholder="House, street, area, Sikar"></textarea></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 03 — FABRIC -->
+        <div class="step-card">
+          <div class="step-head">
+            <div class="step-badge">3</div>
+            <div class="step-info"><h2 class="step-title">{{ cs.step3_title }}</h2><p class="step-sub">{{ cs.step3_sub }}</p></div>
+          </div>
+          <div class="fabric-tabs">
+            <button type="button" class="fab-tab active" onclick="setFab('own',this)">I will bring my own fabric</button>
+            <button type="button" class="fab-tab" onclick="setFab('catalog',this)">Choose from our catalog</button>
+          </div>
+          <input type="hidden" name="fabric_choice" id="fab_choice" value="own">
+          <input type="hidden" name="fabric_selected" id="fab_selected">
+          <div id="fab-own">
+            <div class="fab-own-box">Bring your fabric to Subhash Chowk, Sikar or courier it. We confirm receipt via WhatsApp before stitching.</div>
+          </div>
+          <div id="fab-catalog" style="display:none;">
+            <div style="margin-bottom:.9rem;"><input class="fab-search-input" id="fabSearch" type="text" placeholder="Search fabrics..."></div>
+            <div class="fab-grid" id="fabGrid">
+              {% if fabrics %}
+                {% for f in fabrics %}
+                <div class="fab-card {% if loop.first %}sel{% endif %}" onclick="selFab({{ f.id }},'{{ f.name }}',this)" data-name="{{ f.name|lower }}">
+                  <div class="fab-img-wrap" style="position:relative;">{% if f.image_url %}<img src="{{ f.image_url }}" alt="{{ f.name }}" loading="lazy" style="cursor:zoom-in;" onclick="event.stopPropagation();fabZoom('{{ f.image_url }}','{{ f.name }}')">{% else %}<div class="fab-swatch"></div>{% endif %}<div class="fab-sel-check">OK</div></div>
+                  <div class="fab-info"><span class="fab-name">{{ f.name }}</span><span class="fab-price">Rs. {{ f.price_per_metre }} / metre</span><span class="fab-stock">In stock</span></div>
+                </div>
+                {% endfor %}
+              {% else %}
+                <p style="color:var(--muted);font-size:13px;padding:1rem;grid-column:1/-1;">Fabric catalog coming soon. Select the other option for now.</p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 04 — STYLE -->
+        <div class="step-card">
+          <div class="step-head">
+            <div class="step-badge">4</div>
+            <div class="step-info"><h2 class="step-title">{{ cs.step4_title }}</h2><p class="step-sub">{{ cs.step4_sub }}</p></div>
+          </div>
+          <div id="detailsGrid" class="details-grid"><p style="font-size:13px;color:var(--muted);">Select a garment above to see style options.</p></div>
+          <div class="field-group" style="margin-top:1.35rem;">
+            <label class="field-label">Special instructions</label>
+            <textarea name="special_notes" class="field-textarea" rows="3" placeholder="e.g. make collar 0.5 inch wider, no chest pocket..."></textarea>
+          </div>
+        </div>
+
+        <!-- STEP 05 — DELIVERY -->
+        <div class="step-card">
+          <div class="step-head">
+            <div class="step-badge">5</div>
+            <div class="step-info"><h2 class="step-title">{{ cs.step5_title }}</h2><p class="step-sub">{{ cs.step5_sub }}</p></div>
+          </div>
+          <div class="field-group" style="margin-bottom:.9rem;">
+            <label class="field-label">Preferred delivery date <span style="color:#A33B2A;">*</span></label>
+            <input type="date" name="delivery_date" id="delivery_date_input" class="field-input" required min="{{ min_date }}" onchange="onDeliveryDateChange()">
+            <div id="date-urgent-msg" class="date-urgent-msg" style="display:none;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              <span>You chose a date within 2 days. We've added a <strong>+Rs. 99 urgent charge</strong> so our master tailor can prioritise your garment. Standard turnaround is 5–7 days.</span>
+            </div>
+          </div>
+          <div class="del-opts">
+            <label class="del-card">
+              <input type="radio" name="delivery" value="pickup" checked onchange="delChange('pickup')">
+              <div class="del-inner">
+                <div class="del-icon-box"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+                <div><strong>Pick up from shop</strong><span>Free &bull; Subhash Chowk, Sikar</span></div>
+              </div>
+            </label>
+            <label class="del-card">
+              <input type="radio" name="delivery" value="home" onchange="delChange('home')">
+              <div class="del-inner">
+                <div class="del-icon-box"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div>
+                <div><strong>Home delivery</strong><span>Rs. 49 &bull; Free on orders above Rs. 1,499</span></div>
+              </div>
+            </label>
+          </div>
+          <div id="del-addr" style="display:none;margin-top:1.1rem;">
+            <label class="field-label">Delivery address</label>
+            <textarea name="delivery_address" class="field-textarea" rows="2" placeholder="House, street, area, city, pin code"></textarea>
+          </div>
+          <div class="urgent-box" style="margin-top:1.25rem;">
+            <label class="urgent-toggle">
+              <input type="checkbox" name="is_urgent" id="urgentCheck" onchange="toggleUrgent(this)">
+              <div class="urgent-toggle-info">
+                <div class="urgent-title">{{ cs.urgent_title }}</div>
+                <div class="urgent-sub">{{ cs.urgent_sub }}</div>
+              </div>
+              <div class="urgent-price">+Rs. 99</div>
+            </label>
+            <div class="urgent-note" id="urgentNote" style="display:none;"></div>
+          </div>
+        </div>
+
+        <!-- STEP 06 — CONTACT -->
+        <div class="step-card">
+          <div class="step-head">
+            <div class="step-badge">6</div>
+            <div class="step-info"><h2 class="step-title">{{ cs.step6_title }}</h2><p class="step-sub">{{ cs.step6_sub }}</p></div>
+          </div>
+          <div class="contact-grid">
+            <div class="field-group"><label class="field-label">Full name</label><input type="text" name="cust_name" id="cust_name" class="field-input" required placeholder="Your name" oninput="updateBtn()"></div>
+            <div class="field-group">
+              <label class="field-label">Phone (WhatsApp)</label>
+              <div class="phone-row"><span class="phone-pre">+91</span><input type="tel" name="cust_phone" id="cust_phone" class="field-input" required placeholder="10-digit number" maxlength="10" oninput="updateBtn()"></div>
+            </div>
+            <div class="field-group" style="grid-column:1/-1;">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--muted);">
+                <input type="checkbox" name="save_measurements" value="1" checked>
+                Save my measurements for future orders (recommended)
+              </label>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /com-steps -->
+
+      <!-- STICKY ORDER SUMMARY -->
+      <aside class="com-summary">
+        <div class="summary-box">
+          <div class="summary-head">
+            <p class="summary-heading">{{ cs.summary_title }}</p>
+            <p class="summary-headsub" id="summaryCount">No items added yet</p>
+          </div>
+          <div class="summary-body">
+            <div id="summaryRows"><p class="summary-empty">Select garments to begin.</p></div>
+            <div id="summary-price" style="display:none;" class="summary-price">
+              <div class="sp-row" id="sp-stitch-row"><span>Stitching subtotal</span><span id="sp-unit">--</span></div>
+              <div class="sp-row" id="sp-urg-row" style="display:none;"><span>Urgent charge</span><span>+ Rs. 99</span></div>
+              <div class="sp-row" id="sp-del-row" style="display:none;"><span>Delivery</span><span id="sp-del-amt">Rs. 49</span></div>
+              <div class="sp-row" id="sp-hv-row" style="display:none;"><span>Home visit charge</span><span>Rs. 100</span></div>
+              <div class="sp-row" id="sp-coupon-row" style="display:none;color:#2D6A3F;">
+                <span>🎟 Discount</span><span id="sp-coupon-amt">-Rs. 0</span>
+              </div>
+              <div class="sp-row" id="sp-total-row" style="font-weight:700;color:var(--dark);border-top:1px solid var(--border);padding-top:6px;margin-top:4px;display:none;" id="sp-grand-row"><span>Total</span><span id="sp-total-val">--</span></div>
+              <div class="sp-row sp-total"><span>Advance now (<span id="sp-adv-pct">30</span>%)</span><span id="sp-adv" class="sp-adv-val">--</span></div>
+            </div>
+            <div id="summary-date" style="display:none;" class="summary-date">
+              <span class="sd-label">Estimated ready by</span>
+              <span class="sd-val" id="sd-val"></span>
+            </div>
+            <!-- Coupon box -->
+            <div class="coupon-wrap" id="couponWrap">
+              <span class="coupon-label">Have a promo code?</span>
+              <div class="coupon-row">
+                <input type="text" id="couponInput" name="coupon_code"
+                  placeholder="Enter code"
+                  class="field-input"
+                  onkeydown="if(event.key==='Enter'){event.preventDefault();applyCoupon();}">
+                <button type="button" onclick="applyCoupon()" class="coupon-apply-btn">Apply</button>
+              </div>
+              <div id="couponMsg"></div>
+            </div>
+            <input type="hidden" name="coupon_discount" id="couponDiscount" value="0">
+            <button type="submit" class="reserve-btn" id="reserveBtn" disabled>
+              <span>Complete Your Order</span>
+              <span class="reserve-sub">Pay 30% advance — rest on delivery</span>
+            </button>
+            <ul class="trust-pills">
+              {% if cs.trust_pill_1 %}<li>{{ cs.trust_pill_1 }}</li>{% endif %}
+              {% if cs.trust_pill_2 %}<li>{{ cs.trust_pill_2 }}</li>{% endif %}
+              {% if cs.trust_pill_3 %}<li>{{ cs.trust_pill_3 }}</li>{% endif %}
+              {% if cs.trust_pill_4 %}<li>{{ cs.trust_pill_4 }}</li>{% endif %}
+            </ul>
+          </div>
+        </div>
+      </aside>
+
+    </div>
+
+    <input type="hidden" name="style_json" id="styleJsonInput" value="{}">
+  </form>
+
+<!-- ── STYLE MODAL ── -->
+<div id="styleModalOverlay" onclick="if(event.target===this)closeStyleModal()">
+  <div id="styleModal">
+    <div class="sm-head">
+      <div>
+        <div style="font-size:16px;font-weight:800;color:#f7f0e6;" id="smGarmentName"></div>
+        <div style="font-size:12px;color:#C8903A;font-weight:600;" id="smGarmentPrice"></div>
+      </div>
+      <button onclick="closeStyleModal()" style="background:none;border:none;color:#f7f0e6;font-size:26px;cursor:pointer;line-height:1;padding:0;">&#x2715;</button>
+    </div>
+    <div class="sm-body">
+      <div class="sm-left">
+        <div style="font-size:10px;font-weight:700;color:#7a6a58;text-transform:uppercase;letter-spacing:.08em;">AI Preview</div>
+        <div class="ai-placeholder" id="aiPlaceholder">
+          <div style="font-size:36px;">&#127912;</div>
+          <div style="font-weight:700;color:#2e1a0e;font-size:13px;">Style Preview</div>
+          <div style="font-size:11px;line-height:1.5;">Options choose karo phir<br><strong>Generate AI Preview</strong> dabao</div>
+        </div>
+        <div class="ai-loading" id="aiLoading">
+          <div class="ai-spinner"></div>
+          <div style="font-size:13px;font-weight:700;color:#2e1a0e;" id="aiLoadingText">Generating...</div>
+          <div style="font-size:11px;color:#7a6a58;">10-20 seconds</div>
+        </div>
+        <img id="aiGenImg" src="" alt="AI preview" style="display:none;width:100%;border-radius:10px;border:1px solid #e8ddd0;">
+        <button id="regenBtn" onclick="generateAIPreview()" style="display:none;padding:7px 16px;background:transparent;border:1.5px solid #C8903A;color:#C8903A;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;">&#x21bb; Regenerate</button>
+        <div id="smSelChips" style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;"></div>
+      </div>
+      <div class="sm-right">
+        <div id="smOptionsContainer">
+          <p style="color:#7a6a58;font-size:13px;padding:20px 0;text-align:center;">Loading style options...</p>
+        </div>
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid #e8ddd0;">
+          <label style="font-size:11px;font-weight:700;color:#7a6a58;text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:6px;">Special request to tailor</label>
+          <textarea id="smNote" rows="2" placeholder="e.g. Collar thodi loose rakhna..." style="width:100%;padding:9px 12px;border:1.5px solid #e8ddd0;border-radius:8px;font-size:13px;resize:none;font-family:inherit;outline:none;box-sizing:border-box;background:#fafaf8;"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="sm-foot">
+      <button id="genPreviewBtn" onclick="generateAIPreview()" style="flex:1;padding:12px;background:#f7f0e6;color:#2e1a0e;border:2px dashed #C8903A;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">&#127912; Generate AI Preview</button>
+      <button onclick="confirmStyle()" style="flex:1;padding:12px;background:#2e1a0e;color:#f7f0e6;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">&#10003; Add to Order</button>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<!-- Size guide modal -->
+<div id="sizeGuideModal" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(28,15,6,.55);align-items:center;justify-content:center;padding:2rem;" onclick="if(event.target===this)this.style.display='none';">
+  <div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:1.75rem;max-width:520px;width:100%;position:relative;max-height:80vh;overflow-y:auto;">
+    <button onclick="document.getElementById('sizeGuideModal').style.display='none';" style="position:absolute;top:.9rem;right:.9rem;background:none;border:none;font-size:20px;cursor:pointer;color:#2E1A0D;">&times;</button>
+    <h3 style="font-family:var(--fd);font-size:21px;color:var(--dark);margin-bottom:1rem;">Size Guide (all in inches)</h3>
+    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+      <thead><tr style="border-bottom:2px solid var(--border);">
+        <th style="padding:7px 9px;text-align:left;color:var(--muted);font-size:10px;text-transform:uppercase;">Size</th>
+        <th style="padding:7px 9px;text-align:left;color:var(--muted);font-size:10px;text-transform:uppercase;">Chest</th>
+        <th style="padding:7px 9px;text-align:left;color:var(--muted);font-size:10px;text-transform:uppercase;">Waist</th>
+        <th style="padding:7px 9px;text-align:left;color:var(--muted);font-size:10px;text-transform:uppercase;">Shoulder</th>
+        <th style="padding:7px 9px;text-align:left;color:var(--muted);font-size:10px;text-transform:uppercase;">Hip</th>
+      </tr></thead>
+      <tbody>
+        <tr style="border-bottom:1px solid var(--border);"><td style="padding:9px;font-weight:700;">S</td><td style="padding:9px;">35-36</td><td style="padding:9px;">29-30</td><td style="padding:9px;">15.5</td><td style="padding:9px;">35-36</td></tr>
+        <tr style="border-bottom:1px solid var(--border);"><td style="padding:9px;font-weight:700;">M</td><td style="padding:9px;">37-38</td><td style="padding:9px;">31-32</td><td style="padding:9px;">16.5</td><td style="padding:9px;">37-38</td></tr>
+        <tr style="border-bottom:1px solid var(--border);"><td style="padding:9px;font-weight:700;">L</td><td style="padding:9px;">39-40</td><td style="padding:9px;">33-34</td><td style="padding:9px;">17.5</td><td style="padding:9px;">39-40</td></tr>
+        <tr style="border-bottom:1px solid var(--border);"><td style="padding:9px;font-weight:700;">XL</td><td style="padding:9px;">41-42</td><td style="padding:9px;">35-36</td><td style="padding:9px;">18.5</td><td style="padding:9px;">41-42</td></tr>
+        <tr><td style="padding:9px;font-weight:700;">XXL</td><td style="padding:9px;">43-44</td><td style="padding:9px;">37-38</td><td style="padding:9px;">19.5</td><td style="padding:9px;">43-44</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+// ── GARMENT SELECTION ──
+var garmentQtys = {};
+var GPRICES = {};
+{% for item in db_items %}GPRICES[{{ item.name|tojson }}] = parseInt({{ item.price|tojson }},10)||0;{% endfor %}
+var PRESELECT_NAME = {{ (garment_name or '')|tojson }};
+var ADVANCE_PCT = parseInt('{{ advance_pct|default(30) }}') || 30;
+
+// ── STYLE MODAL STATE ──
+var STYLE_SEL   = {};
+var STYLE_NOTES = {};
+var _sm = {name:'', itemId:0, card:null, inp:null};
+
+function sdEsc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+// Build a single-quoted JS string literal safe to embed inside a double-quoted HTML onclick="..." attribute
+// (JSON.stringify produces double quotes which break double-quoted HTML attributes)
+function jsStr(s){ return "'" + String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;') + "'"; }
+
+function showCat(id, el) {
+  document.querySelectorAll('.garment-panel').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.cat-tab').forEach(function(t){t.classList.remove('active');});
+  var panel = document.getElementById('panel-' + id);
+  if (panel) panel.classList.add('active');
+  if (el) el.classList.add('active');
+}
+
+function garmentChanged(inp) {
+  var card = inp.closest('.g-card');
+  if (card) card.classList.toggle('selected', inp.checked);
+  if (!inp.checked) {
+    delete garmentQtys[inp.value];
+    delete STYLE_SEL[inp.value];
+    delete STYLE_NOTES[inp.value];
+    updateStyleInput();
+  } else if (!garmentQtys[inp.value]) {
+    garmentQtys[inp.value] = 1;
+    var itemId = parseInt(inp.dataset.itemId) || 0;
+    openStyleModal(inp.value, itemId, card, inp);
+  }
+  rebuildQtyRows();
+  refreshSummary();
+  refreshPrice();
+  refreshBtn();
+}
+
+function deleteGarment(val) {
+  var inp = document.querySelector('input[name="garment_type[]"][value="' + CSS.escape(val) + '"]');
+  if (!inp) {
+    // Fallback: find by iterating
+    Array.from(document.querySelectorAll('input[name="garment_type[]"]')).forEach(function(i){ if(i.value===val) inp=i; });
+  }
+  if (inp) {
+    inp.checked = false;
+    var card = inp.closest('.g-card');
+    if (card) { card.classList.remove('selected'); card.classList.remove('has-style'); }
+  }
+  delete garmentQtys[val];
+  delete STYLE_SEL[val];
+  delete STYLE_NOTES[val];
+  updateStyleInput();
+  rebuildQtyRows();
+  refreshSummary();
+  refreshPrice();
+  refreshBtn();
+}
+
+function rebuildQtyRows() {
+  var wrap = document.getElementById('garmentQtyRows');
+  if (!wrap) return;
+  var checked = Array.from(document.querySelectorAll('input[name="garment_type[]"]:checked'));
+  if (!checked.length) { wrap.innerHTML = ''; return; }
+  wrap.innerHTML = checked.map(function(inp) {
+    var qty = garmentQtys[inp.value] || 1;
+    var price = GPRICES[inp.value] || parseInt(inp.dataset.price) || 0;
+    var safeVal = inp.value.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    var itemId  = parseInt(inp.dataset.itemId) || 0;
+    var sel = STYLE_SEL[inp.value] || {};
+    var note = STYLE_NOTES[inp.value] || '';
+    var tags = Object.entries(sel).filter(function(e){ return e[1] && e[0] !== '__note__'; }).map(function(e){
+      return '<span style="font-size:10px;background:#e8ddd0;color:#2e1a0e;padding:2px 8px;border-radius:20px;font-weight:600;">' + sdEsc(e[1]) + '</span>';
+    });
+    if (note) tags.push('<span style="font-size:10px;background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:20px;font-weight:600;">' + sdEsc(note.substr(0,25)) + (note.length>25?'...':'') + '</span>');
+    var editBtn = itemId ? '<button type="button" onclick="editStyle(\'' + safeVal + '\',' + itemId + ')" style="font-size:10px;color:#C8903A;background:none;border:1px solid #C8903A;border-radius:20px;padding:2px 8px;cursor:pointer;font-weight:600;font-family:inherit;">' + (tags.length ? 'Edit &#9998;' : '+ Style') + '</button>' : '';
+    var tagsHtml = (tags.length || editBtn) ? '<div style="display:flex;flex-wrap:wrap;gap:4px;padding:6px 14px 8px;">' + tags.join('') + editBtn + '</div>' : '';
+    return '<div style="background:#f7f0e6;border:1px solid var(--border);border-radius:6px;margin-bottom:6px;overflow:hidden;">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;">'
+      + '<div style="font-size:14px;font-weight:500;color:var(--dark);">' + (inp.dataset.label || inp.value) + '</div>'
+      + '<div style="display:flex;align-items:center;gap:10px;">'
+      + '<div style="display:flex;align-items:center;border:1px solid var(--border);border-radius:6px;overflow:hidden;">'
+      + '<button type="button" onclick="changeGQty(\'' + safeVal + '\',-1)" style="background:#ede5da;border:none;width:30px;height:30px;font-size:16px;cursor:pointer;color:var(--dark);">−</button>'
+      + '<span id="gq_' + cssId(inp.value) + '" style="width:32px;text-align:center;font-size:14px;font-weight:600;color:var(--dark);">' + qty + '</span>'
+      + '<button type="button" onclick="changeGQty(\'' + safeVal + '\',1)" style="background:#ede5da;border:none;width:30px;height:30px;font-size:16px;cursor:pointer;color:var(--dark);">+</button>'
+      + '</div>'
+      + '<span style="font-size:13px;color:var(--gold);font-weight:600;min-width:70px;text-align:right;">Rs. ' + (price*qty).toLocaleString('en-IN') + '</span>'
+      + '<input type="hidden" name="qty_' + inp.value + '" value="' + qty + '">'
+      + '<button type="button" style="background:none;border:none;cursor:pointer;padding:2px;color:#cc5555;font-size:16px;line-height:1;" title="Remove" onclick="deleteGarmentByEl(this)">\xd7</button>'
+      + '</div></div>'
+      + tagsHtml
+      + '</div>';
+  }).join('');
+}
+
+function deleteGarmentByEl(btn) {
+  var row = btn.closest('[style*="margin-bottom:6px"]');
+  if (!row) return;
+  var nameEl = row.querySelector('[style*="font-size:14px"]');
+  if (!nameEl) return;
+  var name = nameEl.textContent.trim();
+  // Find the checkbox with this value
+  var found = null;
+  Array.from(document.querySelectorAll('input[name="garment_type[]"]')).forEach(function(i){ if(i.dataset.label === name || i.value === name) found = i; });
+  if (found) deleteGarment(found.value);
+}
+
+function cssId(v){ return v.replace(/[^a-zA-Z0-9_-]/g,'_'); }
+
+function changeGQty(val, d) {
+  garmentQtys[val] = Math.max(1, Math.min(20, (garmentQtys[val] || 1) + d));
+  rebuildQtyRows();
+  refreshSummary();
+  refreshPrice();
+}
+
+function updateStyleInput() {
+  var merged = {};
+  Object.keys(STYLE_SEL).forEach(function(g){
+    merged[g] = Object.assign({}, STYLE_SEL[g]);
+    if (STYLE_NOTES[g]) merged[g]['__note__'] = STYLE_NOTES[g];
+  });
+  var el = document.getElementById('styleJsonInput');
+  if (el) el.value = JSON.stringify(merged);
+}
+
+function editStyle(name, itemId) {
+  var inp = null;
+  Array.from(document.querySelectorAll('input[name="garment_type[]"]')).forEach(function(i){ if(i.value===name) inp=i; });
+  var card = inp ? inp.closest('.g-card') : null;
+  openStyleModal(name, itemId, card, inp);
+}
+
+// ── STYLE MODAL + AI PREVIEW ──────────────────────────────────
+function openStyleModal(name, itemId, card, inp) {
+  _sm.name = name; _sm.itemId = itemId; _sm.card = card; _sm.inp = inp;
+  var el;
+  el = document.getElementById('smGarmentName'); if(el) el.textContent = name;
+  el = document.getElementById('smGarmentPrice'); if(el) el.textContent = 'Rs. ' + ((GPRICES[name]||0)).toLocaleString('en-IN');
+  el = document.getElementById('smNote'); if(el) el.value = STYLE_NOTES[name] || '';
+  // Reset AI state
+  var aiPlc = document.getElementById('aiPlaceholder');
+  var aiLd  = document.getElementById('aiLoading');
+  var aiImg = document.getElementById('aiGenImg');
+  var regenBtn = document.getElementById('regenBtn');
+  var genBtn   = document.getElementById('genPreviewBtn');
+  if(aiPlc) aiPlc.style.display = 'flex';
+  if(aiLd)  aiLd.style.display  = 'none';
+  if(aiImg) { aiImg.style.display = 'none'; aiImg.src = ''; }
+  if(regenBtn) regenBtn.style.display = 'none';
+  if(genBtn) { genBtn.disabled = false; genBtn.textContent = '\u{1F3A8} Generate AI Preview'; }
+  // Open modal
+  var overlay = document.getElementById('styleModalOverlay');
+  if(overlay) overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  // Load options
+  var container = document.getElementById('smOptionsContainer');
+  if(container) container.innerHTML = '<p style="color:#7a6a58;font-size:13px;padding:20px 0;text-align:center;">Loading...</p>';
+  updateSmChips();
+  if(!itemId) {
+    if(container) container.innerHTML = '<div style="text-align:center;padding:30px;"><div style="font-size:28px;margin-bottom:8px;">&#9986;</div><div style="font-weight:700;color:#2e1a0e;font-size:13px;margin-bottom:6px;">No style options yet</div><div style="font-size:12px;color:#7a6a58;">Admin &#8594; Commission Page &#8594; Step 1 mein add karo</div></div>';
+    return;
+  }
+  fetch('/api/style-options/' + itemId)
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      var opts = d.options || [];
+      if (!opts.length) {
+        if(container) container.innerHTML = '<div style="text-align:center;padding:30px;"><div style="font-size:28px;margin-bottom:8px;">&#9986;</div><div style="font-weight:700;color:#2e1a0e;font-size:13px;margin-bottom:6px;">No style options yet</div><div style="font-size:12px;color:#7a6a58;">Admin &#8594; Commission Page &#8594; Step 1 mein add karo</div></div>';
+        return;
+      }
+      renderSmOptions(opts);
+      updateSmChips();
+    })
+    .catch(function() {
+      if(container) container.innerHTML = '<p style="color:#dc2626;font-size:12px;padding:20px 0;">Could not load style options.</p>';
+    });
+}
+
+function renderSmOptions(opts) {
+  var existing = STYLE_SEL[_sm.name] || {};
+  var html = '';
+  opts.forEach(function(grp) {
+    var currSel = existing[grp.option_group] || '';
+    html += '<div class="sm-grp"><div class="sm-grp-title">' + sdEsc(grp.option_group);
+    if (grp.is_required) html += ' <span style="background:#fee2e2;color:#dc2626;font-size:9px;padding:1px 6px;border-radius:10px;">Required</span>';
+    html += '</div><div class="sm-opts" id="smg_' + grp.id + '">';
+    (grp.values || []).forEach(function(v) {
+      var isSel = (currSel === v.value_label);
+      if (v.image_url) {
+        html += '<div class="sm-opt-card' + (isSel ? ' sel' : '') + '" onclick="smPick(this,' + grp.id + ',' + jsStr(grp.option_group) + ',' + jsStr(v.value_label) + ')" style="border-color:' + (isSel ? '#2e1a0e' : '#e8ddd0') + ';">'
+          + '<img src="' + v.image_url + '" style="width:100%;height:72px;object-fit:cover;display:block;" alt="' + sdEsc(v.value_label) + '" loading="lazy">'
+          + '<div style="font-size:11px;font-weight:600;padding:5px 4px 6px;color:' + (isSel ? '#fff' : '#5a4030') + ';background:' + (isSel ? '#2e1a0e' : '#fff') + ';">' + sdEsc(v.value_label) + '</div>'
+          + '</div>';
+      } else {
+        html += '<button class="sm-opt' + (isSel ? ' sel' : '') + '" onclick="smPick(this,' + grp.id + ',' + jsStr(grp.option_group) + ',' + jsStr(v.value_label) + ')">' + sdEsc(v.value_label) + '</button>';
+      }
+    });
+    html += '</div></div>';
+  });
+  var container = document.getElementById('smOptionsContainer');
+  if(container) container.innerHTML = html;
+}
+
+function smPick(el, grpId, grpName, val) {
+  var wrap = document.getElementById('smg_' + grpId);
+  if (wrap) {
+    wrap.querySelectorAll('.sm-opt, .sm-opt-card').forEach(function(o) {
+      o.classList.remove('sel');
+      if (o.classList.contains('sm-opt-card')) {
+        o.style.borderColor = '#e8ddd0';
+        var lbl = o.querySelector('div:last-child');
+        if (lbl) { lbl.style.background = '#fff'; lbl.style.color = '#5a4030'; }
+      }
+    });
+  }
+  el.classList.add('sel');
+  if (el.classList.contains('sm-opt-card')) {
+    el.style.borderColor = '#2e1a0e';
+    var lbl2 = el.querySelector('div:last-child');
+    if (lbl2) { lbl2.style.background = '#2e1a0e'; lbl2.style.color = '#fff'; }
+  }
+  if (!STYLE_SEL[_sm.name]) STYLE_SEL[_sm.name] = {};
+  STYLE_SEL[_sm.name][grpName] = val;
+  updateSmChips();
+  // Reset AI image
+  var aiImg = document.getElementById('aiGenImg');
+  if (aiImg && aiImg.src) {
+    aiImg.style.display = 'none';
+    var aiPlc = document.getElementById('aiPlaceholder'); if(aiPlc) aiPlc.style.display = 'flex';
+    var regenBtn = document.getElementById('regenBtn'); if(regenBtn) regenBtn.style.display = 'none';
+    var genBtn = document.getElementById('genPreviewBtn'); if(genBtn){ genBtn.textContent = '\u{1F3A8} Generate AI Preview'; genBtn.disabled = false; }
+  }
+}
+
+function updateSmChips() {
+  var c = document.getElementById('smSelChips');
+  if (!c) return;
+  var sel = STYLE_SEL[_sm.name] || {};
+  c.innerHTML = Object.entries(sel).filter(function(e){ return e[1] && e[0] !== '__note__'; }).map(function(e){
+    return '<span style="font-size:10px;background:#2e1a0e;color:#f7f0e6;padding:2px 9px;border-radius:20px;font-weight:600;">' + sdEsc(e[1]) + '</span>';
+  }).join('');
+}
+
+function generateAIPreview() {
+  var genBtn   = document.getElementById('genPreviewBtn');
+  var aiPlc    = document.getElementById('aiPlaceholder');
+  var aiLd     = document.getElementById('aiLoading');
+  var aiImg    = document.getElementById('aiGenImg');
+  var regenBtn = document.getElementById('regenBtn');
+  if(genBtn) { genBtn.disabled = true; genBtn.textContent = 'Generating...'; }
+  if(aiPlc) aiPlc.style.display = 'none';
+  if(aiImg) aiImg.style.display = 'none';
+  if(regenBtn) regenBtn.style.display = 'none';
+  if(aiLd) aiLd.style.display = 'flex';
+  var msgs = ['Cutting the pattern...','Stitching the details...','Adding finishing touches...','Capturing the look...','Polishing...'];
+  var mi = 0;
+  var iv = setInterval(function(){ mi=(mi+1)%msgs.length; var el=document.getElementById('aiLoadingText'); if(el) el.textContent=msgs[mi]; }, 3000);
+  var styles = Object.assign({}, STYLE_SEL[_sm.name] || {});
+  var note = (document.getElementById('smNote') || {}).value || '';
+  if (note) styles['__note__'] = note;
+  fetch('/api/generate-style-preview', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({garment: _sm.name, styles: styles})
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    clearInterval(iv);
+    if(aiLd) aiLd.style.display = 'none';
+    if(genBtn) genBtn.disabled = false;
+    if (d.ok && d.image_url) {
+      if(aiImg) { aiImg.src = d.image_url; aiImg.style.display = 'block'; }
+      if(regenBtn) regenBtn.style.display = 'block';
+      if(genBtn) genBtn.textContent = 'Preview ready — Regenerate?';
+    } else {
+      if(aiPlc) aiPlc.style.display = 'flex';
+      if(genBtn) genBtn.textContent = '\u{1F3A8} Generate AI Preview';
+      var msg = (d.error || 'Could not generate');
+      if(msg.indexOf('API key') >= 0) msg = 'Admin panel mein Replicate API key set karo';
+      alert(msg);
+    }
+  })
+  .catch(function() {
+    clearInterval(iv);
+    if(aiLd) aiLd.style.display = 'none';
+    if(aiPlc) aiPlc.style.display = 'flex';
+    if(genBtn) { genBtn.disabled = false; genBtn.textContent = '\u{1F3A8} Generate AI Preview'; }
+    alert('Network error. Please try again.');
+  });
+}
+
+function confirmStyle() {
+  var noteEl = document.getElementById('smNote');
+  if (noteEl && noteEl.value.trim()) STYLE_NOTES[_sm.name] = noteEl.value.trim();
+  else delete STYLE_NOTES[_sm.name];
+  if (_sm.card) _sm.card.classList.add('has-style');
+  updateStyleInput();
+  rebuildQtyRows();
+  closeStyleModal();
+}
+
+function closeStyleModal() {
+  var overlay = document.getElementById('styleModalOverlay');
+  if(overlay) overlay.classList.remove('open');
+  document.body.style.overflow = '';
+}
+// ── END STYLE MODAL ───────────────────────────────────────────
+
+function refreshSummary() {
+  var rows = document.getElementById('summaryRows');
+  var countEl = document.getElementById('summaryCount');
+  if (!rows) return;
+  var checked = Array.from(document.querySelectorAll('input[name="garment_type[]"]:checked'));
+  if (countEl) countEl.textContent = checked.length ? (checked.length + (checked.length>1?' items added':' item added')) : 'No items added yet';
+  if (!checked.length) { rows.innerHTML = '<p class="summary-empty">Select garments to begin.</p>'; return; }
+  var html = '';
+  checked.forEach(function(inp) {
+    var price = GPRICES[inp.value] || parseInt(inp.dataset.price) || 0;
+    var qty = garmentQtys[inp.value] || 1;
+    html += '<div class="summary-item"><span class="summary-item-name">✓ ' + (inp.dataset.label||inp.value) + (qty > 1 ? ' \xd7' + qty : '') + '</span><span class="summary-item-price">Rs. ' + (price*qty).toLocaleString('en-IN') + '</span></div>';
+  });
+  var m = (document.getElementById('meth_val')||{}).value || 'size';
+  var mmap = {size:'Standard size',manual:'Manual',reference:'Reference garment',locker:'Saved',homevisit:'Home visit'};
+  html += '<div class="summary-row"><span>Measurement</span><span>' + (mmap[m]||m) + '</span></div>';
+  rows.innerHTML = html;
+}
+
+function refreshPrice() {
+  var checked = Array.from(document.querySelectorAll('input[name="garment_type[]"]:checked'));
+  var pe = document.getElementById('summary-price');
+  var de = document.getElementById('summary-date');
+  if (!checked.length) { if(pe)pe.style.display='none'; if(de)de.style.display='none'; return; }
+  var stitch = 0;
+  checked.forEach(function(inp){ stitch += (GPRICES[inp.value]||parseInt(inp.dataset.price)||0)*(garmentQtys[inp.value]||1); });
+  var urgent = document.getElementById('urgentCheck') && document.getElementById('urgentCheck').checked ? 99 : 0;
+  var delRadio = document.querySelector('input[name="delivery"]:checked');
+  var delivery = (delRadio && delRadio.value==='home' && stitch<1499) ? 49 : 0;
+  var methVal = (document.getElementById('meth_val')||{}).value||'';
+  var homevisit = (methVal === 'homevisit') ? 100 : 0;
+  var couponDisc = _couponDiscount || 0;
+  var total = Math.max(0, stitch + urgent + delivery + homevisit - couponDisc);
+  var advance = Math.round(total * ADVANCE_PCT / 100);
+  if(pe) pe.style.display='block';
+  var su=document.getElementById('sp-unit'); if(su) su.textContent='Rs. '+stitch.toLocaleString('en-IN');
+  // Show grand total row
+  var gtr=document.getElementById('sp-total-row'); if(gtr){gtr.style.display='flex';}
+  var stv=document.getElementById('sp-total-val'); if(stv) stv.textContent='Rs. '+total.toLocaleString('en-IN');
+  var apct=document.getElementById('sp-adv-pct'); if(apct) apct.textContent=ADVANCE_PCT;
+  var sa=document.getElementById('sp-adv'); if(sa) sa.textContent='Rs. '+advance.toLocaleString('en-IN');
+  var ur=document.getElementById('sp-urg-row'); if(ur) ur.style.display=urgent?'flex':'none';
+  var dr=document.getElementById('sp-del-row'); if(dr) dr.style.display=(delRadio&&delRadio.value==='home')?'flex':'none';
+  var hvr=document.getElementById('sp-hv-row'); if(hvr) hvr.style.display=homevisit?'flex':'none';
+  if(de){
+    var dateInp = document.getElementById('delivery_date_input');
+    if(dateInp && dateInp.value){
+      de.style.display='block';
+      var parts = dateInp.value.split('-');
+      var dt = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
+      var sv=document.getElementById('sd-val');
+      if(sv) sv.textContent=dt.toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'});
+    } else { de.style.display='none'; }
+  }
+}
+
+function refreshBtn() {
+  var checked = document.querySelectorAll('input[name="garment_type[]"]:checked').length;
+  var name = (document.getElementById('cust_name')||{}).value||'';
+  var phone = (document.getElementById('cust_phone')||{}).value||'';
+  var dateVal = (document.getElementById('delivery_date_input')||{}).value||'';
+  var btn = document.getElementById('reserveBtn');
+  if (btn) btn.disabled = !(checked > 0 && name.trim().length > 1 && phone.trim().length === 10 && dateVal);
+}
+
+var URGENT_UNTIL = {{ urgent_until|tojson }};
+function onDeliveryDateChange(){
+  var inp = document.getElementById('delivery_date_input');
+  var msg = document.getElementById('date-urgent-msg');
+  var urgentCb = document.getElementById('urgentCheck');
+  if(!inp || !msg) return;
+  var picked = inp.value;
+  if (picked && picked <= URGENT_UNTIL){ if (urgentCb && !urgentCb.checked){ urgentCb.checked = true; } msg.style.display = 'flex'; }
+  else { msg.style.display = 'none'; }
+  if (typeof refreshPrice === 'function') refreshPrice();
+  refreshBtn();
+}
+
+// ── AUTO-CATEGORISE flat grid into tabs (when backend has no categories) ──
+document.addEventListener('DOMContentLoaded', function() {
+  ['cust_name','cust_phone'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.addEventListener('input', refreshBtn);
+  });
+
+  var flatGrid = document.getElementById('garmentGrid');
+  if (flatGrid) {
+    var allCards = Array.from(flatGrid.querySelectorAll('label.g-card'));
+    var CATS = [
+      { id: 'shirts',   label: 'Shirts',           test: function(n){ return /shirt/i.test(n); } },
+      { id: 'ethnic',   label: 'Ethnic wear',       test: function(n){ return /kurta|pathani|pajama/i.test(n); } },
+      { id: 'suits',    label: 'Suits & Sets',      test: function(n){ return /suit|blazer|\d[\s-]?piece/i.test(n); } },
+      { id: 'trousers', label: 'Pants',  test: function(n){ return /pant|jean|trouser|\bfit\b|cut\b|\bleg\b|baggy/i.test(n); } },
+      { id: 'other',    label: 'Other',             test: function(){ return true; } }
+    ];
+    var buckets = {};
+    CATS.forEach(function(c){ buckets[c.id] = []; });
+    allCards.forEach(function(card){
+      var nameEl = card.querySelector('.g-name');
+      var name = nameEl ? nameEl.textContent.trim() : '';
+      for (var i = 0; i < CATS.length; i++){
+        if (CATS[i].test(name)){ buckets[CATS[i].id].push(card); break; }
+      }
+    });
+    var visible = CATS.filter(function(c){ return buckets[c.id].length > 0; });
+    if (!visible.length) return;
+
+    var tabBar = document.createElement('div');
+    tabBar.className = 'cat-tabs';
+    var panelWrap = document.createElement('div');
+
+    visible.forEach(function(cat, idx){
+      var tab = document.createElement('div');
+      tab.className = 'cat-tab' + (idx === 0 ? ' active' : '');
+      tab.textContent = cat.label;
+      (function(cId){
+        tab.onclick = function(){
+          tabBar.querySelectorAll('.cat-tab').forEach(function(t){ t.classList.remove('active'); });
+          tab.classList.add('active');
+          panelWrap.querySelectorAll('.js-auto-panel').forEach(function(p){ p.style.display = 'none'; });
+          var panel = document.getElementById('js-auto-panel-' + cId);
+          if (panel) panel.style.display = 'grid';
+        };
+      })(cat.id);
+      tabBar.appendChild(tab);
+
+      var panel = document.createElement('div');
+      panel.className = 'garment-grid js-auto-panel';
+      panel.id = 'js-auto-panel-' + cat.id;
+      panel.style.display = idx === 0 ? 'grid' : 'none';
+      buckets[cat.id].forEach(function(card){ panel.appendChild(card); });
+      panelWrap.appendChild(panel);
+    });
+
+    flatGrid.style.display = 'none';
+    flatGrid.parentNode.insertBefore(tabBar, flatGrid);
+    flatGrid.parentNode.insertBefore(panelWrap, flatGrid);
+  }
+
+  // URL preselect
+  var params = new URLSearchParams(window.location.search);
+  var wanted = [];
+  if (PRESELECT_NAME) wanted.push(PRESELECT_NAME);
+  (params.get('garments') || params.get('garment') || '').split(',').map(function(s){return s.trim();}).filter(Boolean).forEach(function(k){ wanted.push(k); });
+  var qtyList = (params.get('qtys') || params.get('qty') || '1').split(',').map(function(s){return parseInt(s)||1;});
+  var matchedPanel = null;
+  wanted.forEach(function(key, i) {
+    var qty = qtyList[i] || 1;
+    var found = document.querySelector('input[name="garment_type[]"][value="'+key+'"]');
+    if (!found) {
+      Array.from(document.querySelectorAll('input[name="garment_type[]"]')).some(function(inp){
+        if (inp.value.toLowerCase().indexOf(key.toLowerCase()) !== -1) { found = inp; return true; }
+        return false;
+      });
+    }
+    if (found) {
+      found.checked = true; garmentQtys[found.value] = qty;
+      var card = found.closest('.g-card'); if (card) card.classList.add('selected');
+      var panel = found.closest('.garment-panel'); if (panel && !matchedPanel) matchedPanel = panel;
+    }
+  });
+  if (matchedPanel) {
+    document.querySelectorAll('.garment-panel').forEach(function(p){p.classList.remove('active');});
+    document.querySelectorAll('.cat-tab').forEach(function(t){t.classList.remove('active');});
+    matchedPanel.classList.add('active');
+    var idx = Array.from(document.querySelectorAll('.garment-panel')).indexOf(matchedPanel);
+    var tab = document.querySelectorAll('.cat-tab')[idx]; if (tab) tab.classList.add('active');
+  }
+  if (wanted.length) { rebuildQtyRows(); refreshSummary(); refreshPrice(); refreshBtn(); }
+});
+
+function fabZoom(url,name){var box=document.getElementById('fabZoomBox');var img=document.getElementById('fabZoomImg');var lbl=document.getElementById('fabZoomName');if(!box||!img)return;img.src=url;if(lbl)lbl.textContent=name||'';box.style.display='flex';document.body.style.overflow='hidden';}
+function closeFabZoom(){var box=document.getElementById('fabZoomBox');if(box)box.style.display='none';document.body.style.overflow='';}
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeFabZoom();});
+
+function attachLocationBtn(inputId){
+  var inp = document.getElementById(inputId);
+  if(!inp) return;
+  var wr = document.createElement('div');
+  wr.style.cssText = 'position:relative;display:flex;gap:6px;align-items:center;';
+  inp.parentNode.insertBefore(wr, inp);
+  wr.appendChild(inp);
+  inp.style.flex = '1';
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.title = 'Use my location';
+  btn.style.cssText = 'flex-shrink:0;width:36px;height:36px;border:1px solid var(--border);border-radius:4px;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:17px;transition:all .15s;';
+  btn.innerHTML = '📍';
+  btn.onclick = function(){ detectLocation(inputId, btn); };
+  wr.appendChild(btn);
+}
+function detectLocation(inputId, btn){
+  if(!navigator.geolocation){ alert('Location not supported by your browser.'); return; }
+  btn.innerHTML = '⏳'; btn.disabled = true;
+  navigator.geolocation.getCurrentPosition(
+    function(pos){
+      var lat=pos.coords.latitude,lon=pos.coords.longitude;
+      fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat='+lat+'&lon='+lon+'&addressdetails=1',{headers:{'Accept-Language':'en'}})
+      .then(function(r){return r.json();})
+      .then(function(data){
+        var a=data.address||{};
+        var parts=[];
+        if(a.house_number)parts.push(a.house_number);
+        if(a.road||a.street)parts.push(a.road||a.street);
+        if(a.suburb||a.neighbourhood)parts.push(a.suburb||a.neighbourhood);
+        if(a.city||a.town||a.village)parts.push(a.city||a.town||a.village);
+        if(a.state)parts.push(a.state);
+        if(a.postcode)parts.push(a.postcode);
+        var inp2=document.getElementById(inputId);
+        if(inp2){inp2.value=parts.join(', ');inp2.dispatchEvent(new Event('input'));}
+        btn.innerHTML='✅';btn.disabled=false;
+        setTimeout(function(){btn.innerHTML='📍';},2000);
+      })
+      .catch(function(){btn.innerHTML='📍';btn.disabled=false;alert('Could not fetch address. Enter manually.');});
+    },
+    function(){btn.innerHTML='📍';btn.disabled=false;alert('Location access denied.');},
+    {timeout:10000,maximumAge:60000}
+  );
+}
+document.addEventListener('DOMContentLoaded',function(){
+  document.querySelectorAll('input[placeholder*="address"],input[placeholder*="Address"]').forEach(function(inp){
+    if(inp.id)attachLocationBtn(inp.id);
+  });
+});
+
+// ── COUPON ──
+var _couponDiscount = 0;
+function applyCoupon() {
+  var code = (document.getElementById('couponInput').value || '').trim().toUpperCase();
+  var msg  = document.getElementById('couponMsg');
+  if (!code) { if(msg) msg.textContent = ''; return; }
+  var checked = Array.from(document.querySelectorAll('input[name="garment_type[]"]:checked'));
+  var stitch = 0;
+  checked.forEach(function(inp){ stitch += (GPRICES[inp.value]||parseInt(inp.dataset.price)||0)*(garmentQtys[inp.value]||1); });
+  if(msg) { msg.style.color = '#7a6a58'; msg.textContent = 'Checking...'; }
+  fetch('/api/validate-coupon', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({code: code, order_total: stitch})
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d) {
+    if (d.valid) {
+      _couponDiscount = d.discount;
+      document.getElementById('couponDiscount').value = d.discount;
+      if(msg){ msg.style.color='#2D6A3F'; msg.textContent = d.message; }
+      var row = document.getElementById('sp-coupon-row');
+      var amt = document.getElementById('sp-coupon-amt');
+      if(row) row.style.display = 'flex';
+      if(amt) amt.textContent = '-Rs. ' + d.discount.toLocaleString('en-IN');
+    } else {
+      _couponDiscount = 0;
+      document.getElementById('couponDiscount').value = 0;
+      if(msg){ msg.style.color='#A33B2A'; msg.textContent = d.message; }
+      var row = document.getElementById('sp-coupon-row');
+      if(row) row.style.display = 'none';
+    }
+    refreshPrice();
+  })
+  .catch(function(err){
+    console.error('Coupon API error:', err);
+    if(msg){ msg.style.color='#A33B2A'; msg.textContent='Could not apply coupon. Please try again.'; }
+  });
+}
+</script>
+<script src="{{ url_for('static', filename='js/commission.js') }}?v=7"></script>
+{% endblock %}

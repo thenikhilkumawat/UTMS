@@ -1,0 +1,143 @@
+{% extends "website/base.html" %}
+{% block title %}Order Confirmed &mdash; Uttam Tailors{% endblock %}
+{% block head %}
+<style>
+.confirmed-wrap{min-height:80vh;display:flex;align-items:center;justify-content:center;padding:120px 1rem 4rem;}
+.confirmed-box{text-align:center;max-width:500px;width:100%;}
+.confirmed-icon-wrap{margin-bottom:1.5rem;display:inline-block;}
+.confirmed-icon{
+  font-size:52px;color:var(--gold);display:inline-block;
+  animation: starDrop 1s cubic-bezier(.22,.61,.36,1) both;
+}
+@keyframes starDrop{
+  0%  {transform:translateY(-60px) rotate(0deg) scale(0.4);opacity:0;}
+  40% {transform:translateY(8px) rotate(180deg) scale(1.15);opacity:1;}
+  60% {transform:translateY(-4px) rotate(160deg) scale(1);}
+  80% {transform:translateY(2px) rotate(175deg) scale(1.02);}
+  100%{transform:translateY(0) rotate(180deg) scale(1);opacity:1;}
+}
+.confirmed-title{font-family:var(--fd);font-size:42px;font-weight:300;color:var(--dark);margin-bottom:.75rem;}
+.confirmed-id{font-family:var(--fm);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:1rem;}
+.confirmed-body{font-size:15px;color:var(--muted);margin-bottom:1.5rem;line-height:1.6;}
+.confirmed-details{background:var(--bg2);border-radius:var(--rLg);padding:1rem 1.5rem;margin-bottom:1.5rem;text-align:left;}
+.cd-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:14px;}
+.cd-row:last-child{border-bottom:none;font-weight:700;}
+.whatsapp-note{background:#dcfce7;border-radius:8px;padding:12px 16px;font-size:13px;color:#166534;margin-bottom:1.5rem;}
+/* Stitch Tracker */
+.tracker-wrap{background:var(--bg2);border-radius:var(--rLg);padding:1.25rem 1.5rem;margin-bottom:1.5rem;text-align:left;}
+.tracker-title{font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:var(--muted);margin-bottom:1rem;}
+.tracker-steps{display:flex;gap:0;position:relative;}
+.tracker-step{flex:1;text-align:center;position:relative;}
+.tracker-step::before{content:'';position:absolute;top:12px;left:-50%;width:100%;height:3px;background:var(--border);z-index:0;}
+.tracker-step:first-child::before{display:none;}
+.tracker-step.done::before{background:var(--gold);}
+.tracker-dot{width:26px;height:26px;border-radius:50%;border:3px solid var(--border);background:#fff;margin:0 auto 8px;position:relative;z-index:1;display:flex;align-items:center;justify-content:center;}
+.tracker-step.done .tracker-dot{background:var(--gold);border-color:var(--gold);color:#fff;font-size:13px;}
+.tracker-step.current .tracker-dot{border-color:var(--gold);box-shadow:0 0 0 4px rgba(var(--gold-rgb,180,118,9),.18);}
+.tracker-label{font-size:10px;color:var(--muted);line-height:1.3;font-weight:500;}
+.tracker-step.current .tracker-label{color:var(--dark);font-weight:800;}
+.tracker-note{font-size:12px;color:var(--muted);margin-top:.75rem;border-top:1px solid var(--border);padding-top:.75rem;font-style:italic;}
+</style>
+{% endblock %}
+{% block content %}
+<section class="confirmed-wrap">
+  <div class="confirmed-box">
+    <div class="confirmed-icon-wrap">
+      <div class="confirmed-icon">&#10022;</div>
+    </div>
+    <h1 class="confirmed-title">Order confirmed.</h1>
+    {% if order %}
+    <p class="confirmed-id">Order #{{ order.order_code }}</p>
+    <div class="whatsapp-note">
+      📱 WhatsApp confirmation will be sent to your number shortly.
+    </div>
+    <div class="confirmed-details">
+      {% set _note = order.note or '' %}
+      {% set _parts = _note.split('|') %}
+      {% set _garment = _parts[1].strip() if _parts|length > 1 else 'Custom order' %}
+      {% set _coupon_part = namespace(code='', amt=0) %}
+      {% for p in _parts %}
+        {% if p.strip().lower().startswith('coupon:') %}
+          {% set _ci = p.strip()[7:] %}
+          {% set _coupon_part.code = _ci.split('(')[0].strip() %}
+          {% set _coupon_part.amt = _ci.split('-Rs.')[1].rstrip(')') if '-Rs.' in _ci else '0' %}
+        {% endif %}
+      {% endfor %}
+      <div class="cd-row"><span>Garment</span><span>{{ _garment }}</span></div>
+      <div class="cd-row"><span>Order date</span><span>{{ order.order_date }}</span></div>
+      {% if order.delivery_date %}<div class="cd-row"><span>Ready by</span><span>{{ order.delivery_date }}</span></div>{% endif %}
+      <div class="cd-row"><span>Stitching charge</span><span>Rs. {{ order.total_amount|int }}</span></div>
+      {% if order.extra_charges and order.extra_charges > 0 %}
+      <div class="cd-row"><span>Urgent surcharge</span><span>Rs. {{ order.extra_charges|int }}</span></div>
+      {% endif %}
+      {% if _coupon_part.code %}
+      <div class="cd-row" style="color:#16a34a;font-weight:700;"><span>🎟 Coupon ({{ _coupon_part.code }})</span><span>-Rs. {{ _coupon_part.amt }}</span></div>
+      {% endif %}
+      <div class="cd-row" style="font-weight:800;border-top:1px solid #e5e7eb;padding-top:8px;margin-top:4px;"><span>Total payable</span><span>Rs. {{ order.payable_amount|int }}</span></div>
+      <div class="cd-row"><span>Advance paid</span><span>Rs. {{ order.advance_paid|int }}</span></div>
+      <div class="cd-row" style="{% if order.remaining > 0 %}color:#dc2626;font-weight:800;{% else %}color:#16a34a;font-weight:700;{% endif %}">
+        <span>{% if order.remaining > 0 %}Balance on delivery{% else %}✓ Fully paid{% endif %}</span>
+        <span>Rs. {{ order.remaining|int }}</span>
+      </div>
+    </div>
+    {% else %}
+    <p class="confirmed-body">Your order has been received. We will confirm via WhatsApp shortly.</p>
+    {% endif %}
+    {% if order %}
+    <div class="tracker-wrap" id="stitchTracker" style="display:none;">
+      <div class="tracker-title">Live Stitch Tracker</div>
+      <div class="tracker-steps" id="trackerSteps"></div>
+      <div class="tracker-note" id="trackerNote" style="display:none;"></div>
+    </div>
+    {% endif %}
+    <div style="display:flex;flex-direction:column;gap:12px;align-items:center;">
+      {% if order %}
+      <a href="{{ url_for('website.track_order') }}?code={{ order.order_code }}" class="btn-primary" style="display:inline-flex;align-items:center;gap:.5rem;justify-content:center;padding:14px 32px;background:#2e1a0e;">
+        📦 Track Your Order
+      </a>
+      {% endif %}
+      <a href="{{ url_for('website.home') }}" style="font-size:13px;color:var(--muted);text-decoration:none;">← Back to Home</a>
+    </div>
+  </div>
+</section>
+{% if order %}
+<script>
+/* Meta Pixel — Purchase event */
+try{if(window.fbq)fbq('track','Purchase',{value:{{ order.payable_amount|int }},currency:'INR',content_ids:['{{ order.order_code|e }}'],content_type:'product'});}catch(e){}
+</script>
+<script>
+(function(){
+  var orderCode = '{{ order.order_code|e }}';
+  var STAGES = [
+    {num:1,name:'Order Received'},{num:2,name:'Fabric Cut'},
+    {num:3,name:'Stitching'},{num:4,name:'Quality Check'},{num:5,name:'Ready'}
+  ];
+  function renderTracker(current, note){
+    var wrap=document.getElementById('stitchTracker');
+    var steps=document.getElementById('trackerSteps');
+    if(!wrap||!steps) return;
+    var html='';
+    STAGES.forEach(function(s){
+      var done=s.num<current; var cur=s.num===current;
+      var cls=done?'done':(cur?'current':'');
+      html+='<div class="tracker-step '+cls+'">'+
+        '<div class="tracker-dot">'+(done?'&#10003;':'')+'</div>'+
+        '<div class="tracker-label">'+s.name+'</div>'+
+      '</div>';
+    });
+    steps.innerHTML=html;
+    var noteEl=document.getElementById('trackerNote');
+    if(note&&noteEl){noteEl.textContent=note;noteEl.style.display='block';}
+    wrap.style.display='block';
+  }
+  function fetchStage(){
+    fetch('/api/order/stage/'+orderCode).then(function(r){return r.json();}).then(function(d){
+      if(d.ok) renderTracker(d.stage||1,d.note||'');
+    }).catch(function(){});
+  }
+  fetchStage();
+  setInterval(fetchStage,30000);
+})();
+</script>
+{% endif %}
+{% endblock %}

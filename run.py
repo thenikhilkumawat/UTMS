@@ -1,58 +1,287 @@
-# restart-trigger 1781961500
-import os, sys, logging, time
+import os, sys, logging, base64
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from flask import Flask, jsonify, session, redirect, url_for, request, g, render_template_string
+from flask import Flask, jsonify, session, redirect, url_for, request, g, render_template_string, Response
 from config import Config
 from database import init_db, get_setting
 
 app = Flask(__name__, template_folder="templates", static_folder="static", static_url_path="/static")
 app.secret_key = Config.SECRET_KEY
 
-# ── asset_v(): real cache-busting for static files ──────────────────────────
-# Static files are served with a 1-year "immutable" Cache-Control header, which
-# tells the browser to never even revalidate a given URL again once cached.
-# That's fine ONLY if the URL itself changes whenever the file's content
-# changes. This was previously done with a hand-typed "?v=1782918998" hardcoded
-# directly in base.html — a number that never actually updated, so every
-# browser that had ever loaded the page stayed stuck on that exact CSS/JS
-# snapshot forever, no matter how many times the file was updated on the
-# server (this is why mobile CSS fixes weren't showing up on already-visited
-# devices). asset_v() now computes the version from the file's real
-# last-modified time, so it changes automatically on every deploy that
-# actually touches the file.
-@app.template_global()
-def asset_v(path):
-    try:
-        v = int(os.path.getmtime(os.path.join(app.static_folder, path)))
-    except OSError:
-        v = int(time.time())
-    return f"/static/{path}?v={v}"
+# ── Site-wide Basic Auth ──────────────────────────────────────────────────────
+_BASIC_USER = "uttam"
+_BASIC_PASS = "helloo"
+_BASIC_TOKEN = base64.b64encode(f"{_BASIC_USER}:{_BASIC_PASS}".encode()).decode()
 
+@app.before_request
+def require_basic_auth():
+    # Let health checks through so uptime monitors still work
+    if request.path in ("/health", "/health/db"):
+        return
+    auth = request.headers.get("Authorization", "")
+    if auth.startswith("Basic ") and auth[6:] == _BASIC_TOKEN:
+        return  # Correct credentials — allow request
+    return Response(
+        "Access restricted. Please enter your credentials.",
+        401,
+        {"WWW-Authenticate": 'Basic realm="Uttam Tailors"'}
+    )
+
+# ── Logging ───────────────────────────────────────────────────────────────────
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# ── Auto-close DB connections after every request ─────────────────────────────
+@app.teardown_appcontext
+def close_db_on_teardown(exception):
+    """Safety net: close any DB connection stored in g to prevent leaks."""
+    conn = g.pop("_db_conn", None)
+    if conn is not None:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+# ── Error handlers — prevent worker crashes ───────────────────────────────────
+@app.errorhandler(500)
+def handle_500(e):
+    logger.error(f"500 error: {e}")
+    return render_template_string("""
+    <html><head><meta name="viewport" content="width=device-width,initial-scale=1">
+    <style>body{font-family:sans-serif;text-align:center;padding:60px 20px;background:#1a1a2e;color:#fff}
+    h1{font-size:3em;color:#e94560}a{color:#0f3460;background:#e94560;padding:12px 24px;border-radius:8px;
+    text-decoration:none;color:#fff;display:inline-block;margin-top:20px}</style></head>
+    <body><h1>Something went wrong</h1><p>Please try again.</p>
+    <a href="/">← Go Home</a></body></html>
+    """), 500
+
+@app.errorhandler(502)
+def handle_502(e):
+    return render_template_string("""
+    <html><head><meta name="viewport" content="width=device-width,initial-scale=1">
+    <style>body{font-family:sans-serif;text-align:center;padding:60px 20px;background:#1a1a2e;color:#fff}
+    h1{font-size:3em;color:#e94560}a{color:#fff;background:#e94560;padding:12px 24px;border-radius:8px;
+    text-decoration:none;display:inline-block;margin-top:20px}</style></head>
+    <body><h1>Service Starting...</h1><p>Please wait a moment and refresh.</p>
+    <a href="javascript:location.reload()">↻ Refresh</a></body></html>
+    """), 502
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    logger.error(f"Unhandled exception: {e}", exc_info=True)
+    return render_template_string("""
+    <html><head><meta name="viewport" content="width=device-width,initial-scale=1">
+    <style>body{font-family:sans-serif;text-align:center;padding:60px 20px;background:#1a1a2e;color:#fff}
+    h1{font-size:3em;color:#e94560}a{color:#fff;background:#e94560;padding:12px 24px;border-radius:8px;
+    text-decoration:none;display:inline-block;margin-top:20px}</style></head>
+    <body><h1>Oops!</h1><p>Something went wrong. Please try again.</p>
+    <a href="/">← Go Home</a></body></html>
+    """), 500
+
+# ── Health check for uptime monitors ──────────────────────────────────────────
+@app.route("/health")
+def health_check():
+    """Lightweight health check - no DB hit."""
+    return jsonify({"status": "ok"}), 200
+
+@app.route("/health/db")
+def health_db():
+    """Health check with DB ping."""
+    try:
+        from database import get_db
+        conn = get_db()
+        conn.execute("SELECT 1")
+        conn.close()
+        return jsonify({"status": "ok", "db": "connected"}), 200
+    except Exception as e:
+        return jsonify({"status": "error", "db": str(e)}), 503
+
+# ── Static file headers ──────────────────────────────────────────────────────
+@app.after_request
+def add_header(response):
+    if request.path.startswith("/static/"):
+        response.headers["Cache-Control"] = "public, max-age=86400"
+    response.headers["ngrok-skip-browser-warning"] = "true"
+    return response
+
+# ── Custom 404 ───────────────────────────────────────────────────────────────
+@app.errorhandler(404)
+def page_not_found(e):
+    from flask import render_template as _rt
+    return _rt("website/404.html"), 404
 
 # ── Register blueprints ──────────────────────────────────────────────────────
 from app.routes.employee import bp as employee_bp
 from app.routes.owner import bp as owner_bp
-app.register_blueprint(employee_bp)
-app.register_blueprint(owner_bp)
+from app.routes.website import website_bp
+from app.routes.features import features_bp
 
-# ── Cache-Control: prevent stale pages in the installed PWA ─────────────────
-# No header was being set on dynamic pages before this, so mobile browsers —
-# especially in installed/standalone PWA mode — could keep serving an old
-# cached copy of a page even after a fresh deploy (this is why UI fixes weren't
-# showing up on the phone). Static assets are left untouched: asset_v() already
-# cache-busts those via a version query string, so long-lived caching there is fine.
-@app.after_request
-def _add_cache_headers(response):
-    if not request.path.startswith("/static/"):
-        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-        response.headers["Pragma"] = "no-cache"
-        response.headers["Expires"] = "0"
-    return response
+# Employee dashboard under /manage, website at root
+app.register_blueprint(employee_bp, url_prefix="/manage")
+app.register_blueprint(owner_bp)
+app.register_blueprint(website_bp)
+app.register_blueprint(features_bp)
+
+# ── Inject ann_items into every website template ──────────────────────────────
+
+@app.context_processor
+def inject_nav_services():
+    """Inject garment categories + items into every template for mega drawer."""
+    try:
+        from database import get_db
+        from app.routes.website import get_item_media
+        db = get_db()
+        cats = db.execute("SELECT * FROM web_service_categories ORDER BY sort_order, id").fetchall()
+        items = db.execute("SELECT * FROM web_service_items ORDER BY sort_order, id").fetchall()
+        items_by_cat = {}
+        for item in items:
+            cid = item["category_id"]
+            if cid not in items_by_cat:
+                items_by_cat[cid] = []
+            items_by_cat[cid].append(item)
+        media = get_item_media()
+        nav_cats = [(cat, items_by_cat.get(cat["id"], []), media) for cat in cats]
+        return {"nav_services": nav_cats}
+    except:
+        pass
+    return {"nav_services": []}
+
+@app.context_processor
+def inject_ann_items():
+    try:
+        from database import get_db
+        db = get_db()
+        raw = db.execute("SELECT value FROM settings WHERE key='web_ann_items'").fetchone()
+        speed_row = db.execute("SELECT value FROM settings WHERE key='web_ann_speed'").fetchone()
+        ann_speed = speed_row["value"] if speed_row and speed_row["value"] else "55"
+        items = []
+        if raw and raw["value"]:
+            items = [x.strip() for x in raw["value"].split("||") if x.strip()]
+        return {"ann_items": items, "ann_speed": ann_speed}
+    except:
+        pass
+    return {"ann_items": [], "ann_speed": "55"}
+
+# ── Redirect shortcuts so original UTMS template links still work ─────────────
+from flask import redirect as _rd
+
+@app.route("/api/settings/all_rates")
+def api_all_rates():
+    from database import get_db
+    db = get_db()
+    rows = db.execute("SELECT key, value FROM settings WHERE key LIKE 'customer_rate_%'").fetchall()
+    data = {}
+    for r in rows:
+        k = r["key"].replace("customer_rate_", "")
+        data[k] = r["value"]
+    from flask import jsonify
+    return jsonify(data)
+@app.route("/print-slip/<order_code>")
+def _r_print_slip(order_code): return _rd(f"/manage/print-slip/{order_code}", 302)
+
+@app.route("/order-status")
+def _r_order_status(): return _rd("/manage/order-status", 301)
+@app.route("/new-order")
+def _r_new_order(): return _rd("/manage/new-order", 301)
+@app.route("/work-log")
+def _r_work_log(): return _rd("/manage/work-log", 301)
+@app.route("/pickup")
+def _r_pickup(): return _rd("/manage/pickup", 301)
+@app.route("/finance")
+def _r_finance(): return _rd("/manage/finance", 301)
+@app.route("/customers")
+def _r_customers(): return _rd("/manage/customers", 301)
+@app.route("/measurements")
+def _r_measurements(): return _rd("/manage/measurements", 301)
+@app.route("/gallery")
+def _r_gallery(): return _rd("/manage/gallery", 301)
 
 # ── DB init on startup ───────────────────────────────────────────────────────
 os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)
 init_db()
+from database import run_seo_migrations
+run_seo_migrations()  # Adds SEO columns and auto-generates slugs
+from database import run_account_migrations
+run_account_migrations()  # Adds email/Google login, addresses, wishlist, payment refs, order link
+
+# ── Style options column migrations ──────────────────────────────────────────
+try:
+    from database import get_db
+    _db = get_db()
+    _style_alters = [
+        "ALTER TABLE garment_style_options ADD COLUMN is_required INTEGER DEFAULT 0",
+        "ALTER TABLE garment_style_options ADD COLUMN sort_order INTEGER DEFAULT 0",
+        "ALTER TABLE garment_style_values ADD COLUMN sort_order INTEGER DEFAULT 0",
+        "ALTER TABLE garment_style_values ADD COLUMN value_key TEXT DEFAULT ''",
+        "ALTER TABLE garment_style_values ADD COLUMN image_url TEXT DEFAULT ''",
+        "ALTER TABLE garment_style_values ADD COLUMN ai_prompt TEXT DEFAULT ''",
+    ]
+    for _stmt in _style_alters:
+        try:
+            _db.execute(_stmt)
+        except Exception:
+            pass  # Column already exists
+    _db.commit()
+except Exception:
+    pass
+
+# ── Daily Craft table migration ───────────────────────────────────────────────
+try:
+    from database import get_db as _gdb2
+    _dc = _gdb2()
+    _dc.execute("""
+        CREATE TABLE IF NOT EXISTS web_daily_craft (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            image_url TEXT DEFAULT '',
+            caption TEXT DEFAULT '',
+            tag TEXT DEFAULT '',
+            posted_date TEXT DEFAULT (date('now','localtime')),
+            created_at TEXT DEFAULT (datetime('now','localtime')),
+            is_published INTEGER DEFAULT 1
+        )
+    """)
+    _dc.commit()
+except Exception:
+    pass
+# ── OTP log table migration ───────────────────────────────────────────────────
+try:
+    from database import get_db as _gdb3
+    _otpdb = _gdb3()
+    _otpdb.execute("""
+        CREATE TABLE IF NOT EXISTS otp_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            mobile TEXT NOT NULL,
+            otp TEXT NOT NULL,
+            purpose TEXT DEFAULT 'login',
+            created_at TEXT DEFAULT (datetime('now','localtime')),
+            expires_at TEXT DEFAULT (datetime('now','localtime','+10 minutes')),
+            used INTEGER DEFAULT 0
+        )
+    """)
+    _otpdb.commit()
+except Exception:
+    pass
+try:
+    from database import get_db as _gdb4
+    _fcmdb = _gdb4()
+    _fcmdb.execute("""
+        CREATE TABLE IF NOT EXISTS fcm_tokens (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            account_id INTEGER,
+            token      TEXT NOT NULL UNIQUE,
+            created_at TEXT DEFAULT (datetime('now','localtime')),
+            updated_at TEXT DEFAULT (datetime('now','localtime'))
+        )
+    """)
+    # Also add email column to customers if missing
+    try:
+        _fcmdb.execute("ALTER TABLE customers ADD COLUMN email TEXT DEFAULT ''")
+    except Exception:
+        pass
+    _fcmdb.commit()
+except Exception:
+    pass
+# ─────────────────────────────────────────────────────────────────────────────
 from database import set_setting as _set_setting, get_setting as _get_setting
 _cur = int(_get_setting("last_order_code", "0"))
 if _cur < 3599:
@@ -78,7 +307,8 @@ def _auto_backup_worker():
                 import json as _bj
                 tables = ["customers","orders","order_items","order_images","work_logs",
                           "finance","employees","settings","measurement_fields","inventory",
-                          "salary_advances","notify_log"]
+                          "salary_advances","notify_log","web_accounts","web_addresses",
+                          "web_wishlist","web_payment_methods"]
                 backup = {}
                 for t in tables:
                     try:
@@ -126,19 +356,28 @@ def export_orders_root():
     from app.routes.owner import export_orders as _exp
     return _exp()
 
-if __name__ == "__main__":
-    os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)
-    init_db()
-    cur_code = int(get_setting("last_order_code","0"))
-    if cur_code < 3599:
-        from database import set_setting
-        set_setting("last_order_code","3599")
-    print("\n" + "="*50)
-    print("  Uttam Tailors Management System v2")
-    print("  Running at: http://localhost:5000")
-    print("  Owner PIN:  " + get_setting("owner_pin","1234"))
-    print("  Next order: #" + str(int(get_setting("last_order_code","3599")) + 1))
-    print("="*50 + "\n")
-    app.run(debug=True, host="0.0.0.0", port=5000)
 
-# restart-trigger 2026-07-04 09:28:18
+@app.context_processor
+def inject_web_settings():
+    result = {"web_settings": {}, "footer_pages": [], "footer_make_items": []}
+    try:
+        from database import get_db
+        db = get_db()
+        result["web_settings"] = {r["key"]: r["value"] for r in db.execute("SELECT key,value FROM settings").fetchall()}
+    except Exception:
+        pass
+        pass
+    try:
+        from database import get_db
+        db = get_db()
+        result["footer_pages"] = db.execute("SELECT * FROM web_pages WHERE show_in_footer=1 ORDER BY sort_order,id").fetchall()
+    except Exception:
+        pass
+        pass
+    try:
+        from database import get_db
+        db = get_db()
+        result["footer_make_items"] = db.execute("SELECT * FROM web_footer_make ORDER BY sort_order").fetchall()
+    except Exception:
+        pass
+    return result

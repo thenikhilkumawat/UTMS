@@ -1,0 +1,2480 @@
+from flask import Blueprint, render_template, abort, request, jsonify, redirect, url_for, session
+from database import get_db
+from datetime import date, timedelta
+from werkzeug.security import generate_password_hash, check_password_hash
+
+website_bp = Blueprint("website", __name__)
+
+# ── SEO helpers ──────────────────────────────────────────────────────────────
+import re as _re_seo
+
+def make_slug(text):
+    s = (text or "").lower().strip()
+    s = _re_seo.sub(r"[^a-z0-9\s-]", "", s)
+    s = _re_seo.sub(r"[\s-]+", "-", s)
+    return s.strip("-")
+
+def get_page_seo(page_key, default_title="", default_desc="", robots="index,follow"):
+    try:
+        db = get_db()
+        row = db.execute("SELECT * FROM seo_static_pages WHERE page_key=?", (page_key,)).fetchone()
+        if row:
+            return {
+                "title": row["meta_title"] or default_title,
+                "desc":  row["meta_desc"]  or default_desc,
+                "og_image": _row_get(row, "og_image"),
+                "robots": _row_get(row, "robots", robots) or robots,
+                "canonical": _row_get(row, "canonical"),
+            }
+    except Exception: pass
+    return {"title": default_title, "desc": default_desc, "og_image": "", "robots": robots, "canonical": ""}
+
+
+def _cat_icon(name):
+    n = (name or "").lower()
+    for kw, ico in CATEGORY_ICON_RULES:
+        if kw in n:
+            return ico
+    return "\U0001F9F5"  # 🧵 default
+
+def get_categories_grouped():
+    """Returns [{id,name,icon,garments:[{id,name,price,image_url}]}] using the real
+    web_service_categories / web_service_items tables (admin-managed)."""
+    try:
+        db = get_db()
+        cats = db.execute("SELECT id, name FROM web_service_categories ORDER BY sort_order, id").fetchall()
+        items = db.execute("SELECT id, category_id, name, price, image_url FROM web_service_items ORDER BY sort_order, id").fetchall()
+        by_cat = {}
+        for it in items:
+            by_cat.setdefault(it["category_id"], []).append(
+                {"id": it["id"], "name": it["name"], "price": it["price"], "image_url": it["image_url"] or ""})
+        grouped = []
+        for c in cats:
+            its = by_cat.get(c["id"], [])
+            if not its:
+                continue
+            grouped.append({"id": c["id"], "name": c["name"], "icon": _cat_icon(c["name"]), "garments": its})
+        return grouped
+    except Exception:
+        return []
+
+
+def get_auto_categories(db_items):
+    """Auto-group all db_items into tabs by name keywords — always shows ALL garments."""
+    import re
+    cats = [
+        ('shirts',   'Shirts',            lambda n: bool(re.search(r'shirt', n, re.I))),
+        ('ethnic',   'Ethnic wear',       lambda n: bool(re.search(r'kurta|pathani', n, re.I))),
+        ('suits',    'Suits & Sets',      lambda n: bool(re.search(r'suit|blazer|\d[\s\-]?piece|safari', n, re.I))),
+        ('trousers', 'Pants',  lambda n: bool(re.search(r'pant|jean|trouser|\bfit\b|cut|leg|baggy|skinny|tapered|relaxed|regular|wide|cigarette|slim|straight|boot', n, re.I))),
+        ('ethnic2',  'Ethnic wear',       lambda n: bool(re.search(r'pajama|pathani', n, re.I))),
+        ('other',    'Other',             lambda n: True),
+    ]
+    used = set()
+    result = []
+    # Merge ethnic cats
+    merged = [
+        ('shirts',   'Shirts',           lambda n: bool(re.search(r'shirt', n, re.I))),
+        ('ethnic',   'Ethnic wear',      lambda n: bool(re.search(r'kurta|pathani|pajama set', n, re.I))),
+        ('suits',    'Suits & Sets',     lambda n: bool(re.search(r'suit|blazer|\d[\s\-]?piece|safari', n, re.I))),
+        ('trousers', 'Pants', lambda n: bool(re.search(r'pant|jean|trouser|\bfit\b|cut|leg|baggy|skinny|tapered|relaxed|regular|wide|cigarette|slim|straight|boot', n, re.I))),
+        ('other',    'Other',            lambda n: True),
+    ]
+    for cat_id, cat_name, test in merged:
+        garments = [dict(i) for i in db_items if i['id'] not in used and test(i['name'])]
+        if garments:
+            for g in garments:
+                used.add(g['id'])
+            result.append({'id': cat_id, 'name': cat_name, 'icon': '', 'garments': garments})
+    return result
+
+
+def get_commission_settings():
+    """Returns all commission page settings from the settings table."""
+    try:
+        db = get_db()
+        rows = db.execute("SELECT key, value FROM settings WHERE key LIKE 'commission_%'").fetchall()
+        s = {r["key"]: r["value"] for r in rows}
+        return {
+            "header_image":    s.get("commission_header_image", ""),
+            "header_kicker":   s.get("commission_header_kicker", "Customise your garment"),
+            "header_title":    s.get("commission_header_title", "Place your order"),
+            "header_sub":      s.get("commission_header_sub", "Bring your fabric \u2014 we craft the perfect fit. WhatsApp updates at every step."),
+            "step1_title":     s.get("commission_step1_title", "Choose your garment"),
+            "step1_sub":       s.get("commission_step1_sub", "Select a category and item \u2014 add as many garments as you like to one order."),
+            "step2_title":     s.get("commission_step2_title", "How shall we measure you?"),
+            "step2_sub":       s.get("commission_step2_sub", "Choose the method easiest for you."),
+            "step3_title":     s.get("commission_step3_title", "Your style picks"),
+            "step3_sub":       s.get("commission_step3_sub", "Here's a recap of the fabric and look you chose for each garment — tap to revise anytime."),
+            "step4_title":     s.get("commission_step4_title", "Style and finishing"),
+            "step4_sub":       s.get("commission_step4_sub", "Customise the details of your garment."),
+            "step5_title":     s.get("commission_step5_title", "Delivery preference & date"),
+            "step5_sub":       s.get("commission_step5_sub", "Pick when you need it \u2014 we plan the craft around your date."),
+            "step6_title":     s.get("commission_step6_title", "Your contact details"),
+            "step6_sub":       s.get("commission_step6_sub", "No account needed. We send updates on WhatsApp."),
+            "summary_title":   s.get("commission_summary_title", "Order Summary"),
+            "trust_pill_1":    s.get("commission_trust_1", "Free alteration if fit is not right"),
+            "trust_pill_2":    s.get("commission_trust_2", "WhatsApp updates at every step"),
+            "trust_pill_3":    s.get("commission_trust_3", "35+ years of master craft"),
+            "trust_pill_4":    s.get("commission_trust_4", "Rs. 100 off your first order"),
+            "urgent_title":    s.get("commission_urgent_title", "Urgent order"),
+            "urgent_sub":      s.get("commission_urgent_sub", "+Rs. 99 extra \u2022 Delivered in 1\u20133 days (simple items only)"),
+            "advance_pct":     int(s.get("commission_advance_pct", "30") or 30),
+        }
+    except Exception:
+        return {}
+
+GARMENTS = {
+    "shirt":"Formal Shirt","pant":"Pant","trouser":"Pants",
+    "suit":"Two-Piece Suit","suit3pc":"Three-Piece Suit","blazer":"Blazer",
+    "kurta":"Kurta only","kurtaset":"Kurta + Pajama","pathani":"Pathani Suit",
+    "safari":"Safari Suit","jeans":"Jeans","pajama":"Pajama",
+}
+
+def get_settings():
+    db = get_db()
+    cur = db.execute("SELECT key, value FROM settings")
+    rows = cur.fetchall()
+    s = {r['key']: r['value'] for r in rows}
+    return {
+        'addr1':           s.get('web_addr1',          'Subhash Chowk, Sikar'),
+        'addr2':           s.get('web_addr2',          'Rajasthan — 332001'),
+        'phone':           s.get('web_shop_phone',     '+91 XXXXX XXXXX'),
+        'email':           s.get('web_shop_email',     'info.uttamtailors@gmail.com'),
+        'hours':           s.get('web_shop_hours',     'Monday – Saturday · 9am – 7pm'),
+        'wa_link':         s.get('web_whatsapp_link',  'https://wa.me/91XXXXXXXXXX'),
+        'delivery_charge': s.get('web_delivery_charge','49'),
+        'turnaround_days': s.get('web_turnaround_days','7'),
+    }
+
+def get_fabrics():
+    try:
+        db = get_db()
+        cur = db.execute("SELECT * FROM web_fabrics WHERE active=1 ORDER BY sort_order")
+        rows = cur.fetchall()
+        try:
+            media_rows = db.execute("SELECT fabric_id, url FROM web_fabric_media ORDER BY fabric_id, sort_order").fetchall()
+        except Exception:
+            media_rows = []
+        gallery_map = {}
+        for m in media_rows:
+            gallery_map.setdefault(m["fabric_id"], []).append(m["url"])
+        out = []
+        for f in rows:
+            d = dict(f)
+            gal = []
+            if d.get("image_url"):
+                gal.append(d["image_url"])
+            for u in gallery_map.get(d["id"], []):
+                if u and u not in gal:
+                    gal.append(u)
+            d["gallery"] = gal[:4]
+            out.append(d)
+        return out
+    except:
+        return []
+
+def get_item_media():
+    """Returns {item_id: {images:[...], video:url}} from web_item_media table.
+    Falls back to image_url/video_url columns on web_service_items."""
+    try:
+        db = get_db()
+        # Primary: web_item_media table
+        media_rows = db.execute("SELECT * FROM web_item_media ORDER BY item_id, sort_order").fetchall()
+        result = {}
+        for row in media_rows:
+            iid = row["item_id"]
+            if iid not in result:
+                result[iid] = {"images": [], "video": ""}
+            if row["media_type"] == "video":
+                result[iid]["video"] = row["url"]
+            else:
+                result[iid]["images"].append(row["url"])
+        # Fallback: if item has image_url but no media entry, use it
+        items = db.execute("SELECT id, image_url, video_url FROM web_service_items").fetchall()
+        for item in items:
+            iid = item["id"]
+            if iid not in result:
+                result[iid] = {"images": [], "video": ""}
+            if item["image_url"] and not result[iid]["images"]:
+                result[iid]["images"].append(item["image_url"])
+            if item["video_url"] and not result[iid]["video"]:
+                try:
+                    result[iid]["video"] = item["video_url"]
+                except:
+                    pass
+        return result
+    except:
+        return {}
+
+# Key mapping: garment_key → DB item name patterns
+KEY_TO_NAMES = {
+    "shirt":    ["formal shirt", "shirt"],
+    "pant":     ["pant", "trouser", "trousers"],
+    "suit":     ["suit 2-piece", "suit 2pc", "two-piece suit"],
+    "suit3pc":  ["suit 3-piece", "suit 3pc", "three-piece suit"],
+    "blazer":   ["blazer"],
+    "kurta":    ["kurta only", "kurta"],
+    "kurtaset": ["kurta + pajama", "kurta pajama set", "kurta + pajama set"],
+    "pajama":   ["pajama only", "pajama"],
+    "pathani":  ["pathani suit", "pathani"],
+    "safari":   ["safari suit", "safari"],
+    "jeans":    ["jeans"],
+}
+
+DEFAULT_PRICES = {
+    "shirt":450,"pant":550,"suit":2900,"suit3pc":3600,
+    "blazer":2400,"kurta":500,"kurtaset":900,"pajama":450,
+    "pathani":550,"safari":1200,"jeans":650
+}
+
+def get_prices():
+    """Fetch garment prices from web_service_items DB. Falls back to defaults."""
+    try:
+        db = get_db()
+        items = db.execute("SELECT name, price FROM web_service_items").fetchall()
+        # Build name→price map
+        name_price = {row["name"].lower().strip(): row["price"] for row in items}
+        prices = {}
+        for key, names in KEY_TO_NAMES.items():
+            p = None
+            for n in names:
+                if n in name_price:
+                    try: p = int(float(name_price[n]))
+                    except: p = None
+                    break
+            prices[key] = p if p else DEFAULT_PRICES.get(key, 500)
+        return prices
+    except:
+        return DEFAULT_PRICES.copy()
+
+@website_bp.route("/")
+def home():
+    import json as _json
+    prices = get_prices()
+    item_media = get_item_media()
+    try:
+        db = get_db()
+        items = db.execute("SELECT id, name FROM web_service_items").fetchall()
+        img_map = {}
+        for item in items:
+            m = item_media.get(item["id"], {})
+            imgs = m.get("images", [])
+            if imgs: img_map[item["name"].lower()] = imgs[0]
+    except: img_map = {}
+    try:
+        db_all = db.execute("SELECT * FROM web_service_items ORDER BY sort_order, id").fetchall()
+    except:
+        db_all = []
+    # Load homepage sections
+    hs = {}
+    hs_active = {}
+    try:
+        rows = db.execute("SELECT section_key,content,active,sort_order FROM home_sections ORDER BY sort_order").fetchall()
+        for r in rows:
+            hs_active[r["section_key"]] = bool(r["active"])
+            if r["active"]:
+                try: hs[r["section_key"]] = _json.loads(r["content"])
+                except: hs[r["section_key"]] = {}
+    except: pass
+    # Seed new sections if missing in DB
+    _new_sections = [
+        ("price_estimator", "Price Estimator",  1),
+        ("occasion_finder", "Occasion Finder",  1),
+        ("fabric_guide",    "Fabric Guide",     1),
+        ("shop_status",     "Live Shop Status", 1),
+        ("brands_ticker",   "Brands Ticker",    0),
+        ("action_cards",    "Action Cards",     1),
+        ("ai_preview",      "AI Style Preview", 1),
+    ]
+    try:
+        for _key, _title, _active in _new_sections:
+            db.execute(
+                "INSERT OR IGNORE INTO home_sections (section_key, section_title, content, sort_order, active) VALUES (?, ?, '{}', 99, ?)",
+                (_key, _title, _active)
+            )
+        db.commit()
+    except: pass
+    # Catalogue items from admin selection
+    cat_ids = []
+    if hs.get("catalogue",{}).get("item_ids"):
+        try: cat_ids = [int(x.strip()) for x in hs["catalogue"]["item_ids"].split(",") if x.strip()]
+        except: pass
+    if cat_ids:
+        placeholders = ",".join(["?"]*len(cat_ids))
+        try: cat_items = db.execute(f"SELECT w.*, c.name AS cat_name FROM web_service_items w LEFT JOIN web_service_categories c ON c.id=w.category_id WHERE w.id IN ({placeholders})", cat_ids).fetchall()
+        except: cat_items = db_all[:6]
+    else:
+        cat_items = db_all[:6]
+    # Live shop status
+    live_stats = {"active_count": 0}
+    try:
+        r = db.execute("SELECT COUNT(*) as cnt FROM orders WHERE status IN ('pending','ready')").fetchone()
+        live_stats["active_count"] = r["cnt"] if r else 0
+    except: pass
+    item_media_home = get_item_media()
+    # All categories + items for pricing section
+    pricing_cats = []
+    try:
+        all_cats = db.execute("SELECT id, name FROM web_service_categories ORDER BY sort_order, id").fetchall()
+        for cat in all_cats:
+            cat_products = db.execute(
+                "SELECT id, name, price, image_url FROM web_service_items WHERE category_id=? ORDER BY sort_order, id",
+                (cat["id"],)
+            ).fetchall()
+            if cat_products:
+                raw_name = cat["name"]
+                # Skip alterations & repairs
+                if _re_seo.search(r'alteration|repair', raw_name, _re_seo.I):
+                    continue
+                # "Trousers & Jeans" or "Pants & Jeans" → just "Jeans"
+                if _re_seo.search(r'(pant|trouser).{0,10}jean|jean.{0,10}(pant|trouser)', raw_name, _re_seo.I):
+                    display_name = "Jeans"
+                else:
+                    display_name = _re_seo.sub(r'\bTrousers\b', 'Pants', raw_name)
+                    display_name = _re_seo.sub(r'\bTrouser\b', 'Pant', display_name)
+                pricing_cats.append({"name": display_name, "products": [dict(p) for p in cat_products]})
+        # Also grab uncategorized items
+        uncat = db.execute(
+            "SELECT id, name, price, image_url FROM web_service_items WHERE category_id IS NULL ORDER BY sort_order, id"
+        ).fetchall()
+        if uncat:
+            pricing_cats.append({"name": "Other", "products": [dict(p) for p in uncat]})
+        # Move "Formal Pants" (or any pant category) to 3rd position (index 2)
+        fp_idx = next((i for i, c in enumerate(pricing_cats)
+                       if _re_seo.search(r'formal.*pant|pant.*formal|formal.*pan|^pants?$', c['name'], _re_seo.I)), None)
+        if fp_idx is not None and fp_idx != 2 and len(pricing_cats) > 2:
+            pricing_cats.insert(2, pricing_cats.pop(fp_idx))
+    except:
+        pricing_cats = []
+    page_meta = get_page_seo("home",
+        "Uttam Tailors — Custom Tailoring in Sikar since 1987",
+        "Custom shirts, suits, kurtas & more stitched in Sikar. Order online. Free delivery.")
+    return render_template("website/home.html", active="home",
+        home_items=cat_items, item_media=item_media_home, prices=prices, img_map=img_map, hs=hs,
+        hs_active=hs_active,
+        live_stats=live_stats, page_meta=page_meta, pricing_cats=pricing_cats)
+
+@website_bp.route("/our-story")
+def about():
+    from database import get_db
+    db = get_db()
+    # Get settings
+    rows = db.execute("SELECT key, value FROM settings WHERE key LIKE 'about_%'").fetchall()
+    raw = {r["key"].replace("about_",""):r["value"] for r in rows}
+
+    class S: pass
+    s = S()
+    s.hero_title   = raw.get("hero_title", "")
+    s.hero_sub     = raw.get("hero_sub", "")
+    s.hero_kicker  = raw.get("hero_kicker", "")
+    s.hero_img     = raw.get("hero_img", "")
+    s.cta_title    = raw.get("cta_title", "")
+    s.cta_sub      = raw.get("cta_sub", "")
+    for i in range(1,5):
+        setattr(s, f"promise{i}_title", raw.get(f"promise{i}_title",""))
+        setattr(s, f"promise{i}_body",  raw.get(f"promise{i}_body",""))
+
+    # Get timeline
+    try:
+        timeline = db.execute("SELECT * FROM web_story_timeline ORDER BY sort_order, year").fetchall()
+    except:
+        timeline = []
+
+    from builtins import enumerate as _enum
+    page_meta = get_page_seo("about",
+        "Our Story — Uttam Tailors, Sikar since 1987",
+        "37 years of master tailoring in Sikar. Learn about the craft and legacy of Uttam Tailors.")
+    return render_template("website/about.html", active="about", s=s, timeline=timeline, enumerate=_enum,
+        page_meta=page_meta)
+
+@website_bp.route("/our-craft")
+def services():
+    try:
+        db = get_db()
+        cats = db.execute("SELECT * FROM web_service_categories ORDER BY sort_order, id").fetchall()
+        items = db.execute("SELECT * FROM web_service_items ORDER BY sort_order, id").fetchall()
+        items_by_cat = {}
+        for item in items:
+            cid = item["category_id"]
+            if cid not in items_by_cat: items_by_cat[cid] = []
+            items_by_cat[cid].append(item)
+        services_data = [(cat, items_by_cat.get(cat["id"], [])) for cat in cats]
+    except: services_data = []
+    prices = get_prices()
+    item_media = get_item_media()
+    # Build fabric_image map {item_id: url}
+    try:
+        fabric_imgs = {}
+        db2 = get_db()
+        frows = db2.execute("SELECT id, fabric_image_url FROM web_service_items").fetchall()
+        for r in frows:
+            if r["fabric_image_url"]: fabric_imgs[r["id"]] = r["fabric_image_url"]
+    except Exception:
+        fabric_imgs = {}
+    page_meta = get_page_seo("our_craft",
+        "Custom Tailoring — Our Craft | Uttam Tailors Sikar",
+        "Browse our full range of custom tailoring services in Sikar. Suits, shirts, kurtas, pathani & more.")
+    breadcrumbs = [("Our Craft", "/our-craft")]
+    return render_template("website/services.html", active="services", services=services_data, prices=prices, item_media=item_media,
+        fabric_imgs=fabric_imgs, page_meta=page_meta, breadcrumbs=breadcrumbs)
+
+@website_bp.route("/our-services")
+def our_services():
+    db = get_db()
+    try:
+        cats = db.execute("SELECT * FROM web_service_categories ORDER BY sort_order, id").fetchall()
+        items = db.execute("SELECT * FROM web_service_items ORDER BY sort_order, id").fetchall()
+        items_by_cat = {}
+        for item in items:
+            cid = item["category_id"]
+            if cid not in items_by_cat: items_by_cat[cid] = []
+            items_by_cat[cid].append(item)
+        services_data = [(cat, items_by_cat.get(cat["id"], [])) for cat in cats]
+    except: services_data = []
+    prices = get_prices()
+    item_media = get_item_media()
+    try:
+        all_items = db.execute("SELECT * FROM web_service_items ORDER BY sort_order, id").fetchall()
+    except:
+        all_items = []
+    page_meta = get_page_seo("our_services",
+        "Our Services — Uttam Tailors Sikar | Custom Stitching",
+        "All tailoring services at Uttam Tailors Sikar — shirts, suits, ethnic wear, alterations & more.")
+    return render_template("website/our_services.html", active="our_services",
+        services=services_data, prices=prices, item_media=item_media, services_all=all_items,
+        page_meta=page_meta)
+
+
+@website_bp.route("/garment/<int:item_id>")
+def product_detail(item_id):
+    """Legacy numeric URL — 301 redirect to slug."""
+    try:
+        row = get_db().execute("SELECT slug FROM web_service_items WHERE id=?", (item_id,)).fetchone()
+        if row and row["slug"]:
+            from flask import redirect as _redir
+            return _redir(f"/garment/{row['slug']}", 301)
+    except Exception: pass
+    return _render_product(item_id)
+
+@website_bp.route("/garment/<slug>")
+def product_by_slug(slug):
+    """SEO-friendly product page."""
+    try:
+        row = get_db().execute("SELECT id FROM web_service_items WHERE slug=?", (slug,)).fetchone()
+        if row: return _render_product(row["id"])
+    except Exception: pass
+    abort(404)
+
+def _row_get(row, key, default=""):
+    """sqlite3.Row doesn't support .get() — safe lookup that won't blow up on missing columns."""
+    try:
+        val = row[key]
+        return val if val not in (None, "") else default
+    except Exception:
+        return default
+
+def _render_product(item_id):
+    """Render product detail page with full SEO."""
+    try:
+        db = get_db()
+        item = db.execute("SELECT i.*, c.name as cat_name FROM web_service_items i LEFT JOIN web_service_categories c ON i.category_id=c.id WHERE i.id=?", (item_id,)).fetchone()
+        if not item: return "Not found", 404
+        media_rows = db.execute("SELECT * FROM web_item_media WHERE item_id=? ORDER BY sort_order", (item_id,)).fetchall()
+        images = [r["url"] for r in media_rows if r["media_type"] == "image"]
+        videos = [r["url"] for r in media_rows if r["media_type"] == "video"]
+        if not images and item["image_url"]: images = [item["image_url"]]
+        try:
+            reviews = db.execute("SELECT * FROM web_item_reviews WHERE item_id=? ORDER BY id DESC", (item_id,)).fetchall()
+        except: reviews = []
+        try:
+            related = db.execute("""SELECT i.*, c.name as cat_name FROM web_service_items i
+                LEFT JOIN web_service_categories c ON i.category_id=c.id
+                WHERE i.category_id != ? AND i.id != ? LIMIT 4""", (item["category_id"], item_id)).fetchall()
+        except: related = []
+        try:
+            style_options_rows = db.execute("SELECT * FROM garment_style_options WHERE item_id=? ORDER BY sort_order,id", (item_id,)).fetchall()
+            style_options = {}
+            for r in style_options_rows:
+                g = r["option_group"]
+                if g not in style_options:
+                    style_options[g] = {"label": r["option_label"], "values": r["option_values"].split(",")}
+        except:
+            style_options = {}
+        try: item_tiles = db.execute("SELECT * FROM web_item_tiles WHERE item_id=? ORDER BY sort_order", (item_id,)).fetchall()
+        except: item_tiles = []
+        try: item_faq = db.execute("SELECT * FROM web_item_faq WHERE item_id=? ORDER BY sort_order", (item_id,)).fetchall()
+        except: item_faq = []
+        try: item_bullets = db.execute("SELECT * FROM web_item_bullets WHERE item_id=? ORDER BY sort_order", (item_id,)).fetchall()
+        except: item_bullets = []
+        # "Complete the Look" — admin-curated cross-sell (distinct from the same-category
+        # fallback below, which is the "You May Also Like" section).
+        try:
+            complete_look = db.execute("""SELECT ri.related_item_id as id, i2.name, i2.price, i2.image_url
+                FROM web_related_items ri JOIN web_service_items i2 ON ri.related_item_id = i2.id
+                WHERE ri.item_id=? ORDER BY ri.sort_order""", (item_id,)).fetchall()
+        except: complete_look = []
+        # Answered customer Q&A (public-facing; pending ones stay hidden until an admin answers).
+        try:
+            questions = db.execute("SELECT * FROM web_item_questions WHERE item_id=? AND status='answered' ORDER BY id DESC", (item_id,)).fetchall()
+        except: questions = []
+        # AI-customize banner copy — detect the garment word from category+name so the
+        # link reads "Customize this shirt with AI" instead of a generic "this".
+        import re as _re
+        _GARMENT_WORDS = [
+            (r'shirt', 'shirt', False), (r'suit', 'suit', False), (r'blazer', 'blazer', False),
+            (r'kurta', 'kurta', False), (r'sherwani', 'sherwani', False), (r'waistcoat|vest', 'waistcoat', False),
+            (r'jean', 'jeans', True), (r'trouser|pant', 'trousers', True), (r'coat', 'coat', False),
+            (r'dress', 'dress', False), (r'jacket', 'jacket', False),
+        ]
+        _hay = ((item["cat_name"] or "") + " " + (item["name"] or "")).lower()
+        ai_garment_phrase = "this garment"
+        for _pat, _word, _plural in _GARMENT_WORDS:
+            if _re.search(_pat, _hay):
+                ai_garment_phrase = ("these " if _plural else "this ") + _word
+                break
+        # Filter fabrics by category (fabric_type matches category keywords)
+        cat_name = (item["cat_name"] or "").lower()
+        all_fabrics = get_fabrics()
+        if "shirt" in cat_name or "kurta" in cat_name or "pathani" in cat_name or "safari" in cat_name:
+            cat_key = "shirt"
+        elif "trouser" in cat_name or "pant" in cat_name or "jeans" in cat_name:
+            cat_key = "pant"
+        elif "suit" in cat_name or "blazer" in cat_name:
+            cat_key = "suit"
+        else:
+            cat_key = None
+        fabrics = [f for f in all_fabrics if not cat_key or not f["fabric_type"] or f["fabric_type"]==cat_key or f["fabric_type"]=="all"]
+        if not fabrics: fabrics = all_fabrics  # fallback: show all
+        # Build product SEO from item data + DB override
+        _prod_title = _row_get(item, "meta_title") or f"{item['name']} — Custom Stitching in Sikar | Uttam Tailors"
+        _prod_desc = _row_get(item, "meta_desc") or f"Get {item['name']} custom stitched in Sikar. {_row_get(item, 'subtitle') or 'Premium quality, perfect fit.'} Book online at Uttam Tailors."
+        page_meta = {"title": _prod_title, "desc": _prod_desc, "robots": "index,follow",
+                     "og_image": images[0] if images else "", "canonical": ""}
+        return render_template("website/product.html", active="services",
+            item=item, images=images, videos=videos,
+            reviews=reviews, related=related, item_media=get_item_media(),
+            style_options=style_options, fabrics=fabrics,
+            item_tiles=item_tiles, item_faq=item_faq, item_bullets=item_bullets,
+            complete_look=complete_look, questions=questions, ai_garment_phrase=ai_garment_phrase,
+            page_meta=page_meta)
+    except Exception as e:
+        return f"Error: {e}", 500
+
+
+@website_bp.route("/garment/ask/<int:item_id>", methods=["POST"])
+def ask_item_question(item_id):
+    """Public Q&A submission — goes in as 'pending' and only appears on the page
+    once an admin answers it from the product editor."""
+    db = get_db()
+    d = request.get_json() or {}
+    name = (d.get("name") or "").strip()[:80]
+    question = (d.get("question") or "").strip()[:500]
+    if not question:
+        return jsonify({"ok": False, "error": "Please type your question."})
+    try:
+        db.execute("INSERT INTO web_item_questions(item_id,name,question,status) VALUES(?,?,?,'pending')",
+                   (item_id, name, question))
+        db.commit()
+        return jsonify({"ok": True})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)})
+
+
+@website_bp.route("/our-work")
+def our_work():
+    """Daily stitched clothes gallery page."""
+    try:
+        db = get_db()
+        tag = request.args.get("tag", "").strip()
+        page = max(1, int(request.args.get("page", 1)))
+        per_page = 24
+        offset = (page - 1) * per_page
+        if tag:
+            items = db.execute(
+                "SELECT * FROM web_daily_craft WHERE is_published=1 AND tag=? ORDER BY id DESC LIMIT ? OFFSET ?",
+                (tag, per_page, offset)
+            ).fetchall()
+            total = db.execute(
+                "SELECT COUNT(*) FROM web_daily_craft WHERE is_published=1 AND tag=?", (tag,)
+            ).fetchone()[0]
+        else:
+            items = db.execute(
+                "SELECT * FROM web_daily_craft WHERE is_published=1 ORDER BY id DESC LIMIT ? OFFSET ?",
+                (per_page, offset)
+            ).fetchall()
+            total = db.execute("SELECT COUNT(*) FROM web_daily_craft WHERE is_published=1").fetchone()[0]
+        tags = db.execute(
+            "SELECT DISTINCT tag FROM web_daily_craft WHERE is_published=1 AND tag!='' ORDER BY tag"
+        ).fetchall()
+        tags = [r["tag"] for r in tags]
+        pages = max(1, (total + per_page - 1) // per_page)
+    except Exception:
+        items, tags, page, pages, tag = [], [], 1, 1, ""
+    breadcrumbs = [("Fresh From The Workshop", "/our-work")]
+    return render_template("website/our_work.html",
+        active="our_work", items=items, tags=tags,
+        current_tag=tag, page=page, pages=pages,
+        breadcrumbs=breadcrumbs)
+
+@website_bp.route("/api/daily-craft/latest")
+def api_daily_craft_latest():
+    """Return latest N published items for homepage section."""
+    try:
+        db = get_db()
+        limit = min(12, int(request.args.get("n", 6)))
+        rows = db.execute(
+            "SELECT * FROM web_daily_craft WHERE is_published=1 ORDER BY id DESC LIMIT ?", (limit,)
+        ).fetchall()
+        return jsonify({"ok": True, "items": [dict(r) for r in rows]})
+    except Exception as ex:
+        return jsonify({"ok": False, "error": str(ex)})
+
+@website_bp.route("/privacy")
+@website_bp.route("/privacy-policy")
+def privacy_policy():
+    return render_template("website/privacy.html")
+
+@website_bp.route("/shipping")
+@website_bp.route("/shipping-policy")
+def shipping_policy():
+    return render_template("website/shipping.html")
+
+@website_bp.route("/terms")
+@website_bp.route("/terms-and-conditions")
+def terms_conditions():
+    # No separate terms template — serve privacy page which covers legal info
+    return render_template("website/privacy.html")
+
+@website_bp.route("/refund")
+@website_bp.route("/refund-policy")
+def refund_policy():
+    # No separate refund template — shipping page covers refund/return info
+    return render_template("website/shipping.html")
+
+
+@website_bp.route("/page/<slug>")
+def custom_page(slug):
+    db = get_db()
+    try:
+        page = db.execute("SELECT * FROM web_pages WHERE slug=?", (slug,)).fetchone()
+    except:
+        page = None
+    if not page:
+        abort(404)
+    page_meta = {
+        "title": (_row_get(page, "meta_title") or page["title"] + " — Uttam Tailors"),
+        "desc": _row_get(page, "meta_desc"),
+        "robots": "index,follow", "og_image": "", "canonical": ""
+    }
+    return render_template("website/custom_page.html", active="", page=page, page_meta=page_meta)
+
+
+
+# ── Sitemap & Robots ─────────────────────────────────────────────────────────
+
+@website_bp.route("/commission")
+def commission():
+    from datetime import datetime, timedelta
+    cs = get_commission_settings()
+    min_date    = (datetime.now() + timedelta(days=3)).strftime("%Y-%m-%d")
+    urgent_until= (datetime.now() + timedelta(days=3)).strftime("%Y-%m-%d")
+    preselect_method = request.args.get("method", "")
+
+    # Garment categories + items for Step 1
+    categories = get_categories_grouped()
+    try:
+        db       = get_db()
+        db_items = db.execute("SELECT id, name, price FROM web_service_items ORDER BY sort_order, id").fetchall()
+        db_items = [dict(r) for r in db_items]
+    except Exception:
+        db_items = []
+
+    # Fabrics for Step 2
+    fabrics = get_fabrics()
+
+    # Item media (same source PLP uses — primary: web_item_media, fallback: image_url)
+    item_media = get_item_media()
+
+    page_meta = {
+        "title": "Custom Stitching — Place Your Order | Uttam Tailors",
+        "desc": "Custom tailoring in Sikar. Choose your garment, share your measurements and we stitch it perfectly. WhatsApp updates at every step.",
+        "robots": "index,follow",
+        "og_image": cs.get("header_image", ""),
+    }
+    return render_template(
+        "website/commission.html",
+        cs=cs,
+        min_date=min_date,
+        urgent_until=urgent_until,
+        preselect_method=preselect_method,
+        categories=categories,
+        db_items=db_items,
+        fabrics=fabrics,
+        item_media=item_media,
+        page_meta=page_meta,
+    )
+
+@website_bp.route("/track-order")
+def track_order():
+    code  = request.args.get("code", "").strip()
+    phone = request.args.get("phone", "").strip()
+    page_meta = {
+        "title": "Track Your Order — Uttam Tailors",
+        "desc": "Enter your order code or mobile number to see the live status of your garment at every stitch.",
+        "robots": "noindex,nofollow",
+        "og_image": "",
+    }
+    return render_template("website/track_order.html",
+        page_meta=page_meta,
+        prefill_code=code, prefill_phone=phone)
+
+
+@website_bp.route("/api/track-order")
+def api_track_order():
+    code  = (request.args.get("code") or "").strip().upper()
+    phone = (request.args.get("phone") or "").strip().lstrip("0")
+    if not code and not phone:
+        return jsonify({"ok": False, "error": "Provide order code or phone"})
+    try:
+        db = get_db()
+        if code:
+            row = db.execute(
+                "SELECT o.*, c.name as cust_name, c.mobile as cust_mobile "
+                "FROM orders o LEFT JOIN customers c ON c.id=o.customer_id "
+                "WHERE o.order_code=? LIMIT 1", (code,)
+            ).fetchone()
+        else:
+            # Find most recent order for that phone
+            cust = db.execute(
+                "SELECT id FROM customers WHERE mobile=? ORDER BY id DESC LIMIT 1", (phone,)
+            ).fetchone()
+            if not cust:
+                return jsonify({"ok": False, "error": "Not found"})
+            row = db.execute(
+                "SELECT o.*, c.name as cust_name, c.mobile as cust_mobile "
+                "FROM orders o LEFT JOIN customers c ON c.id=o.customer_id "
+                "WHERE o.customer_id=? ORDER BY o.id DESC LIMIT 1", (cust["id"],)
+            ).fetchone()
+
+        if not row:
+            return jsonify({"ok": False, "error": "Order not found"})
+
+        o = dict(row)
+
+        # Parse note (pipe-separated: name | garment | ... | delivery:home | ...)
+        note = o.get("note") or ""
+        note_parts = [p.strip() for p in note.split("|")]
+        garment = note_parts[1] if len(note_parts) > 1 else "Custom Order"
+        is_home_delivery = any("delivery:home" in p for p in note_parts)
+
+        # Customer details
+        cust_name    = o.get("cust_name") or (note_parts[0] if note_parts else "")
+        cust_mobile  = o.get("cust_mobile") or ""
+        cust_address = o.get("address") or ""
+
+        # Live stitch stage
+        stage_row = None
+        try:
+            stage_row = db.execute(
+                "SELECT stage, note FROM order_stages WHERE order_code=? ORDER BY updated_at DESC LIMIT 1",
+                (o["order_code"],)
+            ).fetchone()
+        except Exception:
+            pass
+
+        stage  = int(stage_row["stage"]) if stage_row else 1
+        status = (o.get("status") or "pending").lower()
+        max_stage = 6 if is_home_delivery else 5
+
+        # Auto-advance stage to match status label
+        if status == "ready"     and stage < 5: stage = 5
+        if status == "delivered" and stage < max_stage: stage = max_stage + 1
+
+        return jsonify({
+            "ok": True,
+            "order": {
+                "order_code":       o["order_code"],
+                "status":           status,
+                "garment":          garment,
+                "cust_name":        cust_name,
+                "cust_mobile":      cust_mobile,
+                "cust_address":     cust_address,
+                "order_date":       o.get("order_date", ""),
+                "delivery_date":    o.get("delivery_date", ""),
+                "remaining":        o.get("remaining", 0),
+                "total":            o.get("total_amount", 0),
+                "advance":          o.get("advance_amount", 0),
+                "stage":            stage,
+                "stitch_note":      stage_row["note"] if stage_row else "",
+                "is_home_delivery": is_home_delivery,
+            }
+        })
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)})
+
+
+@website_bp.route("/contact")
+def contact():
+    try:
+        s = get_settings()
+    except Exception:
+        s = {}
+    page_meta = {
+        "title": "Contact Us — Uttam Tailors, Sikar",
+        "desc": "Find us at Subhash Chowk, Sikar. Call, WhatsApp or book a home visit. Monday to Saturday, 9am–7pm.",
+        "robots": "index,follow",
+        "og_image": "",
+    }
+    return render_template("website/contact.html", s=s, page_meta=page_meta)
+
+
+@website_bp.route("/order-confirmed")
+def order_confirmed():
+    from flask import request as _req
+    order_id = _req.args.get("id", type=int)
+    order = None
+    if order_id:
+        try:
+            db = get_db()
+            row = db.execute(
+                "SELECT * FROM orders WHERE id=?", (order_id,)
+            ).fetchone()
+            if row:
+                order = dict(row)
+        except Exception:
+            pass
+    return render_template("website/order_confirmed.html", order=order)
+
+
+@website_bp.route("/create-order", methods=["POST"])
+def create_order():
+    """Handle commission form POST — create customer + order, redirect to confirmation."""
+    import json as _json
+    from datetime import datetime as _dt
+    from database import next_order_code as _next_code
+
+    try:
+        db = get_db()
+        now = _dt.now().strftime("%Y-%m-%d %H:%M:%S")
+        today = _dt.now().strftime("%Y-%m-%d")
+
+        # ── Customer ──
+        cust_name  = (request.form.get("cust_name") or "").strip()
+        cust_phone = (request.form.get("cust_phone") or "").strip().lstrip("0")
+        if not cust_name or not cust_phone:
+            return "Missing customer name or phone", 400
+
+        existing = db.execute(
+            "SELECT id FROM customers WHERE mobile=? ORDER BY id DESC LIMIT 1",
+            (cust_phone,)
+        ).fetchone()
+        if existing:
+            customer_id = existing["id"]
+        else:
+            db.execute(
+                "INSERT INTO customers(name,mobile,created_at) VALUES(?,?,?)",
+                (cust_name, cust_phone, now)
+            )
+            row = db.execute(
+                "SELECT id FROM customers WHERE mobile=? ORDER BY id DESC LIMIT 1",
+                (cust_phone,)
+            ).fetchone()
+            customer_id = row["id"] if row else None
+
+        # ── Order basics ──
+        order_code    = _next_code()
+        delivery_date = request.form.get("delivery_date") or ""
+        is_urgent     = 1 if request.form.get("is_urgent") else 0
+        measure_method= request.form.get("measure_method", "size")
+
+        # Garment types + prices from form checkboxes
+        garment_types = request.form.getlist("garment_type[]")
+        total_amount  = 0.0
+        item_rows     = []
+        for gt in garment_types:
+            qty_key  = "qty_" + gt
+            rate_key = "rate_" + gt
+            qty  = int(request.form.get(qty_key, 1) or 1)
+            rate = float(request.form.get(rate_key, 0) or 0)
+            item_rows.append({"type": gt, "qty": qty, "rate": rate})
+            total_amount += qty * rate
+
+        # Fabric cost
+        fabric_cost = float(request.form.get("fabric_cost", 0) or 0)
+        total_amount += fabric_cost
+
+        # Urgent surcharge 10%
+        extra_charges = round(total_amount * 0.10, 2) if is_urgent else 0.0
+        payable_amount = round(total_amount + extra_charges, 2)
+
+        # ── Coupon discount (server-side re-validation) ──
+        coupon_code = (request.form.get("coupon_code") or "").strip().upper()
+        coupon_discount = 0.0
+        coupon_row = None
+        if coupon_code:
+            try:
+                coupon_row = db.execute(
+                    """SELECT * FROM web_coupons WHERE code=? AND active=1
+                       AND (expires_on='' OR expires_on IS NULL OR expires_on >= date('now'))
+                       AND (max_uses=0 OR used_count < max_uses)""",
+                    (coupon_code,)
+                ).fetchone()
+                if coupon_row and payable_amount >= coupon_row["min_order"]:
+                    if coupon_row["discount_type"] == "percent":
+                        coupon_discount = round(payable_amount * coupon_row["discount_value"] / 100, 2)
+                    else:
+                        coupon_discount = float(coupon_row["discount_value"])
+                    coupon_discount = min(coupon_discount, payable_amount)
+            except Exception:
+                coupon_discount = 0.0
+
+        payable_amount = round(payable_amount - coupon_discount, 2)
+        advance_paid  = 0.0
+        remaining     = payable_amount
+
+        # Gift fields
+        is_gift      = 1 if request.form.get("is_gift") else 0
+        gift_name    = (request.form.get("gift_recipient_name") or "").strip()
+        gift_wa      = (request.form.get("gift_whatsapp") or "").strip()
+        gift_msg     = (request.form.get("gift_message") or "").strip()
+
+        # Build note
+        note_parts = [cust_name]
+        if garment_types:
+            note_parts.append(", ".join(garment_types))
+        if measure_method:
+            note_parts.append("meas:" + measure_method)
+        if is_gift:
+            note_parts.append(f"gift-for:{gift_name}" if gift_name else "gift")
+        if coupon_code and coupon_discount:
+            note_parts.append(f"coupon:{coupon_code}(-Rs.{int(coupon_discount)})")
+        note = " | ".join(note_parts)
+
+        # Insert order
+        db.execute(
+            """INSERT INTO orders(order_code,customer_id,order_date,delivery_date,
+               total_amount,extra_charges,payable_amount,advance_paid,remaining,
+               payment_mode,status,is_urgent,note,created_at)
+               VALUES(?,?,?,?,?,?,?,?,?,'pending','pending',?,?,?)""",
+            (order_code, customer_id, today, delivery_date,
+             total_amount, extra_charges, payable_amount,
+             advance_paid, remaining, is_urgent, note, now)
+        )
+        order_row = db.execute(
+            "SELECT id FROM orders WHERE order_code=?", (order_code,)
+        ).fetchone()
+        order_id = order_row["id"] if order_row else None
+
+        # Insert items
+        if order_id:
+            meas_json = request.form.get("size_per_garment") or "{}"
+            style_json = request.form.get("style_json") or "{}"
+            for it in item_rows:
+                db.execute(
+                    """INSERT INTO order_items(order_id,garment_type,quantity,rate,amount,measurements,notes)
+                       VALUES(?,?,?,?,?,?,?)""",
+                    (order_id, it["type"], it["qty"], it["rate"],
+                     it["qty"] * it["rate"], meas_json, style_json)
+                )
+
+        # Increment coupon used_count
+        if coupon_row and coupon_discount:
+            try:
+                db.execute("UPDATE web_coupons SET used_count=used_count+1 WHERE code=?", (coupon_code,))
+            except Exception:
+                pass
+
+        db.commit()
+
+        # ── SMS confirmation ──────────────────────────────────────────────────
+        if order_id:
+            try:
+                from app.utils.sms import send_order_sms as _osms
+                _garment_names = ", ".join(it["type"] for it in item_rows) if item_rows else "Custom Order"
+                is_home = any("delivery:home" in p for p in note.split("|"))
+                _osms(
+                    mobile          = cust_phone,
+                    order_code      = order_code,
+                    customer_name   = cust_name,
+                    garment         = _garment_names,
+                    total           = payable_amount,
+                    advance         = advance_paid,
+                    delivery_date   = delivery_date,
+                    is_home_delivery= is_home,
+                )
+            except Exception:
+                pass
+
+        # ── Email + FCM confirmation ──────────────────────────────────────────
+        if order_id:
+            try:
+                _cust_email = ""
+                _web_acc_id = session.get("web_account_id")
+                if _web_acc_id:
+                    _acc_row = db.execute(
+                        "SELECT email FROM web_accounts WHERE id=? LIMIT 1", (_web_acc_id,)
+                    ).fetchone()
+                    if _acc_row:
+                        _cust_email = (_acc_row["email"] or "").strip()
+                if _cust_email:
+                    from app.utils.email_notify import send_order_email as _oe
+                    _garment_names_e = ", ".join(it["type"] for it in item_rows) if item_rows else "Custom Order"
+                    _is_home_e = any("delivery:home" in p for p in note.split("|"))
+                    _oe(
+                        to=_cust_email, order_code=order_code,
+                        customer_name=cust_name, garment=_garment_names_e,
+                        total=payable_amount, advance=advance_paid,
+                        delivery_date=delivery_date, is_home_delivery=_is_home_e,
+                    )
+            except Exception:
+                pass
+            try:
+                _web_acc_id2 = session.get("web_account_id")
+                if _web_acc_id2:
+                    from app.utils.fcm import push_order_placed as _fcm_op
+                    _garment_names_f = ", ".join(it["type"] for it in item_rows) if item_rows else "Custom Order"
+                    _fcm_op(_web_acc_id2, order_code, _garment_names_f)
+            except Exception:
+                pass
+
+        if order_id:
+            return redirect(url_for("website.order_confirmed", id=order_id))
+        return redirect(url_for("website.home"))
+
+    except Exception as exc:
+        try: db.rollback()
+        except: pass
+        # Fallback: redirect home rather than showing raw error
+        return redirect(url_for("website.home") + "?order_error=1")
+
+
+@website_bp.route("/sitemap.xml")
+def sitemap():
+    from flask import Response
+    from datetime import datetime
+    db = get_db()
+    base = "https://uttamtailors.in"
+    today = datetime.now().strftime("%Y-%m-%d")
+    urls = []
+
+    # Static pages
+    static_pages = [
+        ("", "1.0", "weekly"),
+        ("/our-craft", "0.9", "weekly"),
+        ("/our-services", "0.9", "weekly"),
+        ("/our-story", "0.7", "monthly"),
+        ("/contact", "0.7", "monthly"),
+        ("/commission", "0.9", "weekly"),
+    ]
+    for path, priority, freq in static_pages:
+        urls.append(f"""  <url>
+    <loc>{base}{path}</loc>
+    <changefreq>{freq}</changefreq>
+    <priority>{priority}</priority>
+    <lastmod>{today}</lastmod>
+  </url>""")
+
+    # Product pages
+    try:
+        items = db.execute("SELECT slug, id FROM web_service_items WHERE slug != '' AND slug IS NOT NULL").fetchall()
+        for item in items:
+            urls.append(f"""  <url>
+    <loc>{base}/garment/{item['slug']}</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>{today}</lastmod>
+  </url>""")
+    except Exception: pass
+
+    # Custom pages
+    try:
+        pages = db.execute("SELECT slug FROM web_pages").fetchall()
+        for page in pages:
+            urls.append(f"""  <url>
+    <loc>{base}/page/{page['slug']}</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>""")
+    except Exception: pass
+
+    xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
+    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    xml += "\n".join(urls)
+    xml += "\n</urlset>"
+    return Response(xml, mimetype="application/xml")
+
+
+@website_bp.route("/robots.txt")
+def robots_txt():
+    from flask import Response
+    try:
+        db = get_db()
+        row = db.execute("SELECT value FROM settings WHERE key='robots_txt'").fetchone()
+        if row and row["value"]:
+            return Response(row["value"], mimetype="text/plain")
+    except Exception: pass
+    default = """User-agent: *
+Allow: /
+Disallow: /manage/
+Disallow: /owner/
+Disallow: /api/
+Disallow: /order-review
+Disallow: /order-confirmed
+
+Sitemap: https://uttamtailors.in/sitemap.xml"""
+    return Response(default, mimetype="text/plain")
+
+@website_bp.route("/api/validate-coupon", methods=["POST"])
+def validate_coupon():
+    db = get_db()
+    d = request.get_json() or {}
+    code = (d.get("code","")).strip().upper()
+    order_total = float(d.get("order_total",0))
+    if not code:
+        return jsonify({"valid":False,"message":"Enter a coupon code"})
+    try:
+        coupon = db.execute("""SELECT * FROM web_coupons WHERE code=? AND active=1
+            AND (expires_on='' OR expires_on IS NULL OR expires_on >= date('now'))
+            AND (max_uses=0 OR used_count < max_uses)""", (code,)).fetchone()
+        if not coupon:
+            return jsonify({"valid":False,"message":"Invalid or expired coupon"})
+        if order_total < coupon["min_order"]:
+            return jsonify({"valid":False,"message":f"Min order Rs.{int(coupon['min_order'])} required"})
+        if coupon["discount_type"] == "percent":
+            discount = round(order_total * coupon["discount_value"] / 100)
+        else:
+            discount = int(coupon["discount_value"])
+        return jsonify({"valid":True,"discount":discount,"message":f"✓ {coupon['description'] or code} applied"})
+    except:
+        return jsonify({"valid":False,"message":"Could not validate coupon"})
+
+@website_bp.route("/api/complete-the-look")
+def api_complete_the_look():
+    """Given the item ids currently in the cart, return admin-curated 'Complete the Look'
+    suggestions — deduped, excluding anything already in the cart."""
+    ids_param = request.args.get("ids", "")
+    ids = []
+    for x in ids_param.split(","):
+        x = x.strip()
+        if x.isdigit():
+            ids.append(int(x))
+    if not ids:
+        return jsonify({"ok": True, "items": []})
+    db = get_db()
+    try:
+        placeholders = ",".join("?" * len(ids))
+        rows = db.execute(
+            f"SELECT DISTINCT related_item_id FROM web_related_items WHERE item_id IN ({placeholders})", ids
+        ).fetchall()
+        related_ids = [r["related_item_id"] for r in rows if r["related_item_id"] not in ids]
+        if not related_ids:
+            return jsonify({"ok": True, "items": []})
+        placeholders2 = ",".join("?" * len(related_ids))
+        items = db.execute(
+            f"SELECT id, name, price, image_url, stock_qty FROM web_service_items WHERE id IN ({placeholders2})",
+            related_ids
+        ).fetchall()
+        return jsonify({"ok": True, "items": [dict(r) for r in items][:8]})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e), "items": []})
+
+@website_bp.route("/api/default-sizes/<garment_category>/<size_label>")
+def api_default_sizes(garment_category, size_label):
+    db = get_db()
+    import json
+    try:
+        row = db.execute("SELECT measurements FROM garment_default_sizes WHERE garment_category=? AND size_label=?",
+                         (garment_category.lower(), size_label)).fetchone()
+        if row:
+            return jsonify({"ok":True,"measurements":json.loads(row["measurements"])})
+        return jsonify({"ok":False,"measurements":{}})
+    except:
+        return jsonify({"ok":False,"measurements":{}})
+
+@website_bp.route("/api/fabric-metres")
+def api_fabric_metres():
+    """Returns admin-configured fabric metres-needed per garment category + size,
+    e.g. {"shirt": {"S": 1.3, "M": 1.4, ...}, "pant": {...}}.
+    Read from garment_default_sizes.measurements.fabric_metres (set in admin Sizes panel)."""
+    db = get_db()
+    import json
+    out = {}
+    try:
+        rows = db.execute("SELECT garment_category, size_label, measurements FROM garment_default_sizes").fetchall()
+        for r in rows:
+            try:
+                meas = json.loads(r["measurements"] or "{}")
+                fm = meas.get("fabric_metres")
+                if fm not in (None, ""):
+                    cat = (r["garment_category"] or "").lower()
+                    out.setdefault(cat, {})[r["size_label"]] = float(fm)
+            except Exception:
+                continue
+    except Exception:
+        pass
+    return jsonify({"ok": True, "data": out})
+
+
+@website_bp.route("/api/size-measurements")
+def api_size_measurements():
+    """Returns admin-configured measurements per garment category + size,
+    normalised to a fixed set of keys (chest, waist, shoulder, length, trouser)
+    so the customer-facing 'fine-tune measurements' fields can be pre-filled
+    with whatever the shop owner entered in the Sizes admin tab."""
+    db = get_db()
+    import json
+    out = {}
+
+    def _pick(meas, candidates):
+        for k in candidates:
+            if k in meas and meas[k] not in (None, ""):
+                return meas[k]
+        return None
+
+    try:
+        rows = db.execute("SELECT garment_category, size_label, measurements FROM garment_default_sizes").fetchall()
+        for r in rows:
+            try:
+                meas = json.loads(r["measurements"] or "{}")
+                meas_lc = {(k or "").lower(): v for k, v in meas.items()}
+                cat = (r["garment_category"] or "").lower()
+                norm = {
+                    "chest":    _pick(meas_lc, ["chest"]),
+                    "waist":    _pick(meas_lc, ["waist"]),
+                    "shoulder": _pick(meas_lc, ["shoulder"]),
+                    "length":   _pick(meas_lc, ["shirt_length", "kurta_length", "jacket_length", "length"]),
+                    "trouser":  _pick(meas_lc, ["pant_length", "trouser_length", "trouser", "pant"]),
+                }
+                norm = {k: v for k, v in norm.items() if v not in (None, "")}
+                if norm:
+                    out.setdefault(cat, {})[r["size_label"]] = norm
+            except Exception:
+                continue
+    except Exception:
+        pass
+    return jsonify({"ok": True, "data": out})
+
+
+@website_bp.route("/api/style-options/<int:item_id>")
+def api_style_options(item_id):
+    db = get_db()
+    try:
+        rows = db.execute("SELECT * FROM garment_style_options WHERE item_id=? ORDER BY sort_order,id", (item_id,)).fetchall()
+        result = []
+        for r in rows:
+            vals = db.execute("SELECT * FROM garment_style_values WHERE option_id=? ORDER BY sort_order,id", (r["id"],)).fetchall()
+            opt = dict(r)
+            opt["values"] = [dict(v) for v in vals]
+            result.append(opt)
+        return jsonify({"ok": True, "options": result})
+    except:
+        return jsonify({"ok": True, "options": []})
+
+
+def _resolve_style_ai_prompts(item_id):
+    """Look up admin-authored explicit AI instructions for an item's style
+    values, from garment_style_values.ai_prompt.
+
+    Returns a dict keyed by (option_group.lower().strip(), value_label.lower().strip())
+    -> ai_prompt, containing ONLY rows where the admin has actually filled in
+    an instruction (blank ai_prompt rows are skipped, so the hardcoded
+    keyword-matching below still covers them as a fallback).
+
+    This is the fix for "style options added in Admin must automatically
+    reach the AI backend" — every Replicate call costs real money, so any
+    style value the keyword-matcher doesn't recognize should use the admin's
+    own explicit, accurate instruction text instead of falling through to a
+    vague generic phrase that wastes the generation."""
+    if not item_id:
+        return {}
+    try:
+        db = get_db()
+        rows = db.execute(
+            "SELECT go.option_group AS grp, gv.value_label AS lbl, gv.ai_prompt AS ai "
+            "FROM garment_style_values gv JOIN garment_style_options go ON go.id = gv.option_id "
+            "WHERE go.item_id=? AND gv.ai_prompt IS NOT NULL AND gv.ai_prompt != ''",
+            (item_id,)
+        ).fetchall()
+        return {
+            ((r["grp"] or "").lower().strip(), (r["lbl"] or "").lower().strip()): r["ai"].strip()
+            for r in rows if (r["ai"] or "").strip()
+        }
+    except Exception:
+        return {}
+
+
+def _style_detail_phrases(styles, ai_map=None):
+    """Shared: turn a {option_group: chosen_value} dict into precise, explicit
+    descriptive phrases (collar/sleeve/pocket-count/placket/buttons/hem/fit).
+    Used by any prompt that DESCRIBES the garment to generate (not edit-style
+    prompts, which phrase things as "change X to Y" instead).
+
+    If ai_map (from _resolve_style_ai_prompts) has an explicit admin-authored
+    instruction for this exact (group, value), it is used VERBATIM instead of
+    the hardcoded keyword guesses below — that's the accurate, intentional
+    instruction an admin wrote for this specific style choice."""
+    ai_map = ai_map or {}
+    style_terms = []
+    for group, value in (styles or {}).items():
+        if group.startswith("__") or not value:
+            continue
+        v = str(value).lower()
+        g_grp = (group or "").lower()
+        ai = ai_map.get((g_grp.strip(), v.strip()))
+        # Collar
+        if ai:
+            style_terms.append(ai)
+        elif "mandarin" in v or "chinese" in v:
+            style_terms.append("a short mandarin/Chinese stand-up band collar that sits straight up around the neck with NO fold-down points and NO spread — clearly different from a regular pointed shirt collar")
+        elif "band" in v and "collar" in v:
+            style_terms.append("a plain band collar, short stand-up collar with no points")
+        elif "button-down" in v or "button down" in v:
+            style_terms.append("a button-down collar with visible buttons fastening the collar points to the shirt")
+        elif "spread" in v:
+            style_terms.append("a wide spread collar with points spread far apart")
+        # Sleeves
+        elif "full" in v and "sleeve" in v:
+            style_terms.append("full-length long sleeves reaching the wrists, with buttoned cuffs")
+        elif "half" in v and "sleeve" in v:
+            style_terms.append("short half sleeves ending above the elbow")
+        elif "3/4" in v or ("three" in v and "quarter" in v):
+            style_terms.append("three-quarter length sleeves ending below the elbow")
+        elif "sleeveless" in v:
+            style_terms.append("sleeveless, no sleeves at all, open armholes")
+        # Pockets — must come before the generic fallback so counts are rendered explicitly
+        elif "pocket" in v or "pocket" in g_grp:
+            if "no pocket" in v or v.strip() in ("no pocket", "no pockets"):
+                style_terms.append("a completely plain front with NO chest pockets at all")
+            elif "2" in v or "two" in v:
+                style_terms.append("exactly TWO patch pockets on the chest — one on the left side and one on the right side, symmetrical and clearly visible")
+            elif "1" in v or "one" in v:
+                style_terms.append("exactly ONE single patch pocket on the left chest only — no pocket on the right side")
+            else:
+                style_terms.append(v)
+        # Placket
+        elif "concealed" in v or "hidden" in v:
+            style_terms.append("a concealed hidden-button placket with no visible buttons, clean minimalist front")
+        elif "french" in v and "placket" in v:
+            style_terms.append("a French placket (folded fabric front band) with visible top-stitching")
+        elif "standard" in v and "placket" in g_grp:
+            style_terms.append("a standard shirt placket with regular visible buttons down the front")
+        # Buttons
+        elif "gold" in v or "metal" in v:
+            style_terms.append("gold-toned metal buttons")
+        elif "white" in v or "pearl" in v:
+            style_terms.append("white pearl buttons")
+        elif "dark" in v or "black" in v:
+            style_terms.append("dark black buttons")
+        elif "denim" in v and "button" in v:
+            style_terms.append("denim-covered fabric buttons matching the garment")
+        # Hem
+        elif "round" in v and "hem" in v:
+            style_terms.append("a rounded curved hem at the bottom — the side seams curve gently inward toward the bottom corners instead of forming sharp square corners")
+        elif "straight" in v and "hem" in v:
+            style_terms.append("a straight horizontal hem at the bottom with sharp square corners, no curve")
+        elif "side" in v and ("cut" in v or "slit" in v):
+            style_terms.append("side slit openings at the bottom hem on both side seams")
+        # Fit
+        elif "slim" in v:
+            style_terms.append("a slim tailored fit")
+        elif "regular" in v:
+            style_terms.append("a regular comfortable fit")
+        elif "loose" in v or "relaxed" in v:
+            style_terms.append("a relaxed loose fit")
+        # Fallback
+        else:
+            clean = value.strip()
+            if len(clean) < 40:
+                style_terms.append(clean.lower())
+    return style_terms
+
+
+_BRAND_LABEL_PHRASE = (
+    "IMPORTANT BRANDING DETAIL — this is a studio reference photo for \"Uttam Tailors, Sikar\" and must "
+    "carry their mark so customers cannot screenshot and reuse it elsewhere: show a small, elegant woven "
+    "or embroidered fabric label sewn onto the INSIDE of the collar (the inside back-neck placket area, "
+    "exactly where real branded shirts have their maker's label), reading \"UTTAM\" on one line and "
+    "\"Est. 1987\" in smaller text below it, in a tasteful gold-on-black or tone-on-tone serif style "
+    "consistent with a premium heritage tailoring house — subtle, neatly stitched, and proportioned like "
+    "a genuine designer label, not a sticker or watermark plastered over the photo."
+)
+
+
+def build_garment_prompt(garment, styles, ai_map=None):
+    """Build a detailed Replicate/Flux prompt from garment + style selections."""
+    g = garment.lower()
+    garment_map = {
+        "formal shirt": "men's formal dress shirt",
+        "shirt":        "men's dress shirt",
+        "kurta":        "men's Indian kurta, ethnic traditional wear",
+        "kurta + pajama": "men's kurta pajama set, Indian ethnic wear",
+        "pathani":      "men's pathani suit, traditional wear",
+        "safari suit":  "men's safari suit",
+        "blazer":       "men's blazer jacket, tailored",
+        "suit 2-piece": "men's 2-piece suit, jacket and pants",
+        "suit 3-piece": "men's 3-piece suit with waistcoat",
+        "pant":         "men's dress pants",
+        "jeans":        "men's jeans",
+        "trouser":      "men's tailored pants",
+    }
+    base = None
+    for key, val in garment_map.items():
+        if key in g:
+            base = val
+            break
+    if not base:
+        base = "men's " + garment
+
+    style_terms = _style_detail_phrases(styles, ai_map)
+    style_str = "; ".join(style_terms) if style_terms else "classic style"
+
+    prompt = (
+        f"Professional fashion catalog photograph, {base}, with these EXACT design details — {style_str}. "
+        "Follow every one of these design details precisely and do not substitute a generic/standard "
+        "version of any of them. "
+        "Flat lay product photography on pure white background, "
+        "studio lighting, sharp focus, high resolution, "
+        "fashion editorial quality, neutral clean aesthetic, "
+        "no people, no mannequin, garment only. "
+        f"{_BRAND_LABEL_PHRASE}"
+    )
+    return prompt
+
+
+def build_img2img_style_prompt(garment, styles, ai_map=None):
+    """Build an *edit* prompt for img2img (Flux Kontext) — describes ONLY the
+    requested style changes (collar/sleeve/placket/buttons/hem/fit). Color,
+    pattern and fabric must NOT be re-described here because the reference
+    photo already shows them — Kontext keeps everything else from the input
+    image untouched and only edits what the prompt tells it to change.
+
+    If ai_map has an admin-authored instruction for a selected value, it is
+    used verbatim (wrapped as an explicit "must show" instruction) instead of
+    the hardcoded keyword guesses — see _resolve_style_ai_prompts."""
+    ai_map = ai_map or {}
+    style_terms = []
+    for group, value in styles.items():
+        if group.startswith("__") or not value:
+            continue
+        v = value.lower()
+        g_grp = (group or "").lower()
+        ai = ai_map.get((g_grp.strip(), v.strip()))
+        if ai:
+            style_terms.append(f"the garment must clearly show: {ai}")
+        elif "mandarin" in v or "chinese" in v:
+            style_terms.append("REPLACE the collar entirely with a short mandarin/Chinese stand-up band collar — a narrow band that stands straight up around the neck with NO fold-down points and NO spread; remove any pointed collar shape completely")
+        elif "band" in v and "collar" in v:
+            style_terms.append("change the collar to a plain short band collar with no points")
+        elif "button-down" in v or "button down" in v:
+            style_terms.append("change the collar to a button-down collar, with small buttons fastening each collar point to the shirt body")
+        elif "spread" in v:
+            style_terms.append("change the collar to a wide spread collar with the points spread far apart")
+        elif "full" in v and "sleeve" in v:
+            style_terms.append("change the sleeves to full-length long sleeves that reach the wrists, with buttoned cuffs")
+        elif "half" in v and "sleeve" in v:
+            style_terms.append("shorten the sleeves to half sleeves that end above the elbow")
+        elif "3/4" in v or ("three" in v and "quarter" in v):
+            style_terms.append("change the sleeves to three-quarter length, ending below the elbow")
+        elif "sleeveless" in v:
+            style_terms.append("remove the sleeves entirely to make it sleeveless with open armholes")
+        # Pockets — explicit count handling so the model doesn't default to 0 or 1
+        elif "pocket" in v or "pocket" in g_grp:
+            if "no pocket" in v or v.strip() in ("no pocket", "no pockets"):
+                style_terms.append("remove all chest pockets — the front should be completely plain with no pockets")
+            elif "2" in v or "two" in v:
+                style_terms.append("the garment must have exactly TWO patch pockets on the chest, one on the left side and one on the right side, placed symmetrically and both clearly visible — add a second pocket if only one is currently shown")
+            elif "1" in v or "one" in v:
+                style_terms.append("the garment must have exactly ONE single patch pocket on the left chest only — remove any pocket on the right side if present")
+            else:
+                style_terms.append("apply this pocket style: " + v)
+        elif "concealed" in v or "hidden" in v:
+            style_terms.append("change the front placket to a concealed hidden-button placket so no buttons are visible")
+        elif "french" in v and "placket" in v:
+            style_terms.append("change the front placket to a French placket (a folded fabric band with visible top-stitching)")
+        elif "gold" in v or "metal" in v:
+            style_terms.append("change the buttons to gold-toned metal buttons")
+        elif "white" in v or "pearl" in v:
+            style_terms.append("change the buttons to white pearl buttons")
+        elif "dark" in v or "black" in v:
+            style_terms.append("change the buttons to dark black buttons")
+        elif "denim" in v and "button" in v:
+            style_terms.append("change the buttons to denim-covered fabric buttons matching the garment fabric")
+        elif "round" in v and "hem" in v:
+            style_terms.append("change the hem to a rounded curved hem")
+        elif "straight" in v and "hem" in v:
+            style_terms.append("change the hem to a straight horizontal hem")
+        elif "side" in v and ("cut" in v or "slit" in v):
+            style_terms.append("add side slit openings to the hem")
+        elif "slim" in v:
+            style_terms.append("adjust the fit to a slim tailored fit")
+        elif "regular" in v:
+            style_terms.append("adjust the fit to a regular comfortable fit")
+        elif "loose" in v or "relaxed" in v:
+            style_terms.append("adjust the fit to a relaxed loose fit")
+        else:
+            clean = value.strip()
+            if len(clean) < 40:
+                style_terms.append("apply this style detail: " + clean.lower())
+
+    if not style_terms:
+        return ("Keep this garment exactly as shown — same color, same fabric pattern, "
+                "same design — just present it as a clean professional catalog product photo "
+                "on a plain white background.")
+
+    changes = "; ".join(style_terms)
+    return (
+        f"Edit this garment photo: {changes}. "
+        "IMPORTANT: keep the exact same fabric color, pattern, print and texture as the original photo — "
+        "do not change the color or material. Keep it a clean professional fashion catalog product photo "
+        "on a plain white background, studio lighting, no people, no mannequin, garment only."
+    )
+
+
+def build_fabric_to_garment_prompt(garment, styles, fabric_name="", ai_map=None):
+    """Edit prompt used when the customer picked a fabric from our catalog —
+    the reference image is a photo of THAT FABRIC (swatch/texture), not the
+    generic product photo, so the model should render the garment USING this
+    fabric's exact color, weave, print and texture, shaped per the garment +
+    style selections."""
+    style_terms = _style_detail_phrases(styles, ai_map)
+    style_str = "; ".join(style_terms) if style_terms else "a classic standard style"
+    fab_phrase = (f"the \"{fabric_name}\" fabric" if fabric_name else "this fabric")
+
+    return (
+        f"The attached reference image is a CLOSE-UP PHOTO OF A FABRIC SWATCH — {fab_phrase}. "
+        "Look closely at this swatch and identify EVERY visual detail in it: its base color, and any print "
+        "or pattern on it (for example dots/polka-dots, stripes, checks, florals, weave lines, texture "
+        "grain, flecks, or any other surface detail). Whatever pattern or texture is visible in the swatch — "
+        "no matter how small or subtle — MUST be reproduced at the correct small scale on the finished "
+        "garment below; do NOT output a plain, solid-color or smoothed-out fabric. If the swatch shows a "
+        "dotted/polka-dot print, the generated garment's fabric must clearly show those same small dots "
+        "repeated all over it, at the same size and spacing and color as in the swatch. "
+        f"Now generate a professional fashion catalog photograph of a finished, fully stitched {garment} "
+        f"made from this exact fabric, cut and styled with these EXACT design details — {style_str}. "
+        "Follow every one of these design details precisely — do not default to a generic/standard version "
+        "of any of them. "
+        "Show the garment laid flat or on an invisible mannequin, clean professional product photo on a "
+        "plain white studio background, even studio lighting, sharp focus, high resolution macro-level "
+        "detail so the fabric's print/texture is clearly visible on the garment, no people, no mannequin "
+        "face, garment only. "
+        f"{_BRAND_LABEL_PHRASE}"
+    )
+
+
+def build_multi_image_fabric_garment_prompt(garment, styles, fabric_name="", ai_map=None):
+    """Edit prompt for the multi-image Kontext model (two reference images).
+    Image 1 = the product's own reference photo — a REAL garment photo, so its
+    collar/sleeve/pocket/placket/hem shapes are already correct; we only tell
+    the model what to CHANGE about that structure (same reliable edit-phrasing
+    as build_img2img_style_prompt). Image 2 = the fabric swatch the customer
+    picked — used only for color/pattern/texture.
+
+    Generating exact pocket counts / collar shapes / hem shapes purely from a
+    fabric swatch + text description (the old single-image fabric path) asks
+    the model to invent the entire garment structure from scratch, which
+    diffusion models are unreliable at. Anchoring structure to a real photo
+    and only describing the deltas is far more reliable.
+
+    If ai_map has an admin-authored instruction for a selected value, it is
+    used verbatim instead of the hardcoded keyword guesses — see
+    _resolve_style_ai_prompts."""
+    ai_map = ai_map or {}
+    style_terms = []
+    for group, value in (styles or {}).items():
+        if group.startswith("__") or not value:
+            continue
+        v = str(value).lower()
+        g_grp = (group or "").lower()
+        ai = ai_map.get((g_grp.strip(), v.strip()))
+        if ai:
+            style_terms.append(f"in Image 1, the garment must clearly show: {ai}")
+        elif "mandarin" in v or "chinese" in v:
+            style_terms.append("REPLACE the collar in Image 1 entirely with a short mandarin/Chinese stand-up band collar — a narrow band that stands straight up around the neck with NO fold-down points and NO spread; remove any pointed collar shape completely")
+        elif "band" in v and "collar" in v:
+            style_terms.append("change the collar in Image 1 to a plain short band collar with no points")
+        elif "button-down" in v or "button down" in v:
+            style_terms.append("change the collar in Image 1 to a button-down collar, with small buttons fastening each collar point to the shirt body")
+        elif "spread" in v:
+            style_terms.append("change the collar in Image 1 to a wide spread collar with the points spread far apart")
+        elif "full" in v and "sleeve" in v:
+            style_terms.append("change the sleeves in Image 1 to full-length long sleeves that reach the wrists, with buttoned cuffs")
+        elif "half" in v and "sleeve" in v:
+            style_terms.append("shorten the sleeves in Image 1 to half sleeves that end above the elbow")
+        elif "3/4" in v or ("three" in v and "quarter" in v):
+            style_terms.append("change the sleeves in Image 1 to three-quarter length, ending below the elbow")
+        elif "sleeveless" in v:
+            style_terms.append("remove the sleeves in Image 1 entirely to make it sleeveless with open armholes")
+        elif "pocket" in v or "pocket" in g_grp:
+            if "no pocket" in v or v.strip() in ("no pocket", "no pockets"):
+                style_terms.append("remove all chest pockets from Image 1 — the front should be completely plain with no pockets")
+            elif "2" in v or "two" in v:
+                style_terms.append("the garment must have exactly TWO patch pockets on the chest, one on the left side and one on the right side, placed symmetrically and both clearly visible — add a second pocket if Image 1 shows only one")
+            elif "1" in v or "one" in v:
+                style_terms.append("the garment must have exactly ONE single patch pocket on the left chest only — remove any pocket on the right side if Image 1 shows one")
+            else:
+                style_terms.append("apply this pocket style to Image 1: " + v)
+        elif "concealed" in v or "hidden" in v:
+            style_terms.append("change the front placket in Image 1 to a concealed hidden-button placket so no buttons are visible")
+        elif "french" in v and "placket" in v:
+            style_terms.append("change the front placket in Image 1 to a French placket (a folded fabric band with visible top-stitching)")
+        elif "gold" in v or "metal" in v:
+            style_terms.append("use gold-toned metal buttons")
+        elif "white" in v or "pearl" in v:
+            style_terms.append("use white pearl buttons")
+        elif "dark" in v or "black" in v:
+            style_terms.append("use dark black buttons")
+        elif "denim" in v and "button" in v:
+            style_terms.append("use denim-covered fabric buttons matching the garment fabric")
+        elif "round" in v and "hem" in v:
+            style_terms.append("change the hem in Image 1 to a rounded curved hem")
+        elif "straight" in v and "hem" in v:
+            style_terms.append("change the hem in Image 1 to a straight horizontal hem")
+        elif "side" in v and ("cut" in v or "slit" in v):
+            style_terms.append("add side slit openings to the hem in Image 1")
+        elif "slim" in v:
+            style_terms.append("adjust the fit to a slim tailored fit")
+        elif "regular" in v:
+            style_terms.append("adjust the fit to a regular comfortable fit")
+        elif "loose" in v or "relaxed" in v:
+            style_terms.append("adjust the fit to a relaxed loose fit")
+        else:
+            clean = value.strip()
+            if len(clean) < 40:
+                style_terms.append("apply this style detail to Image 1: " + clean.lower())
+
+    structure_str = ("; ".join(style_terms) if style_terms
+                      else "keep the garment's collar, sleeves, pockets, placket and hem exactly as shown in Image 1")
+    fab_phrase = (f"the \"{fabric_name}\" fabric" if fabric_name else "this fabric")
+
+    return (
+        f"Image 1 is a photo of a finished {garment} — use it as the STRUCTURAL reference for shape, cut "
+        f"and silhouette, with these specific changes: {structure_str}. Follow every one of these changes "
+        "precisely and do not substitute a generic/standard version of any of them. "
+        f"Image 2 is a close-up photo of a fabric swatch — {fab_phrase}. Look closely at Image 2 and identify "
+        "EVERY visual detail in it: its base color, and any print or pattern on it (for example dots/polka-dots, "
+        "stripes, checks, florals, weave lines, texture grain, flecks, or any other surface detail). "
+        "Generate ONE finished photo of the garment from Image 1 (with the structural changes above applied), "
+        "rendered using the EXACT fabric color, print and texture from Image 2 — reproduce any pattern at the "
+        "correct small scale, at the same size/spacing/color as in the swatch; do NOT output a plain, "
+        "solid-color or smoothed-out fabric. "
+        "Clean professional fashion catalog product photo, plain white studio background, even studio "
+        "lighting, sharp focus, high resolution, macro-level detail so the fabric's print/texture is clearly "
+        "visible, no people, no mannequin, garment only. "
+        f"{_BRAND_LABEL_PHRASE}"
+    )
+
+
+def build_virtual_tryon_prompt(garment, styles, fabric_name="", ref_is_fabric=False, ai_map=None):
+    """Virtual try-on edit prompt for the multi-image Kontext model. Image 1 =
+    the CUSTOMER'S OWN uploaded photo — their face, body, pose, skin tone and
+    background must be preserved EXACTLY; only their clothing changes. Image 2
+    is either the product's real reference photo (garment structure already
+    correct) or — when the customer also picked a catalog fabric — a close-up
+    of that fabric swatch (color/pattern reference only, no structure; the
+    multi-image model only accepts two images, so a person photo + a separate
+    fabric swatch + a separate garment photo all at once isn't possible —
+    the fabric swatch is preferred over the generic product photo here since
+    getting the customer's chosen color/pattern right matters more for a
+    try-on preview than exact pocket/collar counts).
+
+    Mirrors the same keyword/ai_map-driven style-edit logic as
+    build_multi_image_fabric_garment_prompt so admin-authored ai_prompt values
+    are honoured identically; only the image-numbering/identity-preservation
+    framing differs because Image 1 here is a PERSON, not a flat garment."""
+    ai_map = ai_map or {}
+    style_terms = []
+    for group, value in (styles or {}).items():
+        if group.startswith("__") or not value:
+            continue
+        v = str(value).lower()
+        g_grp = (group or "").lower()
+        ai = ai_map.get((g_grp.strip(), v.strip()))
+        if ai:
+            style_terms.append(f"the garment must clearly show: {ai}")
+        elif "mandarin" in v or "chinese" in v:
+            style_terms.append("the collar must be a short mandarin/Chinese stand-up band collar — a narrow band that stands straight up around the neck with NO fold-down points and NO spread")
+        elif "band" in v and "collar" in v:
+            style_terms.append("the collar must be a plain short band collar with no points")
+        elif "button-down" in v or "button down" in v:
+            style_terms.append("the collar must be a button-down collar, with small buttons fastening each collar point to the shirt body")
+        elif "spread" in v:
+            style_terms.append("the collar must be a wide spread collar with the points spread far apart")
+        elif "full" in v and "sleeve" in v:
+            style_terms.append("the sleeves must be full-length long sleeves reaching the wrists, with buttoned cuffs")
+        elif "half" in v and "sleeve" in v:
+            style_terms.append("the sleeves must be half sleeves ending above the elbow")
+        elif "3/4" in v or ("three" in v and "quarter" in v):
+            style_terms.append("the sleeves must be three-quarter length, ending below the elbow")
+        elif "sleeveless" in v:
+            style_terms.append("the garment must be sleeveless with open armholes")
+        elif "pocket" in v or "pocket" in g_grp:
+            if "no pocket" in v or v.strip() in ("no pocket", "no pockets"):
+                style_terms.append("the front must be completely plain with no pockets")
+            elif "2" in v or "two" in v:
+                style_terms.append("the garment must have exactly TWO patch pockets on the chest, one on the left side and one on the right side, placed symmetrically")
+            elif "1" in v or "one" in v:
+                style_terms.append("the garment must have exactly ONE single patch pocket on the left chest only")
+            else:
+                style_terms.append("apply this pocket style: " + v)
+        elif "concealed" in v or "hidden" in v:
+            style_terms.append("the front placket must be a concealed hidden-button placket so no buttons are visible")
+        elif "french" in v and "placket" in v:
+            style_terms.append("the front placket must be a French placket (a folded fabric band with visible top-stitching)")
+        elif "gold" in v or "metal" in v:
+            style_terms.append("use gold-toned metal buttons")
+        elif "white" in v or "pearl" in v:
+            style_terms.append("use white pearl buttons")
+        elif "dark" in v or "black" in v:
+            style_terms.append("use dark black buttons")
+        elif "denim" in v and "button" in v:
+            style_terms.append("use denim-covered fabric buttons matching the garment fabric")
+        elif "round" in v and "hem" in v:
+            style_terms.append("the hem must be a rounded curved hem")
+        elif "straight" in v and "hem" in v:
+            style_terms.append("the hem must be a straight horizontal hem")
+        elif "side" in v and ("cut" in v or "slit" in v):
+            style_terms.append("add side slit openings to the hem")
+        elif "slim" in v:
+            style_terms.append("the fit must be a slim tailored fit")
+        elif "regular" in v:
+            style_terms.append("the fit must be a regular comfortable fit")
+        elif "loose" in v or "relaxed" in v:
+            style_terms.append("the fit must be a relaxed loose fit")
+        else:
+            clean = value.strip()
+            if len(clean) < 40:
+                style_terms.append("apply this style detail: " + clean.lower())
+
+    checklist = "\n".join(f"  {i+1}. {t}" for i, t in enumerate(style_terms)) if style_terms else "  1. a classic standard style"
+    fab_phrase = (f"the \"{fabric_name}\" fabric" if fabric_name else "this fabric")
+
+    identity_lock = (
+        "TASK: Image 1 is a photo of a real person who wants to virtually try on a new garment. "
+        "Edit ONLY their clothing — everything else in Image 1 must stay 100% IDENTICAL: their exact face, "
+        "facial features, skin tone, age, hair, body shape, pose, hands, and the photo's background. Do not "
+        "change their identity, do not slim or reshape their body, do not alter their face in any way."
+    )
+
+    replace_rule = (
+        "REPLACE, DON'T BLEND: completely remove whatever the person is currently wearing in Image 1 and "
+        "replace it with the new garment described below. Do not keep, blend, average or carry over any part "
+        "of their current outfit's collar shape, sleeve length, pattern, fit or color — the new garment's look "
+        "comes ONLY from the checklist and reference image below, never from what they happen to be wearing in "
+        "Image 1 right now."
+    )
+
+    if ref_is_fabric:
+        garment_block = (
+            f"NEW GARMENT: a {garment}. Every single item in this checklist is mandatory, with no exceptions "
+            f"and no defaulting to a generic/standard version:\n{checklist}\n"
+            f"Image 2 is a MACRO close-up photo of a fabric swatch — {fab_phrase}. Zoom in mentally on Image 2 "
+            "and identify every visual detail in it — its base color, and any print/pattern/texture (dots, "
+            "stripes, checks, florals, weave lines, texture grain, flecks, or any other surface detail). "
+            "Whatever pattern is visible, however small or subtle, MUST be reproduced on the new garment at the "
+            "same small scale, spacing and color as the swatch — do NOT smooth it into a plain solid color, "
+            "and do NOT invent a different pattern."
+        )
+    else:
+        garment_block = (
+            f"NEW GARMENT: a {garment}, based on the reference photo in Image 2 for its base color, fabric, "
+            f"pattern and texture. Every single item in this checklist is mandatory, with no exceptions and no "
+            f"defaulting to a generic/standard version:\n{checklist}"
+        )
+
+    result_block = (
+        "Render the final image as one natural, photo-realistic shot of this same person wearing the finished "
+        "garment described above, in the same pose, framing and setting as Image 1, well-fitted to their body, "
+        "with natural fabric drape, folds and shadows consistent with real clothing, and natural lighting "
+        "matching Image 1. Final reminder: the person's face and identity from Image 1 must be perfectly "
+        "unchanged — only the clothing is new, and it must match every checklist item exactly."
+    )
+
+    return f"{identity_lock}\n{replace_rule}\n{garment_block}\n{result_block}"
+
+
+def _replicate_predict(model_url, payload, api_key, poll_iters=60):
+    """POST a prediction to a Replicate model endpoint and return
+    (image_url, error_str) — exactly one of the two will be set. Handles
+    both the immediate result (when `Prefer: wait` returns synchronously)
+    and the polling fallback. Shared by every Replicate call in this file,
+    including each stage of the two-stage virtual try-on pipeline, so the
+    request/poll logic only lives in one place."""
+    import requests, time
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type":  "application/json",
+        "Prefer":        "wait"
+    }
+    resp = requests.post(model_url, headers=headers, json=payload, timeout=90)
+    result = resp.json()
+    if result.get("status") == "succeeded":
+        output = result.get("output")
+        return ((output[0] if isinstance(output, list) else output) or ""), None
+    pred_id = result.get("id")
+    if not pred_id:
+        return None, "Prediction start failed: " + str(result.get("detail", ""))
+    for _ in range(poll_iters):
+        time.sleep(2)
+        poll = requests.get(
+            f"https://api.replicate.com/v1/predictions/{pred_id}",
+            headers={"Authorization": f"Bearer {api_key}"},
+            timeout=15
+        ).json()
+        status = poll.get("status")
+        if status == "succeeded":
+            output = poll.get("output")
+            return ((output[0] if isinstance(output, list) else output) or ""), None
+        if status in ("failed", "canceled"):
+            return None, "Generation failed: " + str(poll.get("error", ""))
+    return None, "Timed out — please try again"
+
+
+# cuuupid/idm-vton (community model) — pinned to its current "latest" version id.
+# Community models on Replicate must be called via POST /v1/predictions with an
+# explicit version, unlike "official" models (e.g. black-forest-labs/flux-kontext-pro)
+# which support the short /v1/models/<owner>/<name>/predictions shorthand. If this
+# model is ever upgraded and this version is retired, check
+# https://replicate.com/cuuupid/idm-vton/versions for the new "Latest" id.
+IDM_VTON_VERSION = "0513734a452173b8173e907e3a59d19a36266e55b48528559432bd21c7d7e985"
+
+
+def _idmvton_category(garment):
+    """Map our garment name to the category bucket IDM-VTON expects
+    (upper_body / lower_body / dresses) — it uses this to know which part
+    of the person's photo to segment and fit the garment onto."""
+    g = (garment or "").lower()
+    if any(k in g for k in ("saree", "sari", "gown", "lehenga")) or (("dress" in g) and "address" not in g):
+        return "dresses"
+    if any(k in g for k in ("pant", "trouser", "jean")) and not any(k in g for k in ("suit", "kurta", "shirt", "blazer")):
+        return "lower_body"
+    return "upper_body"
+
+
+_REPLICATE_VERSION_CACHE = {}  # owner/model -> resolved version id, cached per-process
+
+
+def _replicate_resolve_latest_version(owner_model, api_key):
+    """Resolve the current 'latest' pinned version id for a community
+    Replicate model via GET /v1/models/<owner>/<name> — needed because the
+    shorthand /v1/models/<owner>/<name>/predictions endpoint 404s for some
+    community models (see the IDM_VTON_VERSION note above). Resolving
+    dynamically (instead of hardcoding another hash) means this never goes
+    stale if the model publisher pushes a new version. Cached per-process
+    since it rarely changes; on any failure, return None so the caller can
+    skip the optional step rather than erroring out."""
+    if owner_model in _REPLICATE_VERSION_CACHE:
+        return _REPLICATE_VERSION_CACHE[owner_model]
+    try:
+        import requests
+        r = requests.get(
+            f"https://api.replicate.com/v1/models/{owner_model}",
+            headers={"Authorization": f"Bearer {api_key}"},
+            timeout=15
+        )
+        if r.status_code == 200:
+            vid = ((r.json() or {}).get("latest_version") or {}).get("id")
+            if vid:
+                _REPLICATE_VERSION_CACHE[owner_model] = vid
+                return vid
+    except Exception:
+        pass
+    return None
+
+
+def _restore_face_quality(image_url, api_key):
+    """Best-effort face-restoration pass on a generated virtual try-on image.
+
+    IDM-VTON (Stage 2 of the try-on pipeline) frequently warps/garbles the
+    face on full-body photos — its internal pipeline works at a fixed,
+    fairly low resolution, so a face that's only a small fraction of a
+    full-body frame gets very few effective pixels and the diffusion model
+    regenerates it badly (a known, documented limitation of this model, not
+    something a prompt tweak fixes). GFPGAN specifically detects and
+    restores faces in an image, so running it on the Stage-2 output cleans
+    up exactly that artifact.
+
+    This is purely cosmetic — on ANY failure (model unavailable, network
+    error, no face detected, etc.) we silently fall back to the original
+    image rather than failing the whole generation over an enhancement step."""
+    try:
+        version_id = _replicate_resolve_latest_version("tencentarc/gfpgan", api_key)
+        if not version_id:
+            return image_url
+        payload = {
+            "version": version_id,
+            "input": {"img": image_url, "version": "v1.4", "scale": 1}
+        }
+        restored_url, err = _replicate_predict("https://api.replicate.com/v1/predictions", payload, api_key, poll_iters=20)
+        return restored_url or image_url
+    except Exception:
+        return image_url
+
+
+@website_bp.route("/api/upload-tryon-photo", methods=["POST"])
+def upload_tryon_photo():
+    """Accepts a customer's own photo for the virtual try-on feature and
+    stores it under static/uploads/tryon/. No AI cost is incurred here — the
+    paid Replicate call only happens later in /api/generate-style-preview,
+    which is where the free-trial gate is actually enforced. This endpoint
+    just validates type/size and saves the file."""
+    import os, uuid
+    f = request.files.get("photo")
+    if not f or not f.filename:
+        return jsonify({"ok": False, "error": "No photo uploaded"})
+    ext = os.path.splitext(f.filename)[1].lower()
+    if ext not in (".jpg", ".jpeg", ".png", ".webp"):
+        return jsonify({"ok": False, "error": "Please upload a JPG, PNG or WEBP photo"})
+    f.seek(0, os.SEEK_END)
+    size = f.tell()
+    f.seek(0)
+    if size > 8 * 1024 * 1024:
+        return jsonify({"ok": False, "error": "Photo is too large — please use one under 8MB"})
+    if size == 0:
+        return jsonify({"ok": False, "error": "That file appears to be empty"})
+    fname = "tryon_" + uuid.uuid4().hex[:16] + ext
+    upload_dir = os.path.join(os.path.dirname(__file__), "..", "..", "static", "uploads", "tryon")
+    os.makedirs(upload_dir, exist_ok=True)
+    fpath = os.path.join(upload_dir, fname)
+    f.save(fpath)
+    return jsonify({"ok": True, "url": "/static/uploads/tryon/" + fname})
+
+
+@website_bp.route("/api/generate-style-preview", methods=["POST"])
+def generate_style_preview():
+    import requests, time
+    data = request.get_json() or {}
+    garment = data.get("garment", "shirt")
+    styles  = data.get("styles", {})
+    item_id = data.get("item_id")
+    fabric_choice = (data.get("fabric_choice") or "").strip().lower()
+    fabric_id_raw = (data.get("fabric_id") or "").strip()
+    fabric_name   = (data.get("fabric_name") or "").strip()
+    customer_photo_url = (data.get("customer_photo_url") or "").strip()
+
+    # ── Free-preview limit gate ──────────────────────────────────────────────
+    # Anyone gets FREE_PREVIEW_LIMIT (3) AI style previews. Beyond that they
+    # must sign up / log in with mobile + password — that account then shows
+    # up in the admin panel and its own preview count keeps getting tracked.
+    acc = _current_account()
+    if not acc:
+        used = session.get("preview_count", 0)
+        if used >= FREE_PREVIEW_LIMIT:
+            return jsonify({
+                "ok": False,
+                "need_login": True,
+                "error": f"You've used your {FREE_PREVIEW_LIMIT} free style previews. Please log in or create a free account to keep generating previews — it only takes a moment."
+            })
+
+    # ── Virtual try-on trial gate ────────────────────────────────────────────
+    # Try-on (customer's own photo) is a separate, more expensive-feeling
+    # capability, gated independently of the regular style-preview limit:
+    # TRYON_FREE_LIMIT_ANON free tries before login, then +TRYON_BONUS_LIMIT_ACCOUNT
+    # more once they sign up / log in. This check happens BEFORE any Replicate
+    # call so an exhausted visitor never triggers a paid generation.
+    if customer_photo_url:
+        if not acc:
+            tused = session.get("tryon_count", 0)
+            if tused >= TRYON_FREE_LIMIT_ANON:
+                return jsonify({
+                    "ok": False,
+                    "need_login": True,
+                    "error": f"You've used your {TRYON_FREE_LIMIT_ANON} free try-on previews. Please log in or create a free account for {TRYON_BONUS_LIMIT_ACCOUNT} more free try-on."
+                })
+        else:
+            try:
+                tused = acc["tryon_count"] or 0
+            except Exception:
+                tused = 0
+            if tused >= TRYON_BONUS_LIMIT_ACCOUNT:
+                return jsonify({
+                    "ok": False,
+                    "error": "You've used all your free try-on previews. You can still generate regular AI style previews without your photo."
+                })
+
+    # Get API key from website settings
+    db = get_db()
+    try:
+        row = db.execute("SELECT value FROM settings WHERE key='replicate_api_key'").fetchone()
+        api_key = row["value"].strip() if row and row["value"] else None
+    except Exception:
+        api_key = None
+
+    if not api_key:
+        return jsonify({"ok": False, "error": "Replicate API key not configured. Please add it under Admin Panel → Settings."})
+
+    # NOTE: Replicate's servers run in the cloud and cannot reach a local
+    # 127.0.0.1 / localhost URL — so for locally-stored images we read the file
+    # straight off disk and send it as a base64 data URI instead of a URL.
+    # Externally-hosted images (https://...) are passed through as-is.
+    def _to_data_uri_or_url(raw_url):
+        raw_url = (raw_url or "").strip()
+        if not raw_url:
+            return None
+        if raw_url.startswith("http://") or raw_url.startswith("https://"):
+            return raw_url
+        if raw_url.startswith("/static/"):
+            import os, base64, mimetypes
+            project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+            fpath = os.path.join(project_root, raw_url.lstrip("/").replace("/", os.sep))
+            if os.path.isfile(fpath):
+                mime = mimetypes.guess_type(fpath)[0] or "image/jpeg"
+                with open(fpath, "rb") as fh:
+                    b64 = base64.b64encode(fh.read()).decode("ascii")
+                return f"data:{mime};base64,{b64}"
+        return None
+
+    ref_image_url = None
+    ref_is_fabric = False
+
+    # If the customer picked a fabric from our catalog, prefer THAT fabric's
+    # photo as the reference image — the preview should show their chosen
+    # fabric's actual color/pattern/texture, not the generic product photo.
+    if fabric_choice == "catalog" and fabric_id_raw and fabric_id_raw != "own":
+        try:
+            fid = int(fabric_id_raw)
+            fab_img_raw = None
+            media_row = db.execute(
+                "SELECT url FROM web_fabric_media WHERE fabric_id=? ORDER BY sort_order LIMIT 1", (fid,)
+            ).fetchone()
+            if media_row and media_row["url"]:
+                fab_img_raw = media_row["url"]
+            else:
+                frow = db.execute("SELECT image_url, name FROM web_fabrics WHERE id=?", (fid,)).fetchone()
+                if frow:
+                    fab_img_raw = frow["image_url"]
+                    if not fabric_name and frow["name"]:
+                        fabric_name = frow["name"]
+            candidate = _to_data_uri_or_url(fab_img_raw)
+            if candidate:
+                ref_image_url = candidate
+                ref_is_fabric = True
+        except Exception:
+            pass
+
+    # Always also try to fetch the product's own reference photo — a REAL
+    # garment photo with correct collar/pocket/sleeve/hem shapes already in
+    # it. Used either as the sole reference (no fabric chosen), or — when a
+    # fabric swatch was ALSO chosen — as the structural anchor in a two-image
+    # generation, since inventing exact pocket counts/collar/hem shapes from
+    # a fabric swatch + text alone is unreliable.
+    product_image_url = None
+    if item_id:
+        try:
+            prow = db.execute("SELECT image_url FROM web_service_items WHERE id=?", (item_id,)).fetchone()
+            product_image_url = _to_data_uri_or_url(prow["image_url"] if prow else "")
+        except Exception:
+            product_image_url = None
+
+    use_multi_image = bool(ref_image_url and ref_is_fabric and product_image_url)
+    use_img2img = bool(ref_image_url or product_image_url)
+
+    # Admin-authored, item-specific AI instructions (garment_style_values.ai_prompt)
+    # take priority over the hardcoded keyword-matching below — see
+    # _resolve_style_ai_prompts. This is what lets new style options added in
+    # Admin reach the paid AI backend automatically and accurately, without
+    # needing a code change every time.
+    ai_map = _resolve_style_ai_prompts(item_id)
+
+    # ── Virtual try-on: customer uploaded their own photo ───────────────────
+    # The multi-image Kontext model only accepts TWO images, so when a person
+    # photo is involved it always takes Image-1's slot — we pick whichever
+    # single garment/fabric reference would otherwise have been used (fabric
+    # swatch if one was chosen, else the product's own photo) for Image 2.
+    person_image_url = None
+    use_tryon = False
+    tryon_ref_is_fabric = False
+    if customer_photo_url:
+        person_image_url = _to_data_uri_or_url(customer_photo_url)
+        tryon_garment_ref = ref_image_url if ref_image_url else product_image_url
+        tryon_ref_is_fabric = bool(ref_image_url and ref_is_fabric)
+        if person_image_url and tryon_garment_ref:
+            use_tryon = True
+
+    if use_tryon:
+        # Two-stage pipeline: Stage 1 (this prompt) customizes the GARMENT
+        # ONLY — no person involved — using the exact same structure-
+        # anchoring logic as the regular (non-try-on) preview paths below.
+        # Stage 2 (a dedicated fit/warp model) puts that finished garment on
+        # the customer's own photo; see the `use_tryon` branch further down.
+        if use_multi_image:
+            prompt = build_multi_image_fabric_garment_prompt(garment, styles, fabric_name, ai_map)
+        elif ref_image_url and ref_is_fabric:
+            prompt = build_fabric_to_garment_prompt(garment, styles, fabric_name, ai_map)
+        else:
+            prompt = build_img2img_style_prompt(garment, styles, ai_map)
+    elif use_multi_image:
+        prompt = build_multi_image_fabric_garment_prompt(garment, styles, fabric_name, ai_map)
+    elif ref_image_url and ref_is_fabric:
+        # Fabric chosen but no product reference photo on file — fall back
+        # to the old single-image fabric path.
+        prompt = build_fabric_to_garment_prompt(garment, styles, fabric_name, ai_map)
+    elif use_img2img:
+        if not ref_image_url:
+            ref_image_url = product_image_url
+        prompt = build_img2img_style_prompt(garment, styles, ai_map)
+    else:
+        if customer_photo_url:
+            # Customer wanted a try-on but this item has no reference photo at
+            # all to dress them in — fail clearly instead of silently falling
+            # back to a generic catalog shot of just the garment.
+            return jsonify({"ok": False, "error": "Try-on isn't available for this item yet — it doesn't have a reference photo on file. You can still generate a regular style preview without your photo."})
+        prompt = build_garment_prompt(garment, styles, ai_map)
+
+    try:
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type":  "application/json",
+            "Prefer":        "wait"          # wait up to 60s for result
+        }
+
+        # Track this generation against the visitor's free-limit / account count.
+        # Try-on uses its own (tighter) counter; regular previews use the
+        # existing one. Always called exactly once per successful generation,
+        # from whichever branch (immediate, polled, or two-stage) actually
+        # returns success.
+        def _record_usage_and_extra():
+            new_acc_tryon_count = None
+            try:
+                if use_tryon:
+                    if acc:
+                        db.execute("UPDATE web_accounts SET tryon_count = COALESCE(tryon_count,0)+1 WHERE id=?", (acc["id"],))
+                        db.commit()
+                        new_acc_tryon_count = (acc["tryon_count"] or 0) + 1
+                    else:
+                        session["tryon_count"] = session.get("tryon_count", 0) + 1
+                else:
+                    if acc:
+                        db.execute("UPDATE web_accounts SET preview_count = COALESCE(preview_count,0)+1 WHERE id=?", (acc["id"],))
+                        db.commit()
+                    else:
+                        session["preview_count"] = session.get("preview_count", 0) + 1
+            except Exception:
+                pass
+            if use_tryon:
+                if acc:
+                    remaining = max(0, TRYON_BONUS_LIMIT_ACCOUNT - (new_acc_tryon_count if new_acc_tryon_count is not None else (acc["tryon_count"] or 0)))
+                else:
+                    remaining = max(0, TRYON_FREE_LIMIT_ANON - session.get("tryon_count", 0))
+                return {"tryon_remaining": remaining}
+            else:
+                return {"previews_remaining": (None if acc else max(0, FREE_PREVIEW_LIMIT - session.get("preview_count", 0)))}
+
+        if use_tryon:
+            # ── Two-stage Virtual Try-On pipeline ──────────────────────────
+            # Stage 1: Flux Kontext customizes the garment (collar/sleeve/
+            # pocket/placket/buttons/hem/fabric/etc.) on its own — no person
+            # in the loop, so there's no competing "preserve identity"
+            # instruction to dilute the style edits. Uses BOTH reference
+            # images (product photo + fabric swatch) when both are
+            # available, same as the regular non-try-on previews.
+            if use_multi_image:
+                stage1_payload = {
+                    "input": {
+                        "prompt":           prompt,
+                        "input_image_1":    product_image_url,
+                        "input_image_2":    ref_image_url,
+                        "aspect_ratio":     "match_input_image",
+                        "output_format":    "png",
+                        "safety_tolerance": 2
+                    }
+                }
+                stage1_model_url = "https://api.replicate.com/v1/models/flux-kontext-apps/multi-image-kontext-pro/predictions"
+            elif ref_image_url and ref_is_fabric:
+                stage1_payload = {
+                    "input": {
+                        "prompt":           prompt,
+                        "input_image":      ref_image_url,
+                        "aspect_ratio":     "2:3",
+                        "output_format":    "png",
+                        "safety_tolerance": 2
+                    }
+                }
+                stage1_model_url = "https://api.replicate.com/v1/models/black-forest-labs/flux-kontext-pro/predictions"
+            else:
+                stage1_payload = {
+                    "input": {
+                        "prompt":           prompt,
+                        "input_image":      tryon_garment_ref,
+                        "aspect_ratio":     "match_input_image",
+                        "output_format":    "png",
+                        "safety_tolerance": 2
+                    }
+                }
+                stage1_model_url = "https://api.replicate.com/v1/models/black-forest-labs/flux-kontext-pro/predictions"
+
+            stage1_img_url, stage1_err = _replicate_predict(stage1_model_url, stage1_payload, api_key)
+            if not stage1_img_url:
+                return jsonify({"ok": False, "error": "Garment customization step failed: " + (stage1_err or "unknown error")})
+
+            # Stage 2: a dedicated try-on/fit model (IDM-VTON) — it segments
+            # the person's clothing region and WARPS the Stage-1 garment image
+            # onto it, rather than regenerating the scene from a text prompt.
+            # That makes it preserve the person's face/identity by
+            # construction (it never touches anything outside the clothing
+            # mask) and preserve the garment's exact shape/pattern (it fits
+            # pixels instead of reimagining them).
+            style_terms_for_des = _style_detail_phrases(styles, ai_map)
+            des_bits = [garment]
+            if fabric_name:
+                des_bits.append(fabric_name + " fabric")
+            des_bits.extend(style_terms_for_des[:4])
+            garment_des = ", ".join(des_bits)[:300]
+
+            # cuuupid/idm-vton is a community model (not an "official" Replicate
+            # model like flux-kontext-pro), and the short /v1/models/<owner>/<name>/
+            # predictions endpoint 404s ("requested resource could not be found")
+            # for it — community models must be called via the classic
+            # /v1/predictions endpoint with an explicit, pinned version id instead.
+            # "crop": True asks IDM-VTON to auto-crop/resize the person photo to
+            # the ~3:4 aspect ratio its pipeline is built around — full-body
+            # photos that don't match that ratio otherwise get squeezed into a
+            # smaller effective resolution, which is a major cause of the
+            # face/hand warping artifacts seen on full-body try-on shots.
+            stage2_payload = {
+                "version": IDM_VTON_VERSION,
+                "input": {
+                    "human_img":   person_image_url,
+                    "garm_img":    stage1_img_url,
+                    "garment_des": garment_des,
+                    "category":    _idmvton_category(garment),
+                    "crop":        True
+                }
+            }
+            stage2_model_url = "https://api.replicate.com/v1/predictions"
+
+            final_img_url, stage2_err = _replicate_predict(stage2_model_url, stage2_payload, api_key)
+            if not final_img_url:
+                return jsonify({"ok": False, "error": "Try-on fitting step failed: " + (stage2_err or "unknown error")})
+
+            # Stage 3 (best-effort, never blocks the result): IDM-VTON's fixed,
+            # fairly low internal resolution means small regions of the frame —
+            # the face above all — often come out warped/garbled even when the
+            # rest of the image looks fine. Run a dedicated face-restoration
+            # pass on the output to clean that up before returning it.
+            final_img_url = _restore_face_quality(final_img_url, api_key)
+
+            extra = _record_usage_and_extra()
+            return jsonify({"ok": True, "image_url": final_img_url, "prompt": prompt, **extra})
+        elif use_multi_image:
+            # Two-image edit: Image 1 (product's real photo) anchors structure
+            # (collar/pocket/sleeve/hem shape), Image 2 (fabric swatch) drives
+            # color/pattern/texture — far more reliable than inventing the
+            # garment's structure from a swatch + text description alone.
+            payload = {
+                "input": {
+                    "prompt":           prompt,
+                    "input_image_1":    product_image_url,
+                    "input_image_2":    ref_image_url,
+                    "aspect_ratio":     "match_input_image",
+                    "output_format":    "png",
+                    "safety_tolerance": 2
+                }
+            }
+            model_url = "https://api.replicate.com/v1/models/flux-kontext-apps/multi-image-kontext-pro/predictions"
+        elif use_img2img:
+            # img2img: reference photo drives color/pattern/texture accuracy.
+            # When the reference is a fabric swatch (not a garment photo), its aspect
+            # ratio doesn't represent the desired output — use a portrait product-photo ratio instead.
+            payload = {
+                "input": {
+                    "prompt":           prompt,
+                    "input_image":      ref_image_url,
+                    "aspect_ratio":     ("2:3" if ref_is_fabric else "match_input_image"),
+                    "output_format":    "png",
+                    "safety_tolerance": 2
+                }
+            }
+            model_url = "https://api.replicate.com/v1/models/black-forest-labs/flux-kontext-pro/predictions"
+        else:
+            # Fallback: plain text-to-image (used only if the product has no photo on file)
+            payload = {
+                "input": {
+                    "prompt":         prompt,
+                    "aspect_ratio":   "2:3",
+                    "output_format":  "webp",
+                    "output_quality": 85,
+                    "safety_tolerance": 2
+                }
+            }
+            model_url = "https://api.replicate.com/v1/models/black-forest-labs/flux-1.1-pro/predictions"
+
+        resp = requests.post(
+            model_url,
+            headers=headers,
+            json=payload,
+            timeout=90
+        )
+        result = resp.json()
+
+        # Track this generation against the visitor's free-limit / account count.
+        # Try-on uses its own (tighter) counter; regular previews use the
+        # existing one. Always called exactly once per successful generation,
+        # from whichever branch (immediate or polled) actually returns success.
+        def _record_usage_and_extra():
+            new_acc_tryon_count = None
+            try:
+                if use_tryon:
+                    if acc:
+                        db.execute("UPDATE web_accounts SET tryon_count = COALESCE(tryon_count,0)+1 WHERE id=?", (acc["id"],))
+                        db.commit()
+                        new_acc_tryon_count = (acc["tryon_count"] or 0) + 1
+                    else:
+                        session["tryon_count"] = session.get("tryon_count", 0) + 1
+                else:
+                    if acc:
+                        db.execute("UPDATE web_accounts SET preview_count = COALESCE(preview_count,0)+1 WHERE id=?", (acc["id"],))
+                        db.commit()
+                    else:
+                        session["preview_count"] = session.get("preview_count", 0) + 1
+            except Exception:
+                pass
+            if use_tryon:
+                if acc:
+                    remaining = max(0, TRYON_BONUS_LIMIT_ACCOUNT - (new_acc_tryon_count if new_acc_tryon_count is not None else (acc["tryon_count"] or 0)))
+                else:
+                    remaining = max(0, TRYON_FREE_LIMIT_ANON - session.get("tryon_count", 0))
+                return {"tryon_remaining": remaining}
+            else:
+                return {"previews_remaining": (None if acc else max(0, FREE_PREVIEW_LIMIT - session.get("preview_count", 0)))}
+
+        # With Prefer:wait the result may be immediate
+        if result.get("status") == "succeeded":
+            output = result.get("output")
+            img_url = (output[0] if isinstance(output, list) else output) or ""
+            extra = _record_usage_and_extra()
+            return jsonify({"ok": True, "image_url": img_url, "prompt": prompt, **extra})
+
+        # Otherwise poll until succeeded / failed / timed-out
+        pred_id = result.get("id")
+        if not pred_id:
+            return jsonify({"ok": False, "error": "Prediction start failed: " + str(result.get("detail", ""))})
+
+        for _ in range(60):
+            time.sleep(2)
+            poll = requests.get(
+                f"https://api.replicate.com/v1/predictions/{pred_id}",
+                headers={"Authorization": f"Bearer {api_key}"},
+                timeout=15
+            ).json()
+            status = poll.get("status")
+            if status == "succeeded":
+                output = poll.get("output")
+                img_url = (output[0] if isinstance(output, list) else output) or ""
+                extra = _record_usage_and_extra()
+                return jsonify({"ok": True, "image_url": img_url, "prompt": prompt, **extra})
+            if status in ("failed", "canceled"):
+                return jsonify({"ok": False, "error": "Generation failed: " + str(poll.get("error", ""))})
+        return jsonify({"ok": False, "error": "Timed out — please try again"})
+
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)})
+
+
+# ── AI preview free-limit constants (used by generate_style_preview) ──────────
+FREE_PREVIEW_LIMIT        = 3   # free AI style previews per anonymous visitor
+TRYON_FREE_LIMIT_ANON     = 1   # free virtual try-ons per anonymous visitor
+TRYON_BONUS_LIMIT_ACCOUNT = 5   # extra try-ons once the visitor signs in
+
+
+def _current_account():
+    """Return the logged-in web_accounts row from session, or None."""
+    acc_id = session.get("web_account_id")
+    if not acc_id:
+        return None
+    try:
+        return get_db().execute(
+            "SELECT * FROM web_accounts WHERE id=? AND is_active=1", (acc_id,)
+        ).fetchone()
+    except Exception:
+        return None
+
+
+# ── Missing page routes ───────────────────────────────────────────────────────
+
+@website_bp.route("/account")
+def account():
+    google_error = request.args.get("google_error", "")
+    return render_template("website/account.html", active="account",
+                           google_error=google_error, page_meta={
+        "title": "My Account — Uttam Tailors",
+        "desc": "Manage your account, orders, wishlist and measurements.",
+        "robots": "noindex,nofollow", "og_image": "", "canonical": ""
+    })
+
+
+@website_bp.route("/cart")
+def cart():
+    return render_template("website/cart.html", active="cart", page_meta={
+        "title": "Your Cart — Uttam Tailors",
+        "desc": "Review your cart and proceed to checkout.",
+        "robots": "noindex,nofollow", "og_image": "", "canonical": ""
+    })
+
+
+@website_bp.route("/order-review")
+def order_review():
+    return render_template("website/order_review.html", active="order_review", page_meta={
+        "title": "Order Review — Uttam Tailors",
+        "desc": "Review your order before confirming.",
+        "robots": "noindex,nofollow", "og_image": "", "canonical": ""
+    })
+
+
+# ── OTP endpoints ─────────────────────────────────────────────────────────────
+
+@website_bp.route("/api/send-otp", methods=["POST"])
+def api_send_otp():
+    data = request.get_json(silent=True) or {}
+    mobile = (data.get("mobile") or "").strip()
+    purpose = (data.get("purpose") or "login").strip()
+    if not mobile:
+        return jsonify({"success": False, "error": "Mobile required"})
+    try:
+        db = get_db()
+        # Rate limit: max 3 OTPs per mobile per 10 minutes
+        recent = db.execute(
+            """SELECT COUNT(*) as cnt FROM otp_log
+               WHERE mobile=? AND created_at > datetime('now','localtime','-10 minutes')
+               AND used=0""",
+            (mobile,)
+        ).fetchone()
+        if recent and recent["cnt"] >= 3:
+            return jsonify({"success": False, "error": "Too many OTPs. Please wait 10 minutes."})
+        from app.utils.sms import send_otp as _send_otp
+        otp = _send_otp(mobile)
+        if not otp:
+            return jsonify({"success": False, "error": "Failed to send OTP"})
+        db.execute(
+            """INSERT INTO otp_log (mobile, otp, purpose) VALUES (?, ?, ?)""",
+            (mobile, otp, purpose)
+        )
+        db.commit()
+        return jsonify({"success": True, "message": "OTP sent"})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+
+@website_bp.route("/api/verify-otp", methods=["POST"])
+def api_verify_otp():
+    data = request.get_json(silent=True) or {}
+    mobile = (data.get("mobile") or "").strip()
+    otp    = (data.get("otp") or "").strip()
+    if not mobile or not otp:
+        return jsonify({"success": False, "error": "Mobile and OTP required"})
+    try:
+        db = get_db()
+        row = db.execute(
+            """SELECT id FROM otp_log
+               WHERE mobile=? AND otp=? AND used=0
+               AND expires_at > datetime('now','localtime')
+               ORDER BY id DESC LIMIT 1""",
+            (mobile, otp)
+        ).fetchone()
+        if not row:
+            return jsonify({"success": False, "error": "Invalid or expired OTP"})
+        db.execute("UPDATE otp_log SET used=1 WHERE id=?", (row["id"],))
+        db.commit()
+        return jsonify({"success": True, "message": "OTP verified"})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})

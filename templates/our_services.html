@@ -1,0 +1,85 @@
+{% extends "website/base.html" %}
+{% set active = "our_services" %}
+{% block title %}Our Services &amp; Prices &mdash; Uttam Tailors, Sikar{% endblock %}
+{% block head %}
+<style>
+.price-row { cursor:pointer; transition:background .15s; }
+.price-row:hover { background:rgba(184,120,48,.08); }
+.price-row:hover .price-row-name { color:var(--gold); }
+.price-row-arrow { font-size:13px; color:var(--gold); opacity:0; transition:opacity .15s; margin-left:8px; }
+.price-row:hover .price-row-arrow { opacity:1; }
+.price-row-price { display:flex; align-items:center; gap:6px; }
+</style>
+{% endblock %}
+{% block content %}
+
+<section class="services-hero">
+  <p class="kicker">Complete price list</p>
+  <h1 class="section-title" style="color:#FAF0E4;margin-bottom:1rem;">All our services.<br>Every price, clearly stated.</h1>
+  <p>Tap any garment to order it. No hidden charges — fabric cost is separate.</p>
+</section>
+
+<section class="price-table-section">
+  <div class="price-table">
+    <div class="price-table-header">
+      <span>Garment</span><span>Stitching Charge</span>
+    </div>
+
+    {% if services %}
+      {% for cat, items in services %}
+      <div class="price-category">
+        <div class="price-category-head">{{ cat.name }}</div>
+        {% for item in items %}
+        <div class="price-row" onclick="orderGarment('{{ item.name }}', '{{ item.price }}')" title="Click to order {{ item.name }}">
+          <div class="price-row-name">
+            {{ item.name }}{% if item.subtitle %}<small>{{ item.subtitle }}</small>{% endif %}
+            <span class="price-row-arrow">Order &rarr;</span>
+          </div>
+          <div class="price-row-price">Rs. {{ item.price }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="price-category">
+        <div class="price-category-head">Shirts</div>
+        <div class="price-row" onclick="orderGarment('Formal Shirt','350')"><div class="price-row-name">Formal Shirt<small>Regular / Linen / Cotton</small><span class="price-row-arrow">Order &rarr;</span></div><div class="price-row-price">Rs. 350 &ndash; 400</div></div>
+      </div>
+      <div class="price-category">
+        <div class="price-category-head">Pants &amp; Jeans</div>
+        <div class="price-row" onclick="orderGarment('Pant','450')"><div class="price-row-name">Pant (Single pleat)<small>Standard cut</small><span class="price-row-arrow">Order &rarr;</span></div><div class="price-row-price">Rs. 450</div></div>
+        <div class="price-row" onclick="orderGarment('Jeans','550')"><div class="price-row-name">Jeans<span class="price-row-arrow">Order &rarr;</span></div><div class="price-row-price">Rs. 550</div></div>
+      </div>
+    {% endif %}
+  </div>
+  <p class="price-note">* Stitching charges only. Fabric cost is extra. Free delivery within Sikar city.</p>
+</section>
+
+<section class="consult-section">
+  <p class="kicker">Not sure what to order?</p>
+  <h2>Book a free consultation.</h2>
+  <p>Tell us the occasion, your budget, your preferences. Our tailor will guide you to the right garment and fabric.</p>
+  <a href="{{ url_for('website.contact') }}" class="btn-gold">Book Consultation &rarr;</a>
+</section>
+
+<section class="big-cta">
+  <div class="big-cta-img"><img src="https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=1920&q=80" alt="" aria-hidden="true" loading="lazy"></div>
+  <div class="big-cta-overlay"></div>
+  <div class="big-cta-inner">
+    <h2 class="big-cta-title">Every garment above can<br>be yours in 7 days.</h2>
+    <a href="{{ url_for('website.commission') }}" class="btn-gold btn-xl">Customise Your Garment &rarr;</a>
+  </div>
+</section>
+
+<script>
+function orderGarment(name, price) {
+  // Store in sessionStorage, redirect to commission
+  var existing = JSON.parse(sessionStorage.getItem('preselect_garments') || '[]');
+  // Check if already in list
+  var found = existing.find(function(g){ return g.name === name; });
+  if (!found) existing.push({name: name, price: price});
+  sessionStorage.setItem('preselect_garments', JSON.stringify(existing));
+  window.location.href = '{{ url_for("website.commission") }}?from=services&garment=' + encodeURIComponent(name);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,119 @@
+{% extends "website/base.html" %}
+{% set active = "contact" %}
+{% block title %}Contact Us -- Uttam Tailors, Sikar{% endblock %}
+
+{% block head %}
+<style>
+.contact-wrap{max-width:1200px;margin:0 auto;padding:5rem 3rem 7rem;}
+.contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:stretch;}
+.contact-info-col{display:flex;flex-direction:column;gap:1rem;}
+.cinfo-card{display:flex;align-items:flex-start;gap:1.25rem;padding:1.5rem;background:var(--bg2);border:1px solid var(--border);border-radius:var(--rLg);}
+.cinfo-icon{font-size:22px;flex-shrink:0;width:36px;text-align:center;margin-top:2px;}
+.cinfo-label{font-family:var(--fm);font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;}
+.cinfo-val{font-size:15px;color:var(--dark);font-weight:500;margin:0;}
+.cinfo-sub{font-size:13px;color:var(--muted);margin:3px 0 0;}
+.contact-btns{display:flex;flex-direction:column;gap:10px;margin-top:auto;padding-top:1rem;}
+.map-col{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rLg);overflow:hidden;display:flex;flex-direction:column;}
+.map-frame-wrap{flex:1;min-height:380px;}
+.map-frame-wrap iframe{width:100%;height:100%;min-height:380px;border:0;display:block;}
+.map-footer{padding:1.25rem 1.75rem;background:var(--bg3);border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;flex-shrink:0;}
+.cta-section{background:var(--dark);padding:5rem 3rem;text-align:center;margin:0 3rem 5rem;border-radius:var(--rLg);}
+
+@media(max-width:900px){
+  .contact-wrap{padding:3.5rem 2rem 5rem;}
+  .contact-grid{grid-template-columns:1fr;gap:2rem;}
+  .map-frame-wrap{min-height:340px;}
+  .map-frame-wrap iframe{min-height:340px;}
+  .cta-section{margin:0 1.5rem 4rem;padding:3.5rem 2rem;}
+}
+@media(max-width:600px){
+  .contact-wrap{padding:2.5rem 1.25rem 4rem;}
+  .cinfo-card{padding:1.1rem 1rem;gap:1rem;}
+  .cinfo-icon{font-size:20px;width:30px;}
+  .cinfo-val{font-size:14px;}
+  .map-frame-wrap{min-height:260px;}
+  .map-frame-wrap iframe{min-height:260px;}
+  .map-footer{flex-direction:column;align-items:flex-start;padding:1rem 1.25rem;}
+  .map-footer a{width:100%;text-align:center;}
+  .cta-section{margin:0 0 3rem;border-radius:0;padding:3rem 1.25rem;}
+  .contact-btns a{font-size:14px;}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="contact-page">
+  <div class="contact-wrap">
+
+    <div style="margin-bottom:3rem;">
+      <p class="kicker">Get in touch</p>
+      <h1 style="font-family:var(--fd);font-size:clamp(32px,5vw,60px);font-weight:300;color:var(--dark);line-height:1.1;margin-bottom:1rem;">Come visit us.<br>Or we come to you.</h1>
+      <p style="font-size:16px;color:var(--muted);max-width:540px;line-height:1.75;">We are at Subhash Chowk, Sikar. Walk in any day Monday to Saturday. Or book a home visit and our tailor comes to your door.</p>
+    </div>
+
+    <div class="contact-grid">
+
+      <!-- LEFT -->
+      <div class="contact-info-col">
+        <div class="cinfo-card">
+          <div class="cinfo-icon">📍</div>
+          <div>
+            <p class="cinfo-label">Shop Address</p>
+            <p class="cinfo-val">{{ s.addr1 }}</p>
+            <p class="cinfo-sub">{{ s.addr2 }}</p>
+          </div>
+        </div>
+        <div class="cinfo-card">
+          <div class="cinfo-icon">📞</div>
+          <div>
+            <p class="cinfo-label">Phone &amp; WhatsApp</p>
+            <p class="cinfo-val"><a href="tel:{{ s.phone }}" style="color:inherit;text-decoration:none;">{{ s.phone }}</a></p>
+            <p class="cinfo-sub"><a href="{{ s.wa_link }}" style="color:var(--gold);">Message on WhatsApp &rarr;</a></p>
+          </div>
+        </div>
+        <div class="cinfo-card">
+          <div class="cinfo-icon">✉️</div>
+          <div>
+            <p class="cinfo-label">Email</p>
+            <p class="cinfo-val"><a href="mailto:{{ s.email }}" style="color:inherit;text-decoration:none;">{{ s.email }}</a></p>
+          </div>
+        </div>
+        <div class="cinfo-card">
+          <div class="cinfo-icon">🕐</div>
+          <div>
+            <p class="cinfo-label">Shop Hours</p>
+            <p class="cinfo-val">{{ s.hours }}</p>
+          </div>
+        </div>
+        <div class="contact-btns">
+          <a href="{{ url_for('website.commission') }}?method=homevisit" class="btn-primary" style="justify-content:center;">Book Home Visit &rarr;</a>
+          <a href="{{ url_for('website.commission') }}" class="btn-outline" style="justify-content:center;">Customise Your Garment &rarr;</a>
+        </div>
+      </div>
+
+      <!-- RIGHT: Map -->
+      <div class="map-col">
+        <div class="map-frame-wrap">
+          <iframe
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d4350.184602334239!2d75.13548997611144!3d27.612493729667413!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x396ca4c6bf477111%3A0x9021101f1d6803b!2sUttam%20Tailors!5e1!3m2!1sen!2sin!4v1777916335479!5m2!1sen!2sin"
+            allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"
+            title="Uttam Tailors - Subhash Chowk Sikar">
+          </iframe>
+        </div>
+        <div class="map-footer">
+          <p style="font-size:13px;color:var(--muted);margin:0;">{{ s.addr1 }}, {{ s.addr2 }}</p>
+          <a href="https://maps.app.goo.gl/GtiT3rLB8v4upBXV6" target="_blank" rel="noopener" class="btn-primary" style="padding:9px 20px;font-size:12px;">Open in Google Maps &rarr;</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<section class="cta-section">
+  <p class="kicker" style="color:var(--gold-l);">Free consultation</p>
+  <h2 style="font-family:var(--fd);font-size:clamp(24px,4vw,44px);color:#FAF0E4;margin-bottom:1rem;font-weight:300;">Not sure what to order?</h2>
+  <p style="color:rgba(250,240,228,.55);font-size:15px;max-width:500px;margin:0 auto 2.5rem;">Tell us the occasion and your budget. Our tailor will guide you to the right garment and fabric. No obligation.</p>
+  <a href="{{ s.wa_link }}?text=Hi%2C%20I%20want%20to%20book%20a%20free%20consultation%20at%20Uttam%20Tailors" target="_blank" class="btn-gold">WhatsApp for Consultation &rarr;</a>
+</section>
+{% endblock %}

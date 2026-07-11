@@ -1,0 +1,1976 @@
+{% extends "website/base.html" %}
+{% set active = "commission" %}
+{% block title %}Customise Your Garment -- Uttam Tailors{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/commission.css') }}?v=11">
+<style>
+body{overflow-x:clip!important}
+.garment-panel { display: none; }
+.garment-panel.active { display: block; }
+.step-card { background: #f7f0e6 !important; }
+.cat-tabs {
+  display: flex; gap: 4px; margin-bottom: 1.25rem;
+  background: #e8ddd0; border-radius: 6px; padding: 4px;
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; flex-wrap: nowrap;
+}
+.cat-tabs::-webkit-scrollbar { display: none; }
+.cat-tab {
+  flex: 1 0 auto; text-align: center; padding: .5rem .95rem;
+  font-size: 13px; font-family: var(--fd); color: #7a6858;
+  cursor: pointer; border-radius: 4px; white-space: nowrap;
+  transition: background .18s, color .18s;
+  user-select: none; border: none; background: none;
+}
+.cat-tab.active { background: #2e1a0e; color: #fff; font-weight: 600; }
+.cat-tab:hover:not(.active) { background: #ddd2c8; }
+.coupon-wrap { background: #f7f0e6; border-radius: 6px; padding: .9rem 1rem; margin-bottom: 1rem; }
+.coupon-label { font-size: 13px; font-weight: 600; color: var(--dark); margin: 0 0 .6rem; display: block; }
+.coupon-row { display: flex; gap: 8px; align-items: center; }
+.coupon-row .field-input { flex: 1; font-size: 13px; background: #fff; border: 1px solid #d8cfc6 !important; border-radius: 6px !important; }
+.coupon-apply-btn { flex-shrink: 0; background: #2e1a0e; color: #fff; border: none; border-radius: 6px; padding: 0 1.1rem; height: 38px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background .15s; white-space: nowrap; }
+.coupon-apply-btn:hover { background: #1e0e06; }
+#couponMsg { font-size: 12px; margin-top: .45rem; min-height: 1em; }
+.qty-rows > div { border-radius: 6px !important; }
+
+/* ── STYLE MODAL ── */
+#styleModalOverlay { display:none; position:fixed; inset:0; background:rgba(10,5,2,.72); z-index:900; align-items:center; justify-content:center; padding:12px; overflow-y:auto; }
+#styleModalOverlay.open { display:flex; }
+#styleModal { background:#fff; border-radius:16px; width:100%; max-width:880px; max-height:92vh; display:flex; flex-direction:column; box-shadow:0 24px 64px rgba(0,0,0,.35); animation:smIn .25s ease; }
+@keyframes smIn { from{opacity:0;transform:scale(.96)} to{opacity:1;transform:scale(1)} }
+.sm-head { background:#2e1a0e; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; border-radius:16px 16px 0 0; flex-shrink:0; }
+.sm-body { display:flex; flex:1; min-height:0; overflow:hidden; }
+.sm-left { width:42%; background:#f7f0e6; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:20px 16px; border-right:1px solid #e8ddd0; flex-shrink:0; overflow-y:auto; gap:10px; }
+.sm-right { flex:1; overflow-y:auto; padding:20px; }
+.sm-foot { padding:12px 20px; border-top:1px solid #e8ddd0; display:flex; gap:10px; flex-shrink:0; background:#fff; border-radius:0 0 16px 16px; }
+.sm-grp { margin-bottom:18px; }
+.sm-grp-title { font-size:11px; font-weight:800; color:#7a6a58; text-transform:uppercase; letter-spacing:.08em; margin-bottom:8px; }
+.sm-opt { padding:6px 14px; border-radius:20px; font-size:12px; font-weight:600; cursor:pointer; border:1.5px solid #e8ddd0; background:#fafaf8; color:#1a0e06; transition:all .15s; font-family:inherit; }
+.sm-opt:hover { border-color:#C8903A; }
+.sm-opt.sel { background:#2e1a0e; color:#f7f0e6; border-color:#2e1a0e; }
+.sm-opt-card { flex:0 0 calc(33.33% - 5px); border:2px solid #e8ddd0; border-radius:8px; overflow:hidden; cursor:pointer; text-align:center; background:#fff; transition:border-color .15s; }
+.sm-opt-card:hover { border-color:#C8903A; }
+.sm-opt-card.sel { border-color:#2e1a0e; }
+.sm-opts { display:flex; flex-wrap:wrap; gap:6px; }
+.ai-placeholder { width:100%; aspect-ratio:3/4; background:#ede5d5; border-radius:10px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; border:2px dashed #c8a882; color:#7a6a58; text-align:center; padding:16px; }
+.ai-loading { width:100%; aspect-ratio:3/4; background:#ede5d5; border-radius:10px; display:none; flex-direction:column; align-items:center; justify-content:center; gap:10px; }
+.ai-spinner { width:36px; height:36px; border:3px solid #e8ddd0; border-top-color:#2e1a0e; border-radius:50%; animation:spin 1s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+@media(max-width:640px){ .sm-body{flex-direction:column;} .sm-left{width:100%;border-right:none;border-bottom:1px solid #e8ddd0;} }
+
+</style>
+{% endblock %}
+{% block content %}
+
+<header class="com-header">
+  <div class="com-header-bg">
+    {% if cs.header_image %}<img src="{{ cs.header_image }}" alt="" aria-hidden="true" onerror="this.style.display='none'">{% endif %}
+  </div>
+  <div class="com-header-inner">
+    <p class="kicker">{{ cs.header_kicker }}</p>
+    <h1 class="com-title">{{ cs.header_title }}</h1>
+    <p class="com-sub">{{ cs.header_sub }}</p>
+  </div>
+  <div class="com-header-divider"></div>
+</header>
+
+<main class="com-main">
+  <form id="commissionForm" action="{{ url_for('website.create_order') }}" method="POST" novalidate>
+    <input type="hidden" name="language" value="en">
+    <div class="com-layout">
+      <div class="com-steps">
+
+        <!-- STEP 01 — GARMENT -->
+        <div class="step-card">
+          <div class="step-head">
+            <div class="step-badge">1</div>
+            <div class="step-info">
+              <h2 class="step-title">{{ cs.step1_title }}</h2>
+              <p class="step-sub">{{ cs.step1_sub }}</p>
+            </div>
+          </div>
+
+          {% if categories %}
+          <div class="cat-tabs">
+            {% for c in categories %}
+            <div class="cat-tab {% if loop.first %}active{% endif %}" onclick="showCat('{{ c.id }}',this)">{{ c.name }}</div>
+            {% endfor %}
+          </div>
+          {% for c in categories %}
+          <div class="garment-panel {% if loop.first %}active{% endif %}" id="panel-{{ c.id }}">
+            <div class="garment-grid">
+              {% for item in c.garments %}
+              {% set _m = item_media.get(item.id, {}) %}
+              {% set _imgs = _m.get('images', []) %}
+              {% set _img = _imgs[0] if _imgs else item.image_url %}
+              <label class="g-card">
+                <input type="checkbox" name="garment_type[]" value="{{ item.name|e }}" data-price="{{ item.price }}" data-label="{{ item.name|e }}" data-item-id="{{ item.id }}" data-cat="{{ c.name|e }}" onchange="garmentChanged(this)">
+                <div class="g-inner">
+                  <span class="g-icon">
+                    {% if _img %}<img src="{{ _img }}" alt="{{ item.name }}" class="g-img">
+                    {% else %}{% set n=item.name|lower %}{% if 'shirt' in n %}👔{% elif 'suit' in n or 'blazer' in n %}🤵{% elif 'pant' in n or 'trouser' in n or 'jean' in n %}👖{% elif 'kurta' in n or 'pathani' in n or 'safari' in n or 'sherwani' in n %}🧥{% elif 'pajama' in n or 'pyjama' in n %}🩲{% elif 'saree' in n or 'sari' in n %}🥻{% elif 'blouse' in n or 'kurti' in n or 'dress' in n or 'frock' in n %}👗{% elif 'lehenga' in n or 'salwar' in n %}👘{% else %}🧵{% endif %}{% endif %}
+                  </span>
+                  <span class="g-name">{{ item.name }}</span>
+                  <span class="g-price">Rs. {{ item.price }}</span>
+                </div>
+              </label>
+              {% endfor %}
+            </div>
+          </div>
+          {% endfor %}
+          {% else %}
+          <div class="garment-grid" id="garmentGrid">
+            {% for item in db_items %}
+            {% set _m = item_media.get(item.id, {}) %}
+            {% set _imgs = _m.get('images', []) %}
+            {% set _img = _imgs[0] if _imgs else item.get('image_url','') %}
+            <label class="g-card">
+              <input type="checkbox" name="garment_type[]" value="{{ item.name|e }}" data-price="{{ item.price }}" data-label="{{ item.name|e }}" data-item-id="{{ item.id }}" data-cat="{{ item.cat_name|default('', true)|e }}" onchange="garmentChanged(this)">
+              <div class="g-inner">
+                <span class="g-icon">
+                  {% if _img %}<img src="{{ _img }}" alt="{{ item.name }}" class="g-img">
+                  {% else %}{% set n=item.name|lower %}{% if 'shirt' in n %}👔{% elif 'suit' in n or 'blazer' in n %}🤵{% elif 'pant' in n or 'trouser' in n or 'jean' in n %}👖{% elif 'kurta' in n or 'pathani' in n or 'safari' in n or 'sherwani' in n %}🧥{% elif 'pajama' in n or 'pyjama' in n %}🩲{% elif 'saree' in n or 'sari' in n %}🥻{% elif 'blouse' in n or 'kurti' in n or 'dress' in n or 'frock' in n %}👗{% elif 'lehenga' in n or 'salwar' in n %}👘{% else %}🧵{% endif %}{% endif %}
+                </span>
+                <span class="g-name">{{ item.name }}</span>
+                <span class="g-price">Rs. {{ item.price }}</span>
+              </div>
+            </label>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          <p class="hint-line">&#10003; Select multiple garments for a combined order</p>
+          <div id="garmentQtyRows" class="qty-rows"></div>
+        </div>
+
+        <!-- Hidden fabric-choice fields — set via the fabric-source popup / catalog browser, no separate visible step needed -->
+        <input type="hidden" name="fabric_choice" id="fab_choice" value="own">
+        <input type="hidden" name="fabric_selected" id="fab_selected">
+        <input type="hidden" id="fab_selected_name" value="">
+        <input type="hidden" name="fabric_price_per_metre" id="fab_selected_price" value="0">
+        <input type="hidden" name="fabric_total_metres" id="fab_total_metres" value="0">
+        <input type="hidden" name="fabric_cost" id="fab_total_cost" value="0">
+
+        <!-- STEP 02 — YOUR STYLE PICKS (summary of fabric + style + AI preview, set via the on-selection popup flow) -->
+        <div class="step-card">
+          <div class="step-head">
+            <div class="step-badge">2</div>
+            <div class="step-info">
+              <h2 class="step-title">{{ cs.step3_title or 'Your style picks' }}</h2>
+              <p class="step-sub">{{ cs.step3_sub or "Here's a recap of the fabric and look you chose for each garment — tap to revise anytime." }}</p>
+            </div>
+          </div>
+          <div id="fabricRecapWrap"></div>
+          <div id="stylingPanelWrap">
+            <p style="font-size:13px;color:var(--muted);">First select your garment(s) in Step 1 — your fabric and style choices will show up here automatically.</p>
+          </div>
+        </div>
+
+        <!-- Catalog browser — opens from the fabric-source popup when customer wants to pick from our catalog -->
+        <div id="catalogBrowserOverlay" onclick="if(event.target===this)closeCatalogBrowser()" style="display:none;position:fixed;inset:0;background:rgba(10,5,2,.78);z-index:920;align-items:center;justify-content:center;padding:14px;">
+          <div style="background:#fffaf3;border-radius:18px;max-width:780px;width:100%;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.4);">
+            <div style="padding:16px 20px;border-bottom:1px solid #e8ddd0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+              <div>
+                <div style="font-size:16px;font-weight:800;color:#2e1a0e;">Browse our fabric catalog</div>
+                <div style="font-size:11.5px;color:#7a6a58;margin-top:2px;">Pick a fabric you love — your AI style preview will use its exact colour &amp; texture</div>
+              </div>
+              <button type="button" onclick="closeCatalogBrowser()" style="background:none;border:none;font-size:24px;color:#2e1a0e;cursor:pointer;line-height:1;padding:0;">&#x2715;</button>
+            </div>
+            <div style="padding:14px 20px 0;flex-shrink:0;">
+              <input class="fab-search-input" id="cbFabSearch" type="text" placeholder="Search fabrics by name..." style="width:100%;box-sizing:border-box;">
+              <div id="cbCatTabs" style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 2px;"></div>
+            </div>
+            <div style="overflow-y:auto;padding:10px 20px 22px;">
+              <div class="fab-grid" id="cbFabGrid">
+                {% if fabrics %}
+                  {% for f in fabrics %}
+                  <div class="fab-card" onclick="selFabAndContinue({{ f.id }},'{{ f.name }}',this)" data-name="{{ f.name|lower }}" data-type="{{ f.fabric_type|default('', true)|lower }}" data-price="{{ f.price_per_metre|default(0, true) }}">
+                    <div class="fab-img-wrap" style="position:relative;">{% if f.gallery and f.gallery|length > 0 %}<img src="{{ f.gallery[0] }}" alt="{{ f.name }}" loading="lazy" style="cursor:zoom-in;" onclick="event.stopPropagation();fabZoom('{{ f.gallery[0] }}','{{ f.name }}')">{% else %}<div class="fab-swatch"></div>{% endif %}<div class="fab-sel-check">OK</div></div>
+                    {% if f.gallery and f.gallery|length > 1 %}
+                    <div style="display:flex;gap:4px;padding:6px 8px 0;">
+                      {% for gimg in f.gallery[1:4] %}
+                      <img src="{{ gimg }}" alt="{{ f.name }} — view {{ loop.index + 1 }}" loading="lazy" style="width:30px;height:30px;border-radius:6px;object-fit:cover;border:1px solid var(--border);cursor:zoom-in;" onclick="event.stopPropagation();fabZoom('{{ gimg }}','{{ f.name }}')">
+                      {% endfor %}
+                    </div>
+                    {% endif %}
+                    <div class="fab-info"><span class="fab-name">{{ f.name }}</span><span class="fab-price">Rs. {{ f.price_per_metre }} / metre</span><span class="fab-stock">In stock</span></div>
+                  </div>
+                  {% endfor %}
+                {% else %}
+                  <p style="color:var(--muted);font-size:13px;padding:1rem;grid-column:1/-1;">Fabric catalog coming soon. Choose "I have my own fabric" for now.</p>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 02 — MEASUREMENTS (moved down: most effort-heavy step, now after fabric commitment) -->
+        <div class="step-card">
+          <div class="step-head">
+            <div class="step-badge">3</div>
+            <div class="step-info">
+              <h2 class="step-title">{{ cs.step2_title }}</h2>
+              <p class="step-sub">{{ cs.step2_sub }}</p>
+            </div>
+          </div>
+          <input type="hidden" name="measure_method" id="meth_val" value="{{ preselect_method or 'size' }}">
+          <div class="meth-tabs">
+            <button type="button" class="meth-tab {% if not preselect_method or preselect_method=='size' %}active{% endif %}" onclick="setMeth('size',this)">Standard Size</button>
+            <button type="button" class="meth-tab {% if preselect_method=='manual' %}active{% endif %}" onclick="setMeth('manual',this)">Enter Manually</button>
+            <button type="button" class="meth-tab {% if preselect_method=='reference' %}active{% endif %}" onclick="setMeth('reference',this)">Reference Garment</button>
+            <button type="button" class="meth-tab {% if preselect_method=='locker' %}active{% endif %}" onclick="setMeth('locker',this)">Saved Measurements</button>
+            <button type="button" class="meth-tab {% if preselect_method=='homevisit' %}active{% endif %}" onclick="setMeth('homevisit',this)">Home Visit</button>
+          </div>
+
+          <div class="meth-panel {% if not preselect_method or preselect_method=='size' %}active{% endif %}" id="mp-size">
+            <input type="hidden" name="size_per_garment" id="sizePerGarmentInput" value="{}">
+            <div id="pgSizeWrap" style="display:none;"></div>
+            <div class="size-layout" id="singleSizeLayout">
+              <div>
+                <div class="size-btns">
+                  <button type="button" class="sz-btn" onclick="pickSz('S',this)">S</button>
+                  <button type="button" class="sz-btn" onclick="pickSz('M',this)">M</button>
+                  <button type="button" class="sz-btn" onclick="pickSz('L',this)">L</button>
+                  <button type="button" class="sz-btn" onclick="pickSz('XL',this)">XL</button>
+                  <button type="button" class="sz-btn" onclick="pickSz('XXL',this)">XXL</button>
+                </div>
+                <input type="hidden" name="size_standard" id="sz_val">
+                <div class="fit-row">
+                  <button type="button" class="fit-btn" onclick="pickFit('slim',this)">Slim</button>
+                  <button type="button" class="fit-btn active" onclick="pickFit('regular',this)">Regular</button>
+                  <button type="button" class="fit-btn" onclick="pickFit('loose',this)">Loose</button>
+                </div>
+                <input type="hidden" name="size_fit" id="fit_val" value="regular">
+                <p style="margin-top:.6rem;font-size:12px;"><a href="#" onclick="openSizeGuide(event)" class="link-accent">View full size guide &rarr;</a></p>
+                <div class="size-detail" id="sizeDetail"><p class="size-hint">Select a size above</p></div>
+                <details class="adj-toggle" id="fineTuneDetails">
+                  <summary>Fine-tune measurements (optional)</summary>
+                  <p style="font-size:11px;color:#9a8a78;margin:6px 0 8px;">We've pre-filled these with the standard numbers for your selected size — feel free to adjust any of them to your own measurements.</p>
+                  <div class="adj-grid">
+                    <div class="adj-row"><label>Chest (inches)</label><input type="number" name="adj_chest" class="field-input" step="0.5" placeholder="e.g. 38"></div>
+                    <div class="adj-row"><label>Waist (inches)</label><input type="number" name="adj_waist" class="field-input" step="0.5" placeholder="e.g. 32"></div>
+                    <div class="adj-row"><label>Shoulder (inches)</label><input type="number" name="adj_shoulder" class="field-input" step="0.5" placeholder="e.g. 17"></div>
+                    <div class="adj-row"><label>Shirt length</label><input type="number" name="adj_length" class="field-input" step="0.5" placeholder="e.g. 29"></div>
+                    <div class="adj-row"><label>Pant length</label><input type="number" name="adj_trouser" class="field-input" step="0.5" placeholder="e.g. 40"></div>
+                  </div>
+                </details>
+              </div>
+            </div>
+          </div>
+
+          <div class="meth-panel {% if preselect_method=='manual' %}active{% endif %}" id="mp-manual">
+            <input type="hidden" name="manual_garment_map" id="manualGarmentMapInput" value="{}">
+            <p class="meth-intro">Enter your measurements in inches. Ask someone to help for accuracy.</p>
+            <div class="manual-grid" id="manualGrid"></div>
+          </div>
+
+          <div class="meth-panel {% if preselect_method=='reference' %}active{% endif %}" id="mp-reference">
+            <p class="meth-intro">Give us a garment that fits you perfectly and we make an exact copy in your new fabric.</p>
+            <div class="ref-options">
+              <label class="ref-opt"><input type="radio" name="ref_dropoff" value="dropoff" checked>
+                <div class="ref-opt-inner"><strong>Drop at our shop</strong><span>Subhash Chowk, Sikar</span></div>
+              </label>
+              <label class="ref-opt"><input type="radio" name="ref_dropoff" value="pickup">
+                <div class="ref-opt-inner"><strong>We pick it up</strong><span>Sikar city &bull; Rs. 50 charge</span></div>
+              </label>
+            </div>
+            <div id="ref-pickup-addr" style="display:none;margin-top:1rem;">
+              <label class="field-label">Pickup address</label>
+              <textarea name="ref_pickup_address" class="field-textarea" rows="2" placeholder="House, street, area, Sikar"></textarea>
+            </div>
+            <div class="field-group" style="margin-top:1rem;">
+              <label class="field-label">Type of garment</label>
+              <select name="ref_garment_type" class="field-select">
+                <option value="shirt">Shirt</option>
+                <option value="pant">Pant</option>
+                <option value="kurta">Kurta</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div class="field-group" style="margin-top:.7rem;">
+              <label class="field-label">Special notes</label>
+              <textarea name="ref_notes" class="field-textarea" rows="2" placeholder="e.g. make collar 0.5 inch wider"></textarea>
+            </div>
+          </div>
+
+          <div class="meth-panel {% if preselect_method=='locker' %}active{% endif %}" id="mp-locker">
+            <p class="meth-intro">Visited our shop before? Enter your phone and we load your saved measurements.</p>
+            <div class="phone-row">
+              <span class="phone-pre">+91</span>
+              <input type="tel" id="locker_phone" class="field-input" placeholder="10-digit phone" maxlength="10">
+              <button type="button" class="fetch-btn" onclick="fetchLocker()">Fetch</button>
+            </div>
+            <div id="locker-otp" style="display:none;margin-top:1rem;">
+              <div class="phone-row">
+                <input type="text" id="locker_otp" class="field-input" placeholder="6-digit OTP" maxlength="6">
+                <button type="button" class="fetch-btn" onclick="verifyLocker()">Verify</button>
+              </div>
+            </div>
+            <div id="locker-found" style="display:none;" class="locker-found"></div>
+            <input type="hidden" name="locker_customer_id" id="locker_cid">
+          </div>
+
+          <div class="meth-panel {% if preselect_method=='homevisit' %}active{% endif %}" id="mp-homevisit">
+            <div class="homevisit-box">
+              <h3 class="hv-title">Our tailor comes to you</h3>
+              <p class="hv-desc">Our tailor visits your home, takes measurements, saves them for all future orders.</p>
+              <p class="hv-charge">Visit charge: Rs. 100 (adjusted against your order)</p>
+              <div class="hv-fields">
+                <div class="field-group"><label class="field-label">Preferred date</label><input type="date" name="homevisit_date" class="field-input" min="{{ min_date }}"></div>
+                <div class="field-group"><label class="field-label">Preferred time</label>
+                  <select name="homevisit_slot" class="field-select">
+                    <option value="9-11">9am to 11am</option>
+                    <option value="11-1">11am to 1pm</option>
+                    <option value="2-4">2pm to 4pm</option>
+                    <option value="4-6">4pm to 6pm</option>
+                  </select>
+                </div>
+                <div class="field-group" style="grid-column:1/-1;"><label class="field-label">Your address in Sikar</label><textarea name="homevisit_address" class="field-textarea" rows="2" placeholder="House, street, area, Sikar"></textarea></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 04 — DELIVERY -->
+        <div class="step-card">
+          <div class="step-head">
+            <div class="step-badge">4</div>
+            <div class="step-info"><h2 class="step-title">{{ cs.step5_title }}</h2><p class="step-sub">{{ cs.step5_sub }}</p></div>
+          </div>
+          <div class="field-group" style="margin-bottom:.9rem;">
+            <label class="field-label">Preferred delivery date <span style="color:#A33B2A;">*</span></label>
+            <input type="date" name="delivery_date" id="delivery_date_input" class="field-input" required min="{{ min_date }}" onchange="onDeliveryDateChange()">
+            <div id="date-urgent-msg" class="date-urgent-msg" style="display:none;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              <span>You chose a date within 2 days. We've added a <strong>+Rs. 99 urgent charge</strong> so our master tailor can prioritise your garment. Standard turnaround is 5–7 days.</span>
+            </div>
+          </div>
+          <div class="del-opts">
+            <label class="del-card">
+              <input type="radio" name="delivery" value="pickup" checked onchange="delChange('pickup')">
+              <div class="del-inner">
+                <div class="del-icon-box"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+                <div><strong>Pick up from shop</strong><span>Free &bull; Subhash Chowk, Sikar</span></div>
+              </div>
+            </label>
+            <label class="del-card">
+              <input type="radio" name="delivery" value="home" onchange="delChange('home')">
+              <div class="del-inner">
+                <div class="del-icon-box"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div>
+                <div><strong>Home delivery</strong><span>Rs. 49 &bull; Free on orders above Rs. 1,499</span></div>
+              </div>
+            </label>
+          </div>
+          <div id="del-addr" style="display:none;margin-top:1.1rem;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+              <label class="field-label" style="margin-bottom:0;">Delivery address</label>
+              <button type="button" id="detectAddrBtn" onclick="detectMyAddress()" style="background:#fff;border:1px solid #C8903A;color:#A9763D;font-size:11.5px;font-weight:700;padding:6px 12px;border-radius:20px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;">
+                <span aria-hidden="true">&#x1F4CD;</span> Detect my location
+              </button>
+            </div>
+            <textarea name="delivery_address" id="delivery_address_input" class="field-textarea" rows="2" placeholder="House, street, area, city, pin code" style="margin-top:6px;"></textarea>
+            <div id="detectAddrMsg" style="font-size:11px;color:#9a8a78;margin-top:4px;display:none;"></div>
+          </div>
+          <!-- Gifting Flow -->
+          <div style="border:1.5px solid #e8d9c4;border-radius:12px;padding:14px 16px;margin-top:1.25rem;background:#fffbf5;">
+            <label style="display:flex;align-items:center;gap:12px;cursor:pointer;">
+              <input type="checkbox" name="is_gift" id="isGiftCheck" onchange="toggleGiftFields(this)" style="width:18px;height:18px;accent-color:#C8903A;">
+              <div>
+                <div style="font-size:13.5px;font-weight:700;color:#5a3e1b;">🎁 This is a gift</div>
+                <div style="font-size:12px;color:#9a8a78;">Order for someone else — we'll keep recipient details separate</div>
+              </div>
+            </label>
+            <div id="giftFields" style="display:none;margin-top:14px;padding-top:12px;border-top:1px solid #e8d9c4;">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div>
+                  <label style="font-size:11.5px;font-weight:700;display:block;margin-bottom:4px;">Recipient Name</label>
+                  <input type="text" name="gift_recipient_name" id="giftRecipientName" placeholder="Full name" style="width:100%;padding:9px;border:1.5px solid #e8d9c4;border-radius:8px;font-size:13px;">
+                </div>
+                <div>
+                  <label style="font-size:11.5px;font-weight:700;display:block;margin-bottom:4px;">Recipient WhatsApp</label>
+                  <input type="tel" name="gift_recipient_mobile" id="giftRecipientMobile" placeholder="10-digit number" style="width:100%;padding:9px;border:1.5px solid #e8d9c4;border-radius:8px;font-size:13px;">
+                </div>
+              </div>
+              <div style="margin-top:10px;">
+                <label style="font-size:11.5px;font-weight:700;display:block;margin-bottom:4px;">Gift Message (optional)</label>
+                <textarea name="gift_message" id="giftMessage" rows="2" placeholder="E.g. Happy Birthday! Wishing you joy…" style="width:100%;padding:9px;border:1.5px solid #e8d9c4;border-radius:8px;font-size:13px;resize:vertical;"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="urgent-box" style="margin-top:1.25rem;">
+            <label class="urgent-toggle">
+              <input type="checkbox" name="is_urgent" id="urgentCheck" onchange="toggleUrgent(this)">
+              <div class="urgent-toggle-info">
+                <div class="urgent-title">{{ cs.urgent_title }}</div>
+                <div class="urgent-sub">{{ cs.urgent_sub }}</div>
+              </div>
+              <div class="urgent-price">+Rs. 99</div>
+            </label>
+            <div class="urgent-note" id="urgentNote" style="display:none;"></div>
+          </div>
+        </div>
+
+        <!-- STEP 05 — CONTACT -->
+        <div class="step-card">
+          <div class="step-head">
+            <div class="step-badge">5</div>
+            <div class="step-info"><h2 class="step-title">{{ cs.step6_title }}</h2><p class="step-sub">{{ cs.step6_sub }}</p></div>
+          </div>
+          <div class="contact-grid">
+            <div class="field-group"><label class="field-label">Full name</label><input type="text" name="cust_name" id="cust_name" class="field-input" required placeholder="Your name" oninput="updateBtn()"></div>
+            <div class="field-group">
+              <label class="field-label">Phone (WhatsApp)</label>
+              <div class="phone-row"><span class="phone-pre">+91</span><input type="tel" name="cust_phone" id="cust_phone" class="field-input" required placeholder="10-digit number" maxlength="10" oninput="updateBtn()"></div>
+            </div>
+            <div class="field-group" style="grid-column:1/-1;">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--muted);">
+                <input type="checkbox" name="save_measurements" value="1" checked>
+                Save my measurements for future orders (recommended)
+              </label>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /com-steps -->
+
+      <!-- STICKY ORDER SUMMARY -->
+      <aside class="com-summary">
+        <div class="summary-box">
+          <div class="summary-head">
+            <p class="summary-heading">{{ cs.summary_title }}</p>
+            <p class="summary-headsub" id="summaryCount">No items added yet</p>
+          </div>
+          <div class="summary-body">
+            <div id="summaryRows"><p class="summary-empty">Select garments to begin.</p></div>
+            <div id="summary-price" style="display:none;" class="summary-price">
+              <div class="sp-row" id="sp-stitch-row"><span>Stitching subtotal</span><span id="sp-unit">--</span></div>
+              <div class="sp-row" id="sp-urg-row" style="display:none;"><span>Urgent charge</span><span>+ Rs. 99</span></div>
+              <div class="sp-row" id="sp-del-row" style="display:none;"><span>Delivery</span><span id="sp-del-amt">Rs. 49</span></div>
+              <div class="sp-row" id="sp-hv-row" style="display:none;"><span>Home visit charge</span><span>Rs. 100</span></div>
+              <div class="sp-row" id="sp-fab-row" style="display:none;"><span id="sp-fab-label">Fabric</span><span id="sp-fab-amt">Rs. 0</span></div>
+              <div class="sp-row" id="sp-coupon-row" style="display:none;color:#2D6A3F;">
+                <span>🎟 Discount</span><span id="sp-coupon-amt">-Rs. 0</span>
+              </div>
+              <div class="sp-row" id="sp-total-row" style="font-weight:700;color:var(--dark);border-top:1px solid var(--border);padding-top:6px;margin-top:4px;display:none;" id="sp-grand-row"><span>Total</span><span id="sp-total-val">--</span></div>
+              <div class="sp-row sp-total"><span>Advance now (<span id="sp-adv-pct">30</span>%)</span><span id="sp-adv" class="sp-adv-val">--</span></div>
+            </div>
+            <div id="summary-date" style="display:none;" class="summary-date">
+              <span class="sd-label">Estimated ready by</span>
+              <span class="sd-val" id="sd-val"></span>
+            </div>
+            <!-- Coupon box -->
+            <div class="coupon-wrap" id="couponWrap">
+              <span class="coupon-label">Have a promo code?</span>
+              <div class="coupon-row">
+                <input type="text" id="couponInput" name="coupon_code"
+                  placeholder="Enter code"
+                  class="field-input"
+                  onkeydown="if(event.key==='Enter'){event.preventDefault();applyCoupon();}">
+                <button type="button" onclick="applyCoupon()" class="coupon-apply-btn">Apply</button>
+              </div>
+              <div id="couponMsg"></div>
+            </div>
+            <input type="hidden" name="coupon_discount" id="couponDiscount" value="0">
+            <button type="submit" class="reserve-btn" id="reserveBtn" disabled>
+              <span>Complete Your Order</span>
+              <span class="reserve-sub">Pay {{ cs.advance_pct|default(30) }}% advance — rest on delivery</span>
+            </button>
+            <ul class="trust-pills">
+              {% if cs.trust_pill_1 %}<li>{{ cs.trust_pill_1 }}</li>{% endif %}
+              {% if cs.trust_pill_2 %}<li>{{ cs.trust_pill_2 }}</li>{% endif %}
+              {% if cs.trust_pill_3 %}<li>{{ cs.trust_pill_3 }}</li>{% endif %}
+              {% if cs.trust_pill_4 %}<li>{{ cs.trust_pill_4 }}</li>{% endif %}
+            </ul>
+          </div>
+        </div>
+      </aside>
+
+    </div>
+
+    <input type="hidden" name="style_json" id="styleJsonInput" value="{}">
+    <input type="hidden" name="generated_images_json" id="generatedImagesInput" value="{}">
+  </form>
+
+<!-- ── STYLE MODAL ── -->
+<div id="fabricChoiceOverlay" onclick="if(event.target===this)closeFabricChoicePopup()" style="display:none;position:fixed;inset:0;background:rgba(20,12,6,.6);backdrop-filter:blur(4px);z-index:910;align-items:center;justify-content:center;padding:14px;">
+  <div style="position:relative;background:#fffefb;border-radius:4px;max-width:450px;width:100%;padding:3px;box-shadow:0 30px 80px rgba(20,12,6,.45);font-family:inherit;">
+    <!-- gold foil double-line frame -->
+    <div style="position:absolute;inset:8px;border:1px solid rgba(200,144,58,.5);border-radius:2px;pointer-events:none;"></div>
+    <div style="position:relative;border:1px solid rgba(200,144,58,.28);border-radius:2px;padding:38px 34px 32px;background:#fffefb;">
+
+      <div style="text-align:center;margin-bottom:28px;">
+        <div style="font-size:9px;letter-spacing:.32em;text-transform:uppercase;color:#A9763D;font-weight:800;margin-bottom:10px;">Uttam Tailors &middot; Bespoke Service</div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:700;color:#241407;letter-spacing:.015em;margin-bottom:10px;" id="fcGarmentName">How will you get your fabric?</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:12px;">
+          <span style="width:28px;height:1px;background:linear-gradient(90deg,transparent,#C8903A);"></span>
+          <span style="width:5px;height:5px;border:1px solid #C8903A;transform:rotate(45deg);"></span>
+          <span style="width:28px;height:1px;background:linear-gradient(90deg,#C8903A,transparent);"></span>
+        </div>
+        <div style="font-size:13px;color:#5c4a3a;line-height:1.7;font-weight:400;letter-spacing:.01em;font-style:italic;font-family:'Cormorant Garamond',serif;">Just one quick thing, so we can prepare the right style preview for you</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:13px;">
+        <div onclick="pickFabricChoice('catalog')" onmouseover="this.style.borderColor='#C8903A';this.style.boxShadow='0 10px 30px rgba(200,144,58,.18)';this.style.transform='translateY(-1px)'" onmouseout="this.style.borderColor='#C8903A';this.style.boxShadow='none';this.style.transform='translateY(0)'" style="position:relative;cursor:pointer;border:1.5px solid #C8903A;border-radius:6px;padding:18px 20px;background:linear-gradient(135deg,#fff6e6,#fdecd2);display:flex;align-items:center;gap:16px;transition:all .25s ease;">
+          <span style="position:absolute;top:-9px;right:20px;background:linear-gradient(135deg,#C8903A,#A9763D);color:#fff;font-size:8.5px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;padding:4px 13px;border-radius:2px;box-shadow:0 3px 10px rgba(169,118,61,.4);">&#9733;&nbsp; Recommended</span>
+          <div style="width:44px;height:44px;flex-shrink:0;border-radius:50%;background:#fff;border:1px solid #C8903A;display:flex;align-items:center;justify-content:center;">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#A9763D" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/><path d="M9 7h7M9 11h7"/></svg>
+          </div>
+          <div>
+            <div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:800;color:#241407;letter-spacing:.01em;">Choose from our catalog</div>
+            <div style="font-size:12px;color:#5c4a3a;margin-top:4px;line-height:1.6;font-weight:500;">Browse fabrics with photos &amp; prices — your AI preview will match the exact colour and texture</div>
+          </div>
+        </div>
+
+        <div onclick="pickFabricChoice('own')" onmouseover="this.style.borderColor='#A9763D';this.style.boxShadow='0 8px 22px rgba(46,26,14,.1)';this.style.transform='translateY(-1px)'" onmouseout="this.style.borderColor='#d8c4a8';this.style.boxShadow='none';this.style.transform='translateY(0)'" style="cursor:pointer;border:1.5px solid #d8c4a8;border-radius:6px;padding:18px 20px;background:#fff;display:flex;align-items:center;gap:16px;transition:all .25s ease;">
+          <div style="width:44px;height:44px;flex-shrink:0;border-radius:50%;background:#faf6f0;border:1px solid #d8c4a8;display:flex;align-items:center;justify-content:center;">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#5c4a3a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10l2 3-4 2v11H9V9L5 7Z"/><path d="M9 9l3 2 3-2"/></svg>
+          </div>
+          <div>
+            <div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:800;color:#241407;letter-spacing:.01em;">I have my own fabric</div>
+            <div style="font-size:12px;color:#5c4a3a;margin-top:4px;line-height:1.6;font-weight:500;">No problem — bring it to our shop or courier it. We'll still show you a style preview to confirm the look.</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="text-align:center;margin-top:24px;font-size:9px;letter-spacing:.24em;text-transform:uppercase;color:#A9763D;font-weight:600;">&#10022;&nbsp; Est. 1987 &nbsp;&#10022;&nbsp; Sikar &nbsp;&#10022;</div>
+    </div>
+  </div>
+</div>
+
+<!-- Account login / signup popup — appears once a visitor uses up their free AI style previews -->
+<div id="accountOverlay" onclick="if(event.target===this)closeAccountModal()" style="display:none;position:fixed;inset:0;background:rgba(20,12,6,.6);backdrop-filter:blur(4px);z-index:950;align-items:center;justify-content:center;padding:14px;">
+  <div style="position:relative;background:#fffdf9;border-radius:4px;max-width:410px;width:100%;padding:3px;box-shadow:0 30px 80px rgba(20,12,6,.35);font-family:inherit;">
+    <div style="position:absolute;inset:8px;border:1px solid rgba(200,144,58,.45);border-radius:2px;pointer-events:none;"></div>
+    <div style="position:relative;border:1px solid rgba(200,144,58,.22);border-radius:2px;padding:34px 30px 28px;background:radial-gradient(circle at 50% -10%, rgba(200,144,58,.07), transparent 55%);">
+
+      <button type="button" onclick="closeAccountModal()" aria-label="Close" style="position:absolute;top:10px;right:12px;background:none;border:none;font-size:18px;color:#cbb59b;cursor:pointer;line-height:1;">&times;</button>
+
+      <div style="text-align:center;margin-bottom:22px;">
+        <div style="font-size:9px;letter-spacing:.32em;text-transform:uppercase;color:#C8903A;font-weight:700;margin-bottom:10px;">Uttam Tailors &middot; Bespoke Service</div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:25px;font-weight:600;color:#2e1a0e;letter-spacing:.015em;margin-bottom:8px;" id="acctTitle">Create your free account</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;">
+          <span style="width:28px;height:1px;background:linear-gradient(90deg,transparent,#d8b785);"></span>
+          <span style="width:5px;height:5px;border:1px solid #C8903A;transform:rotate(45deg);"></span>
+          <span style="width:28px;height:1px;background:linear-gradient(90deg,#d8b785,transparent);"></span>
+        </div>
+        <div style="font-size:12px;color:#a8957f;line-height:1.65;font-weight:400;letter-spacing:.01em;font-style:italic;font-family:'Cormorant Garamond',serif;" id="acctSubtitle">You've used your 3 free style previews — sign up (it's free) to keep generating AI looks for your garments</div>
+      </div>
+
+      <button type="button" onclick="window.location.href='/auth/google/login?next='+encodeURIComponent(window.location.pathname)" style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;border:1.5px solid #ece1d3;border-radius:8px;padding:10px 0;background:#fff;font-size:13.5px;font-weight:600;color:#2e1a0e;cursor:pointer;margin-bottom:14px;"><svg width="16" height="16" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84c-.21 1.12-.84 2.07-1.8 2.71v2.26h2.9c1.7-1.57 2.7-3.88 2.7-6.61z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.9-2.26c-.8.55-1.85.86-3.06.86-2.36 0-4.36-1.6-5.07-3.74H.93v2.34C2.42 16.06 5.48 18 9 18z"/><path fill="#FBBC05" d="M3.93 10.68A5.4 5.4 0 0 1 3.64 9c0-.58.1-1.15.29-1.68V4.98H.93A8.97 8.97 0 0 0 0 9c0 1.45.35 2.83.93 4.02l3-2.34z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.46 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0 5.48 0 2.42 1.94.93 4.98l3 2.34C4.64 5.18 6.64 3.58 9 3.58z"/></svg>Continue with Google</button>
+      <div style="text-align:center;font-size:11px;color:#a8957f;margin:-8px 0 14px;">or use your mobile number</div>
+
+      <div style="display:flex;gap:6px;margin-bottom:18px;background:#faf3e8;border-radius:8px;padding:4px;">
+        <button type="button" id="acctTabSignup" onclick="setAccountTab('signup')" style="flex:1;border:none;border-radius:6px;padding:8px 0;font-size:12.5px;font-weight:700;letter-spacing:.04em;cursor:pointer;background:#2e1a0e;color:#fff;">Sign up</button>
+        <button type="button" id="acctTabLogin" onclick="setAccountTab('login')" style="flex:1;border:none;border-radius:6px;padding:8px 0;font-size:12.5px;font-weight:700;letter-spacing:.04em;cursor:pointer;background:transparent;color:#a8957f;">Log in</button>
+      </div>
+
+      <div id="acctNameField" style="margin-bottom:12px;">
+        <label style="display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#a8957f;margin-bottom:5px;">Your name</label>
+        <input type="text" id="acctName" placeholder="e.g. Rohit Sharma" style="width:100%;box-sizing:border-box;border:1px solid #ece1d3;border-radius:7px;padding:11px 13px;font-size:13.5px;background:#fff;">
+      </div>
+      <div style="margin-bottom:12px;">
+        <label style="display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#a8957f;margin-bottom:5px;">Mobile number</label>
+        <input type="tel" id="acctMobile" placeholder="10-digit mobile number" maxlength="10" style="width:100%;box-sizing:border-box;border:1px solid #ece1d3;border-radius:7px;padding:11px 13px;font-size:13.5px;background:#fff;">
+      </div>
+      <div style="margin-bottom:8px;">
+        <label style="display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#a8957f;margin-bottom:5px;">Password</label>
+        <input type="password" id="acctPassword" placeholder="Choose a password" style="width:100%;box-sizing:border-box;border:1px solid #ece1d3;border-radius:7px;padding:11px 13px;font-size:13.5px;background:#fff;">
+      </div>
+
+      <div id="acctMsg" style="font-size:12px;min-height:1.2em;margin:6px 0 4px;"></div>
+
+      <button type="button" id="acctSubmitBtn" onclick="submitAccountForm()" style="width:100%;margin-top:8px;background:linear-gradient(135deg,#C8903A,#A9763D);color:#fff;border:none;border-radius:8px;padding:13px 0;font-size:14px;font-weight:700;letter-spacing:.03em;cursor:pointer;box-shadow:0 8px 22px rgba(169,118,61,.3);">Create account &amp; continue</button>
+
+      <div style="text-align:center;margin-top:18px;font-size:9px;letter-spacing:.24em;text-transform:uppercase;color:#cbb59b;">&#10022;&nbsp; Est. 1987 &nbsp;&#10022;&nbsp; Sikar &nbsp;&#10022;</div>
+    </div>
+  </div>
+</div>
+
+<div id="imgZoomOverlay" onclick="closeImgZoom()" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(20,12,6,0.92);align-items:center;justify-content:center;cursor:zoom-out;">
+  <button onclick="closeImgZoom()" style="position:absolute;top:16px;right:20px;background:none;border:none;color:#f7f0e6;font-size:32px;cursor:pointer;line-height:1;">&#x2715;</button>
+  <img id="imgZoomPic" src="" alt="Zoomed preview" style="max-width:94vw;max-height:90vh;border-radius:8px;box-shadow:0 10px 50px rgba(0,0,0,.5);">
+</div>
+
+<div id="styleModalOverlay" onclick="if(event.target===this)closeStyleModal()">
+  <div id="styleModal">
+    <div class="sm-head">
+      <div>
+        <div style="font-size:16px;font-weight:800;color:#f7f0e6;" id="smGarmentName"></div>
+        <div style="font-size:12px;color:#C8903A;font-weight:600;" id="smGarmentPrice"></div>
+        <div style="font-size:10.5px;color:#bda892;margin-top:3px;">This is a quick preview — once you've chosen your fabric, you can revise it anytime from "Edit Style" in the Order Summary.</div>
+      </div>
+      <button onclick="closeStyleModal()" style="background:none;border:none;color:#f7f0e6;font-size:26px;cursor:pointer;line-height:1;padding:0;">&#x2715;</button>
+    </div>
+    <div class="sm-body">
+      <div class="sm-left">
+        <div id="tryonBox" style="width:100%;background:#fff7ec;border:1.5px dashed #C8903A;border-radius:10px;padding:10px 12px;margin-bottom:10px;box-sizing:border-box;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+            <label style="display:flex;align-items:center;gap:7px;font-size:12px;font-weight:700;color:#2e1a0e;cursor:pointer;">
+              <input type="checkbox" id="tryonToggle" onchange="onTryonToggle()" style="width:15px;height:15px;cursor:pointer;">
+              &#x1FA75; Try it on yourself <span style="color:#C8903A;">(beta)</span>
+            </label>
+          </div>
+          <div id="tryonUploadArea" style="display:none;margin-top:8px;">
+            <input type="file" id="tryonFileInput" accept="image/jpeg,image/png,image/webp" style="display:none;" onchange="handleTryonFileChange(this)">
+            <div id="tryonNoPhoto">
+              <button type="button" onclick="document.getElementById('tryonFileInput').click()" style="width:100%;padding:8px;background:#fff;border:1.5px solid #e8ddd0;border-radius:8px;font-size:11.5px;font-weight:700;color:#7a6a58;cursor:pointer;">&#x1F4F7; Upload your photo</button>
+              <div style="font-size:9.5px;color:#a8957f;margin-top:4px;text-align:center;">Best results: stand facing the camera, full body in frame, hands visible at your sides (not in pockets/crossed). JPG/PNG/WEBP, up to 8MB. Limited free try-ons — unlimited regular previews still apply.</div>
+            </div>
+            <div id="tryonHasPhoto" style="display:none;position:relative;">
+              <img id="tryonThumb" src="" style="width:100%;max-height:140px;object-fit:cover;border-radius:8px;border:1.5px solid #C8903A;display:block;">
+              <button type="button" onclick="removeTryonPhoto()" style="position:absolute;top:5px;right:5px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;border:none;font-size:13px;cursor:pointer;line-height:1;">&#x2715;</button>
+            </div>
+            <div id="tryonUploadMsg" style="font-size:10px;color:#dc2626;margin-top:4px;"></div>
+          </div>
+        </div>
+        <div style="font-size:10px;font-weight:700;color:#7a6a58;text-transform:uppercase;letter-spacing:.08em;">AI Preview</div>
+        <div class="ai-placeholder" id="aiPlaceholder">
+          <div style="font-size:36px;">&#127912;</div>
+          <div style="font-weight:700;color:#2e1a0e;font-size:13px;">Style Preview</div>
+          <div style="font-size:11px;line-height:1.5;" id="aiPlcHint">Choose your options, then<br>tap <strong>Generate AI Preview</strong></div>
+          <div style="font-size:10.5px;line-height:1.5;color:#7a6a58;margin-top:6px;display:none;background:#fff7ec;border:1px solid #e8ddd0;border-radius:8px;padding:7px 10px;" id="aiOwnFabricNote">You've chosen to bring your own fabric — the reference photos below are from our catalog fabrics, so the colour/texture won't match yours. Tap <strong>Generate AI Preview</strong> to generate an example of your chosen cut/design so you can confirm the shape and style; the final colour and texture will be based on the fabric you provide.</div>
+        </div>
+        <div id="aiRefWrap" style="display:none;width:100%;">
+          <img id="aiRefImg" src="" alt="Selected style reference" style="display:block;width:100%;border-radius:10px;border:1.5px solid #C8903A;">
+          <div style="font-size:10px;color:#C8903A;font-weight:700;text-align:center;margin-top:6px;text-transform:uppercase;letter-spacing:.06em;">Reference — <span id="aiRefLabel"></span></div>
+          <div style="font-size:10px;color:#7a6a58;text-align:center;margin-top:2px;">This is just a reference. Tap the button below to generate the final AI preview.</div>
+        </div>
+        <div class="ai-loading" id="aiLoading">
+          <div class="ai-spinner"></div>
+          <div style="font-size:13px;font-weight:700;color:#2e1a0e;" id="aiLoadingText">Generating...</div>
+          <div style="font-size:11px;color:#7a6a58;">10-20 seconds</div>
+        </div>
+        <div style="position:relative;">
+          <img id="aiGenImg" src="" alt="AI preview" onclick="openImgZoom(this.src)" style="display:none;width:100%;border-radius:10px;border:1px solid #e8ddd0;cursor:zoom-in;">
+          <div id="aiGenZoomHint" onclick="openImgZoom(document.getElementById('aiGenImg').src)" style="display:none;position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.6);color:#fff;font-size:10.5px;font-weight:700;padding:5px 10px;border-radius:14px;cursor:zoom-in;">&#x1F50D; Tap to zoom</div>
+        </div>
+        <button id="regenBtn" onclick="generateAIPreview()" style="display:none;padding:7px 16px;background:transparent;border:1.5px solid #C8903A;color:#C8903A;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;">&#x21bb; Regenerate</button>
+        <div id="smSelChips" style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;"></div>
+      </div>
+      <div class="sm-right">
+        <div id="smOptionsContainer">
+          <p style="color:#7a6a58;font-size:13px;padding:20px 0;text-align:center;">Loading style options...</p>
+        </div>
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid #e8ddd0;">
+          <label style="font-size:11px;font-weight:700;color:#7a6a58;text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:6px;">Special request to tailor</label>
+          <textarea id="smNote" rows="2" placeholder="e.g. Collar thodi loose rakhna..." style="width:100%;padding:9px 12px;border:1.5px solid #e8ddd0;border-radius:8px;font-size:13px;resize:none;font-family:inherit;outline:none;box-sizing:border-box;background:#fafaf8;"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="sm-foot">
+      <button id="genPreviewBtn" onclick="generateAIPreview()" style="flex:1;padding:12px;background:#f7f0e6;color:#2e1a0e;border:2px dashed #C8903A;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">&#127912; Generate AI Preview</button>
+      <button onclick="confirmStyle()" style="flex:1;padding:12px;background:#2e1a0e;color:#f7f0e6;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">&#10003; Add to Order</button>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<!-- Size guide modal -->
+<div id="sizeGuideModal" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(28,15,6,.55);align-items:center;justify-content:center;padding:2rem;" onclick="if(event.target===this)this.style.display='none';">
+  <div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:1.75rem;max-width:520px;width:100%;position:relative;max-height:80vh;overflow-y:auto;">
+    <button onclick="document.getElementById('sizeGuideModal').style.display='none';" style="position:absolute;top:.9rem;right:.9rem;background:none;border:none;font-size:20px;cursor:pointer;color:#2E1A0D;">&times;</button>
+    <h3 style="font-family:var(--fd);font-size:21px;color:var(--dark);margin-bottom:1rem;">Size Guide (all in inches)</h3>
+    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+      <thead><tr style="border-bottom:2px solid var(--border);">
+        <th style="padding:7px 9px;text-align:left;color:var(--muted);font-size:10px;text-transform:uppercase;">Size</th>
+        <th style="padding:7px 9px;text-align:left;color:var(--muted);font-size:10px;text-transform:uppercase;">Chest</th>
+        <th style="padding:7px 9px;text-align:left;color:var(--muted);font-size:10px;text-transform:uppercase;">Waist</th>
+        <th style="padding:7px 9px;text-align:left;color:var(--muted);font-size:10px;text-transform:uppercase;">Shoulder</th>
+        <th style="padding:7px 9px;text-align:left;color:var(--muted);font-size:10px;text-transform:uppercase;">Hip</th>
+      </tr></thead>
+      <tbody>
+        <tr style="border-bottom:1px solid var(--border);"><td style="padding:9px;font-weight:700;">S</td><td style="padding:9px;">35-36</td><td style="padding:9px;">29-30</td><td style="padding:9px;">15.5</td><td style="padding:9px;">35-36</td></tr>
+        <tr style="border-bottom:1px solid var(--border);"><td style="padding:9px;font-weight:700;">M</td><td style="padding:9px;">37-38</td><td style="padding:9px;">31-32</td><td style="padding:9px;">16.5</td><td style="padding:9px;">37-38</td></tr>
+        <tr style="border-bottom:1px solid var(--border);"><td style="padding:9px;font-weight:700;">L</td><td style="padding:9px;">39-40</td><td style="padding:9px;">33-34</td><td style="padding:9px;">17.5</td><td style="padding:9px;">39-40</td></tr>
+        <tr style="border-bottom:1px solid var(--border);"><td style="padding:9px;font-weight:700;">XL</td><td style="padding:9px;">41-42</td><td style="padding:9px;">35-36</td><td style="padding:9px;">18.5</td><td style="padding:9px;">41-42</td></tr>
+        <tr><td style="padding:9px;font-weight:700;">XXL</td><td style="padding:9px;">43-44</td><td style="padding:9px;">37-38</td><td style="padding:9px;">19.5</td><td style="padding:9px;">43-44</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+// ── GARMENT SELECTION ──
+var garmentQtys = {};
+var fabricChoiceMade = false;
+var _fcPending = {name:'', itemId:0, card:null, inp:null, catKey:''};
+var _fcPopupOpen = false; // guards against the popup re-opening if another garment is checked while it's already showing
+var GPRICES = {};
+{% for item in db_items %}GPRICES[{{ item.name|tojson }}] = parseInt({{ item.price|tojson }},10)||0;{% endfor %}
+var PRESELECT_NAME = {{ (garment_name or '')|tojson }};
+var ADVANCE_PCT = parseInt('{{ advance_pct|default(30) }}') || 30;
+
+// ── PER-GARMENT SIZE STATE (Standard Size method) ──
+var GARMENT_SIZES = {}; // { "Denim Shirt": {size:'M', fit:'regular'}, ... }
+var SIZE_OPTS = ['S','M','L','XL','XXL'];
+var FIT_OPTS  = [['slim','Slim'],['regular','Regular'],['loose','Loose']];
+
+function syncSizePerGarmentInput() {
+  var el = document.getElementById('sizePerGarmentInput');
+  if (el) el.value = JSON.stringify(GARMENT_SIZES);
+}
+
+// Pull admin-configured fabric-metres-per-size (Sizes panel) so customer-facing estimates
+// reflect what the shop owner has actually set, falling back to built-in defaults otherwise.
+fetch('{{ url_for("website.api_fabric_metres") }}').then(function(r){ return r.json(); }).then(function(d){
+  if (d && d.ok && d.data) {
+    ADMIN_FABRIC_METERS = d.data;
+    if (typeof refreshSummary === 'function') refreshSummary();
+    if (typeof refreshPrice === 'function') refreshPrice();
+  }
+}).catch(function(){});
+
+// Admin-configured measurements per garment category + size (Sizes admin tab) —
+// used to pre-fill the "fine-tune measurements" fields with the shop's own numbers.
+var ADMIN_SIZE_MEASUREMENTS = null;
+fetch('{{ url_for("website.api_size_measurements") }}').then(function(r){ return r.json(); }).then(function(d){
+  if (d && d.ok && d.data) ADMIN_SIZE_MEASUREMENTS = d.data;
+}).catch(function(){});
+
+// Fill the fine-tune fields with the admin's saved measurements for the chosen
+// garment category + size — but never overwrite something the customer already typed.
+function prefillFineTuneFromAdmin(garmentName, sz) {
+  if (!ADMIN_SIZE_MEASUREMENTS || !sz) return;
+  var mKey = (typeof nameToKey === 'function') ? nameToKey(garmentName || '') : 'pant';
+  var perSize = ADMIN_SIZE_MEASUREMENTS[mKey];
+  var m = perSize && perSize[sz];
+  if (!m) return;
+  var map = {adj_chest: m.chest, adj_waist: m.waist, adj_shoulder: m.shoulder, adj_length: m.length, adj_trouser: m.trouser};
+  Object.keys(map).forEach(function(name) {
+    var val = map[name];
+    if (val === undefined || val === null || val === '') return;
+    var inp = document.querySelector('input[name="' + name + '"]');
+    if (inp && !inp.value && !inp.dataset.userEdited) inp.value = val;
+  });
+}
+// Mark fields the customer edits by hand so we never clobber their input later.
+document.addEventListener('input', function(e){
+  if (e.target && e.target.matches && e.target.matches('input[name^="adj_"]')) {
+    e.target.dataset.userEdited = '1';
+  }
+});
+
+// Wrap the base pickSz (from commission.js) to also show fabric metres needed
+// for the currently selected single garment's type + chosen size.
+var _basePickSz = (typeof pickSz === 'function') ? pickSz : null;
+pickSz = function(sz, btn) {
+  if (_basePickSz) _basePickSz(sz, btn);
+  var dEl = document.getElementById('sizeDetail');
+  if (dEl) {
+    var firstChecked = document.querySelector('input[name="garment_type[]"]:checked');
+    var gName = firstChecked ? (firstChecked.dataset.label || firstChecked.value) : '';
+    var mKey = (typeof nameToKey === 'function') ? nameToKey(gName) : 'pant';
+    var mVal = (typeof fabricMetersFor === 'function') ? fabricMetersFor(mKey, sz) : null;
+    prefillFineTuneFromAdmin(gName, sz);
+    if (mVal) {
+      var note = document.createElement('div');
+      note.className = 'sd-fab-meters';
+      note.style.cssText = 'margin-top:10px;font-size:13px;color:var(--muted);';
+      note.innerHTML = 'Fabric needed: <strong style="color:var(--dark);">~' + mVal + ' metres</strong> for size ' + sz;
+      var existing = dEl.querySelector('.sd-fab-meters');
+      if (existing) existing.remove();
+      dEl.appendChild(note);
+    }
+  }
+  if (typeof refreshSummary === 'function') refreshSummary();
+  if (typeof refreshPrice === 'function') refreshPrice();
+};
+
+function pickPgSz(garment, sz, btn) {
+  if (!GARMENT_SIZES[garment]) GARMENT_SIZES[garment] = {size:'', fit:'regular'};
+  GARMENT_SIZES[garment].size = sz;
+  var wrap = btn.closest('.pg-size-block');
+  if (wrap) {
+    wrap.querySelectorAll('.sz-btn').forEach(function(b){ b.classList.remove('active'); });
+    var mNote = wrap.querySelector('.pg-fab-meters');
+    if (mNote) {
+      var mKey = (typeof nameToKey === 'function') ? nameToKey(garment) : 'pant';
+      var mVal = (typeof fabricMetersFor === 'function') ? fabricMetersFor(mKey, sz) : null;
+      mNote.innerHTML = mVal ? ('Fabric needed: <strong>~' + mVal + ' metres</strong> for size ' + sz) : 'Select a size to see fabric needed';
+    }
+  }
+  btn.classList.add('active');
+  syncSizePerGarmentInput();
+  if (typeof refreshBtn === 'function') refreshBtn();
+  if (typeof refreshSummary === 'function') refreshSummary();
+  if (typeof refreshPrice === 'function') refreshPrice();
+}
+
+function pickPgFit(garment, fit, btn) {
+  if (!GARMENT_SIZES[garment]) GARMENT_SIZES[garment] = {size:'', fit:'regular'};
+  GARMENT_SIZES[garment].fit = fit;
+  var wrap = btn.closest('.pg-size-block');
+  if (wrap) wrap.querySelectorAll('.fit-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  syncSizePerGarmentInput();
+}
+
+// Render one size+fit picker per selected garment when 2+ garments are chosen.
+// With a single garment, fall back to the original combined size picker (no UI change for simple orders).
+function rebuildSizePanels() {
+  var pgWrap = document.getElementById('pgSizeWrap');
+  var single = document.getElementById('singleSizeLayout');
+  if (!pgWrap || !single) return;
+  var checked = Array.from(document.querySelectorAll('input[name="garment_type[]"]:checked'));
+  if (checked.length < 2) {
+    pgWrap.style.display = 'none';
+    pgWrap.innerHTML = '';
+    single.style.display = '';
+    return;
+  }
+  single.style.display = 'none';
+  pgWrap.style.display = 'block';
+  // Drop sizes for garments that are no longer selected
+  var names = checked.map(function(inp){ return inp.dataset.label || inp.value; });
+  Object.keys(GARMENT_SIZES).forEach(function(g){ if (names.indexOf(g) === -1) delete GARMENT_SIZES[g]; });
+  pgWrap.innerHTML = checked.map(function(inp) {
+    var name = inp.dataset.label || inp.value;
+    var safe = name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    var cur = GARMENT_SIZES[name] || {size:'', fit:'regular'};
+    if (!GARMENT_SIZES[name]) GARMENT_SIZES[name] = cur;
+    var szBtns = SIZE_OPTS.map(function(s){
+      return '<button type="button" class="sz-btn' + (cur.size===s?' active':'') + '" onclick="pickPgSz(\'' + safe + '\',\'' + s + '\',this)">' + s + '</button>';
+    }).join('');
+    var fitBtns = FIT_OPTS.map(function(f){
+      return '<button type="button" class="fit-btn' + (cur.fit===f[0]?' active':'') + '" onclick="pickPgFit(\'' + safe + '\',\'' + f[0] + '\',this)">' + f[1] + '</button>';
+    }).join('');
+    var mKey = (typeof nameToKey === 'function') ? nameToKey(name) : 'pant';
+    var mVal = (typeof fabricMetersFor === 'function') ? fabricMetersFor(mKey, cur.size) : null;
+    var mTxt = mVal ? ('Fabric needed: <strong>~' + mVal + ' metres</strong> for size ' + cur.size) : 'Select a size to see fabric needed';
+    return '<div class="pg-size-block" style="margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border);">'
+      + '<div style="font-size:13px;font-weight:700;color:var(--dark);margin-bottom:8px;">' + sdEsc(name) + '</div>'
+      + '<div class="size-btns">' + szBtns + '</div>'
+      + '<div class="fit-row" style="margin-top:8px;">' + fitBtns + '</div>'
+      + '<div class="pg-fab-meters" data-garment="' + sdEsc(name) + '" style="margin-top:8px;font-size:12px;color:var(--muted);">' + mTxt + '</div>'
+      + '</div>';
+  }).join('');
+  syncSizePerGarmentInput();
+  if (typeof refreshBtn === 'function') refreshBtn();
+}
+
+// ── "YOUR STYLE PICKS" SUMMARY (fabric recap + per-garment style chips & AI preview thumbnail) ──
+function rebuildFabricRecap() {
+  var wrap = document.getElementById('fabricRecapWrap');
+  if (!wrap) return;
+  if (!fabricChoiceMade) { wrap.innerHTML = ''; return; }
+  var choice = (document.getElementById('fab_choice') || {}).value || 'own';
+  var fname  = (document.getElementById('fab_selected_name') || {}).value || '';
+  var esc=(typeof sdEsc==='function')?sdEsc:function(s){return String(s||'');};
+  var label = choice === 'catalog'
+    ? ('From our catalog' + (fname ? (' — <strong>' + esc(fname) + '</strong>') : ''))
+    : 'You’re bringing your own fabric';
+  wrap.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 14px;background:#fff7ec;border:1px solid #e8ddd0;border-radius:10px;margin-bottom:14px;">'
+    + '<div style="font-size:12.5px;color:#5a4030;"><span style="font-weight:700;">Fabric:</span> ' + label + '</div>'
+    + '<button type="button" onclick="reopenFabricChoice()" style="background:none;border:1px solid #C8903A;color:#C8903A;font-size:10.5px;font-weight:700;border-radius:20px;padding:4px 12px;cursor:pointer;white-space:nowrap;">Change</button>'
+    + '</div>';
+}
+function rebuildStylingPanel() {
+  rebuildFabricRecap();
+  var wrap = document.getElementById('stylingPanelWrap');
+  if (!wrap) return;
+  var checked = Array.from(document.querySelectorAll('input[name="garment_type[]"]:checked'));
+  if (!checked.length) {
+    wrap.innerHTML = '<p style="font-size:13px;color:var(--muted);">First select your garment(s) in Step 1 — your fabric and style choices will show up here automatically.</p>';
+    return;
+  }
+  var esc=(typeof sdEsc==='function')?sdEsc:function(s){return String(s||'');};
+  wrap.innerHTML = checked.map(function(inp) {
+    var name = inp.dataset.label || inp.value;
+    var itemId = parseInt(inp.dataset.itemId) || 0;
+    var safe = name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    var sel = (typeof STYLE_SEL !== 'undefined' && STYLE_SEL[name]) || {};
+    var chips = Object.keys(sel).filter(function(k){ return sel[k] && k !== '__note__'; }).map(function(k){
+      return '<span style="font-size:10px;background:#2e1a0e;color:#f7f0e6;padding:2px 9px;border-radius:20px;font-weight:600;margin:2px 4px 0 0;display:inline-block;">' + esc(sel[k]) + '</span>';
+    }).join('');
+    var hasStyle = chips || (typeof STYLE_NOTES !== 'undefined' && STYLE_NOTES[name]);
+    var img = (typeof STYLE_IMAGES !== 'undefined' && STYLE_IMAGES[name]) || '';
+    var thumb = img ? ('<img src="' + esc(img) + '" alt="AI preview — ' + esc(name) + '" style="width:54px;height:54px;border-radius:8px;object-fit:cover;border:1.5px solid #C8903A;flex-shrink:0;cursor:zoom-in;" onclick="fabZoom(' + jsStr(img) + ',' + jsStr(name + ' — AI preview') + ')">') : '';
+    return '<div class="styling-row" style="display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 0;border-bottom:1px solid var(--border);">'
+      + '<div style="display:flex;align-items:center;gap:12px;min-width:0;">'
+      + thumb
+      + '<div style="min-width:0;"><div style="font-size:13px;font-weight:700;color:var(--dark);">' + esc(name) + '</div>'
+      + (hasStyle ? '<div style="margin-top:4px;">' + chips + '</div>' : '<div style="font-size:11.5px;color:var(--muted);margin-top:3px;">No style chosen yet</div>')
+      + (img ? '<div style="font-size:10px;color:#C8903A;font-weight:700;margin-top:4px;">&#10003; AI preview ready — saved with your order</div>' : '')
+      + '</div></div>'
+      + '<button type="button" style="padding:8px 18px;background:#2e1a0e;color:#f7f0e6;border:none;border-radius:20px;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;" onclick="editStyle(\'' + safe + '\',' + itemId + ')">' + (hasStyle ? 'Edit Style' : 'Customise Style') + '</button>'
+      + '</div>';
+  }).join('');
+}
+
+// ── STYLE MODAL STATE ──
+var STYLE_SEL   = {};
+var STYLE_NOTES = {};
+var STYLE_IMAGES = {};   // {garmentName: generatedAIPreviewImageUrl} — saved with the order so admin can see it
+function updateGeneratedImagesInput() {
+  var el = document.getElementById('generatedImagesInput');
+  if (el) el.value = JSON.stringify(STYLE_IMAGES);
+}
+var _sm = {name:'', itemId:0, card:null, inp:null};
+
+function sdEsc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+// Build a single-quoted JS string literal safe to embed inside a double-quoted HTML onclick="..." attribute
+// (JSON.stringify produces double quotes which break double-quoted HTML attributes)
+function jsStr(s){ return "'" + String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;') + "'"; }
+
+function showCat(id, el) {
+  document.querySelectorAll('.garment-panel').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.cat-tab').forEach(function(t){t.classList.remove('active');});
+  var panel = document.getElementById('panel-' + id);
+  if (panel) panel.classList.add('active');
+  if (el) el.classList.add('active');
+}
+
+function garmentChanged(inp) {
+  var card = inp.closest('.g-card');
+  if (card) card.classList.toggle('selected', inp.checked);
+  if (!inp.checked) {
+    delete garmentQtys[inp.value];
+    delete STYLE_SEL[inp.value];
+    delete STYLE_NOTES[inp.value];
+    delete STYLE_IMAGES[inp.value];
+    updateStyleInput();
+    updateGeneratedImagesInput();
+  } else if (!garmentQtys[inp.value]) {
+    garmentQtys[inp.value] = 1;
+  }
+  rebuildQtyRows();
+  rebuildSizePanels();
+  if (typeof rebuildManualPanels === 'function') rebuildManualPanels();
+  if (typeof rebuildStylingPanel === 'function') rebuildStylingPanel();
+  refreshSummary();
+  refreshPrice();
+  refreshBtn();
+
+  // Newly selected garment → ask where its fabric will come from, every time
+  // (each garment can use a different fabric), then straight into styling.
+  if (inp.checked) {
+    var itemId = parseInt(inp.dataset.itemId) || 0;
+    var card2 = inp.closest('.g-card');
+    if (!_fcPopupOpen) {
+      openFabricChoicePopup(inp.value, itemId, card2, inp);
+    }
+    // else: fabric-choice popup is already open for an earlier garment — this one
+    // simply gets added to the selection; the customer can style it via "Customise Style"
+    // (and will be asked about its fabric at that time too).
+  }
+}
+
+// Map a garment's name/category to a fabric category key (mirrors backend logic in website.py _render_product)
+function garmentCatKey(name, catName) {
+  var s = ((catName || '') + ' ' + (name || '')).toLowerCase();
+  if (s.indexOf('shirt') !== -1 || s.indexOf('kurta') !== -1 || s.indexOf('pathani') !== -1 || s.indexOf('safari') !== -1) return 'shirt';
+  if (s.indexOf('trouser') !== -1 || s.indexOf('pant') !== -1 || s.indexOf('jeans') !== -1) return 'pant';
+  if (s.indexOf('suit') !== -1 || s.indexOf('blazer') !== -1) return 'suit';
+  return '';
+}
+
+// ── FABRIC CHOICE MINI-POPUP (asked once, right before the style preview) ──
+function openFabricChoicePopup(name, itemId, card, inp) {
+  var catKey = garmentCatKey(name, inp ? (inp.dataset.cat || '') : '');
+  _fcPending = {name:name, itemId:itemId, card:card, inp:inp, catKey:catKey};
+  _fcPopupOpen = true;
+  var nameEl = document.getElementById('fcGarmentName');
+  if (nameEl) nameEl.textContent = 'How will you get your fabric?';
+  var ov = document.getElementById('fabricChoiceOverlay');
+  if (ov) ov.style.display = 'flex';
+}
+function closeFabricChoicePopup() {
+  _fcPopupOpen = false;
+  var ov = document.getElementById('fabricChoiceOverlay');
+  if (ov) ov.style.display = 'none';
+}
+function pickFabricChoice(choice) {
+  fabricChoiceMade = true;
+  var fabChoiceEl = document.getElementById('fab_choice');
+  if (fabChoiceEl) fabChoiceEl.value = choice;
+  closeFabricChoicePopup();
+  if (choice === 'catalog') {
+    openCatalogBrowser();
+  } else {
+    var nameEl = document.getElementById('fab_selected_name');
+    if (nameEl) nameEl.value = '';
+    var p = _fcPending;
+    if (p && p.inp && p.inp.checked) {
+      openStyleModal(p.name, p.itemId, p.card, p.inp);
+    }
+    if (typeof rebuildStylingPanel === 'function') rebuildStylingPanel();
+  }
+}
+
+// ── CATALOG BROWSER (big preview pane: categories, search, larger images) ──
+function openCatalogBrowser() {
+  buildCatalogCategoryTabs();
+  var ov = document.getElementById('catalogBrowserOverlay');
+  if (ov) ov.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  var search = document.getElementById('cbFabSearch');
+  if (search) { search.value = ''; }
+  // Auto-filter to the selected garment's fabric category, if a matching tab exists
+  var wantCat = (_fcPending && _fcPending.catKey) || '';
+  var matchBtn = wantCat ? document.querySelector('.cb-cat-tab[data-cat="' + wantCat + '"]') : null;
+  if (matchBtn) {
+    setCatalogCategory(wantCat, matchBtn);
+  } else {
+    var allBtn = document.querySelector('.cb-cat-tab[data-cat=""]');
+    setCatalogCategory('', allBtn);
+  }
+}
+function closeCatalogBrowser() {
+  var ov = document.getElementById('catalogBrowserOverlay');
+  if (ov) ov.style.display = 'none';
+  document.body.style.overflow = '';
+}
+function buildCatalogCategoryTabs() {
+  var wrap = document.getElementById('cbCatTabs');
+  if (!wrap || wrap.dataset.built) return;
+  var cards = Array.from(document.querySelectorAll('#cbFabGrid .fab-card'));
+  var types = [];
+  cards.forEach(function(c){ var t=(c.dataset.type||'').trim(); if (t && types.indexOf(t)===-1) types.push(t); });
+  if (!types.length) { wrap.style.display = 'none'; return; }
+  var label = function(t){ return t.charAt(0).toUpperCase() + t.slice(1); };
+  var html = '<button type="button" class="cb-cat-tab active" data-cat="" onclick="setCatalogCategory(\'\',this)" style="padding:6px 14px;border-radius:20px;border:1.5px solid #2e1a0e;background:#2e1a0e;color:#f7f0e6;font-size:11px;font-weight:700;cursor:pointer;">All</button>';
+  types.forEach(function(t){
+    html += '<button type="button" class="cb-cat-tab" data-cat="' + t.replace(/'/g,"\\'") + '" onclick="setCatalogCategory(\'' + t.replace(/'/g,"\\'") + '\',this)" style="padding:6px 14px;border-radius:20px;border:1.5px solid #e8ddd0;background:#fff;color:#5a4030;font-size:11px;font-weight:700;cursor:pointer;">' + label(t) + '</button>';
+  });
+  wrap.innerHTML = html;
+  wrap.dataset.built = '1';
+}
+var _cbActiveCat = '';
+function setCatalogCategory(cat, btn) {
+  _cbActiveCat = cat;
+  document.querySelectorAll('.cb-cat-tab').forEach(function(t){
+    var active = (t === btn);
+    t.classList.toggle('active', active);
+    t.style.background = active ? '#2e1a0e' : '#fff';
+    t.style.color = active ? '#f7f0e6' : '#5a4030';
+    t.style.borderColor = active ? '#2e1a0e' : '#e8ddd0';
+  });
+  filterCatalogBrowser();
+}
+function filterCatalogBrowser() {
+  var q = ((document.getElementById('cbFabSearch') || {}).value || '').toLowerCase().trim();
+  document.querySelectorAll('#cbFabGrid .fab-card').forEach(function(c){
+    var matchesSearch = !q || (c.dataset.name||'').indexOf(q) !== -1;
+    var matchesCat = !_cbActiveCat || (c.dataset.type||'') === _cbActiveCat;
+    c.style.display = (matchesSearch && matchesCat) ? '' : 'none';
+  });
+}
+(function(){
+  var s = document.getElementById('cbFabSearch');
+  if (s) s.addEventListener('input', filterCatalogBrowser);
+})();
+function selFabAndContinue(id, name, card) {
+  document.querySelectorAll('#cbFabGrid .fab-card').forEach(function(c){ c.classList.remove('sel'); });
+  if (card) card.classList.add('sel');
+  var selEl = document.getElementById('fab_selected');
+  if (selEl) selEl.value = id;
+  var nameEl = document.getElementById('fab_selected_name');
+  if (nameEl) nameEl.value = name;
+  var priceEl = document.getElementById('fab_selected_price');
+  if (priceEl) priceEl.value = (card && card.dataset && card.dataset.price) ? card.dataset.price : '0';
+  var choiceEl = document.getElementById('fab_choice');
+  if (choiceEl) choiceEl.value = 'catalog';
+  closeCatalogBrowser();
+  if (typeof rebuildStylingPanel === 'function') rebuildStylingPanel();
+  if (typeof refreshSummary === 'function') refreshSummary();
+  if (typeof refreshPrice === 'function') refreshPrice();
+  var p = _fcPending;
+  if (p && p.inp && p.inp.checked) {
+    openStyleModal(p.name, p.itemId, p.card, p.inp);
+  }
+}
+function reopenFabricChoice() {
+  var firstChecked = document.querySelector('input[name="garment_type[]"]:checked');
+  if (!firstChecked) return;
+  var itemId = parseInt(firstChecked.dataset.itemId) || 0;
+  var card = firstChecked.closest('.g-card');
+  openFabricChoicePopup(firstChecked.value, itemId, card, firstChecked);
+}
+
+function deleteGarment(val) {
+  var inp = document.querySelector('input[name="garment_type[]"][value="' + CSS.escape(val) + '"]');
+  if (!inp) {
+    // Fallback: find by iterating
+    Array.from(document.querySelectorAll('input[name="garment_type[]"]')).forEach(function(i){ if(i.value===val) inp=i; });
+  }
+  if (inp) {
+    inp.checked = false;
+    var card = inp.closest('.g-card');
+    if (card) { card.classList.remove('selected'); card.classList.remove('has-style'); }
+  }
+  delete garmentQtys[val];
+  delete STYLE_SEL[val];
+  delete STYLE_NOTES[val];
+  delete STYLE_IMAGES[val];
+  updateStyleInput();
+  updateGeneratedImagesInput();
+  rebuildQtyRows();
+  rebuildSizePanels();
+  if (typeof rebuildManualPanels === 'function') rebuildManualPanels();
+  if (typeof rebuildStylingPanel === 'function') rebuildStylingPanel();
+  refreshSummary();
+  refreshPrice();
+  refreshBtn();
+}
+
+function rebuildQtyRows() {
+  var wrap = document.getElementById('garmentQtyRows');
+  if (!wrap) return;
+  var checked = Array.from(document.querySelectorAll('input[name="garment_type[]"]:checked'));
+  if (!checked.length) { wrap.innerHTML = ''; return; }
+  wrap.innerHTML = checked.map(function(inp) {
+    var qty = garmentQtys[inp.value] || 1;
+    var price = GPRICES[inp.value] || parseInt(inp.dataset.price) || 0;
+    var safeVal = inp.value.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    var itemId  = parseInt(inp.dataset.itemId) || 0;
+    var sel = STYLE_SEL[inp.value] || {};
+    var note = STYLE_NOTES[inp.value] || '';
+    var tags = Object.entries(sel).filter(function(e){ return e[1] && e[0] !== '__note__'; }).map(function(e){
+      return '<span style="font-size:10px;background:#e8ddd0;color:#2e1a0e;padding:2px 8px;border-radius:20px;font-weight:600;">' + sdEsc(e[1]) + '</span>';
+    });
+    if (note) tags.push('<span style="font-size:10px;background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:20px;font-weight:600;">' + sdEsc(note.substr(0,25)) + (note.length>25?'...':'') + '</span>');
+    var editBtn = itemId ? '<button type="button" onclick="editStyle(\'' + safeVal + '\',' + itemId + ')" style="font-size:10px;color:#C8903A;background:none;border:1px solid #C8903A;border-radius:20px;padding:2px 8px;cursor:pointer;font-weight:600;font-family:inherit;">' + (tags.length ? 'Edit &#9998;' : '+ Style') + '</button>' : '';
+    var tagsHtml = (tags.length || editBtn) ? '<div style="display:flex;flex-wrap:wrap;gap:4px;padding:6px 14px 8px;">' + tags.join('') + editBtn + '</div>' : '';
+    return '<div style="background:#f7f0e6;border:1px solid var(--border);border-radius:6px;margin-bottom:6px;overflow:hidden;">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;">'
+      + '<div style="font-size:14px;font-weight:500;color:var(--dark);">' + (inp.dataset.label || inp.value) + '</div>'
+      + '<div style="display:flex;align-items:center;gap:10px;">'
+      + '<div style="display:flex;align-items:center;border:1px solid var(--border);border-radius:6px;overflow:hidden;">'
+      + '<button type="button" onclick="changeGQty(\'' + safeVal + '\',-1)" style="background:#ede5da;border:none;width:30px;height:30px;font-size:16px;cursor:pointer;color:var(--dark);">\u2212</button>'
+      + '<span id="gq_' + cssId(inp.value) + '" style="width:32px;text-align:center;font-size:14px;font-weight:600;color:var(--dark);">' + qty + '</span>'
+      + '<button type="button" onclick="changeGQty(\'' + safeVal + '\',1)" style="background:#ede5da;border:none;width:30px;height:30px;font-size:16px;cursor:pointer;color:var(--dark);">+</button>'
+      + '</div>'
+      + '<span style="font-size:13px;color:var(--gold);font-weight:600;min-width:70px;text-align:right;">Rs. ' + (price*qty).toLocaleString('en-IN') + '</span>'
+      + '<input type="hidden" name="qty_' + inp.value + '" value="' + qty + '">'
+      + '<button type="button" style="background:none;border:none;cursor:pointer;padding:2px;color:#cc5555;font-size:16px;line-height:1;" title="Remove" onclick="deleteGarmentByEl(this)">\xd7</button>'
+      + '</div></div>'
+      + tagsHtml
+      + '</div>';
+  }).join('');
+}
+
+function deleteGarmentByEl(btn) {
+  var row = btn.closest('[style*="margin-bottom:6px"]');
+  if (!row) return;
+  var nameEl = row.querySelector('[style*="font-size:14px"]');
+  if (!nameEl) return;
+  var name = nameEl.textContent.trim();
+  // Find the checkbox with this value
+  var found = null;
+  Array.from(document.querySelectorAll('input[name="garment_type[]"]')).forEach(function(i){ if(i.dataset.label === name || i.value === name) found = i; });
+  if (found) deleteGarment(found.value);
+}
+
+function cssId(v){ return v.replace(/[^a-zA-Z0-9_-]/g,'_'); }
+
+function changeGQty(val, d) {
+  garmentQtys[val] = Math.max(1, Math.min(20, (garmentQtys[val] || 1) + d));
+  rebuildQtyRows();
+  refreshSummary();
+  refreshPrice();
+}
+
+function updateStyleInput() {
+  var merged = {};
+  Object.keys(STYLE_SEL).forEach(function(g){
+    merged[g] = Object.assign({}, STYLE_SEL[g]);
+    if (STYLE_NOTES[g]) merged[g]['__note__'] = STYLE_NOTES[g];
+  });
+  var el = document.getElementById('styleJsonInput');
+  if (el) el.value = JSON.stringify(merged);
+}
+
+function editStyle(name, itemId) {
+  var inp = null;
+  Array.from(document.querySelectorAll('input[name="garment_type[]"]')).forEach(function(i){ if(i.value===name) inp=i; });
+  var card = inp ? inp.closest('.g-card') : null;
+  openStyleModal(name, itemId, card, inp);
+}
+</script>
+
+<script>
+// Compute total fabric metres needed (across all selected garments, by their chosen size)
+// and resulting cost (only when sourcing from our catalog, using the fabric's per-metre rate).
+function computeFabricInfo() {
+  var checked = Array.from(document.querySelectorAll('input[name="garment_type[]"]:checked'));
+  var totalMetres = 0;
+  checked.forEach(function(inp) {
+    var name = inp.dataset.label || inp.value;
+    var qty = garmentQtys[inp.value] || 1;
+    var sz = '';
+    if (GARMENT_SIZES[name] && GARMENT_SIZES[name].size) sz = GARMENT_SIZES[name].size;
+    else sz = (document.getElementById('sz_val')||{}).value || '';
+    if (!sz) return; // don't estimate fabric until the customer actually picks a size
+    var mKey = (typeof nameToKey === 'function') ? nameToKey(name) : 'pant';
+    var mVal = (typeof fabricMetersFor === 'function') ? fabricMetersFor(mKey, sz) : null;
+    if (mVal) totalMetres += mVal * qty;
+  });
+  totalMetres = Math.round(totalMetres * 100) / 100;
+  var choiceEl = document.getElementById('fab_choice');
+  var choice = choiceEl ? choiceEl.value : '';
+  var priceEl = document.getElementById('fab_selected_price');
+  var pricePerMetre = priceEl ? (parseFloat(priceEl.value) || 0) : 0;
+  var cost = (choice === 'catalog' && pricePerMetre > 0) ? Math.round(totalMetres * pricePerMetre) : 0;
+  // persist into hidden inputs for server-side use
+  var tmEl = document.getElementById('fab_total_metres'); if (tmEl) tmEl.value = totalMetres;
+  var tcEl = document.getElementById('fab_total_cost'); if (tcEl) tcEl.value = cost;
+  return {metres: totalMetres, cost: cost, choice: choice, pricePerMetre: pricePerMetre};
+}
+
+function refreshSummary() {
+  var rows = document.getElementById('summaryRows');
+  var countEl = document.getElementById('summaryCount');
+  if (!rows) return;
+  var checked = Array.from(document.querySelectorAll('input[name="garment_type[]"]:checked'));
+  if (countEl) countEl.textContent = checked.length ? (checked.length + (checked.length>1?' items added':' item added')) : 'No items added yet';
+  if (!checked.length) { rows.innerHTML = '<p class="summary-empty">Select garments to begin.</p>'; return; }
+  var html = '';
+  checked.forEach(function(inp) {
+    var price = GPRICES[inp.value] || parseInt(inp.dataset.price) || 0;
+    var qty = garmentQtys[inp.value] || 1;
+    html += '<div class="summary-item"><span class="summary-item-name">\u2713 ' + (inp.dataset.label||inp.value) + (qty > 1 ? ' \xd7' + qty : '') + '</span><span class="summary-item-price">Rs. ' + (price*qty).toLocaleString('en-IN') + '</span></div>';
+  });
+  var m = (document.getElementById('meth_val')||{}).value || 'size';
+  var mmap = {size:'Standard size',manual:'Manual',reference:'Reference garment',locker:'Saved',homevisit:'Home visit'};
+  html += '<div class="summary-row"><span>Measurement</span><span>' + (mmap[m]||m) + '</span></div>';
+  var fInfo = computeFabricInfo();
+  if (fInfo.metres > 0) {
+    if (fInfo.choice === 'catalog' && fInfo.cost > 0) {
+      html += '<div class="summary-item"><span class="summary-item-name">Fabric (≈' + fInfo.metres + ' m \xd7 Rs. ' + fInfo.pricePerMetre + '/m)</span><span class="summary-item-price">Rs. ' + fInfo.cost.toLocaleString('en-IN') + '</span></div>';
+    } else if (fInfo.choice === 'own') {
+      html += '<div class="summary-row"><span>Fabric</span><span>≈' + fInfo.metres + ' m — your own fabric</span></div>';
+    } else {
+      html += '<div class="summary-row"><span>Fabric needed</span><span>≈' + fInfo.metres + ' m</span></div>';
+    }
+  }
+  rows.innerHTML = html;
+}
+
+function refreshPrice() {
+  var checked = Array.from(document.querySelectorAll('input[name="garment_type[]"]:checked'));
+  var pe = document.getElementById('summary-price');
+  var de = document.getElementById('summary-date');
+  if (!checked.length) { if(pe)pe.style.display='none'; if(de)de.style.display='none'; return; }
+  var stitch = 0;
+  checked.forEach(function(inp){ stitch += (GPRICES[inp.value]||parseInt(inp.dataset.price)||0)*(garmentQtys[inp.value]||1); });
+  var urgent = document.getElementById('urgentCheck') && document.getElementById('urgentCheck').checked ? 99 : 0;
+  var delRadio = document.querySelector('input[name="delivery"]:checked');
+  var delivery = (delRadio && delRadio.value==='home' && stitch<1499) ? 49 : 0;
+  var methVal = (document.getElementById('meth_val')||{}).value||'';
+  var homevisit = (methVal === 'homevisit') ? 100 : 0;
+  var couponDisc = _couponDiscount || 0;
+  var fInfo = computeFabricInfo();
+  var fabricCost = fInfo.cost || 0;
+  var total = Math.max(0, stitch + urgent + delivery + homevisit + fabricCost - couponDisc);
+  var advance = Math.round(total * ADVANCE_PCT / 100);
+  if(pe) pe.style.display='block';
+  var su=document.getElementById('sp-unit'); if(su) su.textContent='Rs. '+stitch.toLocaleString('en-IN');
+  // Show grand total row
+  var gtr=document.getElementById('sp-total-row'); if(gtr){gtr.style.display='flex';}
+  var stv=document.getElementById('sp-total-val'); if(stv) stv.textContent='Rs. '+total.toLocaleString('en-IN');
+  var apct=document.getElementById('sp-adv-pct'); if(apct) apct.textContent=ADVANCE_PCT;
+  var sa=document.getElementById('sp-adv'); if(sa) sa.textContent='Rs. '+advance.toLocaleString('en-IN');
+  var ur=document.getElementById('sp-urg-row'); if(ur) ur.style.display=urgent?'flex':'none';
+  var dr=document.getElementById('sp-del-row'); if(dr) dr.style.display=(delRadio&&delRadio.value==='home')?'flex':'none';
+  var hvr=document.getElementById('sp-hv-row'); if(hvr) hvr.style.display=homevisit?'flex':'none';
+  var fr=document.getElementById('sp-fab-row');
+  if (fr) {
+    if (fabricCost > 0) {
+      fr.style.display = 'flex';
+      var fl=document.getElementById('sp-fab-label'); if(fl) fl.textContent = 'Fabric (≈' + fInfo.metres + ' m \xd7 Rs. ' + fInfo.pricePerMetre + '/m)';
+      var fa=document.getElementById('sp-fab-amt'); if(fa) fa.textContent = '+ Rs. ' + fabricCost.toLocaleString('en-IN');
+    } else {
+      fr.style.display = 'none';
+    }
+  }
+  if(de){
+    var dateInp = document.getElementById('delivery_date_input');
+    if(dateInp && dateInp.value){
+      de.style.display='block';
+      var parts = dateInp.value.split('-');
+      var dt = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
+      var sv=document.getElementById('sd-val');
+      if(sv) sv.textContent=dt.toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'});
+    } else { de.style.display='none'; }
+  }
+}
+
+function refreshBtn() {
+  var checked = document.querySelectorAll('input[name="garment_type[]"]:checked').length;
+  var name = (document.getElementById('cust_name')||{}).value||'';
+  var phone = (document.getElementById('cust_phone')||{}).value||'';
+  var dateVal = (document.getElementById('delivery_date_input')||{}).value||'';
+  var btn = document.getElementById('reserveBtn');
+  if (btn) btn.disabled = !(checked > 0 && name.trim().length > 1 && phone.trim().length === 10 && dateVal);
+}
+
+function toggleGiftFields(cb){
+  var el = document.getElementById('giftFields');
+  if(el) el.style.display = cb.checked ? 'block' : 'none';
+}
+
+var URGENT_UNTIL = {{ urgent_until|tojson }};
+function onDeliveryDateChange(){
+  var inp = document.getElementById('delivery_date_input');
+  var msg = document.getElementById('date-urgent-msg');
+  var urgentCb = document.getElementById('urgentCheck');
+  if(!inp || !msg) return;
+  var picked = inp.value;
+  if (picked && picked <= URGENT_UNTIL){ if (urgentCb && !urgentCb.checked){ urgentCb.checked = true; } msg.style.display = 'flex'; }
+  else { msg.style.display = 'none'; }
+  if (typeof refreshPrice === 'function') refreshPrice();
+  refreshBtn();
+}
+
+// ── AUTO-DETECT DELIVERY ADDRESS (browser Geolocation + free Nominatim reverse-geocode) ──
+function detectMyAddress(){
+  var btn = document.getElementById('detectAddrBtn');
+  var msg = document.getElementById('detectAddrMsg');
+  var ta  = document.getElementById('delivery_address_input');
+  if (!ta) return;
+  if (!('geolocation' in navigator)){
+    if (msg){ msg.style.display='block'; msg.style.color='#A33B2A'; msg.textContent = 'Location detection is not supported on this device/browser. Please type your address.'; }
+    return;
+  }
+  if (btn){ btn.disabled = true; btn.style.opacity = '0.6'; btn.innerHTML = '<span aria-hidden="true">&#8987;</span> Detecting...'; }
+  if (msg){ msg.style.display='block'; msg.style.color='#9a8a78'; msg.textContent = 'Getting your location — please allow location access if your browser asks.'; }
+
+  navigator.geolocation.getCurrentPosition(function(pos){
+    var lat = pos.coords.latitude, lon = pos.coords.longitude;
+    fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=' + lat + '&lon=' + lon + '&addressdetails=1', {
+      headers: { 'Accept': 'application/json' }
+    }).then(function(r){ return r.json(); }).then(function(d){
+      var addr = (d && d.display_name) ? d.display_name : '';
+      if (addr){
+        ta.value = addr;
+        ta.dataset.userEdited = '1';
+        if (msg){ msg.style.color = '#5a8a5a'; msg.textContent = 'Location detected — please check and edit if needed.'; }
+      } else {
+        if (msg){ msg.style.color = '#A33B2A'; msg.textContent = 'Could not find an address for your location. Please type it manually.'; }
+      }
+    }).catch(function(){
+      if (msg){ msg.style.color = '#A33B2A'; msg.textContent = 'Could not fetch your address right now. Please type it manually.'; }
+    }).finally(function(){
+      if (btn){ btn.disabled = false; btn.style.opacity = '1'; btn.innerHTML = '<span aria-hidden="true">&#x1F4CD;</span> Detect my location'; }
+      if (typeof refreshBtn === 'function') refreshBtn();
+    });
+  }, function(err){
+    var m = 'Could not get your location. Please type your address manually.';
+    if (err && err.code === 1) m = 'Location access was denied. Please allow location access, or type your address manually.';
+    if (msg){ msg.style.color = '#A33B2A'; msg.textContent = m; }
+    if (btn){ btn.disabled = false; btn.style.opacity = '1'; btn.innerHTML = '<span aria-hidden="true">&#x1F4CD;</span> Detect my location'; }
+  }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 });
+}
+
+// ── AUTO-CATEGORISE flat grid into tabs (when backend has no categories) ──
+document.addEventListener('DOMContentLoaded', function() {
+  ['cust_name','cust_phone'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.addEventListener('input', refreshBtn);
+  });
+
+  var flatGrid = document.getElementById('garmentGrid');
+  if (flatGrid) {
+    var allCards = Array.from(flatGrid.querySelectorAll('label.g-card'));
+    var CATS = [
+      { id: 'shirts',   label: 'Shirts',           test: function(n){ return /shirt/i.test(n); } },
+      { id: 'ethnic',   label: 'Ethnic wear',       test: function(n){ return /kurta|pathani|pajama/i.test(n); } },
+      { id: 'suits',    label: 'Suits & Sets',      test: function(n){ return /suit|blazer|\d[\s-]?piece/i.test(n); } },
+      { id: 'trousers', label: 'Pants',  test: function(n){ return /pant|jean|trouser|\bfit\b|cut\b|\bleg\b|baggy/i.test(n); } },
+      { id: 'other',    label: 'Other',             test: function(){ return true; } }
+    ];
+    var buckets = {};
+    CATS.forEach(function(c){ buckets[c.id] = []; });
+    allCards.forEach(function(card){
+      var nameEl = card.querySelector('.g-name');
+      var name = nameEl ? nameEl.textContent.trim() : '';
+      for (var i = 0; i < CATS.length; i++){
+        if (CATS[i].test(name)){ buckets[CATS[i].id].push(card); break; }
+      }
+    });
+    var visible = CATS.filter(function(c){ return buckets[c.id].length > 0; });
+    if (!visible.length) return;
+
+    var tabBar = document.createElement('div');
+    tabBar.className = 'cat-tabs';
+    var panelWrap = document.createElement('div');
+
+    visible.forEach(function(cat, idx){
+      var tab = document.createElement('div');
+      tab.className = 'cat-tab' + (idx === 0 ? ' active' : '');
+      tab.textContent = cat.label;
+      (function(cId){
+        tab.onclick = function(){
+          tabBar.querySelectorAll('.cat-tab').forEach(function(t){ t.classList.remove('active'); });
+          tab.classList.add('active');
+          panelWrap.querySelectorAll('.js-auto-panel').forEach(function(p){ p.style.display = 'none'; });
+          var panel = document.getElementById('js-auto-panel-' + cId);
+          if (panel) panel.style.display = 'grid';
+        };
+      })(cat.id);
+      tabBar.appendChild(tab);
+
+      var panel = document.createElement('div');
+      panel.className = 'garment-grid js-auto-panel';
+      panel.id = 'js-auto-panel-' + cat.id;
+      panel.style.display = idx === 0 ? 'grid' : 'none';
+      buckets[cat.id].forEach(function(card){ panel.appendChild(card); });
+      panelWrap.appendChild(panel);
+    });
+
+    flatGrid.style.display = 'none';
+    flatGrid.parentNode.insertBefore(tabBar, flatGrid);
+    flatGrid.parentNode.insertBefore(panelWrap, flatGrid);
+  }
+
+  // URL preselect
+  var params = new URLSearchParams(window.location.search);
+  var wanted = [];
+  if (PRESELECT_NAME) wanted.push(PRESELECT_NAME);
+  (params.get('garments') || params.get('garment') || '').split(',').map(function(s){return s.trim();}).filter(Boolean).forEach(function(k){ wanted.push(k); });
+  var qtyList = (params.get('qtys') || params.get('qty') || '1').split(',').map(function(s){return parseInt(s)||1;});
+  var matchedPanel = null;
+  wanted.forEach(function(key, i) {
+    var qty = qtyList[i] || 1;
+    var found = document.querySelector('input[name="garment_type[]"][value="'+key+'"]');
+    if (!found) {
+      Array.from(document.querySelectorAll('input[name="garment_type[]"]')).some(function(inp){
+        if (inp.value.toLowerCase().indexOf(key.toLowerCase()) !== -1) { found = inp; return true; }
+        return false;
+      });
+    }
+    if (found) {
+      found.checked = true; garmentQtys[found.value] = qty;
+      var card = found.closest('.g-card'); if (card) card.classList.add('selected');
+      var panel = found.closest('.garment-panel'); if (panel && !matchedPanel) matchedPanel = panel;
+    }
+  });
+  if (matchedPanel) {
+    document.querySelectorAll('.garment-panel').forEach(function(p){p.classList.remove('active');});
+    document.querySelectorAll('.cat-tab').forEach(function(t){t.classList.remove('active');});
+    matchedPanel.classList.add('active');
+    var idx = Array.from(document.querySelectorAll('.garment-panel')).indexOf(matchedPanel);
+    var tab = document.querySelectorAll('.cat-tab')[idx]; if (tab) tab.classList.add('active');
+  }
+  if (wanted.length) { rebuildQtyRows(); rebuildSizePanels(); if (typeof rebuildManualPanels === 'function') rebuildManualPanels(); if (typeof rebuildStylingPanel === 'function') rebuildStylingPanel(); refreshSummary(); refreshPrice(); refreshBtn(); }
+
+  // Carry over a coupon applied on the cart page (?coupon=CODE) — without this,
+  // a coupon entered at /cart was silently dropped on the way to checkout and
+  // the customer had to re-type it here.
+  var couponParam = params.get('coupon');
+  if (couponParam) {
+    var couponInputEl = document.getElementById('couponInput');
+    if (couponInputEl) {
+      couponInputEl.value = couponParam;
+      if (typeof applyCoupon === 'function') applyCoupon();
+    }
+  }
+});
+</script>
+<!-- Fabric zoom lightbox -->
+<div id="fabZoomBox" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:3000;align-items:center;justify-content:center;cursor:pointer;" onclick="closeFabZoom()">
+  <button onclick="closeFabZoom();event.stopPropagation();" style="position:absolute;top:16px;right:20px;background:rgba(255,255,255,.12);border:none;color:#fff;font-size:26px;cursor:pointer;width:42px;height:42px;border-radius:3px;display:flex;align-items:center;justify-content:center;">&times;</button>
+  <div style="text-align:center;" onclick="event.stopPropagation()">
+    <img id="fabZoomImg" src="" alt="" style="max-width:88vw;max-height:82vh;object-fit:contain;border-radius:4px;display:block;">
+    <div id="fabZoomName" style="color:rgba(255,255,255,.75);font-size:14px;margin-top:10px;font-family:serif;letter-spacing:.04em;"></div>
+  </div>
+</div>
+<script>
+function fabZoom(url,name){var box=document.getElementById('fabZoomBox');var img=document.getElementById('fabZoomImg');var lbl=document.getElementById('fabZoomName');if(!box||!img)return;img.src=url;if(lbl)lbl.textContent=name||'';box.style.display='flex';document.body.style.overflow='hidden';}
+function closeFabZoom(){var box=document.getElementById('fabZoomBox');if(box)box.style.display='none';document.body.style.overflow='';}
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeFabZoom();});
+</script>
+<script>
+function attachLocationBtn(inputId){
+  var inp = document.getElementById(inputId);
+  if(!inp) return;
+  var wr = document.createElement('div');
+  wr.style.cssText = 'position:relative;display:flex;gap:6px;align-items:center;';
+  inp.parentNode.insertBefore(wr, inp);
+  wr.appendChild(inp);
+  inp.style.flex = '1';
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.title = 'Use my location';
+  btn.style.cssText = 'flex-shrink:0;width:36px;height:36px;border:1px solid var(--border);border-radius:4px;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:17px;transition:all .15s;';
+  btn.innerHTML = '\uD83D\uDCCD';
+  btn.onclick = function(){ detectLocation(inputId, btn); };
+  wr.appendChild(btn);
+}
+function detectLocation(inputId, btn){
+  if(!navigator.geolocation){ alert('Location not supported by your browser.'); return; }
+  btn.innerHTML = '\u23F3'; btn.disabled = true;
+  navigator.geolocation.getCurrentPosition(
+    function(pos){
+      var lat=pos.coords.latitude,lon=pos.coords.longitude;
+      fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat='+lat+'&lon='+lon+'&addressdetails=1',{headers:{'Accept-Language':'en'}})
+      .then(function(r){return r.json();})
+      .then(function(data){
+        var a=data.address||{};
+        var parts=[];
+        if(a.house_number)parts.push(a.house_number);
+        if(a.road||a.street)parts.push(a.road||a.street);
+        if(a.suburb||a.neighbourhood)parts.push(a.suburb||a.neighbourhood);
+        if(a.city||a.town||a.village)parts.push(a.city||a.town||a.village);
+        if(a.state)parts.push(a.state);
+        if(a.postcode)parts.push(a.postcode);
+        var inp2=document.getElementById(inputId);
+        if(inp2){inp2.value=parts.join(', ');inp2.dispatchEvent(new Event('input'));}
+        btn.innerHTML='\u2705';btn.disabled=false;
+        setTimeout(function(){btn.innerHTML='\uD83D\uDCCD';},2000);
+      })
+      .catch(function(){btn.innerHTML='\uD83D\uDCCD';btn.disabled=false;alert('Could not fetch address. Enter manually.');});
+    },
+    function(){btn.innerHTML='\uD83D\uDCCD';btn.disabled=false;alert('Location access denied.');},
+    {timeout:10000,maximumAge:60000}
+  );
+}
+document.addEventListener('DOMContentLoaded',function(){
+  document.querySelectorAll('input[placeholder*="address"],input[placeholder*="Address"]').forEach(function(inp){
+    if(inp.id)attachLocationBtn(inp.id);
+  });
+});
+</script>
+<script src="{{ url_for('static', filename='js/commission.js') }}?v=7"></script>
+<script>
+// ── COUPON ──
+var _couponDiscount = 0;
+function applyCoupon() {
+  var code = (document.getElementById('couponInput').value || '').trim().toUpperCase();
+  var msg  = document.getElementById('couponMsg');
+  if (!code) { if(msg) msg.textContent = ''; return; }
+  var checked = Array.from(document.querySelectorAll('input[name="garment_type[]"]:checked'));
+  var stitch = 0;
+  checked.forEach(function(inp){ stitch += (GPRICES[inp.value]||parseInt(inp.dataset.price)||0)*(garmentQtys[inp.value]||1); });
+  if(msg) { msg.style.color = '#7a6a58'; msg.textContent = 'Checking...'; }
+  fetch('/api/validate-coupon', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({code: code, order_total: stitch})
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d) {
+    if (d.valid) {
+      _couponDiscount = d.discount;
+      document.getElementById('couponDiscount').value = d.discount;
+      if(msg){ msg.style.color='#2D6A3F'; msg.textContent = d.message; }
+      var row = document.getElementById('sp-coupon-row');
+      var amt = document.getElementById('sp-coupon-amt');
+      if(row) row.style.display = 'flex';
+      if(amt) amt.textContent = '-Rs. ' + d.discount.toLocaleString('en-IN');
+    } else {
+      _couponDiscount = 0;
+      document.getElementById('couponDiscount').value = 0;
+      if(msg){ msg.style.color='#A33B2A'; msg.textContent = d.message; }
+      var row = document.getElementById('sp-coupon-row');
+      if(row) row.style.display = 'none';
+    }
+    refreshPrice();
+  })
+  .catch(function(err){
+    console.error('Coupon API error:', err);
+    if(msg){ msg.style.color='#A33B2A'; msg.textContent='Could not apply coupon. Please try again.'; }
+  });
+}
+</script>
+
+<script>
+// ── IMAGE ZOOM LIGHTBOX ───────────────────────────────────────
+function openImgZoom(src) {
+  if (!src) return;
+  var ov = document.getElementById('imgZoomOverlay');
+  var pic = document.getElementById('imgZoomPic');
+  if (pic) pic.src = src;
+  if (ov) ov.style.display = 'flex';
+}
+function closeImgZoom() {
+  var ov = document.getElementById('imgZoomOverlay');
+  if (ov) ov.style.display = 'none';
+}
+
+// ── STYLE MODAL + AI PREVIEW ──────────────────────────────────
+function openStyleModal(name, itemId, card, inp) {
+  _sm.name = name; _sm.itemId = itemId; _sm.card = card; _sm.inp = inp;
+  // Detect fabric choice — if customer is bringing their own fabric, our catalog
+  // reference photos won't match their cloth's colour/texture, so we steer them
+  // towards the fabric-neutral AI-generated preview instead.
+  var fabChoiceEl = document.getElementById('fab_choice');
+  _sm.ownFabric = !fabChoiceEl || fabChoiceEl.value !== 'catalog';
+  var ownNote = document.getElementById('aiOwnFabricNote');
+  var plcHint = document.getElementById('aiPlcHint');
+  if (ownNote) ownNote.style.display = _sm.ownFabric ? 'block' : 'none';
+  if (plcHint) plcHint.style.display = _sm.ownFabric ? 'none' : '';
+  var el;
+  el = document.getElementById('smGarmentName'); if(el) el.textContent = name;
+  el = document.getElementById('smGarmentPrice'); if(el) el.textContent = 'Rs. ' + ((GPRICES[name]||0)).toLocaleString('en-IN');
+  el = document.getElementById('smNote'); if(el) el.value = STYLE_NOTES[name] || '';
+  // Reset AI state
+  var aiPlc = document.getElementById('aiPlaceholder');
+  var aiLd  = document.getElementById('aiLoading');
+  var aiImg = document.getElementById('aiGenImg');
+  var regenBtn = document.getElementById('regenBtn');
+  var genBtn   = document.getElementById('genPreviewBtn');
+  var refWrap  = document.getElementById('aiRefWrap');
+  if(aiPlc) aiPlc.style.display = 'flex';
+  if(aiLd)  aiLd.style.display  = 'none';
+  if(aiImg) { aiImg.style.display = 'none'; aiImg.src = ''; }
+  var zoomHintReset = document.getElementById('aiGenZoomHint');
+  if(zoomHintReset) zoomHintReset.style.display = 'none';
+  if(refWrap) refWrap.style.display = 'none';
+  if(regenBtn) regenBtn.style.display = 'none';
+  if(genBtn) { genBtn.disabled = false; genBtn.textContent = '\u{1F3A8} Generate AI Preview'; }
+  // Open modal
+  var overlay = document.getElementById('styleModalOverlay');
+  if(overlay) overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  // Load options
+  var container = document.getElementById('smOptionsContainer');
+  if(container) container.innerHTML = '<p style="color:#7a6a58;font-size:13px;padding:20px 0;text-align:center;">Loading...</p>';
+  updateSmChips();
+  if(!itemId) {
+    if(container) container.innerHTML = '<div style="text-align:center;padding:30px;"><div style="font-size:28px;margin-bottom:8px;">&#9986;</div><div style="font-weight:700;color:#2e1a0e;font-size:13px;margin-bottom:6px;">No style options yet</div><div style="font-size:12px;color:#7a6a58;">Add them from Admin &#8594; Commission Page &#8594; Step 1</div></div>';
+    return;
+  }
+  fetch('/api/style-options/' + itemId)
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      var opts = d.options || [];
+      if (!opts.length) {
+        if(container) container.innerHTML = '<div style="text-align:center;padding:30px;"><div style="font-size:28px;margin-bottom:8px;">&#9986;</div><div style="font-weight:700;color:#2e1a0e;font-size:13px;margin-bottom:6px;">No style options yet</div><div style="font-size:12px;color:#7a6a58;">Add them from Admin &#8594; Commission Page &#8594; Step 1</div></div>';
+        return;
+      }
+      renderSmOptions(opts);
+      updateSmChips();
+    })
+    .catch(function() {
+      if(container) container.innerHTML = '<p style="color:#dc2626;font-size:12px;padding:20px 0;">Could not load style options.</p>';
+    });
+}
+
+function renderSmOptions(opts) {
+  var existing = STYLE_SEL[_sm.name] || {};
+  var html = '';
+  opts.forEach(function(grp) {
+    var currSel = existing[grp.option_group] || '';
+    html += '<div class="sm-grp"><div class="sm-grp-title">' + sdEsc(grp.option_group);
+    if (grp.is_required) html += ' <span style="background:#fee2e2;color:#dc2626;font-size:9px;padding:1px 6px;border-radius:10px;">Required</span>';
+    html += '</div><div class="sm-opts" id="smg_' + grp.id + '">';
+    (grp.values || []).forEach(function(v) {
+      var isSel = (currSel === v.value_label);
+      // Pills always render as plain text buttons (no thumbnail) — the reference
+      // image (if any) is shown large in the AI Preview box on selection instead.
+      html += '<button class="sm-opt' + (isSel ? ' sel' : '') + '" onclick="smPick(this,' + grp.id + ',' + jsStr(grp.option_group) + ',' + jsStr(v.value_label) + ',' + jsStr(v.image_url||'') + ')">' + sdEsc(v.value_label) + '</button>';
+    });
+    html += '</div></div>';
+  });
+  var container = document.getElementById('smOptionsContainer');
+  if(container) container.innerHTML = html;
+}
+
+function smPick(el, grpId, grpName, val, imgUrl) {
+  var wrap = document.getElementById('smg_' + grpId);
+  if (wrap) {
+    wrap.querySelectorAll('.sm-opt, .sm-opt-card').forEach(function(o) {
+      o.classList.remove('sel');
+      if (o.classList.contains('sm-opt-card')) {
+        o.style.borderColor = '#e8ddd0';
+        var lbl = o.querySelector('div:last-child');
+        if (lbl) { lbl.style.background = '#fff'; lbl.style.color = '#5a4030'; }
+      }
+    });
+  }
+  el.classList.add('sel');
+  if (el.classList.contains('sm-opt-card')) {
+    el.style.borderColor = '#2e1a0e';
+    var lbl2 = el.querySelector('div:last-child');
+    if (lbl2) { lbl2.style.background = '#2e1a0e'; lbl2.style.color = '#fff'; }
+  }
+  if (!STYLE_SEL[_sm.name]) STYLE_SEL[_sm.name] = {};
+  STYLE_SEL[_sm.name][grpName] = val;
+  updateSmChips();
+  // Show a quick visual reference of the picked option (if admin uploaded an image for it)
+  showRefPreview(imgUrl, grpName + ': ' + val);
+  // Reset AI generated image (selections changed, old AI preview is now stale)
+  var aiImg = document.getElementById('aiGenImg');
+  if (aiImg && aiImg.src) {
+    aiImg.style.display = 'none';
+    var regenBtn = document.getElementById('regenBtn'); if(regenBtn) regenBtn.style.display = 'none';
+    var genBtn = document.getElementById('genPreviewBtn'); if(genBtn){ genBtn.textContent = '\u{1F3A8} Generate AI Preview'; genBtn.disabled = false; }
+  }
+}
+
+// Show the selected style-option's reference image (large) in the AI Preview panel,
+// in place of the placeholder, until the user generates the actual AI composite.
+function showRefPreview(imgUrl, label) {
+  var ref   = document.getElementById('aiRefWrap');
+  var refImg= document.getElementById('aiRefImg');
+  var refLbl= document.getElementById('aiRefLabel');
+  var plc   = document.getElementById('aiPlaceholder');
+  var aiImg = document.getElementById('aiGenImg');
+  // Don't override a final AI-generated image that's already on screen
+  if (aiImg && aiImg.style.display === 'block' && aiImg.src) return;
+  // Customer is bringing their own fabric — catalog reference photos would show
+  // the wrong cloth colour/texture, so keep the placeholder (with its note) instead
+  // and nudge them towards the fabric-neutral "Generate AI Preview" button.
+  if (_sm.ownFabric) {
+    if (ref) ref.style.display = 'none';
+    if (plc) plc.style.display = 'flex';
+    return;
+  }
+  if (imgUrl) {
+    if (refImg) refImg.src = imgUrl;
+    if (refLbl) refLbl.textContent = label || '';
+    if (ref) ref.style.display = 'block';
+    if (plc) plc.style.display = 'none';
+  } else {
+    // No reference image for this option — fall back to placeholder
+    if (ref) ref.style.display = 'none';
+    if (plc) plc.style.display = 'flex';
+  }
+}
+
+function updateSmChips() {
+  var c = document.getElementById('smSelChips');
+  if (!c) return;
+  var sel = STYLE_SEL[_sm.name] || {};
+  c.innerHTML = Object.entries(sel).filter(function(e){ return e[1] && e[0] !== '__note__'; }).map(function(e){
+    return '<span style="font-size:10px;background:#2e1a0e;color:#f7f0e6;padding:2px 9px;border-radius:20px;font-weight:600;">' + sdEsc(e[1]) + '</span>';
+  }).join('');
+}
+
+// ── Account login / signup popup (shown after free AI-preview limit is hit) ──
+var _acctMode = 'signup';
+var _acctPendingRetry = false;
+
+function setAccountTab(mode) {
+  _acctMode = mode;
+  var tS = document.getElementById('acctTabSignup'), tL = document.getElementById('acctTabLogin');
+  var nameField = document.getElementById('acctNameField');
+  var title = document.getElementById('acctTitle');
+  var sub = document.getElementById('acctSubtitle');
+  var btn = document.getElementById('acctSubmitBtn');
+  var msg = document.getElementById('acctMsg'); if (msg) msg.textContent = '';
+  if (mode === 'signup') {
+    if(tS){tS.style.background='#2e1a0e';tS.style.color='#fff';}
+    if(tL){tL.style.background='transparent';tL.style.color='#a8957f';}
+    if(nameField) nameField.style.display = 'block';
+    if(title) title.textContent = 'Create your free account';
+    if(sub) sub.textContent = "You've used your " + FREE_PREVIEW_LIMIT_JS + " free style previews — sign up (it's free) to keep generating AI looks for your garments";
+    if(btn) btn.textContent = 'Create account & continue';
+  } else {
+    if(tL){tL.style.background='#2e1a0e';tL.style.color='#fff';}
+    if(tS){tS.style.background='transparent';tS.style.color='#a8957f';}
+    if(nameField) nameField.style.display = 'none';
+    if(title) title.textContent = 'Welcome back';
+    if(sub) sub.textContent = 'Log in with your mobile number and password to keep generating AI style previews';
+    if(btn) btn.textContent = 'Log in & continue';
+  }
+}
+
+function openAccountModal(message) {
+  var ov = document.getElementById('accountOverlay');
+  if (!ov) return;
+  _acctPendingRetry = true;
+  setAccountTab('signup');
+  if (message) { var sub = document.getElementById('acctSubtitle'); if (sub) sub.textContent = message; }
+  ov.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+function closeAccountModal() {
+  var ov = document.getElementById('accountOverlay');
+  if (ov) ov.style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function submitAccountForm() {
+  var name = (document.getElementById('acctName')||{}).value || '';
+  var mobile = (document.getElementById('acctMobile')||{}).value || '';
+  var password = (document.getElementById('acctPassword')||{}).value || '';
+  var msg = document.getElementById('acctMsg');
+  var btn = document.getElementById('acctSubmitBtn');
+  mobile = mobile.replace(/\D/g,'');
+  if (_acctMode === 'signup' && !name.trim()) { if(msg){msg.style.color='#dc2626';msg.textContent='Please enter your name';} return; }
+  if (mobile.length < 10) { if(msg){msg.style.color='#dc2626';msg.textContent='Please enter a valid 10-digit mobile number';} return; }
+  if (password.length < 4) { if(msg){msg.style.color='#dc2626';msg.textContent='Password should be at least 4 characters';} return; }
+  if(msg){msg.style.color='#a8957f';msg.textContent='Please wait...';}
+  if(btn) btn.disabled = true;
+  var url = (_acctMode === 'signup') ? '/api/account/signup' : '/api/account/login';
+  var payload = (_acctMode === 'signup') ? {name: name.trim(), mobile: mobile, password: password} : {mobile: mobile, password: password};
+  fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)})
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if(btn) btn.disabled = false;
+      if (d.ok) {
+        if(msg){msg.style.color='#2D6A3F';msg.textContent='Welcome, ' + (d.name||'') + '! You can keep generating previews now.';}
+        try{
+          var wl = JSON.parse(localStorage.getItem('ut_wishlist')||'[]');
+          if (wl && wl.length) fetch('/api/account/wishlist/merge',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({item_ids:wl.map(function(i){return i&&i.id;}).filter(function(id){return id;})})}).catch(function(){});
+        }catch(e){}
+        setTimeout(function(){
+          closeAccountModal();
+          if (_acctPendingRetry) { _acctPendingRetry = false; generateAIPreview(); }
+          if (_acctPendingFormSubmit) {
+            _acctPendingFormSubmit = false;
+            var form = document.getElementById('commissionForm');
+            if(form) form.dispatchEvent(new Event('submit', {bubbles:true, cancelable:true}));
+          }
+        }, 700);
+      } else {
+        if(msg){msg.style.color='#dc2626';msg.textContent = d.error || 'Something went wrong, please try again';}
+      }
+    })
+    .catch(function(){
+      if(btn) btn.disabled = false;
+      if(msg){msg.style.color='#dc2626';msg.textContent='Network error. Please try again.';}
+    });
+}
+
+var FREE_PREVIEW_LIMIT_JS = 3;
+
+// ── VIRTUAL TRY-ON (beta) ──────────────────────────────────────────────
+var tryonPhotoUrl = '';
+
+function onTryonToggle() {
+  var box = document.getElementById('tryonUploadArea');
+  var on = document.getElementById('tryonToggle').checked;
+  if (box) box.style.display = on ? 'block' : 'none';
+}
+
+function handleTryonFileChange(input) {
+  var msgEl = document.getElementById('tryonUploadMsg');
+  if (msgEl) { msgEl.style.color = '#dc2626'; msgEl.textContent = ''; }
+  var file = input.files && input.files[0];
+  if (!file) return;
+  if (file.size > 8 * 1024 * 1024) {
+    if (msgEl) msgEl.textContent = 'Photo is too large — please use one under 8MB.';
+    input.value = '';
+    return;
+  }
+  var fd = new FormData();
+  fd.append('photo', file);
+  if (msgEl) { msgEl.style.color = '#7a6a58'; msgEl.textContent = 'Uploading...'; }
+  fetch('/api/upload-tryon-photo', { method: 'POST', body: fd })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.ok && d.url) {
+        tryonPhotoUrl = d.url;
+        var thumb = document.getElementById('tryonThumb');
+        if (thumb) thumb.src = d.url;
+        var hasP = document.getElementById('tryonHasPhoto');
+        var noP  = document.getElementById('tryonNoPhoto');
+        if (hasP) hasP.style.display = 'block';
+        if (noP)  noP.style.display = 'none';
+        if (msgEl) msgEl.textContent = '';
+      } else {
+        if (msgEl) { msgEl.style.color = '#dc2626'; msgEl.textContent = d.error || 'Upload failed, please try again.'; }
+        input.value = '';
+      }
+    })
+    .catch(function() {
+      if (msgEl) { msgEl.style.color = '#dc2626'; msgEl.textContent = 'Network error, please try again.'; }
+      input.value = '';
+    });
+}
+
+function removeTryonPhoto() {
+  tryonPhotoUrl = '';
+  var input = document.getElementById('tryonFileInput');
+  if (input) input.value = '';
+  var hasP = document.getElementById('tryonHasPhoto');
+  var noP  = document.getElementById('tryonNoPhoto');
+  if (hasP) hasP.style.display = 'none';
+  if (noP)  noP.style.display = 'block';
+  var msgEl = document.getElementById('tryonUploadMsg');
+  if (msgEl) msgEl.textContent = '';
+}
+// ── END VIRTUAL TRY-ON ─────────────────────────────────────────────────
+
+function generateAIPreview() {
+  var tryonOn = !!(document.getElementById('tryonToggle') && document.getElementById('tryonToggle').checked);
+  if (tryonOn && !tryonPhotoUrl) {
+    alert('Please upload your photo first, or untick "Try it on yourself" to generate a regular preview.');
+    return;
+  }
+  var genBtn   = document.getElementById('genPreviewBtn');
+  var aiPlc    = document.getElementById('aiPlaceholder');
+  var aiLd     = document.getElementById('aiLoading');
+  var aiImg    = document.getElementById('aiGenImg');
+  var regenBtn = document.getElementById('regenBtn');
+  var refWrap  = document.getElementById('aiRefWrap');
+  if(genBtn) { genBtn.disabled = true; genBtn.textContent = 'Generating...'; }
+  if(aiPlc) aiPlc.style.display = 'none';
+  if(refWrap) refWrap.style.display = 'none';
+  if(aiImg) aiImg.style.display = 'none';
+  if(regenBtn) regenBtn.style.display = 'none';
+  if(aiLd) aiLd.style.display = 'flex';
+  var msgs = ['Cutting the pattern...','Stitching the details...','Adding finishing touches...','Capturing the look...','Polishing...'];
+  var mi = 0;
+  var iv = setInterval(function(){ mi=(mi+1)%msgs.length; var el=document.getElementById('aiLoadingText'); if(el) el.textContent=msgs[mi]; }, 3000);
+  var styles = Object.assign({}, STYLE_SEL[_sm.name] || {});
+  var note = (document.getElementById('smNote') || {}).value || '';
+  if (note) styles['__note__'] = note;
+  fetch('/api/generate-style-preview', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      garment: _sm.name,
+      styles: styles,
+      item_id: _sm.itemId,
+      fabric_choice: (document.getElementById('fab_choice')||{}).value || '',
+      fabric_id: (document.getElementById('fab_selected')||{}).value || '',
+      fabric_name: (document.getElementById('fab_selected_name')||{}).value || '',
+      customer_photo_url: tryonOn ? tryonPhotoUrl : ''
+    })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    clearInterval(iv);
+    var ld=document.getElementById('aiLoading');
+    if(ld)ld.style.display='none';
+    var gb=document.getElementById('genPreviewBtn');  // fixed: was 'aiGenBtn'
+    if(d.ok && d.image_url){
+      if(aiImg){aiImg.src=d.image_url;aiImg.style.display='block';}
+      var ph=document.getElementById('aiPlaceholder');
+      if(ph)ph.style.display='none';
+      STYLE_IMAGES[_sm.name]=d.image_url;
+      if(regenBtn) regenBtn.style.display='inline-block';
+      if(gb){gb.disabled=false;gb.textContent='\u{1F3A8} Regenerate Preview';}
+    }else{
+      var ph2=document.getElementById('aiPlaceholder');
+      if(ph2)ph2.style.display='flex';
+      var em=document.getElementById('aiErrorMsg');
+      if(em){em.style.display='block';em.textContent=d.error||'Preview unavailable. Please try again.';}
+      if(gb){gb.disabled=false;gb.textContent='\u{1F3A8} Generate AI Preview';}
+    }
+  }).catch(function(){
+    clearInterval(iv);
+    var ld=document.getElementById('aiLoading');
+    if(ld)ld.style.display='none';
+    var gb=document.getElementById('genPreviewBtn');  // fixed: was 'aiGenBtn'
+    if(gb){gb.disabled=false;gb.textContent='\u{1F3A8} Generate AI Preview';}
+  });
+}
+
+// ── Style modal: close + confirm (were missing from this template) ──────────
+function closeStyleModal(){
+  var overlay=document.getElementById('styleModalOverlay');
+  if(overlay) overlay.classList.remove('open');
+  document.body.style.overflow='';
+}
+
+function confirmStyle(){
+  var noteEl=document.getElementById('smNote');
+  if(noteEl&&noteEl.value.trim()) STYLE_NOTES[_sm.name]=noteEl.value.trim();
+  else delete STYLE_NOTES[_sm.name];
+  if(_sm.card) _sm.card.classList.add('has-style');
+  if(typeof updateStyleInput==='function') updateStyleInput();
+  if(typeof rebuildQtyRows==='function') rebuildQtyRows();
+  closeStyleModal();
+}
+</script>
+<script src="{{ url_for('static', filename='js/commission.js') }}?v=7"></script>
+{% endblock %}

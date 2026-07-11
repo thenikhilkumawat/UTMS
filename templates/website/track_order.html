@@ -1,0 +1,540 @@
+{% extends "website/base.html" %}
+{% set active = "" %}
+{% block title %}Track Your Order — Uttam Tailors{% endblock %}
+
+{% block head %}
+<style>
+/* ── Page shell ── */
+.track-page { min-height:85vh; background:var(--bg2); padding:0 0 5rem; }
+
+/* ── Hero banner ── */
+.track-hero {
+  background: linear-gradient(135deg, #1a0e06 0%, #2e1a0e 60%, #3d2211 100%);
+  padding: 8rem 1.5rem 4rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.track-hero::before {
+  content:'';position:absolute;inset:0;
+  background: radial-gradient(ellipse at 60% 40%, rgba(200,144,58,.13) 0%, transparent 70%);
+  pointer-events:none;
+}
+.track-hero-kicker {
+  font-family:var(--fm); font-size:10px; letter-spacing:.22em; text-transform:uppercase;
+  color:#C8903A; margin-bottom:.9rem; display:block;
+}
+.track-hero h1 {
+  font-family:var(--fd); font-size:clamp(32px,6vw,56px); font-weight:300;
+  color:#fff; line-height:1.1; margin-bottom:1rem;
+}
+.track-hero-sub { font-size:15px; color:rgba(255,255,255,.6); max-width:480px; margin:0 auto 2.5rem; line-height:1.7; }
+
+/* ── Search card ── */
+.track-search-card {
+  background:#fff; border-radius:18px; padding:2rem 2rem 1.75rem;
+  max-width:560px; margin:-2.5rem auto 0;
+  box-shadow:0 16px 56px rgba(0,0,0,.18);
+  position:relative; z-index:2;
+}
+.track-search-card h2 { font-family:var(--fd); font-size:22px; font-weight:400; color:var(--dark); margin-bottom:.4rem; }
+.track-search-card p  { font-size:13px; color:var(--muted); margin-bottom:1.4rem; line-height:1.6; }
+.track-input-row { display:flex; gap:10px; }
+.track-input {
+  flex:1; height:48px; padding:0 1rem;
+  border:1.5px solid #e0d5c8; border-radius:10px;
+  font-size:14px; font-family:inherit; color:var(--dark);
+  background:#faf7f3; transition:border .15s;
+}
+.track-input:focus { outline:none; border-color:#C8903A; background:#fff; }
+.track-btn {
+  height:48px; padding:0 1.5rem;
+  background:#2e1a0e; color:#fff; border:none; border-radius:10px;
+  font-size:14px; font-weight:700; font-family:inherit;
+  cursor:pointer; white-space:nowrap; transition:background .15s;
+}
+.track-btn:hover { background:#1a0e06; }
+.track-btn:disabled { background:#c8b8a4; cursor:not-allowed; }
+.track-tabs { display:flex; gap:6px; margin-bottom:1.2rem; }
+.track-tab {
+  flex:1; padding:.55rem; text-align:center; border-radius:8px;
+  font-size:12px; font-weight:600; cursor:pointer;
+  border:1.5px solid #e0d5c8; color:var(--muted); background:#faf7f3;
+  transition:all .15s; font-family:inherit;
+}
+.track-tab.active { background:#2e1a0e; color:#fff; border-color:#2e1a0e; }
+.track-err { font-size:13px; color:#dc2626; margin-top:.75rem; min-height:1.2em; }
+
+/* ── Result area ── */
+.track-result { max-width:700px; margin:2.5rem auto 0; padding:0 1rem; display:none; }
+.track-result.show { display:block; }
+
+/* Order card */
+.order-card {
+  background:#fff; border-radius:16px;
+  box-shadow:0 4px 24px rgba(0,0,0,.07);
+  overflow:hidden; margin-bottom:1.25rem;
+}
+.order-card-head {
+  background:linear-gradient(135deg,#2e1a0e,#3d2a1a);
+  padding:1.25rem 1.5rem;
+  display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem;
+}
+.order-code-label { font-family:var(--fm); font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:rgba(255,255,255,.5); margin-bottom:3px; }
+.order-code-val  { font-family:var(--fd); font-size:22px; font-weight:400; color:#fff; }
+.order-status-chip { padding:.4rem 1rem; border-radius:20px; font-size:12px; font-weight:700; letter-spacing:.04em; }
+.status-pending   { background:rgba(251,191,36,.15); color:#f59e0b; border:1.5px solid rgba(251,191,36,.3); }
+.status-stitching { background:rgba(59,130,246,.12); color:#3b82f6; border:1.5px solid rgba(59,130,246,.25); }
+.status-ready     { background:rgba(34,197,94,.12);  color:#16a34a; border:1.5px solid rgba(34,197,94,.25); }
+.status-delivered { background:rgba(34,197,94,.2);   color:#15803d; border:1.5px solid rgba(34,197,94,.4); }
+.status-cancelled { background:rgba(220,38,38,.1);   color:#dc2626; border:1.5px solid rgba(220,38,38,.2); }
+
+/* Customer section */
+.order-customer {
+  padding:1rem 1.5rem;
+  background:#fdf8f2;
+  border-bottom:1px solid var(--border);
+  display:flex; flex-wrap:wrap; gap:1rem; align-items:flex-start;
+}
+.cust-avatar {
+  width:42px; height:42px; border-radius:50%;
+  background:linear-gradient(135deg,#C8903A,#E8A84A);
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--fd); font-size:18px; color:#fff; flex-shrink:0;
+}
+.cust-info { flex:1; min-width:180px; }
+.cust-name { font-size:15px; font-weight:700; color:var(--dark); margin-bottom:2px; }
+.cust-meta { font-size:12px; color:var(--muted); display:flex; flex-wrap:wrap; gap:.5rem .9rem; }
+.cust-meta span { display:flex; align-items:center; gap:4px; }
+
+/* Meta grid */
+.order-meta { padding:1.25rem 1.5rem; display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:1rem; border-bottom:1px solid var(--border); }
+.meta-label { font-family:var(--fm); font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-bottom:4px; }
+.meta-val   { font-size:14px; font-weight:600; color:var(--dark); }
+
+/* Progress tracker */
+.tracker-card { padding:1.5rem 1.5rem 1.25rem; }
+.tracker-heading { font-family:var(--fm); font-size:10px; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); margin-bottom:1.5rem; }
+.tracker-steps { display:flex; }
+.tracker-step  { flex:1; text-align:center; position:relative; }
+.tracker-step::before {
+  content:''; position:absolute; top:15px; left:-50%; width:100%; height:3px;
+  background:#e8d9c5; z-index:0;
+}
+.tracker-step:first-child::before { display:none; }
+.tracker-step.done::before    { background:#C8903A; }
+.tracker-step.current::before { background:linear-gradient(90deg,#C8903A 50%,#e8d9c5 50%); }
+.tracker-dot {
+  width:32px; height:32px; border-radius:50%;
+  border:2.5px solid #e8d9c5; background:#fff;
+  margin:0 auto 10px; position:relative; z-index:1;
+  display:flex; align-items:center; justify-content:center;
+  font-size:13px; transition:all .3s;
+}
+.tracker-step.done    .tracker-dot { background:#C8903A; border-color:#C8903A; color:#fff; }
+.tracker-step.current .tracker-dot { border-color:#C8903A; box-shadow:0 0 0 5px rgba(200,144,58,.18); background:#fff; }
+.tracker-step.current .tracker-dot::after { content:''; width:10px; height:10px; background:#C8903A; border-radius:50%; }
+.tracker-lbl   { font-size:9.5px; color:var(--muted); font-weight:500; line-height:1.3; }
+.tracker-step.current .tracker-lbl { color:var(--dark); font-weight:800; font-size:10.5px; }
+.tracker-step.done    .tracker-lbl { color:#C8903A; }
+.tracker-note-box {
+  margin-top:1rem; padding:.85rem 1rem;
+  background:#fdf8f0; border:1px solid #e8d9c4; border-radius:8px;
+  font-size:13px; color:#5c4a3a; line-height:1.6; font-style:italic;
+  display:flex; gap:.6rem; align-items:flex-start;
+}
+
+/* Delivery badge */
+.delivery-badge {
+  display:inline-flex; align-items:center; gap:6px;
+  background:#f0f7ff; border:1px solid #bfdbfe;
+  color:#1d4ed8; border-radius:20px;
+  padding:.3rem .85rem; font-size:11px; font-weight:600;
+  margin:0 1.5rem 1rem;
+}
+
+/* Action links */
+.track-actions { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:1.5rem; }
+.track-action-btn {
+  flex:1; min-width:140px; padding:.85rem 1rem;
+  border-radius:12px; text-align:center; text-decoration:none;
+  font-size:13px; font-weight:600; font-family:inherit;
+  transition:all .15s; border:1.5px solid transparent; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:.4rem;
+}
+.btn-wa    { background:#25D366; color:#fff; border-color:#25D366; }
+.btn-wa:hover { background:#1ebe5d; }
+.btn-dark  { background:#2e1a0e; color:#fff; border-color:#2e1a0e; }
+.btn-dark:hover { background:#1a0e06; }
+.btn-outline { background:#fff; color:var(--dark); border-color:#e0d5c8; }
+.btn-outline:hover { border-color:#2e1a0e; }
+
+/* Trust strip */
+.trust-strip {
+  max-width:700px; margin:3rem auto 0;
+  padding:0 1rem;
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:1rem;
+}
+.trust-card {
+  background:#fff; border-radius:14px;
+  padding:1.25rem 1rem 1.1rem; text-align:center;
+  box-shadow:0 2px 12px rgba(0,0,0,.05);
+  border:1px solid var(--border);
+}
+.trust-icon-wrap {
+  width:44px; height:44px; border-radius:50%;
+  background:#fdf6ee; border:1.5px solid rgba(200,144,58,.2);
+  display:flex; align-items:center; justify-content:center;
+  margin:0 auto .75rem;
+}
+.trust-title { font-size:13px; font-weight:700; color:var(--dark); margin-bottom:3px; }
+.trust-sub   { font-size:11px; color:var(--muted); line-height:1.5; }
+
+/* Not found */
+.not-found-box {
+  max-width:560px; margin:2.5rem auto 0;
+  background:#fff; border-radius:16px;
+  padding:2.5rem 2rem; text-align:center;
+  box-shadow:0 4px 24px rgba(0,0,0,.07);
+  display:none;
+}
+.not-found-box.show { display:block; }
+
+@media(max-width:600px){
+  .track-hero { padding:6rem 1rem 3rem; }
+  .track-search-card { margin:0 1rem; border-radius:14px; padding:1.5rem 1.25rem; }
+  .track-input-row { flex-direction:column; }
+  .tracker-lbl { font-size:8.5px; }
+  .tracker-dot { width:26px; height:26px; font-size:11px; }
+  .order-meta { grid-template-columns:1fr 1fr; }
+  .order-customer { flex-direction:column; gap:.75rem; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="track-page">
+
+  <!-- HERO -->
+  <div class="track-hero">
+    <span class="track-hero-kicker">Real-time updates</span>
+    <h1>Track your order</h1>
+    <p class="track-hero-sub">Enter your order code or the mobile number you placed the order with — see exactly where your garment is.</p>
+  </div>
+
+  <!-- SEARCH CARD -->
+  <div style="max-width:700px;margin:0 auto;padding:0 1rem;">
+    <div class="track-search-card">
+      <h2>Where's my order?</h2>
+      <p>Use your order code (like <strong>UT-3600</strong>) or your registered mobile number.</p>
+      <div class="track-tabs">
+        <button class="track-tab active" onclick="switchTab('code',this)">Order Code</button>
+        <button class="track-tab" onclick="switchTab('phone',this)">Mobile Number</button>
+      </div>
+      <div id="tab-code">
+        <div class="track-input-row">
+          <div style="flex:1;display:flex;align-items:center;border:1.5px solid #e0d5c8;border-radius:10px;background:#faf7f3;overflow:hidden;transition:border .15s;" id="codeInputWrap">
+            <span style="padding:0 0 0 1rem;font-size:14px;font-weight:700;color:var(--dark);white-space:nowrap;user-select:none;">UT-</span>
+            <input class="track-input" id="inputCode" type="text" placeholder="3600"
+                   autocomplete="off" autocapitalize="characters" maxlength="6"
+                   style="border:none;background:transparent;padding-left:2px;flex:1;"
+                   onkeydown="if(event.key==='Enter')doTrack()"
+                   oninput="this.value=this.value.replace(/[^0-9]/g,'').toUpperCase();"
+                   onfocus="document.getElementById('codeInputWrap').style.borderColor='#C8903A';document.getElementById('codeInputWrap').style.background='#fff';"
+                   onblur="document.getElementById('codeInputWrap').style.borderColor='#e0d5c8';document.getElementById('codeInputWrap').style.background='#faf7f3';">
+          </div>
+          <button class="track-btn" id="trackBtn" onclick="doTrack()">Track &rarr;</button>
+        </div>
+      </div>
+      <div id="tab-phone" style="display:none;">
+        <div class="track-input-row">
+          <input class="track-input" id="inputPhone" type="tel" placeholder="10-digit mobile number"
+                 maxlength="10" onkeydown="if(event.key==='Enter')doTrack()">
+          <button class="track-btn" onclick="doTrack()">Track &rarr;</button>
+        </div>
+      </div>
+      <div class="track-err" id="trackErr"></div>
+    </div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="track-result" id="trackResult">
+    <div class="order-card">
+
+      <!-- Header -->
+      <div class="order-card-head">
+        <div>
+          <div class="order-code-label">Order Code</div>
+          <div class="order-code-val" id="resCode">—</div>
+        </div>
+        <div class="order-status-chip" id="resStatusChip"></div>
+      </div>
+
+      <!-- Customer info -->
+      <div class="order-customer" id="resCustRow" style="display:none;">
+        <div class="cust-avatar" id="resCustAvatar">U</div>
+        <div class="cust-info">
+          <div class="cust-name" id="resCustName"></div>
+          <div class="cust-meta" id="resCustMeta"></div>
+        </div>
+      </div>
+
+      <!-- Order meta -->
+      <div class="order-meta">
+        <div>
+          <div class="meta-label">Garment</div>
+          <div class="meta-val" id="resGarment">—</div>
+        </div>
+        <div>
+          <div class="meta-label">Order Date</div>
+          <div class="meta-val" id="resDate">—</div>
+        </div>
+        <div id="resDeliveryWrap">
+          <div class="meta-label">Ready By</div>
+          <div class="meta-val" id="resDelivery">—</div>
+        </div>
+        <div>
+          <div class="meta-label">Order Total</div>
+          <div class="meta-val" id="resTotal">—</div>
+        </div>
+        <div>
+          <div class="meta-label">Balance Due</div>
+          <div class="meta-val" id="resBalance">—</div>
+        </div>
+      </div>
+
+      <!-- Home delivery badge (shown only for delivery orders) -->
+      <div id="resDeliveryBadge" style="display:none;">
+        <span class="delivery-badge">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+          Home Delivery
+        </span>
+      </div>
+
+      <!-- Tracker -->
+      <div class="tracker-card">
+        <div class="tracker-heading">Live Stitch Tracker</div>
+        <div class="tracker-steps" id="resTrackerSteps"></div>
+        <div class="tracker-note-box" id="resTrackerNote" style="display:none;">
+          <span>📌</span><span id="resTrackerNoteText"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="track-actions" id="resActions"></div>
+  </div>
+
+  <!-- NOT FOUND -->
+  <div class="not-found-box" id="notFoundBox">
+    <div style="margin-bottom:1rem;">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#C8903A" stroke-width="1.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+    </div>
+    <h3 style="font-family:var(--fd);font-size:22px;font-weight:400;color:var(--dark);margin-bottom:.5rem;">Order not found</h3>
+    <p style="font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:1.5rem;">We couldn't find an order with those details. Double-check your order code or try the mobile number you used when placing the order.</p>
+    <a id="nfWaLink" href="#" target="_blank" rel="noopener"
+       style="display:inline-flex;align-items:center;gap:.5rem;background:#25D366;color:#fff;padding:.85rem 1.75rem;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none;">
+      💬 Contact us on WhatsApp
+    </a>
+  </div>
+
+  <!-- TRUST STRIP -->
+  <div class="trust-strip">
+    <div class="trust-card">
+      <div class="trust-icon-wrap">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C8903A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      </div>
+      <div class="trust-title">WhatsApp Updates</div>
+      <div class="trust-sub">Every stage update sent to your number automatically</div>
+    </div>
+    <div class="trust-card">
+      <div class="trust-icon-wrap">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C8903A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      </div>
+      <div class="trust-title">Master Tailors</div>
+      <div class="trust-sub">35+ years of craft — every stitch by hand</div>
+    </div>
+    <div class="trust-card">
+      <div class="trust-icon-wrap">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C8903A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      </div>
+      <div class="trust-title">Free Alterations</div>
+      <div class="trust-sub">If the fit isn't perfect, we fix it — no questions asked</div>
+    </div>
+    <div class="trust-card">
+      <div class="trust-icon-wrap">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C8903A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <div class="trust-title">Ready in 5–7 Days</div>
+      <div class="trust-sub">Standard orders. Rush orders available on request</div>
+    </div>
+  </div>
+
+  <!-- BOTTOM CTA -->
+  <div style="text-align:center;padding:2rem 1rem 5rem;">
+    <p style="font-size:14px;color:var(--muted);margin-bottom:1rem;">Haven't placed an order yet?</p>
+    <a href="{{ url_for('website.commission') }}" class="btn-primary" style="display:inline-flex;align-items:center;gap:.5rem;padding:14px 28px;">
+      ✂️ Customise Your Garment →
+    </a>
+  </div>
+
+</div>
+
+<script>
+var WA_NUMBER = '{{ web_settings.get("web_footer_whatsapp","91XXXXXXXXXX") }}';
+
+// Stages for pickup orders (5 steps)
+var STAGES_PICKUP = [
+  {num:1, name:'Order\nReceived', svg:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>'},
+  {num:2, name:'Fabric\nCut',     svg:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><circle cx="8" cy="16" r="2.5"/><circle cx="16" cy="8" r="2.5"/></svg>'},
+  {num:3, name:'Stitching',       svg:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 2c-3 0-5 2-5 5v10c0 3 2 5 5 5s5-2 5-5V7c0-3-2-5-5-5z"/></svg>'},
+  {num:4, name:'Quality\nCheck',  svg:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>'},
+  {num:5, name:'Ready!',          svg:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>'}
+];
+
+// Stages for home delivery orders (6 steps)
+var STAGES_DELIVERY = [
+  {num:1, name:'Order\nReceived', svg:STAGES_PICKUP[0].svg},
+  {num:2, name:'Fabric\nCut',     svg:STAGES_PICKUP[1].svg},
+  {num:3, name:'Stitching',       svg:STAGES_PICKUP[2].svg},
+  {num:4, name:'Quality\nCheck',  svg:STAGES_PICKUP[3].svg},
+  {num:5, name:'Packed &\nReady', svg:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>'},
+  {num:6, name:'Delivered!',      svg:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>'}
+];
+
+var _activeTab = 'code';
+
+function switchTab(tab, btn) {
+  _activeTab = tab;
+  document.querySelectorAll('.track-tab').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  document.getElementById('tab-code').style.display  = tab==='code'  ? '' : 'none';
+  document.getElementById('tab-phone').style.display = tab==='phone' ? '' : 'none';
+  document.getElementById('trackErr').textContent = '';
+  clearResult();
+}
+
+function clearResult() {
+  document.getElementById('trackResult').classList.remove('show');
+  document.getElementById('notFoundBox').classList.remove('show');
+}
+
+function doTrack() {
+  var val = (_activeTab==='code'
+    ? 'UT-' + (document.getElementById('inputCode').value||'').trim().toUpperCase()
+    : (document.getElementById('inputPhone').value||'').trim());
+  var errEl = document.getElementById('trackErr');
+  errEl.textContent = '';
+  if (!val || val === 'UT-') { errEl.textContent = _activeTab==='code' ? 'Please enter your order number after UT-.' : 'Please enter your mobile number.'; return; }
+  if (_activeTab==='phone' && !/^\d{10}$/.test(val)) { errEl.textContent = 'Enter a valid 10-digit mobile number.'; return; }
+
+  var btn = document.getElementById('trackBtn');
+  if(btn){ btn.disabled=true; btn.textContent='Looking…'; }
+  clearResult();
+
+  var url = _activeTab==='code'
+    ? '/api/track-order?code=' + encodeURIComponent(val)
+    : '/api/track-order?phone=' + encodeURIComponent(val);
+
+  fetch(url)
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if(btn){ btn.disabled=false; btn.textContent='Track →'; }
+      if (d.ok && d.order) {
+        renderResult(d.order);
+      } else {
+        document.getElementById('notFoundBox').classList.add('show');
+        document.getElementById('nfWaLink').href = 'https://wa.me/'+WA_NUMBER+'?text=Hi%2C+I+need+help+tracking+my+order';
+      }
+    })
+    .catch(function(){
+      if(btn){ btn.disabled=false; btn.textContent='Track →'; }
+      errEl.textContent = 'Network error — please try again.';
+    });
+}
+
+function renderResult(o) {
+  // Status chip
+  var chip = document.getElementById('resStatusChip');
+  var statusLabel = {pending:'Pending Payment', stitching:'In Progress', ready:'Ready for Pickup', delivered:'Delivered', cancelled:'Cancelled'};
+  var statusCls   = {pending:'status-pending', stitching:'status-stitching', ready:'status-ready', delivered:'status-delivered', cancelled:'status-cancelled'};
+  var st = (o.status||'pending').toLowerCase();
+  chip.textContent  = statusLabel[st] || o.status;
+  chip.className    = 'order-status-chip ' + (statusCls[st]||'status-pending');
+
+  // Order code
+  document.getElementById('resCode').textContent = o.order_code || '—';
+
+  // Customer section
+  var custRow = document.getElementById('resCustRow');
+  if (o.cust_name) {
+    document.getElementById('resCustAvatar').textContent = o.cust_name.charAt(0).toUpperCase();
+    document.getElementById('resCustName').textContent = o.cust_name;
+    var metaHtml = '';
+    if (o.cust_mobile) metaHtml += '<span><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg> '+o.cust_mobile+'</span>';
+    if (o.cust_address) metaHtml += '<span><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> '+o.cust_address+'</span>';
+    document.getElementById('resCustMeta').innerHTML = metaHtml;
+    custRow.style.display = 'flex';
+  } else {
+    custRow.style.display = 'none';
+  }
+
+  // Meta fields
+  document.getElementById('resGarment').textContent = o.garment || 'Custom Order';
+  document.getElementById('resDate').textContent     = o.order_date || '—';
+  var dwrap = document.getElementById('resDeliveryWrap');
+  if (o.delivery_date) {
+    document.getElementById('resDelivery').textContent = o.delivery_date;
+    dwrap.style.display = '';
+  } else { dwrap.style.display = 'none'; }
+  document.getElementById('resTotal').textContent   = o.total   ? 'Rs. '+Math.round(o.total)   : '—';
+  document.getElementById('resBalance').textContent = (o.remaining !== undefined && o.remaining !== null) ? 'Rs. '+Math.round(o.remaining) : '—';
+
+  // Home delivery badge
+  document.getElementById('resDeliveryBadge').style.display = o.is_home_delivery ? 'block' : 'none';
+
+  // Tracker steps
+  var stage  = parseInt(o.stage||1, 10);
+  var stages = o.is_home_delivery ? STAGES_DELIVERY : STAGES_PICKUP;
+  var steps  = document.getElementById('resTrackerSteps');
+  steps.innerHTML = '';
+  stages.forEach(function(s){
+    var done = s.num < stage;
+    var cur  = s.num === stage;
+    var div  = document.createElement('div');
+    div.className = 'tracker-step' + (done?' done':'') + (cur?' current':'');
+    div.innerHTML =
+      '<div class="tracker-dot">'+(done ? s.svg : '')+'</div>'+
+      '<div class="tracker-lbl">'+s.name.replace('\n','<br>')+'</div>';
+    steps.appendChild(div);
+  });
+
+  // Stitch note
+  var noteBox = document.getElementById('resTrackerNote');
+  if (o.stitch_note) {
+    document.getElementById('resTrackerNoteText').textContent = o.stitch_note;
+    noteBox.style.display = 'flex';
+  } else { noteBox.style.display = 'none'; }
+
+  // Actions
+  var waMsg = encodeURIComponent('Hi, I want to ask about my order '+o.order_code);
+  document.getElementById('resActions').innerHTML =
+    '<a class="track-action-btn btn-wa" href="https://wa.me/'+WA_NUMBER+'?text='+waMsg+'" target="_blank" rel="noopener">💬 WhatsApp us</a>'+
+    '<a class="track-action-btn btn-dark" href="{{ url_for("website.commission") }}">✂️ Place another order</a>'+
+    '<a class="track-action-btn btn-outline" href="{{ url_for("website.services") }}">Browse our services</a>';
+
+  document.getElementById('trackResult').classList.add('show');
+  document.getElementById('trackResult').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+// Pre-fill from URL param
+(function(){
+  var p = new URLSearchParams(window.location.search);
+  var c = p.get('code');
+  if (c) {
+    document.getElementById('inputCode').value = c;
+    doTrack();
+  }
+})();
+</script>
+{% endblock %}

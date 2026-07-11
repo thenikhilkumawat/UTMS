@@ -146,7 +146,6 @@ const T = {
   "Kurta Pajama":    {en:"Kurta Pajama",  hi:"कुर्ता पाजामा",   hl:"Kurta Pajama"},
   "Pajama":          {en:"Pajama",        hi:"पाजामा",         hl:"Pajama"},
   "Pathani":         {en:"Pathani",       hi:"पठानी",          hl:"Pathani"},
-  "Sherwani":        {en:"Sherwani",      hi:"शेरवानी",        hl:"Sherwani"},
   "Safari":          {en:"Safari",        hi:"सफारी",          hl:"Safari"},
   "Waistcoat":       {en:"Waistcoat",     hi:"वेस्टकोट",       hl:"Waistcoat"},
   "Alteration":      {en:"Alteration",    hi:"बदलाव",          hl:"Alteration"},

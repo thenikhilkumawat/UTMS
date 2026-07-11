@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% set active = "contact" %}
+{% block title %}Contact Us -- Uttam Tailors, Sikar{% endblock %}
+{% block content %}
+
+<div class="contact-page">
+  <div style="max-width:1200px;margin:0 auto;padding:5rem 3rem 7rem;">
+    <div style="margin-bottom:3rem;">
+      <p class="kicker">Get in touch</p>
+      <h1 style="font-family:var(--fd);font-size:clamp(36px,5vw,60px);font-weight:300;color:var(--dark);line-height:1.1;margin-bottom:1rem;">Come visit us.<br>Or we come to you.</h1>
+      <p style="font-size:16px;color:var(--muted);max-width:540px;line-height:1.75;">We are at Subhash Chowk, Sikar. Walk in any day Monday to Saturday. Or book a home visit and our tailor comes to your door.</p>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:start;">
+      <div style="display:flex;flex-direction:column;gap:1rem;">
+        <div class="cinfo-row">
+          <div class="cinfo-icon">&#128205;</div>
+          <div><p class="cinfo-label">Shop Address</p><p class="cinfo-val">Subhash Chowk, Sikar<small>Rajasthan &mdash; 332001</small></p></div>
+        </div>
+        <div class="cinfo-row">
+          <div class="cinfo-icon">&#128222;</div>
+          <div><p class="cinfo-label">Phone &amp; WhatsApp</p><p class="cinfo-val"><a href="tel:+91XXXXXXXXXX">+91 XXXXX XXXXX</a><small><a href="https://wa.me/91XXXXXXXXXX">Message on WhatsApp &rarr;</a></small></p></div>
+        </div>
+        <div class="cinfo-row">
+          <div class="cinfo-icon">&#9993;</div>
+          <div><p class="cinfo-label">Email</p><p class="cinfo-val"><a href="mailto:info.uttamtailors@gmail.com">info.uttamtailors@gmail.com</a></p></div>
+        </div>
+        <div class="cinfo-row">
+          <div class="cinfo-icon">&#128336;</div>
+          <div><p class="cinfo-label">Shop Hours</p><p class="cinfo-val">Monday &ndash; Saturday<small>9:00 AM &ndash; 7:00 PM</small></p></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-top:1rem;">
+          <a href="{{ url_for('website.commission') }}?method=homevisit" class="btn-primary" style="justify-content:center;">Book Home Visit &rarr;</a>
+          <a href="{{ url_for('website.commission') }}" class="btn-outline" style="justify-content:center;">Customise Your Garment &rarr;</a>
+        </div>
+      </div>
+
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--rLg);overflow:hidden;">
+        <div style="height:400px;">
+          <iframe
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3558.9!2d75.1398!3d27.6089!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x396c3e41a9d39c7f%3A0x2a7e0e38f3e5c1a4!2sSubhash%20Chowk%2C%20Sikar%2C%20Rajasthan!5e0!3m2!1sen!2sin!4v1"
+            width="100%" height="400" style="border:0;display:block;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Uttam Tailors - Subhash Chowk Sikar">
+          </iframe>
+        </div>
+        <div style="padding:1.25rem 1.75rem;background:var(--bg3);border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+          <p style="font-size:13px;color:var(--muted);">Subhash Chowk, Sikar, Rajasthan 332001</p>
+          <a href="https://maps.app.goo.gl/GtiT3rLB8v4upBXV6" target="_blank" rel="noopener" class="btn-primary" style="padding:9px 20px;font-size:12px;">Open in Google Maps &rarr;</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section style="background:var(--dark);padding:5rem 3rem;text-align:center;margin:0 3rem 5rem;border-radius:var(--rLg);">
+  <p class="kicker" style="color:var(--gold-l);">Free consultation</p>
+  <h2 style="font-family:var(--fd);font-size:clamp(28px,4vw,44px);color:#FAF0E4;margin-bottom:1rem;font-weight:300;">Not sure what to order?</h2>
+  <p style="color:rgba(250,240,228,.55);font-size:15px;max-width:500px;margin:0 auto 2.5rem;">Tell us the occasion and your budget. Our tailor will guide you to the right garment and fabric. No obligation.</p>
+  <a href="https://wa.me/91XXXXXXXXXX?text=Hi%2C%20I%20want%20to%20book%20a%20free%20consultation%20at%20Uttam%20Tailors" target="_blank" class="btn-gold">WhatsApp for Consultation &rarr;</a>
+</section>
+
+{% endblock %}

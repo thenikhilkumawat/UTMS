@@ -1,0 +1,391 @@
+{% extends "website/base.html" %}
+{% set active = "our_services" %}
+{% block title %}Our Services &amp; Prices &mdash; Uttam Tailors, Sikar{% endblock %}
+{% block head %}
+<style>
+.price-row{cursor:pointer;transition:background .15s;}
+.price-row:hover{background:rgba(184,120,48,.08);}
+.price-row:hover .price-row-name{color:var(--gold);}
+.price-row-arrow{font-size:13px;color:var(--gold);opacity:0;transition:opacity .15s;margin-left:6px;}
+.price-row:hover .price-row-arrow{opacity:1;}
+.price-row-price{display:flex;align-items:center;gap:6px;}
+
+/* Popup */
+#orderPopup{display:none;position:fixed;inset:0;z-index:9999;background:rgba(28,15,6,.6);align-items:center;justify-content:center;padding:1rem;}
+#orderPopup.show{display:flex;}
+.popup-box{background:var(--bg);border:1px solid var(--border);border-radius:var(--rLg);width:100%;max-width:520px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,.3);overflow:hidden;}
+.popup-img-wrap{position:relative;flex-shrink:0;overflow:hidden;border-radius:var(--rLg) var(--rLg) 0 0;min-height:280px;}
+.popup-img-placeholder{width:100%;height:110px;background:linear-gradient(135deg,var(--bg2),var(--bg3));display:flex;align-items:center;justify-content:center;font-size:36px;}
+.popup-close{position:absolute;top:.75rem;right:.75rem;background:rgba(0,0,0,.35);backdrop-filter:blur(4px);border:none;color:#fff;width:30px;height:30px;border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:11;}
+.popup-nav-btn{display:none;position:absolute;top:50%;transform:translateY(-50%);width:40px;height:40px;border-radius:50%;background:rgba(247,240,230,.92);backdrop-filter:blur(6px);border:none;color:#1a0e06;font-size:26px;cursor:pointer;z-index:11;align-items:center;justify-content:center;line-height:1;box-shadow:0 2px 12px rgba(0,0,0,.2);transition:background .15s;}
+.popup-nav-btn:hover{background:#fff;}
+.popup-nav-prev{left:12px;}
+.popup-nav-next{right:12px;}
+.popup-body{padding:1.25rem 1.5rem;overflow-y:auto;flex:1;}
+.popup-tag{font-family:var(--fm);font-size:9px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;margin-bottom:4px;}
+.popup-name{font-family:var(--fd);font-size:22px;font-weight:400;color:var(--dark);margin-bottom:2px;line-height:1.2;}
+.popup-sub{font-size:12px;color:var(--muted);margin-bottom:.9rem;}
+.popup-price-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid var(--border);}
+.popup-price{font-size:18px;font-weight:600;color:var(--gold);}
+.qty-wrap{display:flex;align-items:center;gap:8px;}
+.qty-wrap span{font-size:12px;color:var(--muted);}
+.qty-ctrl{display:flex;align-items:center;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.qty-ctrl button{background:var(--bg2);border:none;width:30px;height:30px;font-size:16px;cursor:pointer;color:var(--dark);}
+.qty-ctrl .qty-num{width:34px;text-align:center;font-size:14px;font-weight:600;color:var(--dark);}
+.popup-btns{display:flex;gap:8px;padding-top:1rem;border-top:1px solid var(--border);margin-top:.5rem;flex-shrink:0;}
+@media(max-width:500px){.popup-box{max-width:100%;border-radius:var(--rLg) var(--rLg) 0 0;max-height:95vh;}#orderPopup{align-items:flex-end;padding:0;}}
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="services-hero">
+  <p class="kicker">Complete price list</p>
+  <h1 class="section-title" style="color:#FAF0E4;margin-bottom:1rem;">All our services.<br>Every price, clearly stated.</h1>
+  <p>Tap any garment to order it. No hidden charges — fabric cost is separate.</p>
+</section>
+
+<section class="price-table-section">
+  <div class="price-table">
+    <div class="price-table-header"><span>Garment</span><span>Stitching Charge</span></div>
+    {% if services %}
+      {% for cat, items in services %}
+      <div class="price-category">
+        <div class="price-category-head">{{ cat.name }}</div>
+        {% for item in items %}
+        {% set _m = item_media.get(item.id, {}) %}
+        {% set _ns = namespace(imgs=_m.get('images', []), vid=_m.get('video', '')) %}
+        {% if not _ns.imgs and item.image_url %}{% set _ns.imgs = [item.image_url] %}{% endif %}
+        {% set _imgs = _ns.imgs %}
+        {% set _vid = _ns.vid %}
+        <div class="price-row"
+          onclick="openPopup(this)"
+          data-id="{{ item.id }}"
+          data-name="{{ item.name|e }}"
+          data-sub="{{ (item.subtitle or '')|e }}"
+          data-price="{{ item.price }}"
+          data-imgs='{{ _imgs|tojson }}'
+          data-vid="{{ _vid|e }}"
+          title="Click to order {{ item.name }}">
+          <div class="price-row-name">{{ item.name }}{% if item.subtitle %}<small>{{ item.subtitle }}</small>{% endif %}<span class="price-row-arrow">Order &rarr;</span></div>
+          <div class="price-row-price">Rs. {{ item.price }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="price-category">
+        <div class="price-category-head">Shirts</div>
+        <div class="price-row" onclick="openPopup(this)" data-name="Formal Shirt" data-sub="Regular / Linen / Cotton" data-price="350" data-imgs="[]" data-vid=""><div class="price-row-name">Formal Shirt<small>Regular / Linen / Cotton</small><span class="price-row-arrow">Order &rarr;</span></div><div class="price-row-price">Rs. 350</div></div>
+      </div>
+    {% endif %}
+  </div>
+  <p class="price-note">* Stitching charges only. Fabric cost is extra. Free delivery within Sikar city.</p>
+</section>
+
+<section class="consult-section">
+  <p class="kicker">Not sure what to order?</p>
+  <h2>Book a free consultation.</h2>
+  <p>Tell us the occasion, your budget, your preferences. Our tailor will guide you to the right garment and fabric.</p>
+  <a href="{{ url_for('website.contact') }}" class="btn-gold">Book Consultation &rarr;</a>
+</section>
+
+<section class="big-cta">
+  <div class="big-cta-img"><img src="https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=1920&q=80" alt="" aria-hidden="true" loading="lazy"></div>
+  <div class="big-cta-overlay"></div>
+  <div class="big-cta-inner">
+    <h2 class="big-cta-title">Every garment above can<br>be yours in 7 days.</h2>
+    <a href="{{ url_for('website.commission') }}" class="btn-gold btn-xl">Customise Your Garment &rarr;</a>
+  </div>
+</section>
+
+<!-- ORDER POPUP -->
+<div id="orderPopup" onclick="if(event.target===this)closePopup()">
+  <div class="popup-box">
+
+    <!-- Image (compact) -->
+    <div class="popup-img-wrap" id="popupImgWrap">
+      <div class="popup-img-placeholder" id="popupImgPlaceholder">✂</div>
+      <button class="popup-close" onclick="closePopup()">&times;</button>
+      <button id="popupPrevBtn" class="popup-nav-btn popup-nav-prev" onclick="slidePopup(-1)">&#8249;</button>
+      <button id="popupNextBtn" class="popup-nav-btn popup-nav-next" onclick="slidePopup(1)">&#8250;</button>
+    </div>
+
+    <!-- Scrollable body -->
+    <div class="popup-body">
+
+      <!-- Header row: name + qty -->
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:.9rem;">
+        <div style="flex:1;min-width:0;">
+          <p class="popup-tag">Selected garment</p>
+          <p class="popup-name" id="popupName">—</p>
+          <p class="popup-sub" id="popupSub"></p>
+        </div>
+        <div style="flex-shrink:0;text-align:right;">
+          <div style="font-size:9px;font-family:var(--fm);color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;">Qty</div>
+          <div class="qty-ctrl">
+            <button onclick="changePopupQty(-1)">−</button>
+            <div class="qty-num" id="popupQtyNum">1</div>
+            <button onclick="changePopupQty(1)">+</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Price -->
+      <div class="popup-price" id="popupPrice" style="margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid var(--border);">Rs. —</div>
+
+      <!-- Add more toggle -->
+      <button onclick="toggleAddMore()" id="addMoreBtn"
+        style="width:100%;padding:8px;background:var(--bg2);border:1px dashed var(--border);border-radius:8px;font-size:12px;color:var(--gold);cursor:pointer;font-weight:600;margin-bottom:8px;">
+        + Add more garments
+      </button>
+
+      <!-- Add more grid (scrollable, max 220px) -->
+      <div id="addMoreGrid" style="display:none;max-height:220px;overflow-y:auto;margin-bottom:10px;"></div>
+
+      <!-- Basket -->
+      <div id="popupBasket" style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:10px;">
+        <div style="padding:6px 12px;background:var(--bg3);font-size:9px;font-weight:700;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;">Your Order</div>
+        <div id="popupBasketRows"></div>
+        <div style="padding:7px 12px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:var(--dark);">
+          <span>Total</span><span id="popupBasketTotal" style="color:var(--gold);">—</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Fixed bottom buttons -->
+    <div class="popup-btns" style="padding:1rem 1.5rem;background:var(--bg);border-top:1px solid var(--border);">
+      <a id="popupOrderBtn" href="#" class="btn-primary" style="flex:1;justify-content:center;">Order Now &rarr;</a>
+      <button onclick="closePopup()" class="btn-outline" style="flex:0 0 auto;padding:0 1.25rem;">Cancel</button>
+    </div>
+    <div style="padding:0 1.5rem 14px;background:var(--bg);">
+      <a id="popupDetailLink" href="#" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:10px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--dark);text-decoration:none;transition:background .15s;" onmouseover="this.style.background='#E8DCC8'" onmouseout="this.style.background='var(--bg2)'">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        View Full Product Details
+      </a>
+    </div>
+
+  </div>
+</div>
+
+<script>
+var _popupGarment='', _popupPrice=0, _popupQty=1;
+var _basket={}; // {key: {name, price, qty}}
+var _addMoreOpen=false;
+
+var NAME_TO_KEY={
+  'formal shirt':'shirt','shirt':'shirt',
+  'pant':'pant','pant (single pleat)':'pant','pant (double pleat)':'pant','pant':'pant','pants':'pant',
+  'suit 2-piece':'suit','suit 2pc':'suit',
+  'suit 3-piece':'suit3pc','suit 3pc':'suit3pc',
+  'blazer':'blazer','waistcoat':'blazer',
+  'kurta only':'kurta','kurta':'kurta',
+  'kurta + pajama set':'kurtaset','kurta + pajama':'kurtaset',
+  'pajama only':'pajama','pajama':'pajama',
+  'pathani suit':'pathani','pathani':'pathani',
+  'safari suit':'safari','safari':'safari',
+  'jeans':'jeans'
+};
+var ALL_GARMENTS=[
+  {% for item in services_all %}{key:{{ item.name|tojson }},name:{{ item.name|tojson }},price:{{ item.price|tojson }}}{% if not loop.last %},{% endif %}{% endfor %}
+];
+
+function getGarmentKey(name){
+  var n=name.toLowerCase().trim();
+  if(NAME_TO_KEY[n]) return NAME_TO_KEY[n];
+  for(var k in NAME_TO_KEY){ if(n.startsWith(k)||k.startsWith(n)) return NAME_TO_KEY[k]; }
+  return name;
+}
+
+var _popupImgs=[], _popupSlide=0;
+
+function openPopup(el){
+  try{
+  var name=el.dataset.name, sub=el.dataset.sub, price=el.dataset.price;
+  var imgs=[]; try{imgs=JSON.parse(el.dataset.imgs||'[]');}catch(e){imgs=[];}
+  var vid=el.dataset.vid||'';
+  _basket={};
+  _addMoreOpen=false;
+  document.getElementById('addMoreGrid').style.display='none';
+  document.getElementById('addMoreBtn').textContent='+ Add more garments to this order';
+
+  _popupGarment=name; _popupPrice=parseInt(price)||0; _popupQty=1;
+  _popupImgs=Array.isArray(imgs)?imgs:(imgs?[imgs]:[]);
+  _popupSlide=0;
+  var key=getGarmentKey(name);
+  _basket[key]={name:name, price:_popupPrice, qty:1};
+
+  var itemId=el.dataset.id||'';
+  document.getElementById('popupName').textContent=name;
+  document.getElementById('popupSub').textContent=sub||'';
+  document.getElementById('popupQtyNum').textContent=1;
+  var detailLink=document.getElementById('popupDetailLink');
+  if(detailLink) detailLink.href=itemId?'/garment/'+itemId:'#';
+
+  // Media
+  var wrap=document.getElementById('popupImgWrap');
+  var ph=document.getElementById('popupImgPlaceholder');
+  // Clear old media
+  wrap.querySelectorAll('img:not(#popupImgPlaceholder),video,.popup-slide-dots').forEach(function(el){el.remove();});
+
+  if(vid){
+    var v=document.createElement('video');
+    v.src=vid; v.autoplay=true; v.loop=true; v.muted=true;
+    v.style.cssText='width:100%;height:280px;object-fit:cover;display:block;';
+    wrap.insertBefore(v,ph); ph.style.display='none';
+  } else if(_popupImgs.length>0){
+    var im=document.createElement('img');
+    im.id='popupMainImg'; im.src=_popupImgs[0]; im.alt=name;
+    im.style.cssText='width:100%;height:280px;object-fit:cover;object-position:top center;display:block;cursor:'+((_popupImgs.length>1)?'pointer':'default')+';';
+    if(_popupImgs.length>1) im.onclick=function(){slidePopup(1);};
+    wrap.insertBefore(im,ph); ph.style.display='none';
+    var pBtn=document.getElementById('popupPrevBtn'),nBtn=document.getElementById('popupNextBtn');
+    var showArrows=_popupImgs.length>1;
+    if(pBtn){pBtn.style.display=showArrows?'flex':'none';}
+    if(nBtn){nBtn.style.display=showArrows?'flex':'none';}
+    if(_popupImgs.length>1){
+      var dots=document.createElement('div');
+      dots.className='popup-slide-dots';
+      dots.style.cssText='position:absolute;bottom:8px;left:0;right:0;display:flex;justify-content:center;gap:6px;';
+      _popupImgs.forEach(function(src,i){
+        var d=document.createElement('button');
+        d.style.cssText='width:8px;height:8px;border-radius:50%;border:none;background:'+(i===0?'#fff':'rgba(255,255,255,.5)')+';cursor:pointer;padding:0;';
+        d.onclick=function(){slidePopup(i-_popupSlide);};
+        dots.appendChild(d);
+      });
+      wrap.insertBefore(dots,ph);
+    }
+  } else {
+    ph.style.display='flex';
+    var pBtn=document.getElementById('popupPrevBtn'),nBtn=document.getElementById('popupNextBtn');
+    if(pBtn)pBtn.style.display='none'; if(nBtn)nBtn.style.display='none';
+  }
+
+  updateBasketUI();
+  var popup = document.getElementById('orderPopup');
+  if(!popup){ console.error('orderPopup element not found'); return; }
+  popup.classList.add('show');
+  document.body.style.overflow='hidden';
+  }catch(err){ console.error('openPopup error:', err); }
+}
+
+function slidePopup(dir){
+  _popupSlide=(_popupSlide+dir+_popupImgs.length)%_popupImgs.length;
+  var im=document.getElementById('popupMainImg');
+  if(im) im.src=_popupImgs[_popupSlide];
+  // Update dots
+  var dots=document.querySelectorAll('.popup-slide-dots button');
+  dots.forEach(function(d,i){d.style.background=(i===_popupSlide?'#fff':'rgba(255,255,255,.5)');});
+}
+
+function closePopup(){
+  document.getElementById('orderPopup').classList.remove('show');
+  document.body.style.overflow='';
+}
+
+function changePopupQty(d){
+  _popupQty=Math.max(1,Math.min(20,_popupQty+d));
+  var key=getGarmentKey(_popupGarment);
+  if(_basket[key]) _basket[key].qty=_popupQty;
+  updateBasketUI();
+}
+
+function toggleAddMore(){
+  _addMoreOpen=!_addMoreOpen;
+  var grid=document.getElementById('addMoreGrid');
+  var btn=document.getElementById('addMoreBtn');
+  if(_addMoreOpen){
+    renderAddMoreGrid();
+    grid.style.display='block';
+    btn.textContent='− Hide';
+  } else {
+    grid.style.display='none';
+    btn.textContent='+ Add more garments to this order';
+  }
+}
+
+function renderAddMoreGrid(){
+  var mainKey=getGarmentKey(_popupGarment);
+  var h='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;padding:2px 0;">';
+  ALL_GARMENTS.forEach(function(g){
+    if(g.key===mainKey) return;
+    var inB=!!_basket[g.key];
+    var qty=inB?(_basket[g.key].qty||1):1;
+    if(inB){
+      h+='<div id="bcard_'+g.key+'" style="background:rgba(184,120,48,.1);border:1.5px solid var(--gold);border-radius:8px;padding:7px 6px;text-align:center;">'
+        +'<div style="font-size:11px;font-weight:600;color:var(--dark);margin-bottom:3px;">'+g.name+'</div>'
+        +'<div style="display:flex;align-items:center;justify-content:center;gap:2px;margin-bottom:3px;">'
+        +'<button onclick="changeExtraQty(\''+g.key+'\',\''+g.name+'\','+g.price+',-1)" style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;width:22px;height:22px;font-size:13px;cursor:pointer;line-height:1;">−</button>'
+        +'<span id="xqty_'+g.key+'" style="width:24px;text-align:center;font-size:12px;font-weight:700;">'+qty+'</span>'
+        +'<button onclick="changeExtraQty(\''+g.key+'\',\''+g.name+'\','+g.price+',1)" style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;width:22px;height:22px;font-size:13px;cursor:pointer;line-height:1;">+</button>'
+        +'</div>'
+        +'<button onclick="removeExtraItem(\''+g.key+'\')" style="font-size:10px;color:#dc2626;background:none;border:none;cursor:pointer;">✕ Remove</button>'
+        +'</div>';
+    } else {
+      h+='<div id="bcard_'+g.key+'" style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:7px 6px;text-align:center;cursor:pointer;" onclick="addExtraItem(\''+g.key+'\',\''+g.name+'\','+g.price+')">'
+        +'<div style="font-size:11px;font-weight:600;color:var(--dark);margin-bottom:2px;">'+g.name+'</div>'
+        +'<div style="font-size:10px;color:var(--muted);margin-bottom:5px;">Rs. '+g.price+'</div>'
+        +'<div style="font-size:11px;color:var(--gold);font-weight:700;">+ Add</div>'
+        +'</div>';
+    }
+  });
+  h+='</div>';
+  document.getElementById('addMoreGrid').innerHTML=h;
+}
+
+function addExtraItem(key, name, price){
+  _basket[key]={name:name, price:price, qty:1};
+  renderAddMoreGrid();
+  updateBasketUI();
+}
+
+function removeExtraItem(key){
+  delete _basket[key];
+  renderAddMoreGrid();
+  updateBasketUI();
+}
+
+function changeExtraQty(key, name, price, d){
+  if(!_basket[key]) _basket[key]={name:name, price:price, qty:1};
+  _basket[key].qty=Math.max(1,Math.min(20,(_basket[key].qty||1)+d));
+  var el=document.getElementById('xqty_'+key);
+  if(el) el.textContent=_basket[key].qty;
+  updateBasketUI();
+}
+
+function updateBasketUI(){
+  var keys=Object.keys(_basket);
+  var total=0;
+  keys.forEach(function(k){total+=_basket[k].price*(_basket[k].qty||1);});
+
+  // Always show basket
+  var basket=document.getElementById('popupBasket');
+  var rows=document.getElementById('popupBasketRows');
+  basket.style.display='block';
+  rows.innerHTML=keys.map(function(k){
+    var it=_basket[k];
+    var qty=it.qty||1;
+    return '<div style="display:flex;justify-content:space-between;padding:6px 14px;border-top:1px solid var(--border);font-size:13px;">'
+      +'<span>'+it.name+(qty>1?' ×'+qty:'')+'</span>'
+      +'<span style="color:var(--gold);">Rs. '+(it.price*qty).toLocaleString('en-IN')+'</span>'
+      +'</div>';
+  }).join('');
+  document.getElementById('popupBasketTotal').textContent='Rs. '+total.toLocaleString('en-IN');
+
+  // Update main item price display
+  var mainKey=getGarmentKey(_popupGarment);
+  var mainItem=_basket[mainKey];
+  var mainQty=mainItem?mainItem.qty:_popupQty;
+  document.getElementById('popupQtyNum').textContent=mainQty;
+  var mainTotal=_popupPrice*mainQty;
+  document.getElementById('popupPrice').textContent='Rs. '+mainTotal.toLocaleString('en-IN')
+    +(mainQty>1?' ('+mainQty+'×Rs.'+_popupPrice+')':'');
+
+  // Build URL
+  var garmentKeys=keys.join(',');
+  var qtys=keys.map(function(k){return (_basket[k].qty||1);}).join(',');
+  var url='{{ url_for("website.commission") }}?garments='+encodeURIComponent(garmentKeys)+'&qtys='+encodeURIComponent(qtys);
+  document.getElementById('popupOrderBtn').href=url;
+}
+</script>
+{% endblock %}

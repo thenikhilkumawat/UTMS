@@ -1,0 +1,369 @@
+{% extends "base.html" %}
+{% block title %}Header & Footer — Uttam Tailors{% endblock %}
+{% block extra_css %}
+<style>
+.hf-wrap{padding:24px;max-width:1100px;}
+.hf-title{font-size:22px;font-weight:800;color:#1a0e06;margin-bottom:4px;}
+.hf-sub{font-size:13px;color:#7a6a58;margin-bottom:24px;}
+.hf-section{background:#fff;border-radius:12px;border:1px solid #e8d9c5;margin-bottom:22px;overflow:hidden;}
+.hf-section-hdr{background:#f5ede0;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e8d9c5;}
+.hf-section-hdr h3{font-size:14px;font-weight:700;color:#1a0e06;margin:0;}
+.hf-section-body{padding:18px 20px;}
+.hf-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+.hf-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;}
+.hf-lbl{font-size:11px;font-weight:700;color:#7a6a58;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:4px;}
+.hf-in{width:100%;padding:9px 12px;border:1px solid #e8d9c5;border-radius:8px;font-size:13px;color:#1a0e06;outline:none;}
+.hf-in:focus{border-color:#C8903A;}
+.hf-ta{width:100%;padding:10px 12px;border:1px solid #e8d9c5;border-radius:8px;font-size:13px;color:#1a0e06;outline:none;resize:vertical;min-height:80px;}
+.hf-ta:focus{border-color:#C8903A;}
+.hf-btn{padding:8px 18px;border-radius:8px;border:none;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.04em;}
+.hf-btn.gold{background:#C8903A;color:#fff;}
+.hf-btn.gold:hover{background:#a06820;}
+.hf-btn.dark{background:#1a0e06;color:#fff;}
+.hf-btn.red{background:#dc2626;color:#fff;}
+.hf-btn.ghost{background:none;border:1px solid #e8d9c5;color:#7a6a58;}
+.hf-save-bar{display:flex;justify-content:flex-end;margin-top:14px;padding-top:14px;border-top:1px solid #e8d9c5;}
+/* Nav items list */
+.nav-item-row{display:flex;align-items:center;gap:8px;padding:9px 12px;background:#f9f5ef;border-radius:8px;margin-bottom:6px;}
+.nav-item-row input{flex:1;padding:6px 10px;border:1px solid #e8d9c5;border-radius:6px;font-size:13px;}
+.nav-item-row .nav-url{flex:1.5;}
+/* Pages list */
+.page-row{border:1px solid #e8d9c5;border-radius:10px;margin-bottom:10px;overflow:hidden;}
+.page-row-hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#f5ede0;cursor:pointer;}
+.page-row-body{padding:14px;display:none;}
+.page-row-body.open{display:block;}
+/* Make items */
+.make-item-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.make-item-row input{flex:1;padding:7px 10px;border:1px solid #e8d9c5;border-radius:6px;font-size:13px;}
+.toast-hf{position:fixed;bottom:20px;right:20px;background:#1a0e06;color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;z-index:9999;display:none;}
+</style>
+{% endblock %}
+{% block content %}
+<div class="hf-wrap">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+    <div>
+      <div class="hf-title">Header & Footer Management</div>
+      <div class="hf-sub">Manage navigation, contact details, pages and all website content</div>
+    </div>
+    <a href="{{ url_for('owner.website_admin') }}" class="hf-btn ghost">← Website Admin</a>
+  </div>
+
+  <!-- ── HEADER SETTINGS ── -->
+  <div class="hf-section">
+    <div class="hf-section-hdr">
+      <h3>🔝 Header</h3>
+      <button class="hf-btn gold" onclick="saveHeaderSettings()">Save Header</button>
+    </div>
+    <div class="hf-section-body">
+      <div class="hf-row">
+        <div>
+          <label class="hf-lbl">Shop name (logo text)</label>
+          <input class="hf-in" id="web_shop_name" value="{{ web_settings.get('web_shop_name','Uttam Tailors') }}">
+        </div>
+        <div>
+          <label class="hf-lbl">Tagline below logo</label>
+          <input class="hf-in" id="web_shop_est" value="{{ web_settings.get('web_shop_est','EST. 1987 · SIKAR') }}">
+        </div>
+      </div>
+      <div class="hf-row">
+        <div>
+          <label class="hf-lbl">CTA Button Text</label>
+          <input class="hf-in" id="web_header_cta_text" value="{{ web_settings.get('web_header_cta_text','Customise Your Garment') }}">
+        </div>
+        <div>
+          <label class="hf-lbl">CTA Button URL</label>
+          <input class="hf-in" id="web_header_cta_url" value="{{ web_settings.get('web_header_cta_url','/commission') }}">
+        </div>
+      </div>
+
+      <!-- Nav items -->
+      <div style="margin-top:16px;">
+        <div style="font-size:12px;font-weight:700;color:#7a6a58;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Navigation Links</div>
+        <div id="navItemsList">
+          {% for item in nav_items %}
+          <div class="nav-item-row" data-id="{{ item.id }}">
+            <span style="color:#aaa;cursor:grab;font-size:16px;">⠿</span>
+            <input class="nav-lbl-in" value="{{ item.label }}" placeholder="Label">
+            <input class="nav-url-in nav-url" value="{{ item.url }}" placeholder="URL e.g. /our-craft">
+            <select class="hf-in" style="width:100px;" onchange="this.dataset.tab=this.value">
+              <option value="0" {% if not item.open_new_tab %}selected{% endif %}>Same tab</option>
+              <option value="1" {% if item.open_new_tab %}selected{% endif %}>New tab</option>
+            </select>
+            <button class="hf-btn gold" style="padding:6px 12px;" onclick="updateNavItem({{ item.id }},this)">Save</button>
+            <button class="hf-btn red" style="padding:6px 10px;" onclick="deleteNavItem({{ item.id }},this)">✕</button>
+          </div>
+          {% endfor %}
+        </div>
+        <div style="margin-top:10px;display:flex;gap:8px;align-items:center;background:#f9f5ef;padding:10px;border-radius:8px;">
+          <input class="hf-in" id="newNavLabel" placeholder="Label e.g. Blog" style="flex:1;">
+          <input class="hf-in" id="newNavUrl" placeholder="URL e.g. /blog" style="flex:1.5;">
+          <button class="hf-btn dark" onclick="addNavItem()">+ Add Link</button>
+        </div>
+        <p style="font-size:11px;color:#7a6a58;margin-top:6px;">💡 To add a custom page link, create it below first, then add its URL here</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── FOOTER CONTACT ── -->
+  <div class="hf-section">
+    <div class="hf-section-hdr">
+      <h3>📞 Footer — Contact & Brand</h3>
+      <button class="hf-btn gold" onclick="saveFooterContact()">Save Contact</button>
+    </div>
+    <div class="hf-section-body">
+      <div class="hf-row">
+        <div>
+          <label class="hf-lbl">Footer tagline</label>
+          <input class="hf-in" id="web_footer_tagline" value="{{ web_settings.get('web_footer_tagline','Measured to the thread. Since 1987.') }}">
+        </div>
+        <div>
+          <label class="hf-lbl">Address</label>
+          <input class="hf-in" id="web_footer_address" value="{{ web_settings.get('web_footer_address','Subhash Chowk, Sikar — 332001, Rajasthan') }}">
+        </div>
+      </div>
+      <div class="hf-row">
+        <div>
+          <label class="hf-lbl">Opening hours</label>
+          <input class="hf-in" id="web_footer_hours" value="{{ web_settings.get('web_footer_hours','Mon – Sat · 9am – 7pm') }}">
+        </div>
+        <div>
+          <label class="hf-lbl">Phone number</label>
+          <input class="hf-in" id="web_footer_phone" value="{{ web_settings.get('web_footer_phone','+91 XXXXX XXXXX') }}">
+        </div>
+      </div>
+      <div class="hf-row">
+        <div>
+          <label class="hf-lbl">WhatsApp number (digits only)</label>
+          <input class="hf-in" id="web_footer_whatsapp" value="{{ web_settings.get('web_footer_whatsapp','91XXXXXXXXXX') }}">
+        </div>
+        <div>
+          <label class="hf-lbl">Email address</label>
+          <input class="hf-in" id="web_footer_email" value="{{ web_settings.get('web_footer_email','info.uttamtailors@gmail.com') }}">
+        </div>
+      </div>
+      <div class="hf-row">
+        <div>
+          <label class="hf-lbl">Google Maps URL</label>
+          <input class="hf-in" id="web_footer_maps_url" value="{{ web_settings.get('web_footer_maps_url','') }}" placeholder="https://maps.app.goo.gl/...">
+        </div>
+        <div>
+          <label class="hf-lbl">Bulk orders email</label>
+          <input class="hf-in" id="web_footer_bulk_email" value="{{ web_settings.get('web_footer_bulk_email','info.uttamtailors@gmail.com') }}">
+        </div>
+      </div>
+      <div class="hf-row">
+        <div>
+          <label class="hf-lbl">Copyright text</label>
+          <input class="hf-in" id="web_footer_copyright" value="{{ web_settings.get('web_footer_copyright','© 2025 Uttam Tailors, Sikar. All rights reserved.') }}">
+        </div>
+        <div>
+          <label class="hf-lbl">Bottom right text</label>
+          <input class="hf-in" id="web_footer_est" value="{{ web_settings.get('web_footer_est','Est. 1987 · Handcrafted in Rajasthan') }}">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── FOOTER "WE MAKE" ── -->
+  <div class="hf-section">
+    <div class="hf-section-hdr">
+      <h3>✂ Footer — "We Make" Column</h3>
+      <button class="hf-btn gold" onclick="saveMakeItems()">Save</button>
+    </div>
+    <div class="hf-section-body">
+      <div id="makeItemsList">
+        {% for item in footer_make %}
+        <div class="make-item-row">
+          <input placeholder="Label e.g. Suits & Blazers" value="{{ item.label }}">
+          <input placeholder="URL (optional)" value="{{ item.url }}" style="flex:.8;">
+          <button class="hf-btn red" style="padding:5px 10px;" onclick="this.closest('.make-item-row').remove()">✕</button>
+        </div>
+        {% endfor %}
+      </div>
+      <button class="hf-btn ghost" style="margin-top:8px;" onclick="addMakeItem()">+ Add item</button>
+    </div>
+  </div>
+
+  <!-- ── CUSTOM PAGES ── -->
+  <div class="hf-section">
+    <div class="hf-section-hdr">
+      <h3>📄 Pages (Privacy Policy, Terms, etc.)</h3>
+      <button class="hf-btn dark" onclick="showNewPageForm()">+ New Page</button>
+    </div>
+    <div class="hf-section-body">
+      <p style="font-size:12px;color:#7a6a58;margin-bottom:14px;">Pages with "Show in footer" enabled appear in the footer Pages column automatically.</p>
+
+      <!-- New page form (hidden by default) -->
+      <div id="newPageForm" style="display:none;background:#f9f5ef;border-radius:10px;padding:16px;margin-bottom:16px;">
+        <div class="hf-row" style="margin-bottom:10px;">
+          <div><label class="hf-lbl">Page title</label><input class="hf-in" id="newPageTitle" placeholder="e.g. Privacy Policy"></div>
+          <div style="display:flex;align-items:center;gap:8px;padding-top:18px;">
+            <input type="checkbox" id="newPageFooter" checked style="width:16px;height:16px;">
+            <label class="hf-lbl" style="margin:0;">Show in footer</label>
+          </div>
+        </div>
+        <div style="margin-bottom:10px;"><label class="hf-lbl">Page content</label><textarea class="hf-ta" id="newPageContent" rows="5" placeholder="Write the page content here..."></textarea></div>
+        <div style="display:flex;gap:8px;">
+          <button class="hf-btn gold" onclick="createPage()">Create Page</button>
+          <button class="hf-btn ghost" onclick="document.getElementById('newPageForm').style.display='none'">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Existing pages -->
+      <div id="pagesList">
+        {% for page in pages %}
+        <div class="page-row" id="page-{{ page.id }}">
+          <div class="page-row-hdr" onclick="togglePageEdit({{ page.id }})">
+            <div>
+              <span style="font-weight:700;font-size:13px;color:#1a0e06;">{{ page.title }}</span>
+              <span style="font-size:11px;color:#7a6a58;margin-left:10px;">/page/{{ page.slug }}</span>
+              {% if page.show_in_footer %}<span style="font-size:10px;background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:10px;margin-left:8px;">Footer</span>{% endif %}
+            </div>
+            <div style="display:flex;gap:6px;">
+              <a href="/page/{{ page.slug }}" target="_blank" class="hf-btn ghost" style="padding:4px 10px;font-size:11px;">Preview</a>
+              <button class="hf-btn red" style="padding:4px 10px;font-size:11px;" onclick="event.stopPropagation();deletePage({{ page.id }})">Delete</button>
+            </div>
+          </div>
+          <div class="page-row-body" id="page-body-{{ page.id }}">
+            <div class="hf-row" style="margin-bottom:10px;">
+              <div><label class="hf-lbl">Title</label><input class="hf-in page-title-in" value="{{ page.title }}"></div>
+              <div style="display:flex;align-items:center;gap:8px;padding-top:18px;">
+                <input type="checkbox" class="page-footer-in" {% if page.show_in_footer %}checked{% endif %} style="width:16px;height:16px;">
+                <label class="hf-lbl" style="margin:0;">Show in footer</label>
+              </div>
+            </div>
+            <div style="margin-bottom:10px;"><label class="hf-lbl">Content</label><textarea class="hf-ta page-content-in" rows="8">{{ page.content }}</textarea></div>
+            <button class="hf-btn gold" onclick="updatePage({{ page.id }},this)">Save Page</button>
+          </div>
+        </div>
+        {% else %}
+        <p style="font-size:13px;color:#7a6a58;text-align:center;padding:20px;">No pages yet. Create your first page above.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-hf" id="hfToast"></div>
+
+<script>
+function hfToast(msg, err){
+  var t=document.getElementById('hfToast');
+  t.textContent=msg;t.style.background=err?'#dc2626':'#1a0e06';
+  t.style.display='block';setTimeout(function(){t.style.display='none';},2500);
+}
+
+function apiFetch(url, opts){return fetch(url, opts||{});}
+
+// ── Header ──
+function saveHeaderSettings(){
+  var d={
+    web_shop_name: document.getElementById('web_shop_name').value,
+    web_shop_est: document.getElementById('web_shop_est').value,
+    web_header_cta_text: document.getElementById('web_header_cta_text').value,
+    web_header_cta_url: document.getElementById('web_header_cta_url').value,
+  };
+  apiFetch('/owner/website/nav-footer/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)})
+  .then(function(r){return r.json();}).then(function(r){hfToast(r.ok?'✓ Header saved!':'Error',!r.ok);});
+}
+
+// ── Nav items ──
+function updateNavItem(id, btn){
+  var row=btn.closest('.nav-item-row');
+  var label=row.querySelector('.nav-lbl-in').value;
+  var url=row.querySelector('.nav-url-in').value;
+  var tab=row.querySelector('select').value;
+  apiFetch('/owner/website/nav/item/update/'+id,{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({label:label,url:url,open_new_tab:tab,active:1})})
+  .then(function(r){return r.json();}).then(function(r){hfToast(r.ok?'✓ Saved':'Error',!r.ok);});
+}
+function deleteNavItem(id, btn){
+  if(!confirm('Remove this nav link?'))return;
+  apiFetch('/owner/website/nav/item/delete/'+id,{method:'POST'})
+  .then(function(r){return r.json();}).then(function(r){
+    if(r.ok){btn.closest('.nav-item-row').remove();hfToast('Removed');}
+  });
+}
+function addNavItem(){
+  var label=document.getElementById('newNavLabel').value.trim();
+  var url=document.getElementById('newNavUrl').value.trim();
+  if(!label||!url){hfToast('Enter label and URL',true);return;}
+  apiFetch('/owner/website/nav/item/add',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({label:label,url:url,open_new_tab:0})})
+  .then(function(r){return r.json();}).then(function(r){
+    if(r.ok){
+      hfToast('✓ Link added — refresh to see');
+      document.getElementById('newNavLabel').value='';
+      document.getElementById('newNavUrl').value='';
+    } else hfToast(r.error||'Error',true);
+  });
+}
+
+// ── Footer contact ──
+function saveFooterContact(){
+  var fields=['web_footer_tagline','web_footer_address','web_footer_hours','web_footer_phone',
+    'web_footer_whatsapp','web_footer_email','web_footer_maps_url','web_footer_bulk_email',
+    'web_footer_copyright','web_footer_est'];
+  var d={};
+  fields.forEach(function(f){var el=document.getElementById(f);if(el)d[f]=el.value;});
+  apiFetch('/owner/website/nav-footer/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)})
+  .then(function(r){return r.json();}).then(function(r){hfToast(r.ok?'✓ Contact info saved!':'Error',!r.ok);});
+}
+
+// ── We Make ──
+function addMakeItem(){
+  var div=document.createElement('div');div.className='make-item-row';
+  div.innerHTML='<input placeholder="Label"><input placeholder="URL (optional)" style="flex:.8;"><button class="hf-btn red" style="padding:5px 10px;" onclick="this.closest(\'.make-item-row\').remove()">✕</button>';
+  document.getElementById('makeItemsList').appendChild(div);
+}
+function saveMakeItems(){
+  var rows=document.querySelectorAll('#makeItemsList .make-item-row');
+  var items=[];
+  rows.forEach(function(r){
+    var ins=r.querySelectorAll('input');
+    var lbl=(ins[0]||{}).value||''; var url=(ins[1]||{}).value||'';
+    if(lbl)items.push({label:lbl,url:url});
+  });
+  apiFetch('/owner/website/footer/make/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items:items})})
+  .then(function(r){return r.json();}).then(function(r){hfToast(r.ok?'✓ Saved!':'Error',!r.ok);});
+}
+
+// ── Pages ──
+function showNewPageForm(){
+  document.getElementById('newPageForm').style.display='block';
+  document.getElementById('newPageTitle').focus();
+}
+function createPage(){
+  var title=document.getElementById('newPageTitle').value.trim();
+  var content=document.getElementById('newPageContent').value;
+  var footer=document.getElementById('newPageFooter').checked?1:0;
+  if(!title){hfToast('Title required',true);return;}
+  apiFetch('/owner/website/page/add',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({title:title,content:content,show_in_footer:footer})})
+  .then(function(r){return r.json();}).then(function(r){
+    if(r.ok){hfToast('✓ Page created!');location.reload();}
+    else hfToast(r.error||'Error',true);
+  });
+}
+function togglePageEdit(id){
+  var b=document.getElementById('page-body-'+id);
+  if(b)b.classList.toggle('open');
+}
+function updatePage(id, btn){
+  var row=document.getElementById('page-'+id);
+  var title=row.querySelector('.page-title-in').value;
+  var content=row.querySelector('.page-content-in').value;
+  var footer=row.querySelector('.page-footer-in').checked?1:0;
+  apiFetch('/owner/website/page/update/'+id,{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({title:title,content:content,show_in_footer:footer})})
+  .then(function(r){return r.json();}).then(function(r){hfToast(r.ok?'✓ Page saved!':'Error',!r.ok);});
+}
+function deletePage(id){
+  if(!confirm('Delete this page permanently?'))return;
+  apiFetch('/owner/website/page/delete/'+id,{method:'POST'})
+  .then(function(r){return r.json();}).then(function(r){
+    if(r.ok){document.getElementById('page-'+id).remove();hfToast('Deleted');}
+  });
+}
+</script>
+{% endblock %}

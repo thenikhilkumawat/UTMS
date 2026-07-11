@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+{% set active = "home" %}
+{% block title %}Uttam Tailors &mdash; Master Tailoring in Sikar since 1987{% endblock %}
+{% block content %}
+
+<section class="hero">
+  <div class="hero-img">
+    <img src="https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=1920&q=85" alt="Tailored suit" loading="eager">
+  </div>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow">
+      <span class="eyebrow-line"></span>
+      <span>Subhash Chowk, Sikar &middot; Est. 1987</span>
+      <span class="eyebrow-line"></span>
+    </div>
+    <h1 class="hero-title">
+      Tailored<br>For You.<br>
+      <em>Since 1987.</em>
+    </h1>
+    <p class="hero-sub">Three generations of master craft. Every shirt, suit and kurta cut for your exact body &mdash; your measurements, your fabric, your style.</p>
+    <div class="hero-actions">
+      <a href="{{ url_for('website.commission') }}" class="hero-btn-primary">Customise Your Garment</a>
+      <a href="{{ url_for('website.services') }}" class="hero-btn-ghost">See what we make</a>
+    </div>
+    <div class="hero-promise">
+      <span>Free alteration if fit is off</span>
+      <span>Ready in 5&ndash;7 days</span>
+      <span>Free delivery in Sikar</span>
+      <span>Ships across India</span>
+    </div>
+  </div>
+  <div class="hero-scroll" aria-hidden="true">
+    <div class="scroll-line"></div>
+    <span>scroll</span>
+  </div>
+</section>
+
+<section class="heritage">
+  <div class="heritage-inner">
+    <div class="heritage-item"><span class="h-num">1987</span><span class="h-label">Est. since</span></div>
+    <div class="heritage-item"><span class="h-num">35+</span><span class="h-label">Years of craft</span></div>
+    <div class="heritage-item"><span class="h-num">1 Lakh+</span><span class="h-label">Garments delivered</span></div>
+    <div class="heritage-item"><span class="h-num">7</span><span class="h-label">Day turnaround</span></div>
+  </div>
+</section>
+
+<section class="catalogue">
+  <div class="section-header section-header--center">
+    <p class="kicker">What we make</p>
+    <h2 class="section-title">Every garment, made to your exact measure.</h2>
+    <p class="section-sub">No readymade. No shortcuts. Only what fits you perfectly.</p>
+  </div>
+  <div class="cat-grid">
+    {% for val, name, price, img_id, desc in [
+      ("shirt",   "Formal Shirt",    "from Rs. 350",   "photo-1596755094514-f87e34085b2c", "The shirt that makes every occasion worth it. Collar, cuffs, sleeve &mdash; every detail is yours."),
+      ("pant", "Pants",         "from Rs. 450",   "photo-1473966968600-fa801b869a1a", "Cut for how you actually move. Hip, thigh, knee, hem &mdash; all four done right."),
+      ("suit",    "Two-Piece Suit",   "from Rs. 2,800", "photo-1507679799987-c73779587ccf", "The garment that changes how a room treats you. Built for your exact body."),
+      ("blazer",  "Blazer",           "from Rs. 2,300", "photo-1617127365659-c47fa864d8bc", "Over a shirt, over a kurta. Works harder than any other garment you own."),
+      ("kurta",   "Kurta &amp; Pajama", "from Rs. 800", "photo-1583391733956-3750e0ff4e8b", "From Eid to family functions. The kurta that becomes a memory."),
+    ] %}
+    <a href="{{ url_for('website.service_detail', garment=val) }}" class="cat-card">
+      <div class="cat-img-wrap">
+        <img src="https://images.unsplash.com/{{ img_id }}?w=600&q=80" alt="{{ name }}" loading="lazy">
+        <div class="cat-overlay"><span>View &amp; Order &rarr;</span></div>
+      </div>
+      <div class="cat-info">
+        <div class="cat-name-row">
+          <span class="cat-name">{{ name }}</span>
+          <span class="cat-price">{{ price }}</span>
+        </div>
+        <p class="cat-desc">{{ desc }}</p>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  <div class="section-cta">
+    <a href="{{ url_for('website.our_services') }}" class="btn-primary">See all services &amp; prices &rarr;</a>
+  </div>
+</section>
+
+<section class="papa-story">
+  <div class="papa-img">
+    <img src="https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=1400&q=80" alt="The craft" loading="lazy">
+  </div>
+  <div class="papa-content">
+    <div>
+      <p class="kicker" style="color:var(--gold-l);">The legacy</p>
+      <blockquote class="papa-quote">&ldquo;My father spent 33 years building this craft. In 2025, I am taking it to every corner of India.&rdquo;</blockquote>
+      <p class="papa-attr">&mdash; The family behind Uttam Tailors, Sikar</p>
+      <a href="{{ url_for('website.about') }}" class="papa-link">Read our full story &rarr;</a>
+    </div>
+    <div>
+      <div class="papa-body">
+        <p>In 1987, a single sewing machine and one rule: if the garment fits perfectly, the customer always comes back.</p>
+        <p>My father spent over three decades building Uttam Tailors into what Sikar knows today. Lakhs of garments. Thousands of families served. Not one shortcut taken.</p>
+        <p>In 2020 he left us, but not the craft. I took over with one mission &mdash; to carry his standard forward and bring it online, so his quality reaches not just Sikar, but all of India.</p>
+      </div>
+      <div class="papa-year">1987 &mdash; forever in every stitch</div>
+    </div>
+  </div>
+</section>
+
+<section class="hiw">
+  <div class="hiw-inner">
+    <div class="hiw-header">
+      <p class="kicker">The process</p>
+      <h2 class="section-title" style="color:#FAF0E4;">Order to your door in four steps.</h2>
+    </div>
+    <div class="hiw-steps">
+      <div class="hiw-step"><div class="hiw-num">01</div><h3 class="hiw-title">You order online</h3><p class="hiw-body">Choose garment, size, fabric. Pay 30% advance. Done in 3 minutes.</p></div>
+      <div class="hiw-step"><div class="hiw-num">02</div><h3 class="hiw-title">We confirm on WhatsApp</h3><p class="hiw-body">You get order details and ready date within minutes of placing.</p></div>
+      <div class="hiw-step"><div class="hiw-num">03</div><h3 class="hiw-title">Our masters stitch it</h3><p class="hiw-body">Every cut, every seam by our tailors in Sikar. Never outsourced.</p></div>
+      <div class="hiw-step"><div class="hiw-num">04</div><h3 class="hiw-title">Pickup or delivery</h3><p class="hiw-body">Collect from Subhash Chowk, or we deliver anywhere in India.</p></div>
+    </div>
+    <div class="hiw-cta">
+      <a href="{{ url_for('website.commission') }}" class="btn-gold">Customise Your Garment &rarr;</a>
+    </div>
+  </div>
+</section>
+
+<section class="fabric-journey">
+  <div class="section-header section-header--center">
+    <p class="kicker">From bolt to body</p>
+    <h2 class="section-title">Drag to see the transformation.</h2>
+    <p class="section-sub">Raw fabric becomes a garment made precisely for you.</p>
+  </div>
+  <div class="fj-thumbs">
+    <button class="fj-thumb active" data-slide="0" onclick="setSlide(0,this)"><div class="fj-swatch" style="background:#1e2540"></div><span>Navy &rarr; Suit</span></button>
+    <button class="fj-thumb" data-slide="1" onclick="setSlide(1,this)"><div class="fj-swatch" style="background:#d4c4a0"></div><span>Khaki &rarr; Pant</span></button>
+    <button class="fj-thumb" data-slide="2" onclick="setSlide(2,this)"><div class="fj-swatch" style="background:#2a1a10"></div><span>Dark &rarr; Blazer</span></button>
+  </div>
+  <div class="fj-slides">
+    {% for idx, bimg, aimg, alabel, price in [
+      (0,"photo-1558618666-fcd25c85cd64","photo-1507679799987-c73779587ccf","Two-piece Suit","Rs. 2,800"),
+      (1,"photo-1558618666-fcd25c85cd64","photo-1473966968600-fa801b869a1a","Tailored Pant","Rs. 450"),
+      (2,"photo-1558618666-fcd25c85cd64","photo-1617127365659-c47fa864d8bc","Blazer","Rs. 2,300"),
+    ] %}
+    <div class="fj-slide {% if idx==0 %}active{% endif %}" data-slide="{{ idx }}">
+      <div class="compare-wrap" id="cmp{{ idx }}">
+        <div class="c-before"><img src="https://images.unsplash.com/{{ bimg }}?w=1040&q=80" alt="Raw fabric" loading="lazy"><div class="c-label c-label--l"><span class="c-label-text">Raw fabric</span></div></div>
+        <div class="c-after" id="after{{ idx }}"><div class="c-after-inner" id="afterinner{{ idx }}"><img src="https://images.unsplash.com/{{ aimg }}?w=1040&q=80" alt="{{ alabel }}" loading="lazy"></div><div class="c-label c-label--r"><span class="c-label-text">{{ alabel }}</span><span class="c-label-price">{{ price }}</span></div></div>
+        <div class="c-handle" id="hdl{{ idx }}"><div class="c-handle-btn">&#8644;</div></div>
+      </div>
+      <div class="fj-cta"><a href="{{ url_for('website.commission') }}" class="btn-primary">Customise this &rarr;</a></div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="reviews">
+  <div class="section-header section-header--center">
+    <p class="kicker">What Sikar says</p>
+    <h2 class="section-title">Words from our customers.</h2>
+  </div>
+  <div class="reviews-track" id="reviewTrack">
+    {% for init, name, loc, text in [
+      ("RK","Rakesh Kumar","Sikar","Got a suit stitched here for my son's wedding. Perfect fit on the first try. The whole family has been coming here ever since."),
+      ("MS","Mohan Sharma","Subhash Chowk","I have been coming for 12 years. My father used to bring me as a child. The quality has never dropped once."),
+      ("AV","Anil Verma","Piprali Road","Three shirts done. Not one alteration needed. That says everything about the quality here."),
+      ("SJ","Sunil Jain","Sikar","I gave my old kurta as reference. They made an identical one. Perfect fit. Brilliant service."),
+      ("DM","Dinesh Mathur","Fatehpur Road","Ordered a blazer. They came home to measure. Delivered in 6 days. Genuinely impressed."),
+      ("VK","Vijay Kumar","Losal Road","Got a suit stitched for my brother's wedding. Superb work. Everyone at the function was asking where we got it from."),
+    ] %}
+    <div class="review-card">
+      <div class="review-top">
+        <div class="review-av">{{ init }}</div>
+        <div><p class="review-name">{{ name }}</p><p class="review-loc">{{ loc }}</p></div>
+        <div class="review-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+      </div>
+      <blockquote class="review-text">&ldquo;{{ text }}&rdquo;</blockquote>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="reviews-nav">
+    <button class="rev-btn" onclick="scrollRev(-1)">&larr;</button>
+    <button class="rev-btn" onclick="scrollRev(1)">&rarr;</button>
+  </div>
+</section>
+
+<section class="big-cta">
+  <div class="big-cta-img"><img src="https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=1920&q=80" alt="" aria-hidden="true" loading="lazy"></div>
+  <div class="big-cta-overlay"></div>
+  <div class="big-cta-inner">
+    <p class="kicker" style="color:var(--gold-l);">Ready?</p>
+    <h2 class="big-cta-title">Your perfect garment is<br>three minutes away.</h2>
+    <p class="big-cta-sub">Pick what you want. Tell us your size. We stitch. You wear it.</p>
+    <a href="{{ url_for('website.commission') }}" class="btn-gold btn-xl">Customise Your Garment &rarr;</a>
+    <p class="big-cta-note">30% advance &middot; Free alteration &middot; Rs. 100 off first order &middot; Delivery across India</p>
+  </div>
+</section>
+
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/home.js') }}"></script>{% endblock %}

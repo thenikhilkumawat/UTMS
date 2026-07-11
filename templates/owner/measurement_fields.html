@@ -39,12 +39,7 @@
     </div>
   </div>
 
-  <!-- Drag hint -->
-  <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 16px;margin-bottom:16px;font-size:13px;color:#1d4ed8;font-weight:500;">
-    &#9776; Drag the handle on each field to reorder. Changes save automatically.
-  </div>
-
-  <!-- Fields by garment — exact same structure as original, just adding data-id + drag handle -->
+  <!-- Fields by garment -->
   {% for gt in garment_types %}
   {% set fields = fields_by_garment.get(gt, []) %}
   {% if fields %}
@@ -54,14 +49,13 @@
       <span style="font-size:12px;color:var(--text-muted);">{{ fields|length }} fields</span>
     </div>
     <div class="card-body" style="padding:12px 16px;">
-      <div id="sf-{{ loop.index }}" style="display:flex;flex-wrap:wrap;gap:8px;">
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
         {% for f in fields %}
-        <div data-id="{{ f.id }}" style="display:flex;align-items:center;gap:6px;background:#f3f4f6;border-radius:20px;padding:6px 12px;cursor:default;user-select:none;">
-          <span class="sf-handle" style="cursor:grab;color:#9ca3af;font-size:13px;line-height:1;">&#9776;</span>
+        <div style="display:flex;align-items:center;gap:6px;background:#f3f4f6;border-radius:20px;padding:6px 12px;">
           <span style="font-size:13px;font-weight:600;">{{ f.name }}</span>
           <a href="/owner/measurement-fields/delete/{{ f.id }}"
             onclick="return confirm('Remove {{ f.name }} from {{ gt }}?')"
-            style="color:var(--danger);font-size:11px;font-weight:700;text-decoration:none;margin-left:2px;">&#x2715;</a>
+            style="color:var(--danger);font-size:11px;font-weight:700;text-decoration:none;margin-left:2px;">✕</a>
         </div>
         {% endfor %}
       </div>
@@ -70,22 +64,4 @@
   {% endif %}
   {% endfor %}
 </div>
-
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
-<script>
-document.querySelectorAll('[id^="sf-"]').forEach(function(el) {
-  Sortable.create(el, {
-    animation: 150,
-    handle: '.sf-handle',
-    onEnd: function() {
-      var ids = Array.from(el.querySelectorAll('[data-id]')).map(function(d){ return d.dataset.id; });
-      fetch('/owner/measurement-fields/reorder', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids: ids })
-      });
-    }
-  });
-});
-</script>
 {% endblock %}

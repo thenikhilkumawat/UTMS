@@ -9,9 +9,17 @@ static/order_images/**/*.gif
 static/order_images/**/*.webp
 static/order_images/gallery/**
 
+# Secrets
+.env
+
 # Python cache
 __pycache__/
 *.pyc
 *.pyo
 .DS_Store
 Thumbs.db
+static/website/img/
+Db/
+Server/
+*.bak*
+.fuse_hidden*

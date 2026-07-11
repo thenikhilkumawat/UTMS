@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% set active = "" %}
+{% block title %}Shipping Policy -- Uttam Tailors{% endblock %}
+{% block content %}
+<section class="page-hero" style="min-height:40vh;">
+  <div class="page-hero-img"><img src="https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=1400&q=80" alt="" loading="eager"></div>
+  <div class="page-hero-overlay"></div>
+  <div class="page-hero-content"><p class="kicker" style="color:var(--gold-l);">Legal</p><h1 class="page-hero-title">Shipping Policy</h1></div>
+</section>
+<div style="max-width:860px;margin:0 auto;padding:5rem 3rem;color:var(--dark);">
+  <p style="font-size:13px;color:var(--muted);margin-bottom:3rem;">Last updated: May 2025</p>
+  {% for title, body in [
+    ("Delivery Timelines", "Standard orders: 5 to 7 working days for shirts, pants, kurtas, and pajamas. Blazers and safari suits: 7 to 10 working days. Suits (2-piece and 3-piece): 10 to 14 working days. Urgent orders: 1 to 3 days for simple garments only (shirts, pants, kurtas, jeans, pajamas). Urgent option not available for suits, blazers, or safari suits."),
+    ("Delivery Charges", "Shop pickup: Free. Home delivery within Sikar city: Rs. 49. Home delivery above Rs. 1,499 order value: Free. Pan-India delivery: Rs. 99 to Rs. 199 depending on location. Actual shipping charges for pan-India orders will be confirmed via WhatsApp before dispatch."),
+    ("Free Delivery", "Orders above Rs. 1,499 qualify for free home delivery within Sikar city. For pan-India orders, free delivery is available on orders above Rs. 3,999 (subject to change)."),
+    ("Shop Pickup", "You can collect your garment from our shop at Subhash Chowk, Sikar. We will send you a WhatsApp message when your order is ready for pickup. Shop hours: Monday to Saturday, 9:00 AM to 7:00 PM."),
+    ("Pan-India Delivery", "We ship across India. For orders outside Sikar, we use reliable courier services (Delhivery, Blue Dart, or India Post depending on your location). Delivery typically takes 2 to 5 additional days after the garment is ready."),
+    ("Order Tracking", "Once your order is dispatched, you will receive tracking information on WhatsApp. You can also check your order status by visiting our shop or calling us."),
+    ("Delivery Failures", "If a delivery attempt fails and the garment is returned to us, we will contact you on WhatsApp to arrange re-delivery. Additional shipping charges may apply for re-delivery."),
+    ("Alteration and Returns", "If your garment does not fit as expected, we offer free alteration. Please bring or courier the garment back to our shop within 7 days of delivery. We do not offer cash refunds on custom-made garments. Please contact us at info.uttamtailors@gmail.com for any issues."),
+  ] %}
+  <div style="margin-bottom:2.5rem;">
+    <h2 style="font-family:var(--fd);font-size:24px;font-weight:400;color:var(--dark);margin-bottom:1rem;">{{ title }}</h2>
+    <p style="font-size:15px;color:var(--muted);line-height:1.85;">{{ body }}</p>
+  </div>
+  {% endfor %}
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--rLg);padding:2rem;margin-top:3rem;">
+    <h3 style="font-family:var(--fd);font-size:22px;color:var(--dark);margin-bottom:1rem;">Questions?</h3>
+    <p style="font-size:14px;color:var(--muted);line-height:1.75;">Contact us at <a href="mailto:info.uttamtailors@gmail.com" style="color:var(--gold);">info.uttamtailors@gmail.com</a> or visit our shop at Subhash Chowk, Sikar.</p>
+  </div>
+</div>
+{% endblock %}

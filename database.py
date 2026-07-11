@@ -1,4 +1,5 @@
 import os
+import sqlite3
 from config import Config
 
 # ── Detect PostgreSQL or SQLite ──────────────────────────────────────────────
@@ -22,8 +23,6 @@ if USE_PG:
             self._cur = cur
 
         def _fix(self, sql, params):
-            # Escape literal % in LIKE patterns BEFORE replacing ? with %s
-            # e.g. LIKE 'types_%' → LIKE 'types_%%' so psycopg2 doesn't treat it as param
             import re as _re
             sql = _re.sub(r"%(?![s{])", "%%", sql)
             sql = sql.replace("?", "%s")
@@ -35,23 +34,10 @@ if USE_PG:
                          lambda m: f"STRING_AGG(CAST({m.group(1)} AS TEXT), '{m.group(2)}')", sql)
             sql = re.sub(r"INSERT\s+OR\s+IGNORE\s+INTO",  "INSERT INTO", sql, flags=re.IGNORECASE)
             sql = re.sub(r"INSERT\s+OR\s+REPLACE\s+INTO", "INSERT INTO", sql, flags=re.IGNORECASE)
-            # ALTER TABLE ADD COLUMN → ADD COLUMN IF NOT EXISTS (PostgreSQL 9.6+)
-            sql = re.sub(r"ALTER TABLE (\w+) ADD COLUMN (\w+)",
-                         r"ALTER TABLE  ADD COLUMN IF NOT EXISTS ", sql, flags=re.IGNORECASE)
-            # Add ON CONFLICT for settings upsert
             if "INTO settings" in sql and "ON CONFLICT" not in sql:
                 sql = sql.rstrip().rstrip(";") + " ON CONFLICT(key) DO UPDATE SET value=EXCLUDED.value"
             elif "INSERT INTO" in sql and "ON CONFLICT" not in sql and "DO NOTHING" not in sql:
-                # ON CONFLICT must appear BEFORE any RETURNING clause in PostgreSQL.
-                # Blindly appending at the end broke every "INSERT ... RETURNING id"
-                # query (e.g. new-customer creation) with a syntax error like:
-                #   syntax error at or near "ON" — LINE 1: ...RETURNING id ON CONFLICT DO NOTHING
-                stripped = sql.rstrip().rstrip(";")
-                m = re.search(r"\bRETURNING\b", stripped, flags=re.IGNORECASE)
-                if m:
-                    sql = stripped[:m.start()].rstrip() + " ON CONFLICT DO NOTHING " + stripped[m.start():]
-                else:
-                    sql = stripped + " ON CONFLICT DO NOTHING"
+                sql = sql.rstrip().rstrip(";") + " ON CONFLICT DO NOTHING"
             return sql, params or []
 
         def execute(self, sql, params=None):
@@ -59,7 +45,6 @@ if USE_PG:
             try:
                 self._cur.execute(sql, params)
             except Exception as e:
-                # Rollback aborted transaction so connection stays usable
                 try:
                     self._cur.connection.rollback()
                 except Exception:
@@ -128,15 +113,8 @@ if USE_PG:
             url = url.replace("postgres://", "postgresql://", 1)
         for attempt in range(3):
             try:
-                # statement_timeout / lock_timeout: without these, a query stuck waiting
-                # on a lock (e.g. two requests touching the same settings row) hangs the
-                # request — and the Gunicorn thread handling it — forever, with no error
-                # ever reaching the browser. Now it fails fast with a real Postgres error
-                # that flows into the existing except-block handling instead.
-                conn = psycopg2.connect(url, connect_timeout=10,
-                                         options="-c statement_timeout=15000 -c lock_timeout=8000")
+                conn = psycopg2.connect(url, connect_timeout=10)
                 conn.autocommit = False
-                # Test the connection is alive
                 cur = conn.cursor()
                 cur.execute("SELECT 1")
                 cur.close()
@@ -148,13 +126,13 @@ if USE_PG:
                 time.sleep(1)
 
 else:
-    import sqlite3
-
     def get_db():
-        conn = sqlite3.connect(Config.DATABASE)
+        conn = sqlite3.connect(Config.DATABASE, timeout=30)
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=10000")
         conn.execute("PRAGMA foreign_keys=ON")
+        conn.execute("PRAGMA synchronous=NORMAL")
         return conn
 
 
@@ -173,7 +151,6 @@ def _init_pg():
         url = url.replace("postgres://", "postgresql://", 1)
     conn = psycopg2.connect(url)
     cur  = conn.cursor()
-
     statements = [
         """CREATE TABLE IF NOT EXISTS customers (
             id SERIAL PRIMARY KEY, name TEXT NOT NULL,
@@ -181,197 +158,296 @@ def _init_pg():
             created_at TEXT DEFAULT TO_CHAR(NOW(),'YYYY-MM-DD HH24:MI:SS'))""",
         """CREATE TABLE IF NOT EXISTS orders (
             id SERIAL PRIMARY KEY, order_code TEXT UNIQUE NOT NULL,
-            customer_id INTEGER NOT NULL, order_date TEXT, delivery_date TEXT,
+            customer_id INTEGER, order_date TEXT, delivery_date TEXT,
             total_amount REAL DEFAULT 0, extra_charges REAL DEFAULT 0,
             payable_amount REAL DEFAULT 0, advance_paid REAL DEFAULT 0,
             remaining REAL DEFAULT 0, payment_mode TEXT DEFAULT 'cash',
-            status TEXT DEFAULT 'pending', is_urgent INTEGER DEFAULT 0,
-            note TEXT DEFAULT '', repeat_of TEXT, delivered_at TEXT,
-            created_at TEXT DEFAULT TO_CHAR(NOW(),'YYYY-MM-DD HH24:MI:SS'))""",
+            status TEXT DEFAULT 'received', is_urgent INTEGER DEFAULT 0,
+            note TEXT DEFAULT '', repeat_of TEXT,
+            delivered_at TEXT, created_at TEXT DEFAULT TO_CHAR(NOW(),'YYYY-MM-DD HH24:MI:SS'))""",
         """CREATE TABLE IF NOT EXISTS order_items (
             id SERIAL PRIMARY KEY, order_id INTEGER NOT NULL,
-            garment_type TEXT NOT NULL, quantity INTEGER DEFAULT 1,
+            garment_type TEXT, quantity INTEGER DEFAULT 1,
             rate REAL DEFAULT 0, amount REAL DEFAULT 0,
-            measurements TEXT DEFAULT '{}', notes TEXT)""",
+            measurements TEXT DEFAULT '{}', notes TEXT DEFAULT '')""",
         """CREATE TABLE IF NOT EXISTS order_images (
             id SERIAL PRIMARY KEY, order_id INTEGER NOT NULL,
-            file_path TEXT NOT NULL,
-            uploaded_at TEXT DEFAULT TO_CHAR(NOW(),'YYYY-MM-DD HH24:MI:SS'))""",
+            image_url TEXT NOT NULL, uploaded_at TEXT DEFAULT TO_CHAR(NOW(),'YYYY-MM-DD HH24:MI:SS'))""",
         """CREATE TABLE IF NOT EXISTS work_logs (
-            id SERIAL PRIMARY KEY, order_id INTEGER NOT NULL,
-            order_code TEXT NOT NULL, garment_type TEXT NOT NULL,
-            qty_done INTEGER DEFAULT 0,
-            log_date TEXT DEFAULT TO_CHAR(NOW(),'YYYY-MM-DD'),
-            making_rate REAL DEFAULT 0, notes TEXT DEFAULT '',
-            employee_name TEXT DEFAULT '', is_non_stitch INTEGER DEFAULT 0,
-            rate_override REAL DEFAULT 0,
-            created_at TEXT DEFAULT TO_CHAR(NOW(),'YYYY-MM-DD HH24:MI:SS'))""",
-        """CREATE TABLE IF NOT EXISTS finance (
-            id SERIAL PRIMARY KEY, tx_date TEXT NOT NULL,
-            tx_type TEXT NOT NULL, category TEXT NOT NULL,
-            amount REAL NOT NULL, mode TEXT DEFAULT 'cash',
-            order_id INTEGER, note TEXT, created_by TEXT DEFAULT 'employee',
-            employee_name TEXT DEFAULT NULL,
-            created_at TEXT DEFAULT TO_CHAR(NOW(),'YYYY-MM-DD HH24:MI:SS'))""",
-        """CREATE TABLE IF NOT EXISTS inventory (
-            id SERIAL PRIMARY KEY, item_name TEXT UNIQUE NOT NULL,
-            quantity REAL DEFAULT 0, unit TEXT DEFAULT 'pcs',
-            low_alert_at REAL DEFAULT 0,
-            updated_at TEXT DEFAULT TO_CHAR(NOW(),'YYYY-MM-DD HH24:MI:SS'))""",
-        """CREATE TABLE IF NOT EXISTS whatsapp_log (
             id SERIAL PRIMARY KEY, order_id INTEGER,
-            mobile TEXT NOT NULL, message_type TEXT,
-            sent_at TEXT DEFAULT TO_CHAR(NOW(),'YYYY-MM-DD HH24:MI:SS'))""",
-        """CREATE TABLE IF NOT EXISTS employees (
-            id SERIAL PRIMARY KEY, name TEXT NOT NULL UNIQUE,
-            phone TEXT DEFAULT '', active INTEGER DEFAULT 1,
-            skills TEXT DEFAULT 'stitch', hindi_name TEXT DEFAULT '',
+            stage TEXT, note TEXT, logged_by TEXT,
+            logged_at TEXT DEFAULT TO_CHAR(NOW(),'YYYY-MM-DD HH24:MI:SS'))""",
+        """CREATE TABLE IF NOT EXISTS finance (
+            id SERIAL PRIMARY KEY, txn_date TEXT, category TEXT,
+            description TEXT, amount REAL DEFAULT 0, txn_type TEXT DEFAULT 'income',
             created_at TEXT DEFAULT TO_CHAR(NOW(),'YYYY-MM-DD HH24:MI:SS'))""",
+        """CREATE TABLE IF NOT EXISTS employees (
+            id SERIAL PRIMARY KEY, name TEXT NOT NULL, role TEXT,
+            mobile TEXT, salary REAL DEFAULT 0, join_date TEXT, active INTEGER DEFAULT 1)""",
+        """CREATE TABLE IF NOT EXISTS salary_advances (
+            id SERIAL PRIMARY KEY, employee_id INTEGER, amount REAL DEFAULT 0,
+            reason TEXT, date TEXT, created_at TEXT DEFAULT TO_CHAR(NOW(),'YYYY-MM-DD HH24:MI:SS'))""",
+        """CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)""",
         """CREATE TABLE IF NOT EXISTS measurement_fields (
             id SERIAL PRIMARY KEY, garment_type TEXT NOT NULL,
-            field_name TEXT NOT NULL, sort_order INTEGER DEFAULT 0,
-            UNIQUE(garment_type, field_name))""",
-        """CREATE TABLE IF NOT EXISTS shop_logo (id INTEGER PRIMARY KEY, data TEXT)""",
-        """CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)""",
-        """CREATE TABLE IF NOT EXISTS salary_advances (
-            id SERIAL PRIMARY KEY, employee_name TEXT,
-            amount REAL, note TEXT, advance_date TEXT, created_at TEXT)""",
-        """CREATE TABLE IF NOT EXISTS notify_log (
-            id SERIAL PRIMARY KEY, order_code TEXT,
-            customer TEXT, mobile TEXT, lang TEXT, sent_at TEXT)""",
+            field_name TEXT NOT NULL, field_label TEXT, sort_order INTEGER DEFAULT 0)""",
+        """CREATE TABLE IF NOT EXISTS inventory (
+            id SERIAL PRIMARY KEY, item_name TEXT NOT NULL, category TEXT,
+            quantity REAL DEFAULT 0, unit TEXT DEFAULT 'pcs',
+            reorder_level REAL DEFAULT 0, last_updated TEXT)""",
         """CREATE TABLE IF NOT EXISTS gallery_types (
-            id SERIAL PRIMARY KEY, name TEXT NOT NULL,
-            parent_id INTEGER DEFAULT NULL, sort_order INTEGER DEFAULT 0,
-            created_at TEXT DEFAULT TO_CHAR(NOW(),'YYYY-MM-DD HH24:MI:SS'))""",
+            id SERIAL PRIMARY KEY, name TEXT NOT NULL, slug TEXT UNIQUE)""",
         """CREATE TABLE IF NOT EXISTS gallery_images (
-            id SERIAL PRIMARY KEY, type_id INTEGER NOT NULL,
-            filename TEXT NOT NULL, caption TEXT DEFAULT '',
+            id SERIAL PRIMARY KEY, type_id INTEGER, image_url TEXT,
+            caption TEXT, sort_order INTEGER DEFAULT 0)""",
+        """CREATE TABLE IF NOT EXISTS whatsapp_log (
+            id SERIAL PRIMARY KEY, customer_id INTEGER, order_id INTEGER,
+            template TEXT, message TEXT, status TEXT,
+            sent_at TEXT DEFAULT TO_CHAR(NOW(),'YYYY-MM-DD HH24:MI:SS'))""",
+        """CREATE TABLE IF NOT EXISTS notify_log (
+            id SERIAL PRIMARY KEY, order_id INTEGER, customer_id INTEGER,
+            message TEXT, sent_at TEXT DEFAULT TO_CHAR(NOW(),'YYYY-MM-DD HH24:MI:SS'))""",
+        """CREATE TABLE IF NOT EXISTS shop_logo (
+            id SERIAL PRIMARY KEY, image_url TEXT, updated_at TEXT)""",
+        """CREATE TABLE IF NOT EXISTS web_service_categories (
+            id SERIAL PRIMARY KEY, name TEXT NOT NULL, slug TEXT,
+            sort_order INTEGER DEFAULT 0)""",
+        """CREATE TABLE IF NOT EXISTS web_service_items (
+            id SERIAL PRIMARY KEY, category_id INTEGER, name TEXT NOT NULL,
+            subtitle TEXT, price REAL DEFAULT 0, sort_order INTEGER DEFAULT 0,
+            image_url TEXT, video_url TEXT, description TEXT, long_desc TEXT)""",
+        """CREATE TABLE IF NOT EXISTS web_fabrics (
+            id SERIAL PRIMARY KEY, name TEXT NOT NULL, price_per_metre REAL DEFAULT 0,
+            stock_metres REAL DEFAULT 0, image_url TEXT, active INTEGER DEFAULT 1,
+            sort_order INTEGER DEFAULT 0, fabric_type TEXT DEFAULT '')""",
+        """CREATE TABLE IF NOT EXISTS web_fabric_media (
+            id SERIAL PRIMARY KEY, fabric_id INTEGER NOT NULL,
+            url TEXT NOT NULL, sort_order INTEGER DEFAULT 0)""",
+        """CREATE TABLE IF NOT EXISTS web_otp_store (
+            id SERIAL PRIMARY KEY, mobile TEXT NOT NULL, otp TEXT,
+            created_at TEXT DEFAULT TO_CHAR(NOW(),'YYYY-MM-DD HH24:MI:SS'))""",
+        """CREATE TABLE IF NOT EXISTS web_story_timeline (
+            id SERIAL PRIMARY KEY, year TEXT, title TEXT, body TEXT, sort_order INTEGER DEFAULT 0)""",
+        """CREATE TABLE IF NOT EXISTS web_item_media (
+            id SERIAL PRIMARY KEY, item_id INTEGER NOT NULL,
+            media_type TEXT DEFAULT 'image', url TEXT NOT NULL, sort_order INTEGER DEFAULT 0)""",
+        """CREATE TABLE IF NOT EXISTS web_item_reviews (
+            id SERIAL PRIMARY KEY, item_id INTEGER NOT NULL,
+            reviewer_name TEXT NOT NULL, review_text TEXT DEFAULT '',
+            rating INTEGER DEFAULT 5, created_at TEXT DEFAULT '')""",
+        """CREATE TABLE IF NOT EXISTS garment_style_options (
+            id SERIAL PRIMARY KEY, item_id INTEGER NOT NULL,
+            option_group TEXT NOT NULL, option_label TEXT NOT NULL,
+            option_values TEXT NOT NULL DEFAULT '', sort_order INTEGER DEFAULT 0,
+            is_required INTEGER DEFAULT 0)""",
+        """CREATE TABLE IF NOT EXISTS garment_style_values (
+            id SERIAL PRIMARY KEY,
+            option_id INTEGER NOT NULL,
+            value_label TEXT NOT NULL,
+            value_key TEXT NOT NULL DEFAULT '',
+            image_url TEXT DEFAULT '',
             sort_order INTEGER DEFAULT 0,
+            ai_prompt TEXT DEFAULT '')""",
+        """CREATE TABLE IF NOT EXISTS web_coupons (
+            id SERIAL PRIMARY KEY, code TEXT NOT NULL UNIQUE,
+            discount_type TEXT NOT NULL DEFAULT 'fixed',
+            discount_value REAL NOT NULL DEFAULT 0,
+            min_order REAL NOT NULL DEFAULT 0,
+            max_uses INTEGER DEFAULT 0, used_count INTEGER DEFAULT 0,
+            active INTEGER DEFAULT 1, expires_on TEXT DEFAULT '',
+            description TEXT DEFAULT '',
+            created_at TEXT DEFAULT TO_CHAR(NOW(),'YYYY-MM-DD HH24:MI:SS'))""",
+
+        """CREATE TABLE IF NOT EXISTS web_pages (
+            id SERIAL PRIMARY KEY, title TEXT NOT NULL,
+            slug TEXT NOT NULL UNIQUE, content TEXT DEFAULT '',
+            show_in_footer INTEGER DEFAULT 1, sort_order INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT TO_CHAR(NOW(),'YYYY-MM-DD HH24:MI:SS'))""",
+        """CREATE TABLE IF NOT EXISTS web_nav_items (
+            id SERIAL PRIMARY KEY, label TEXT NOT NULL,
+            url TEXT NOT NULL, open_new_tab INTEGER DEFAULT 0,
+            sort_order INTEGER DEFAULT 0, active INTEGER DEFAULT 1)""",
+        """CREATE TABLE IF NOT EXISTS web_footer_make (
+            id SERIAL PRIMARY KEY, label TEXT NOT NULL,
+            url TEXT DEFAULT '', sort_order INTEGER DEFAULT 0)""",
+        """CREATE TABLE IF NOT EXISTS garment_default_sizes (
+            id SERIAL PRIMARY KEY, garment_category TEXT NOT NULL,
+            size_label TEXT NOT NULL, measurements TEXT NOT NULL DEFAULT '{}',
+            UNIQUE(garment_category, size_label))""",
+        """CREATE TABLE IF NOT EXISTS seo_static_pages (
+            id SERIAL PRIMARY KEY, page_key TEXT UNIQUE NOT NULL,
+            page_name TEXT DEFAULT '', meta_title TEXT DEFAULT '',
+            meta_desc TEXT DEFAULT '', og_image TEXT DEFAULT '',
+            robots TEXT DEFAULT 'index,follow', canonical TEXT DEFAULT '')""",
+        """CREATE TABLE IF NOT EXISTS web_accounts (
+            id SERIAL PRIMARY KEY,
+            name TEXT NOT NULL, mobile TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            preview_count INTEGER DEFAULT 0,
+            tryon_count INTEGER DEFAULT 0,
             created_at TEXT DEFAULT TO_CHAR(NOW(),'YYYY-MM-DD HH24:MI:SS'))""",
     ]
-    for s in statements:
-        cur.execute(s)
-
-    # Schema migrations — each in its own savepoint so a failure doesn't
-    # abort the whole transaction (PostgreSQL requires this pattern).
-    migrations = [
-        "ALTER TABLE finance ADD COLUMN IF NOT EXISTS employee_name TEXT DEFAULT NULL",
-        "ALTER TABLE customers ADD COLUMN IF NOT EXISTS alt_mobile TEXT DEFAULT NULL",
-    ]
-    for m in migrations:
+    for stmt in statements:
         try:
-            cur.execute("SAVEPOINT migration_sp")
-            cur.execute(m)
-            cur.execute("RELEASE SAVEPOINT migration_sp")
+            cur.execute(stmt)
         except Exception:
-            cur.execute("ROLLBACK TO SAVEPOINT migration_sp")
-
-    _insert_defaults_pg(cur)
+            conn.rollback()
     conn.commit()
+    cur.close()
     conn.close()
 
 
-def _insert_defaults_pg(cur):
-    defaults = [
-        ("owner_pin","1234"),("shop_name","Uttam Tailors"),
-        ("whatsapp_number",""),("default_language","hinglish"),
-        ("last_order_code","3599"),("work_rate_measurement","0"),
-        ("work_rate_cutting","25"),("work_rate_alteration","15"),
-        ("finance_income_cats","advance,payment,alteration,other income"),
-        ("finance_expense_cats","thread,buttons,fabric,electricity,rent,salary,transport,maintenance,other expense"),
-        ("rate_list_image",""),
-    ]
-    for k,v in defaults:
-        cur.execute("INSERT INTO settings(key,value) VALUES(%s,%s) ON CONFLICT(key) DO NOTHING",(k,v))
-
-    cust_rates = [
-        ("customer_rate_Shirt","350"),("customer_rate_Shirt Linen","450"),
-        ("customer_rate_Pant","450"),("customer_rate_Pant Double","550"),
-        ("customer_rate_Jeans","550"),("customer_rate_Suit 2pc","2800"),
-        ("customer_rate_Suit 3pc","3500"),("customer_rate_Blazer","2300"),
-        ("customer_rate_Kurta","800"),("customer_rate_Kurta Pajama","1000"),
-        ("customer_rate_Pajama","300"),("customer_rate_Pathani","800"),
-        ("customer_rate_Sherwani","3500"),("customer_rate_Safari","1500"),
-        ("customer_rate_Waistcoat","800"),("customer_rate_Alteration","100"),
-        ("customer_rate_Cutting Only","100"),
-    ]
-    for k,v in cust_rates:
-        cur.execute("INSERT INTO settings(key,value) VALUES(%s,%s) ON CONFLICT(key) DO NOTHING",(k,v))
-
-    stitch_rates = [
-        ("stitch_rate_Shirt","100"),("stitch_rate_Shirt Linen","120"),
-        ("stitch_rate_Pant","105"),("stitch_rate_Pant Double","120"),
-        ("stitch_rate_Jeans","110"),("stitch_rate_Suit 2pc","350"),
-        ("stitch_rate_Suit 3pc","450"),("stitch_rate_Blazer","300"),
-        ("stitch_rate_Kurta","120"),("stitch_rate_Kurta Pajama","180"),
-        ("stitch_rate_Pajama","80"),("stitch_rate_Pathani","120"),
-        ("stitch_rate_Sherwani","450"),("stitch_rate_Safari","200"),
-        ("stitch_rate_Waistcoat","100"),("stitch_rate_Alteration","50"),
-        ("stitch_rate_Cutting Only","40"),
-    ]
-    for k,v in stitch_rates:
-        cur.execute("INSERT INTO settings(key,value) VALUES(%s,%s) ON CONFLICT(key) DO NOTHING",(k,v))
-
-    cur.execute("SELECT COUNT(*) FROM measurement_fields")
-    if cur.fetchone()[0] == 0:
-        meas = [
-            ("Pant","Lambai",1),("Pant","Kamar",2),("Pant","Seat",3),("Pant","Mori",4),("Pant","Jangh",5),("Pant","Goda",6),("Pant","Langot",7),
-            ("Pant Double","Lambai",1),("Pant Double","Kamar",2),("Pant Double","Seat",3),("Pant Double","Mori",4),("Pant Double","Jangh",5),("Pant Double","Goda",6),("Pant Double","Langot",7),
-            ("Jeans","Lambai",1),("Jeans","Kamar",2),("Jeans","Seat",3),("Jeans","Mori",4),("Jeans","Jangh",5),("Jeans","Goda",6),("Jeans","Langot",7),
-            ("Pajama","Lambai",1),("Pajama","Kamar",2),("Pajama","Seat",3),("Pajama","Mori",4),("Pajama","Jangh",5),("Pajama","Goda",6),("Pajama","Langot",7),
-            ("Shirt","Lambai",1),("Shirt","Seeno",2),("Shirt","Kamar",3),("Shirt","Shoulder",4),("Shirt","Collar",5),("Shirt","Aastin",6),("Shirt","Cough",7),("Shirt","Part 1",8),("Shirt","Part 2",9),("Shirt","Part 3",10),
-            ("Shirt Linen","Lambai",1),("Shirt Linen","Seeno",2),("Shirt Linen","Kamar",3),("Shirt Linen","Shoulder",4),("Shirt Linen","Collar",5),("Shirt Linen","Aastin",6),("Shirt Linen","Cough",7),("Shirt Linen","Part 1",8),("Shirt Linen","Part 2",9),("Shirt Linen","Part 3",10),
-            ("Kurta","Lambai",1),("Kurta","Seeno",2),("Kurta","Kamar",3),("Kurta","Shoulder",4),("Kurta","Collar",5),("Kurta","Aastin",6),("Kurta","Cough",7),("Kurta","Part 1",8),("Kurta","Part 2",9),("Kurta","Part 3",10),
-            ("Pathani","Lambai",1),("Pathani","Seeno",2),("Pathani","Kamar",3),("Pathani","Shoulder",4),("Pathani","Collar",5),("Pathani","Aastin",6),("Pathani","Cough",7),("Pathani","Part 1",8),("Pathani","Part 2",9),("Pathani","Part 3",10),
-            ("Sherwani","Lambai",1),("Sherwani","Seeno",2),("Sherwani","Kamar",3),("Sherwani","Shoulder",4),("Sherwani","Collar",5),("Sherwani","Aastin",6),("Sherwani","Cough",7),("Sherwani","Part 1",8),("Sherwani","Part 2",9),("Sherwani","Part 3",10),
-            ("Blazer","Lambai",1),("Blazer","Seeno",2),("Blazer","Kamar",3),("Blazer","Shoulder",4),("Blazer","Aastin",5),("Blazer","Mori",6),("Blazer","Back Paat",7),
-            ("Suit 2pc","Lambai",1),("Suit 2pc","Seeno",2),("Suit 2pc","Kamar",3),("Suit 2pc","Shoulder",4),("Suit 2pc","Aastin",5),("Suit 2pc","Mori",6),("Suit 2pc","Back Paat",7),("Suit 2pc","P-Lambai",8),("Suit 2pc","P-Kamar",9),("Suit 2pc","P-Seat",10),("Suit 2pc","P-Mori",11),
-            ("Suit 3pc","Lambai",1),("Suit 3pc","Seeno",2),("Suit 3pc","Kamar",3),("Suit 3pc","Shoulder",4),("Suit 3pc","Aastin",5),("Suit 3pc","Mori",6),("Suit 3pc","Back Paat",7),("Suit 3pc","P-Lambai",8),("Suit 3pc","P-Kamar",9),("Suit 3pc","P-Seat",10),("Suit 3pc","P-Mori",11),
-            ("Safari","Lambai",1),("Safari","Seeno",2),("Safari","Kamar",3),("Safari","Shoulder",4),("Safari","Collar",5),("Safari","Aastin",6),("Safari","Cough",7),("Safari","P-Lambai",8),("Safari","P-Kamar",9),("Safari","P-Seat",10),("Safari","P-Mori",11),
-            ("Kurta Pajama","Lambai",1),("Kurta Pajama","Seeno",2),("Kurta Pajama","Kamar",3),("Kurta Pajama","Shoulder",4),("Kurta Pajama","Aastin",5),("Kurta Pajama","P-Lambai",6),("Kurta Pajama","P-Jangh",7),("Kurta Pajama","P-Mori",8),
-            ("Waistcoat","Lambai",1),("Waistcoat","Seeno",2),("Waistcoat","Shoulder",3),("Waistcoat","Kamar",4),
-            ("Alteration","Details",1),("Cutting Only","Details",1),
-        ]
-        for gt,fn,so in meas:
-            cur.execute("INSERT INTO measurement_fields(garment_type,field_name,sort_order) VALUES(%s,%s,%s) ON CONFLICT DO NOTHING",(gt,fn,so))
-
-    employees = [("Kamal","कमल","naap+kataai+silai"),("Bhagwan","भगवान","silai"),("Sawarmal","सावरमल","silai"),("Mahesh","महेश","silai"),("Manak Tau","मानक ताऊ","silai")]
-    for name,hindi,skills in employees:
-        cur.execute("INSERT INTO employees(name,hindi_name,skills,active) VALUES(%s,%s,%s,1) ON CONFLICT(name) DO NOTHING",(name,hindi,skills))
-
-
 def _init_sqlite():
-    import sqlite3
     conn = sqlite3.connect(Config.DATABASE)
-    conn.row_factory = sqlite3.Row
-    cur = conn.cursor()
-    cur.executescript("""
-        CREATE TABLE IF NOT EXISTS customers (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, mobile TEXT, address TEXT, created_at TEXT DEFAULT (datetime('now','localtime')));
-        CREATE TABLE IF NOT EXISTS orders (id INTEGER PRIMARY KEY AUTOINCREMENT, order_code TEXT UNIQUE NOT NULL, customer_id INTEGER NOT NULL, order_date TEXT, delivery_date TEXT, total_amount REAL DEFAULT 0, extra_charges REAL DEFAULT 0, payable_amount REAL DEFAULT 0, advance_paid REAL DEFAULT 0, remaining REAL DEFAULT 0, payment_mode TEXT DEFAULT 'cash', status TEXT DEFAULT 'pending', is_urgent INTEGER DEFAULT 0, note TEXT DEFAULT '', repeat_of TEXT, delivered_at TEXT, created_at TEXT DEFAULT (datetime('now','localtime')));
-        CREATE TABLE IF NOT EXISTS order_items (id INTEGER PRIMARY KEY AUTOINCREMENT, order_id INTEGER NOT NULL, garment_type TEXT NOT NULL, quantity INTEGER DEFAULT 1, rate REAL DEFAULT 0, amount REAL DEFAULT 0, measurements TEXT DEFAULT '{}', notes TEXT);
-        CREATE TABLE IF NOT EXISTS order_images (id INTEGER PRIMARY KEY AUTOINCREMENT, order_id INTEGER NOT NULL, file_path TEXT NOT NULL, uploaded_at TEXT DEFAULT (datetime('now','localtime')));
-        CREATE TABLE IF NOT EXISTS work_logs (id INTEGER PRIMARY KEY AUTOINCREMENT, order_id INTEGER NOT NULL, order_code TEXT NOT NULL, garment_type TEXT NOT NULL, qty_done INTEGER DEFAULT 0, log_date TEXT DEFAULT (date('now','localtime')), making_rate REAL DEFAULT 0, notes TEXT DEFAULT '', employee_name TEXT DEFAULT '', is_non_stitch INTEGER DEFAULT 0, rate_override REAL DEFAULT 0, created_at TEXT DEFAULT (datetime('now','localtime')));
-        CREATE TABLE IF NOT EXISTS finance (id INTEGER PRIMARY KEY AUTOINCREMENT, tx_date TEXT NOT NULL, tx_type TEXT NOT NULL, category TEXT NOT NULL, amount REAL NOT NULL, mode TEXT DEFAULT 'cash', order_id INTEGER, note TEXT, created_by TEXT DEFAULT 'employee', created_at TEXT DEFAULT (datetime('now','localtime')));
-        CREATE TABLE IF NOT EXISTS inventory (id INTEGER PRIMARY KEY AUTOINCREMENT, item_name TEXT UNIQUE NOT NULL, quantity REAL DEFAULT 0, unit TEXT DEFAULT 'pcs', low_alert_at REAL DEFAULT 0, updated_at TEXT DEFAULT (datetime('now','localtime')));
-        CREATE TABLE IF NOT EXISTS whatsapp_log (id INTEGER PRIMARY KEY AUTOINCREMENT, order_id INTEGER, mobile TEXT NOT NULL, message_type TEXT, sent_at TEXT DEFAULT (datetime('now','localtime')));
-        CREATE TABLE IF NOT EXISTS employees (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL UNIQUE, phone TEXT DEFAULT '', active INTEGER DEFAULT 1, skills TEXT DEFAULT 'stitch', hindi_name TEXT DEFAULT '', created_at TEXT DEFAULT (datetime('now','localtime')));
-        CREATE TABLE IF NOT EXISTS measurement_fields (id INTEGER PRIMARY KEY AUTOINCREMENT, garment_type TEXT NOT NULL, field_name TEXT NOT NULL, sort_order INTEGER DEFAULT 0, UNIQUE(garment_type, field_name));
-        CREATE TABLE IF NOT EXISTS shop_logo (id INTEGER PRIMARY KEY, data TEXT);
-        CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);
-        CREATE TABLE IF NOT EXISTS salary_advances (id INTEGER PRIMARY KEY AUTOINCREMENT, employee_name TEXT, amount REAL, note TEXT, advance_date TEXT, created_at TEXT);
-        CREATE TABLE IF NOT EXISTS notify_log (id INTEGER PRIMARY KEY AUTOINCREMENT, order_code TEXT, customer TEXT, mobile TEXT, lang TEXT, sent_at TEXT);
-        CREATE TABLE IF NOT EXISTS gallery_types (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, parent_id INTEGER DEFAULT NULL, sort_order INTEGER DEFAULT 0, created_at TEXT DEFAULT (datetime('now','localtime')));
-        CREATE TABLE IF NOT EXISTS gallery_images (id INTEGER PRIMARY KEY AUTOINCREMENT, type_id INTEGER NOT NULL, filename TEXT NOT NULL, caption TEXT DEFAULT '', sort_order INTEGER DEFAULT 0, created_at TEXT DEFAULT (datetime('now','localtime')));
-    """)
-    defaults = [("owner_pin","1234"),("shop_name","Uttam Tailors"),("whatsapp_number",""),("default_language","hinglish"),("last_order_code","3599"),("work_rate_measurement","0"),("work_rate_cutting","25"),("work_rate_alteration","15"),("finance_income_cats","advance,payment,alteration,other income"),("finance_expense_cats","thread,buttons,fabric,electricity,rent,salary,transport,maintenance,other expense"),("rate_list_image","")]
-    for k,v in defaults:
-        cur.execute("INSERT OR IGNORE INTO settings(key,value) VALUES(?,?)",(k,v))
-    # Schema migration — safe on existing DBs
-    try:
-        cur.execute("ALTER TABLE finance ADD COLUMN employee_name TEXT DEFAULT NULL")
-    except Exception:
-        pass  # Already exists
-    conn.commit(); conn.close()
+    cur  = conn.cursor()
+
+    tables = [
+        """CREATE TABLE IF NOT EXISTS customers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL,
+            mobile TEXT, address TEXT, created_at TEXT DEFAULT (datetime('now')))""",
+        """CREATE TABLE IF NOT EXISTS orders (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, order_code TEXT UNIQUE NOT NULL,
+            customer_id INTEGER, order_date TEXT, delivery_date TEXT,
+            total_amount REAL DEFAULT 0, extra_charges REAL DEFAULT 0,
+            payable_amount REAL DEFAULT 0, advance_paid REAL DEFAULT 0,
+            remaining REAL DEFAULT 0, payment_mode TEXT DEFAULT 'cash',
+            status TEXT DEFAULT 'received', is_urgent INTEGER DEFAULT 0,
+            note TEXT DEFAULT '', repeat_of TEXT,
+            delivered_at TEXT, created_at TEXT DEFAULT (datetime('now')))""",
+        """CREATE TABLE IF NOT EXISTS order_items (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, order_id INTEGER NOT NULL,
+            garment_type TEXT, quantity INTEGER DEFAULT 1,
+            rate REAL DEFAULT 0, amount REAL DEFAULT 0,
+            measurements TEXT DEFAULT '{}', notes TEXT DEFAULT '')""",
+        """CREATE TABLE IF NOT EXISTS order_images (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, order_id INTEGER NOT NULL,
+            image_url TEXT NOT NULL, uploaded_at TEXT DEFAULT (datetime('now')))""",
+        """CREATE TABLE IF NOT EXISTS work_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, order_id INTEGER,
+            stage TEXT, note TEXT, logged_by TEXT,
+            logged_at TEXT DEFAULT (datetime('now')))""",
+        """CREATE TABLE IF NOT EXISTS finance (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, txn_date TEXT, category TEXT,
+            description TEXT, amount REAL DEFAULT 0, txn_type TEXT DEFAULT 'income',
+            created_at TEXT DEFAULT (datetime('now')))""",
+        """CREATE TABLE IF NOT EXISTS employees (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, role TEXT,
+            mobile TEXT, salary REAL DEFAULT 0, join_date TEXT, active INTEGER DEFAULT 1)""",
+        """CREATE TABLE IF NOT EXISTS salary_advances (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, employee_id INTEGER,
+            amount REAL DEFAULT 0, reason TEXT, date TEXT,
+            created_at TEXT DEFAULT (datetime('now')))""",
+        """CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)""",
+        """CREATE TABLE IF NOT EXISTS measurement_fields (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, garment_type TEXT NOT NULL,
+            field_name TEXT NOT NULL, field_label TEXT, sort_order INTEGER DEFAULT 0)""",
+        """CREATE TABLE IF NOT EXISTS inventory (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, item_name TEXT NOT NULL,
+            category TEXT, quantity REAL DEFAULT 0, unit TEXT DEFAULT 'pcs',
+            reorder_level REAL DEFAULT 0, last_updated TEXT)""",
+        """CREATE TABLE IF NOT EXISTS gallery_types (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, slug TEXT UNIQUE)""",
+        """CREATE TABLE IF NOT EXISTS gallery_images (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, type_id INTEGER,
+            image_url TEXT, caption TEXT, sort_order INTEGER DEFAULT 0)""",
+        """CREATE TABLE IF NOT EXISTS whatsapp_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, customer_id INTEGER,
+            order_id INTEGER, template TEXT, message TEXT, status TEXT,
+            sent_at TEXT DEFAULT (datetime('now')))""",
+        """CREATE TABLE IF NOT EXISTS notify_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, order_id INTEGER,
+            customer_id INTEGER, message TEXT,
+            sent_at TEXT DEFAULT (datetime('now')))""",
+        """CREATE TABLE IF NOT EXISTS shop_logo (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, image_url TEXT, updated_at TEXT)""",
+        """CREATE TABLE IF NOT EXISTS web_service_categories (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL,
+            slug TEXT, sort_order INTEGER DEFAULT 0)""",
+        """CREATE TABLE IF NOT EXISTS web_service_items (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, category_id INTEGER,
+            name TEXT NOT NULL, subtitle TEXT, price REAL DEFAULT 0,
+            sort_order INTEGER DEFAULT 0, image_url TEXT, video_url TEXT,
+            description TEXT, long_desc TEXT)""",
+        """CREATE TABLE IF NOT EXISTS web_fabrics (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL,
+            price_per_metre REAL DEFAULT 0, stock_metres REAL DEFAULT 0,
+            image_url TEXT, active INTEGER DEFAULT 1,
+            sort_order INTEGER DEFAULT 0, fabric_type TEXT DEFAULT '')""",
+        """CREATE TABLE IF NOT EXISTS web_fabric_media (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, fabric_id INTEGER NOT NULL,
+            url TEXT NOT NULL, sort_order INTEGER DEFAULT 0)""",
+        """CREATE TABLE IF NOT EXISTS web_otp_store (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, mobile TEXT NOT NULL,
+            otp TEXT, created_at TEXT DEFAULT (datetime('now')))""",
+        """CREATE TABLE IF NOT EXISTS web_story_timeline (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, year TEXT, title TEXT,
+            body TEXT, sort_order INTEGER DEFAULT 0)""",
+        """CREATE TABLE IF NOT EXISTS web_item_media (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, item_id INTEGER NOT NULL,
+            media_type TEXT DEFAULT 'image', url TEXT NOT NULL, sort_order INTEGER DEFAULT 0)""",
+        """CREATE TABLE IF NOT EXISTS web_item_reviews (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, item_id INTEGER NOT NULL,
+            reviewer_name TEXT NOT NULL, review_text TEXT DEFAULT '',
+            rating INTEGER DEFAULT 5, created_at TEXT DEFAULT '')""",
+        """CREATE TABLE IF NOT EXISTS garment_style_options (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, item_id INTEGER NOT NULL,
+            option_group TEXT NOT NULL, option_label TEXT NOT NULL,
+            option_values TEXT NOT NULL DEFAULT '', sort_order INTEGER DEFAULT 0,
+            is_required INTEGER DEFAULT 0)""",
+        """CREATE TABLE IF NOT EXISTS garment_style_values (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            option_id INTEGER NOT NULL,
+            value_label TEXT NOT NULL,
+            value_key TEXT NOT NULL DEFAULT '',
+            image_url TEXT DEFAULT '',
+            sort_order INTEGER DEFAULT 0,
+            ai_prompt TEXT DEFAULT '')""",
+        """CREATE TABLE IF NOT EXISTS web_coupons (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, code TEXT NOT NULL UNIQUE,
+            discount_type TEXT NOT NULL DEFAULT 'fixed',
+            discount_value REAL NOT NULL DEFAULT 0,
+            min_order REAL NOT NULL DEFAULT 0,
+            max_uses INTEGER DEFAULT 0, used_count INTEGER DEFAULT 0,
+            active INTEGER DEFAULT 1, expires_on TEXT DEFAULT '',
+            description TEXT DEFAULT '',
+            created_at TEXT DEFAULT (datetime('now')))""",
+
+        """CREATE TABLE IF NOT EXISTS web_pages (
+            id SERIAL PRIMARY KEY, title TEXT NOT NULL,
+            slug TEXT NOT NULL UNIQUE, content TEXT DEFAULT '',
+            show_in_footer INTEGER DEFAULT 1, sort_order INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT TO_CHAR(NOW(),'YYYY-MM-DD HH24:MI:SS'))""",
+        """CREATE TABLE IF NOT EXISTS web_nav_items (
+            id SERIAL PRIMARY KEY, label TEXT NOT NULL,
+            url TEXT NOT NULL, open_new_tab INTEGER DEFAULT 0,
+            sort_order INTEGER DEFAULT 0, active INTEGER DEFAULT 1)""",
+        """CREATE TABLE IF NOT EXISTS web_footer_make (
+            id SERIAL PRIMARY KEY, label TEXT NOT NULL,
+            url TEXT DEFAULT '', sort_order INTEGER DEFAULT 0)""",
+        """CREATE TABLE IF NOT EXISTS garment_default_sizes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, garment_category TEXT NOT NULL,
+            size_label TEXT NOT NULL, measurements TEXT NOT NULL DEFAULT '{}',
+            UNIQUE(garment_category, size_label))""",
+        """CREATE TABLE IF NOT EXISTS seo_static_pages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, page_key TEXT UNIQUE NOT NULL,
+            page_name TEXT DEFAULT '', meta_title TEXT DEFAULT '',
+            meta_desc TEXT DEFAULT '', og_image TEXT DEFAULT '',
+            robots TEXT DEFAULT 'index,follow', canonical TEXT DEFAULT '')""",
+        """CREATE TABLE IF NOT EXISTS web_accounts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL, mobile TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            preview_count INTEGER DEFAULT 0,
+            tryon_count INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT (datetime('now')))""",
+    ]
+    for stmt in tables:
+        try:
+            cur.execute(stmt)
+        except Exception:
+            pass
+    conn.commit()
+    conn.close()
 
 
 # ── get_setting / set_setting ─────────────────────────────────────────────────
@@ -379,189 +455,423 @@ def _init_sqlite():
 _settings_cache = {}
 _settings_cache_valid = False
 
-def _load_settings_cache():
-    global _settings_cache, _settings_cache_valid
-    try:
-        conn = get_db()
-        rows = conn.execute("SELECT key, value FROM settings").fetchall()
-        conn.close()
-        _settings_cache = {r["key"]: r["value"] for r in rows}
-        _settings_cache_valid = True
-    except:
-        _settings_cache_valid = False
-
 def get_setting(key, default=""):
-    global _settings_cache_valid
+    global _settings_cache, _settings_cache_valid
     if not _settings_cache_valid:
-        _load_settings_cache()
+        try:
+            db = get_db()
+            rows = db.execute("SELECT key, value FROM settings").fetchall()
+            _settings_cache = {r["key"]: r["value"] for r in rows}
+            _settings_cache_valid = True
+        except Exception:
+            pass
     return _settings_cache.get(key, default)
 
 def set_setting(key, value):
-    global _settings_cache, _settings_cache_valid
-    conn = get_db()
-    conn.execute("INSERT OR REPLACE INTO settings(key,value) VALUES(?,?)", (key, value))
-    conn.commit()
-    conn.close()
-    # Update cache immediately
-    _settings_cache[key] = value
-    _settings_cache_valid = True
-
-def invalidate_settings_cache():
-    global _settings_cache_valid, _settings_cache
-    _settings_cache = {}
-    _settings_cache_valid = False
-
-
-# ── order codes ───────────────────────────────────────────────────────────────
-
-def _get_existing_codes(conn):
-    """Get set of all existing order codes as integers."""
-    rows = conn.execute("SELECT order_code FROM orders").fetchall()
-    codes = set()
-    for r in rows:
-        code = r["order_code"] if hasattr(r, "__getitem__") else str(r[0])
-        if code.isdigit():
-            codes.add(int(code))
-    return codes
-
-
-def _get_recycled_codes(conn):
-    """Return sorted list of recycled (deleted) numeric order codes."""
+    global _settings_cache_valid
     try:
-        row = conn.execute("SELECT value FROM settings WHERE key='recycled_order_codes'").fetchone()
-        val = (row["value"] if row else "") or ""
-        return sorted([int(c) for c in val.split(",") if c.strip().isdigit()])
-    except Exception:
-        return []
-
-
-def _save_recycled_codes(conn, codes):
-    """Persist recycled codes list back to settings."""
-    val = ",".join(str(c) for c in sorted(set(codes))) if codes else ""
-    conn.execute(
-        "INSERT OR REPLACE INTO settings(key,value) VALUES('recycled_order_codes',?)",
-        (val,)
-    )
-
-
-def add_recycled_code(code_str):
-    """DISABLED: Order codes are never recycled — deleted order numbers stay retired.
-    The New Order flow must always continue forward from last_order_code, never reuse
-    an old/deleted code (caused confusion when #1001/#2002 resurfaced unexpectedly).
-    This function is now a no-op, kept so existing call sites don't break."""
-    return
-
-
-def release_order_code_if_latest(code_str):
-    """Call after deleting an order. Only releases the number back to the counter
-    if the deleted code IS the most recently issued one (last_order_code) — this
-    gives a clean 'undo' for the order you just created, WITHOUT ever recycling
-    old/unrelated codes from deep in the past (e.g. deleting order #3900 right
-    after creating it gives you #3900 back; deleting old order #1001 does NOT
-    make #1001 reappear as the next code)."""
-    if not str(code_str).isdigit():
-        return
-    conn = get_db()
-    try:
-        c = int(code_str)
-        row = conn.execute("SELECT value FROM settings WHERE key='last_order_code'").fetchone()
-        current_last = int(row["value"]) if row else None
-        if current_last is not None and c == current_last:
-            conn.execute(
-                "INSERT OR REPLACE INTO settings(key,value) VALUES('last_order_code',?)",
-                (str(c - 1),)
-            )
-            conn.commit()
+        db = get_db()
+        db.execute("INSERT OR REPLACE INTO settings(key, value) VALUES(?, ?)", (key, str(value)))
+        db.commit()
+        _settings_cache_valid = False
     except Exception:
         pass
-    finally:
-        conn.close()
 
 
-def peek_order_code():
-    """Return next available order code without incrementing.
-    Always continues forward from last_order_code — never reuses old/deleted codes."""
-    conn = get_db()
+# ── Order code helpers ────────────────────────────────────────────────────────
+
+def _get_order_counter(prefix="UT"):
     try:
-        existing = _get_existing_codes(conn)
-        row = conn.execute("SELECT value FROM settings WHERE key='last_order_code'").fetchone()
-        setting_last = int(row["value"]) if row else 3599
-        candidate = setting_last + 1
-        # Skip any codes that already exist (safety net only)
-        while candidate in existing:
-            candidate += 1
-        return str(candidate)
+        db = get_db()
+        row = db.execute(
+            "SELECT order_code FROM orders WHERE order_code LIKE ? ORDER BY id DESC LIMIT 1",
+            (f"{prefix}-%",)
+        ).fetchone()
+        if row:
+            try:
+                return int(row["order_code"].split("-")[1]) + 1
+            except Exception:
+                pass
+        start = int(get_setting("web_order_start_number", "1") or 1)
+        return start
     except Exception:
-        return "3800"
-    finally:
-        conn.close()
-
+        return 1
 
 def next_order_code():
-    """Increment and return next available order code.
-    Always continues forward from last_order_code — never reuses old/deleted codes."""
-    conn = get_db()
+    n = _get_order_counter("UT")
+    return f"UT-{str(n).zfill(4)}"
+
+def peek_order_code():
+    return next_order_code()
+
+def next_repeat_code(original_code):
     try:
-        existing = _get_existing_codes(conn)
-        row = conn.execute("SELECT value FROM settings WHERE key='last_order_code'").fetchone()
-        setting_last = int(row["value"]) if row else 3599
-        candidate = setting_last + 1
-        # Skip any codes that already exist (safety net only)
-        while candidate in existing:
-            candidate += 1
-        conn.execute("INSERT OR REPLACE INTO settings(key,value) VALUES('last_order_code',?)", (str(candidate),))
-        conn.commit()
-        return str(candidate)
+        db = get_db()
+        row = db.execute(
+            "SELECT order_code FROM orders WHERE repeat_of=? ORDER BY id DESC LIMIT 1",
+            (original_code,)
+        ).fetchone()
+        base = original_code.rstrip("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+        suffix_ord = ord('B')
+        if row:
+            existing = row["order_code"]
+            if existing[-1].isalpha():
+                suffix_ord = ord(existing[-1]) + 1
+        return base + chr(suffix_ord)
     except Exception:
-        return "3800"
-    finally:
-        conn.close()
+        return original_code + "B"
+
+def peek_repeat_code(original_code):
+    return next_repeat_code(original_code)
+
+# ── SEO Migrations — safe to run multiple times ───────────────────────────────
+
+def make_slug(text):
+    """Convert text to clean URL slug."""
+    import re
+    s = (text or "").lower().strip()
+    s = re.sub(r"[^a-z0-9\s-]", "", s)
+    s = re.sub(r"[\s-]+", "-", s)
+    return s.strip("-")
 
 
-# ── repeat order codes (0001, 0002...) ───────────────────────────────────────
-
-def _get_db_repeat_last(conn):
-    """Get highest repeat code number from orders table — works on both SQLite & PostgreSQL."""
+def run_seo_migrations():
+    """Add SEO columns to existing tables. Safe to run multiple times."""
     try:
-        rows = conn.execute(
-            "SELECT order_code FROM orders WHERE order_code LIKE '0___'"
-        ).fetchall()
-        nums = []
-        for r in rows:
-            code = r["order_code"] if hasattr(r, "__getitem__") else str(r[0])
-            if code.isdigit() and len(code) == 4 and code.startswith("0"):
-                nums.append(int(code))
-        return max(nums) if nums else 0
+        db = get_db()
+        if USE_PG:
+            alters = [
+                "ALTER TABLE web_service_items ADD COLUMN IF NOT EXISTS slug TEXT DEFAULT ''",
+                "ALTER TABLE web_service_items ADD COLUMN IF NOT EXISTS meta_title TEXT DEFAULT ''",
+                "ALTER TABLE web_service_items ADD COLUMN IF NOT EXISTS meta_desc TEXT DEFAULT ''",
+                "ALTER TABLE web_service_categories ADD COLUMN IF NOT EXISTS meta_title TEXT DEFAULT ''",
+                "ALTER TABLE web_service_categories ADD COLUMN IF NOT EXISTS meta_desc TEXT DEFAULT ''",
+                "ALTER TABLE web_pages ADD COLUMN IF NOT EXISTS meta_title TEXT DEFAULT ''",
+                "ALTER TABLE web_pages ADD COLUMN IF NOT EXISTS meta_desc TEXT DEFAULT ''",
+            ]
+            for stmt in alters:
+                try:
+                    db.execute(stmt)
+                except Exception:
+                    pass
+        else:
+            alters = [
+                "ALTER TABLE web_service_items ADD COLUMN slug TEXT DEFAULT ''",
+                "ALTER TABLE web_service_items ADD COLUMN meta_title TEXT DEFAULT ''",
+                "ALTER TABLE web_service_items ADD COLUMN meta_desc TEXT DEFAULT ''",
+                "ALTER TABLE web_service_categories ADD COLUMN meta_title TEXT DEFAULT ''",
+                "ALTER TABLE web_service_categories ADD COLUMN meta_desc TEXT DEFAULT ''",
+                "ALTER TABLE web_pages ADD COLUMN meta_title TEXT DEFAULT ''",
+                "ALTER TABLE web_pages ADD COLUMN meta_desc TEXT DEFAULT ''",
+            ]
+            for stmt in alters:
+                try:
+                    db.execute(stmt)
+                except Exception:
+                    pass  # Column already exists
+        db.commit()
+
+        # Auto-populate slugs for items that don't have one yet
+        try:
+            items = db.execute("SELECT id, name FROM web_service_items WHERE slug IS NULL OR slug = ''").fetchall()
+            for item in items:
+                slug = make_slug(item["name"])
+                # Ensure uniqueness: append -2, -3 etc if needed
+                base_slug = slug
+                counter = 2
+                while True:
+                    existing = db.execute("SELECT id FROM web_service_items WHERE slug=? AND id!=?", (slug, item["id"])).fetchone()
+                    if not existing:
+                        break
+                    slug = f"{base_slug}-{counter}"
+                    counter += 1
+                db.execute("UPDATE web_service_items SET slug=? WHERE id=?", (slug, item["id"]))
+            if items:
+                db.commit()
+        except Exception:
+            pass
     except Exception:
-        return 0
+        pass
 
 
-def peek_repeat_code():
-    """Return next repeat code without incrementing — format 0001, 0002..."""
-    conn = get_db()
+# ── Customer-account migrations (email/Google login, addresses, orders link,
+#    wishlist, saved payment refs, soft-delete) — safe to run multiple times ──
+
+def run_account_migrations():
     try:
-        row = conn.execute("SELECT value FROM settings WHERE key='last_repeat_code'").fetchone()
-        last = int(row["value"]) if row else 0
-        db_last = _get_db_repeat_last(conn)
-        return f"{max(last, db_last) + 1:04d}"
+        db = get_db()
+        if USE_PG:
+            alters = [
+                "ALTER TABLE web_accounts ADD COLUMN IF NOT EXISTS email TEXT",
+                "ALTER TABLE web_accounts ADD COLUMN IF NOT EXISTS google_id TEXT",
+                "ALTER TABLE web_accounts ADD COLUMN IF NOT EXISTS is_active INTEGER DEFAULT 1",
+                "ALTER TABLE web_accounts ADD COLUMN IF NOT EXISTS deleted_at TEXT DEFAULT ''",
+                "ALTER TABLE web_accounts ADD COLUMN IF NOT EXISTS address_line1 TEXT DEFAULT ''",
+                "ALTER TABLE web_accounts ADD COLUMN IF NOT EXISTS address_line2 TEXT DEFAULT ''",
+                "ALTER TABLE web_accounts ADD COLUMN IF NOT EXISTS address_city TEXT DEFAULT ''",
+                "ALTER TABLE web_accounts ADD COLUMN IF NOT EXISTS address_state TEXT DEFAULT ''",
+                "ALTER TABLE web_accounts ADD COLUMN IF NOT EXISTS address_pincode TEXT DEFAULT ''",
+                "ALTER TABLE web_accounts ADD COLUMN IF NOT EXISTS tryon_count INTEGER DEFAULT 0",
+                "ALTER TABLE orders ADD COLUMN IF NOT EXISTS web_account_id INTEGER",
+            ]
+        else:
+            alters = [
+                "ALTER TABLE web_accounts ADD COLUMN email TEXT",
+                "ALTER TABLE web_accounts ADD COLUMN google_id TEXT",
+                "ALTER TABLE web_accounts ADD COLUMN is_active INTEGER DEFAULT 1",
+                "ALTER TABLE web_accounts ADD COLUMN deleted_at TEXT DEFAULT ''",
+                "ALTER TABLE web_accounts ADD COLUMN address_line1 TEXT DEFAULT ''",
+                "ALTER TABLE web_accounts ADD COLUMN address_line2 TEXT DEFAULT ''",
+                "ALTER TABLE web_accounts ADD COLUMN address_city TEXT DEFAULT ''",
+                "ALTER TABLE web_accounts ADD COLUMN address_state TEXT DEFAULT ''",
+                "ALTER TABLE web_accounts ADD COLUMN address_pincode TEXT DEFAULT ''",
+                "ALTER TABLE web_accounts ADD COLUMN tryon_count INTEGER DEFAULT 0",
+                "ALTER TABLE orders ADD COLUMN web_account_id INTEGER",
+            ]
+        for stmt in alters:
+            try:
+                db.execute(stmt)
+            except Exception:
+                pass  # column already exists
+        db.commit()
+
+        if USE_PG:
+            new_tables = [
+                """CREATE TABLE IF NOT EXISTS web_addresses (
+                    id SERIAL PRIMARY KEY, account_id INTEGER NOT NULL,
+                    label TEXT DEFAULT 'Home', full_name TEXT DEFAULT '', mobile TEXT DEFAULT '',
+                    line1 TEXT DEFAULT '', line2 TEXT DEFAULT '', city TEXT DEFAULT '',
+                    state TEXT DEFAULT '', pincode TEXT DEFAULT '', is_default INTEGER DEFAULT 0,
+                    created_at TEXT DEFAULT TO_CHAR(NOW(),'YYYY-MM-DD HH24:MI:SS'))""",
+                """CREATE TABLE IF NOT EXISTS web_wishlist (
+                    id SERIAL PRIMARY KEY, account_id INTEGER NOT NULL, item_id INTEGER NOT NULL,
+                    created_at TEXT DEFAULT TO_CHAR(NOW(),'YYYY-MM-DD HH24:MI:SS'),
+                    UNIQUE(account_id, item_id))""",
+                """CREATE TABLE IF NOT EXISTS web_payment_methods (
+                    id SERIAL PRIMARY KEY, account_id INTEGER NOT NULL,
+                    method_type TEXT DEFAULT 'upi', label TEXT DEFAULT '', masked_detail TEXT DEFAULT '',
+                    is_default INTEGER DEFAULT 0,
+                    created_at TEXT DEFAULT TO_CHAR(NOW(),'YYYY-MM-DD HH24:MI:SS'))""",
+                """CREATE TABLE IF NOT EXISTS web_related_items (
+                    id SERIAL PRIMARY KEY, item_id INTEGER NOT NULL, related_item_id INTEGER NOT NULL,
+                    sort_order INTEGER DEFAULT 0,
+                    UNIQUE(item_id, related_item_id))""",
+            ]
+        else:
+            new_tables = [
+                """CREATE TABLE IF NOT EXISTS web_addresses (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT, account_id INTEGER NOT NULL,
+                    label TEXT DEFAULT 'Home', full_name TEXT DEFAULT '', mobile TEXT DEFAULT '',
+                    line1 TEXT DEFAULT '', line2 TEXT DEFAULT '', city TEXT DEFAULT '',
+                    state TEXT DEFAULT '', pincode TEXT DEFAULT '', is_default INTEGER DEFAULT 0,
+                    created_at TEXT DEFAULT (datetime('now')))""",
+                """CREATE TABLE IF NOT EXISTS web_wishlist (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT, account_id INTEGER NOT NULL, item_id INTEGER NOT NULL,
+                    created_at TEXT DEFAULT (datetime('now')),
+                    UNIQUE(account_id, item_id))""",
+                """CREATE TABLE IF NOT EXISTS web_payment_methods (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT, account_id INTEGER NOT NULL,
+                    method_type TEXT DEFAULT 'upi', label TEXT DEFAULT '', masked_detail TEXT DEFAULT '',
+                    is_default INTEGER DEFAULT 0,
+                    created_at TEXT DEFAULT (datetime('now')))""",
+                """CREATE TABLE IF NOT EXISTS web_related_items (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT, item_id INTEGER NOT NULL, related_item_id INTEGER NOT NULL,
+                    sort_order INTEGER DEFAULT 0,
+                    UNIQUE(item_id, related_item_id))""",
+            ]
+        for stmt in new_tables:
+            try:
+                db.execute(stmt)
+            except Exception:
+                pass
+        db.commit()
+
+        # Wishlist price-drop / back-in-stock alerts: ready-made stock on items,
+        # and a snapshot of price/stock taken at the moment an item is wishlisted.
+        if USE_PG:
+            wl_alters = [
+                "ALTER TABLE web_service_items ADD COLUMN IF NOT EXISTS stock_qty INTEGER DEFAULT -1",
+                "ALTER TABLE web_wishlist ADD COLUMN IF NOT EXISTS price_snapshot REAL",
+                "ALTER TABLE web_wishlist ADD COLUMN IF NOT EXISTS stock_snapshot INTEGER",
+            ]
+        else:
+            wl_alters = [
+                "ALTER TABLE web_service_items ADD COLUMN stock_qty INTEGER DEFAULT -1",
+                "ALTER TABLE web_wishlist ADD COLUMN price_snapshot REAL",
+                "ALTER TABLE web_wishlist ADD COLUMN stock_snapshot INTEGER",
+            ]
+        for stmt in wl_alters:
+            try:
+                db.execute(stmt)
+            except Exception:
+                pass
+        db.commit()
+
+        # PDP: per-item delivery estimate text + customer Q&A (ask-a-question,
+        # admin answers, then shows publicly).
+        if USE_PG:
+            pdp_alters = ["ALTER TABLE web_service_items ADD COLUMN IF NOT EXISTS delivery_estimate TEXT DEFAULT ''"]
+            pdp_tables = ["""CREATE TABLE IF NOT EXISTS web_item_questions (
+                id SERIAL PRIMARY KEY, item_id INTEGER NOT NULL,
+                name TEXT DEFAULT '', question TEXT NOT NULL, answer TEXT DEFAULT '',
+                status TEXT DEFAULT 'pending',
+                created_at TEXT DEFAULT TO_CHAR(NOW(),'YYYY-MM-DD HH24:MI:SS'),
+                answered_at TEXT DEFAULT '')"""]
+        else:
+            pdp_alters = ["ALTER TABLE web_service_items ADD COLUMN delivery_estimate TEXT DEFAULT ''"]
+            pdp_tables = ["""CREATE TABLE IF NOT EXISTS web_item_questions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT, item_id INTEGER NOT NULL,
+                name TEXT DEFAULT '', question TEXT NOT NULL, answer TEXT DEFAULT '',
+                status TEXT DEFAULT 'pending',
+                created_at TEXT DEFAULT (datetime('now')),
+                answered_at TEXT DEFAULT '')"""]
+        for stmt in pdp_alters + pdp_tables:
+            try:
+                db.execute(stmt)
+            except Exception:
+                pass
+        db.commit()
+
+        # ── Server-side cart sync + item view tracking ────────────────────
+        # web_carts: persists logged-in customer's localStorage cart so we
+        #   can (a) restore it on next login, (b) send abandoned-cart emails.
+        # web_item_views: anonymous + logged-in page-view log, used for
+        #   "X people viewing" social proof and personalised recommendations.
+        if USE_PG:
+            engagement_tables = [
+                """CREATE TABLE IF NOT EXISTS web_carts (
+                    id SERIAL PRIMARY KEY,
+                    account_id INTEGER NOT NULL,
+                    item_id INTEGER NOT NULL,
+                    item_name TEXT DEFAULT '',
+                    item_price REAL DEFAULT 0,
+                    item_img TEXT DEFAULT '',
+                    qty INTEGER DEFAULT 1,
+                    added_at TEXT DEFAULT TO_CHAR(NOW(),'YYYY-MM-DD HH24:MI:SS'),
+                    reminded_at TEXT DEFAULT NULL,
+                    UNIQUE(account_id, item_id))""",
+                """CREATE TABLE IF NOT EXISTS web_item_views (
+                    id SERIAL PRIMARY KEY,
+                    item_id INTEGER NOT NULL,
+                    account_id INTEGER DEFAULT NULL,
+                    session_key TEXT DEFAULT '',
+                    viewed_at TEXT DEFAULT TO_CHAR(NOW(),'YYYY-MM-DD HH24:MI:SS'))""",
+            ]
+        else:
+            engagement_tables = [
+                """CREATE TABLE IF NOT EXISTS web_carts (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    account_id INTEGER NOT NULL,
+                    item_id INTEGER NOT NULL,
+                    item_name TEXT DEFAULT '',
+                    item_price REAL DEFAULT 0,
+                    item_img TEXT DEFAULT '',
+                    qty INTEGER DEFAULT 1,
+                    added_at TEXT DEFAULT (datetime('now')),
+                    reminded_at TEXT DEFAULT NULL,
+                    UNIQUE(account_id, item_id))""",
+                """CREATE TABLE IF NOT EXISTS web_item_views (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    item_id INTEGER NOT NULL,
+                    account_id INTEGER DEFAULT NULL,
+                    session_key TEXT DEFAULT '',
+                    viewed_at TEXT DEFAULT (datetime('now')))""",
+            ]
+        for stmt in engagement_tables:
+            try:
+                db.execute(stmt)
+            except Exception:
+                pass
+        db.commit()
+
+        # ── OTP store: add missing columns (mobile alias, expires_at, used) ──
+        # The original table only had: id, phone, otp, created_at
+        # Auth code uses: mobile, expires_at, used — migrate them safely.
+        otp_alters = [
+            "ALTER TABLE web_otp_store ADD COLUMN mobile TEXT DEFAULT ''",
+            "ALTER TABLE web_otp_store ADD COLUMN expires_at TEXT DEFAULT ''",
+            "ALTER TABLE web_otp_store ADD COLUMN used INTEGER DEFAULT 0",
+        ]
+        for stmt in otp_alters:
+            try:
+                db.execute(stmt)
+            except Exception:
+                pass
+        # Backfill mobile from phone where mobile is empty
+        try:
+            db.execute("UPDATE web_otp_store SET mobile=phone WHERE mobile='' OR mobile IS NULL")
+        except Exception:
+            pass
+        db.commit()
+
+        # ── Wishlist: add item_name/price/img/added_at columns ───────────────
+        wl_extra_alters = [
+            "ALTER TABLE web_wishlist ADD COLUMN item_name TEXT DEFAULT ''",
+            "ALTER TABLE web_wishlist ADD COLUMN item_price REAL DEFAULT 0",
+            "ALTER TABLE web_wishlist ADD COLUMN item_img TEXT DEFAULT ''",
+            "ALTER TABLE web_wishlist ADD COLUMN added_at TEXT DEFAULT (datetime('now'))",
+        ]
+        for stmt in wl_extra_alters:
+            try:
+                db.execute(stmt)
+            except Exception:
+                pass
+        # Backfill added_at from created_at
+        try:
+            db.execute("UPDATE web_wishlist SET added_at=created_at WHERE added_at='' OR added_at IS NULL")
+        except Exception:
+            pass
+        db.commit()
+
+        # ── support_chats: add customer_email if missing ─────────────────────
+        try:
+            db.execute("ALTER TABLE support_chats ADD COLUMN customer_email TEXT DEFAULT ''")
+        except Exception:
+            pass
+        db.commit()
+
     except Exception:
-        return "0001"
-    finally:
-        conn.close()
+        pass
 
 
-def next_repeat_code():
-    """Increment and return the next repeat code — format 0001, 0002..."""
-    conn = get_db()
+# ── SEO helpers ──────────────────────────────────────────────────────────────
+
+def make_slug(text):
+    import re
+    s = (text or "").lower().strip()
+    s = re.sub(r"[^a-z0-9\s-]", "", s)
+    s = re.sub(r"[\s-]+", "-", s)
+    return s.strip("-")
+
+
+def run_seo_migrations():
+    """Add SEO columns to existing tables. Safe to run multiple times."""
     try:
-        row = conn.execute("SELECT value FROM settings WHERE key='last_repeat_code'").fetchone()
-        last = int(row["value"]) if row else 0
-        db_last = _get_db_repeat_last(conn)
-        new_code = max(last, db_last) + 1
-        conn.execute("INSERT OR REPLACE INTO settings(key,value) VALUES('last_repeat_code',?)", (str(new_code),))
-        conn.commit()
-        return f"{new_code:04d}"
-    except Exception:
-        return f"{last + 1:04d}"
-    finally:
-        conn.close()
+        db = get_db()
+        alters = [
+            "ALTER TABLE web_service_items ADD COLUMN slug TEXT DEFAULT ''",
+            "ALTER TABLE web_service_items ADD COLUMN meta_title TEXT DEFAULT ''",
+            "ALTER TABLE web_service_items ADD COLUMN meta_desc TEXT DEFAULT ''",
+            "ALTER TABLE web_service_categories ADD COLUMN meta_title TEXT DEFAULT ''",
+            "ALTER TABLE web_service_categories ADD COLUMN meta_desc TEXT DEFAULT ''",
+            "ALTER TABLE web_pages ADD COLUMN meta_title TEXT DEFAULT ''",
+            "ALTER TABLE web_pages ADD COLUMN meta_desc TEXT DEFAULT ''",
+        ]
+        if USE_PG:
+            alters = [a.replace("ADD COLUMN ", "ADD COLUMN IF NOT EXISTS ") for a in alters]
+        for stmt in alters:
+            try: db.execute(stmt)
+            except Exception: pass
+        db.commit()
+        # Auto-populate slugs
+        try:
+            items = db.execute("SELECT id, name FROM web_service_items WHERE slug IS NULL OR slug = ''").fetchall()
+            for item in items:
+                slug = make_slug(item["name"])
+                base_slug, counter = slug, 2
+                while db.execute("SELECT id FROM web_service_items WHERE slug=? AND id!=?", (slug, item["id"])).fetchone():
+                    slug = f"{base_slug}-{counter}"; counter += 1
+                db.execute("UPDATE web_service_items SET slug=? WHERE id=?", (slug, item["id"]))
+            if items: db.commit()
+        except Exception: pass
+    except Exception: pass

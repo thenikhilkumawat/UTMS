@@ -86,7 +86,7 @@
 <div style="padding:16px 22px;" id="cards-container">
 {% for o in orders %}
 <div class="m-card {% if o.is_urgent %}urgent-card{% endif %} {% if o.status == 'delivered' %}delivered-card{% endif %}"
-  data-search="{{ o.order_code }} {{ o.display_code }} {{ o.repeat_of or '' }} {{ (o.customer_name or '') | lower | trim }} {{ o.mobile | default('') }}">
+  data-search="{{ o.order_code }} {{ o.display_code }} {{ o.customer_name|lower }} {{ o.mobile }}">
 
   <!-- Header -->
   <div class="m-header {% if o.is_urgent %}m-header-urgent{% else %}m-header-normal{% endif %}">
@@ -215,40 +215,11 @@ var _cutOrderCode = "";
 var _cutGarmentType = "";
 var _cutQty = 0;
 
-function syncMeasureUrlState() {
-  var q = document.getElementById("m-search").value;
-  var params = new URLSearchParams(window.location.search);
-  if (q) params.set("q", q); else params.delete("q");
-  var newUrl = window.location.pathname + (params.toString() ? "?" + params.toString() : "");
-  history.replaceState(null, "", newUrl);
-}
-
-(function restoreMeasureUrlState() {
-  var params = new URLSearchParams(window.location.search);
-  var q = params.get('q');
-  if (q) {
-    document.getElementById("m-search").value = q;
-    filterCards();
-  }
-})();
-
 function filterCards() {
-  var q = (document.getElementById("m-search").value || "").trim().toLowerCase();
-  syncMeasureUrlState();
-
-  if (!q) {
-    // Empty search — show all cards
-    document.querySelectorAll(".m-card").forEach(function(c){ c.style.display = ""; });
-    return;
-  }
-
-  // Split into words — each word must appear independently (AND logic)
-  var words = q.split(/\s+/).filter(function(w){ return w.length > 0; });
-
+  var q = (document.getElementById("m-search").value || "").toLowerCase();
   document.querySelectorAll(".m-card").forEach(function(c){
     var s = (c.getAttribute("data-search") || "").toLowerCase();
-    var match = words.every(function(w){ return s.indexOf(w) !== -1; });
-    c.style.display = match ? "" : "none";
+    c.style.display = (!q || s.indexOf(q) !== -1) ? "" : "none";
   });
 }
 

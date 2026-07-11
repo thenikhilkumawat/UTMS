@@ -1,0 +1,1631 @@
+{% extends "website/base.html" %}
+{% set active = "home" %}
+{% block title %}Uttam Tailors — Custom Tailoring in Sikar since 1987{% endblock %}
+
+{% block head %}
+<style>
+/* ── HERO ── */
+.hero{min-height:90vh;}
+.hero-ai-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:7px 16px;margin-bottom:1.25rem;
+  background:rgba(200,144,58,.14);
+  border:1px solid rgba(212,152,72,.4);
+  border-radius:30px;
+  font-family:var(--fm);font-size:11px;letter-spacing:.04em;
+  color:var(--gold-l);text-decoration:none;
+  transition:background .2s,border-color .2s;
+}
+.hero-ai-badge:hover{background:rgba(200,144,58,.24);border-color:var(--gold-l);}
+.ai-tag{
+  display:inline-block;vertical-align:middle;
+  padding:2px 8px;margin-left:4px;
+  background:rgba(200,144,58,.12);border:1px solid rgba(200,144,58,.35);
+  border-radius:20px;
+  font-family:var(--fb);font-size:9px;letter-spacing:.04em;text-transform:none;
+  color:var(--gold-d);font-weight:600;
+}
+/* Promise bar — force single line, centered, wider container */
+.hero-content{max-width:780px !important;}
+.hero-promise{
+  flex-wrap:nowrap !important;
+  justify-content:center !important;
+  gap:0 !important;
+}
+.hero-promise span{
+  white-space:nowrap;
+  padding:0 1.4rem !important;
+  border-right:1px solid rgba(250,240,228,.12) !important;
+  font-size:10.5px !important;
+}
+.hero-promise span:last-child{border-right:none !important;}
+
+/* ── BRING YOUR INSPO SECTION ── */
+.inspo-section{background:var(--dark);padding:6.5rem 3rem;overflow:hidden;position:relative;}
+.inspo-section::before{content:'';position:absolute;top:-20%;right:-8%;width:55%;height:150%;background:radial-gradient(ellipse at center,rgba(200,144,58,.1) 0%,transparent 65%);pointer-events:none;}
+.inspo-section::after{content:'';position:absolute;bottom:-10%;left:0%;width:35%;height:60%;background:radial-gradient(ellipse at center,rgba(200,144,58,.06) 0%,transparent 65%);pointer-events:none;}
+.inspo-inner{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:5rem;align-items:center;position:relative;z-index:1;}
+.inspo-text .kicker{color:var(--gold-l);letter-spacing:.14em;}
+.inspo-title{font-family:var(--fd);font-size:clamp(38px,4.5vw,60px);font-weight:300;color:#FAF0E4;line-height:1.1;margin:1rem 0 1.4rem;}
+.inspo-title em{font-style:normal;color:var(--gold-l);}
+.inspo-sub{font-size:15px;color:rgba(250,240,228,.48);line-height:1.85;margin-bottom:2.5rem;max-width:420px;}
+.inspo-steps{display:flex;flex-direction:column;gap:0;margin-bottom:2.75rem;}
+.inspo-step{display:flex;align-items:flex-start;gap:1.4rem;padding:1.1rem 0;border-bottom:1px solid rgba(200,144,58,.1);}
+.inspo-step:last-child{border-bottom:none;}
+.inspo-step-num{font-family:var(--fd);font-size:32px;font-weight:300;color:rgba(200,144,58,.2);line-height:1;flex-shrink:0;min-width:40px;padding-top:2px;}
+.inspo-step-body strong{display:block;font-size:14px;font-weight:700;color:#FAF0E4;margin-bottom:4px;letter-spacing:.01em;}
+.inspo-step-body span{font-size:13px;color:rgba(250,240,228,.42);line-height:1.6;}
+.inspo-cta{display:inline-flex;align-items:center;gap:11px;padding:15px 36px;background:var(--gold);color:var(--dark);font-family:var(--fm);font-size:11px;letter-spacing:.13em;text-transform:uppercase;border-radius:var(--r);text-decoration:none;font-weight:700;transition:background .2s,transform .15s,box-shadow .2s;}
+.inspo-cta:hover{background:var(--gold-l);transform:translateY(-2px);box-shadow:0 10px 32px rgba(200,144,58,.32);}
+/* Right-side feature cards */
+.inspo-visual{display:flex;flex-direction:column;gap:.9rem;position:relative;}
+.inspo-card{
+  display:flex;align-items:center;gap:1.25rem;
+  padding:1.3rem 1.6rem;
+  background:rgba(250,240,228,.04);
+  border:1px solid rgba(200,144,58,.14);
+  border-radius:14px;
+  transition:background .25s,border-color .25s,transform .3s;
+}
+.inspo-card:hover{background:rgba(200,144,58,.08);border-color:rgba(200,144,58,.35);transform:translateX(6px);}
+.inspo-card-icon{
+  width:50px;height:50px;border-radius:12px;
+  background:rgba(200,144,58,.1);border:1px solid rgba(200,144,58,.2);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.inspo-card-text strong{display:block;font-size:14px;font-weight:700;color:#FAF0E4;margin-bottom:4px;letter-spacing:.01em;}
+.inspo-card-text span{font-size:12.5px;color:rgba(250,240,228,.4);line-height:1.5;}
+/* Accent stripe on first card */
+.inspo-card:first-child{border-color:rgba(200,144,58,.28);background:rgba(200,144,58,.06);}
+@media(max-width:900px){
+  .inspo-inner{grid-template-columns:1fr;gap:3rem;}
+  .inspo-section{padding:4.5rem 1.5rem;}
+}
+
+/* ── WHATSAPP FAB ── */
+.wa-fab{
+  position:fixed;bottom:24px;right:24px;z-index:9000;
+  display:inline-flex;align-items:center;gap:0;
+  background:#25D366;color:#fff;
+  border-radius:999px;text-decoration:none;
+  box-shadow:0 4px 20px rgba(37,211,102,.4);
+  transition:all .25s cubic-bezier(.4,0,.2,1);
+  overflow:hidden;white-space:nowrap;
+  width:50px;height:50px;justify-content:center;
+}
+.wa-fab:hover{
+  width:auto;height:50px;padding:0 20px 0 14px;gap:9px;
+  box-shadow:0 8px 28px rgba(37,211,102,.5);
+  transform:translateY(-2px);
+}
+.wa-fab svg{flex-shrink:0;}
+.wa-fab-label{
+  font-size:13px;font-weight:700;
+  max-width:0;opacity:0;overflow:hidden;
+  transition:max-width .25s .05s,opacity .2s;
+}
+.wa-fab:hover .wa-fab-label{max-width:160px;opacity:1;}
+
+/* ── DAILY CRAFT SECTION ── */
+.craft-section{background:#F5F0EA;padding:6rem 3rem;}
+.craft-inner{max-width:1180px;margin:0 auto;}
+.craft-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  grid-auto-rows:240px;
+  gap:14px;
+  margin:3rem auto;
+}
+.craft-tile{
+  position:relative;overflow:hidden;border-radius:14px;cursor:pointer;
+  background:var(--dark);
+  transition:transform .35s ease,box-shadow .35s ease;
+}
+.craft-tile:hover{transform:translateY(-5px);box-shadow:0 18px 50px rgba(28,15,6,.2);}
+.craft-tile:first-child{grid-row:span 2;}
+.craft-tile:nth-child(4){grid-column:span 2;}
+.craft-tile img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .55s ease;opacity:.92;}
+.craft-tile:hover img{transform:scale(1.07);opacity:1;}
+.craft-tile-overlay{
+  position:absolute;inset:0;
+  background:linear-gradient(to top,rgba(28,15,6,.72) 0%,transparent 55%);
+  opacity:0;transition:opacity .3s;
+  display:flex;flex-direction:column;justify-content:flex-end;padding:1.25rem 1.4rem;
+}
+.craft-tile:hover .craft-tile-overlay{opacity:1;}
+.craft-tile-tag{font-family:var(--fm);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-l);margin-bottom:4px;}
+.craft-tile-cap{font-size:13px;font-weight:600;color:#FAF0E4;line-height:1.4;}
+.craft-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:40px;opacity:.25;background:var(--dark2);}
+.craft-tile--ph{background:linear-gradient(135deg,#1E1008 0%,#2A160A 100%);}
+.craft-tile--ph .craft-tile-overlay{opacity:1!important;background:linear-gradient(to top,rgba(28,15,6,.88) 0%,rgba(28,15,6,.2) 60%,transparent 100%);}
+.craft-placeholder-luxury{width:100%;height:100%;display:flex;align-items:center;justify-content:center;}
+.craft-footer{text-align:center;margin-top:2.5rem;}
+.craft-view-all{
+  display:inline-flex;align-items:center;gap:10px;
+  padding:13px 32px;border:1.5px solid var(--dark);border-radius:var(--r);
+  font-family:var(--fm);font-size:11px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--dark);text-decoration:none;transition:all .2s;
+}
+.craft-view-all:hover{background:var(--dark);color:#FAF0E4;}
+@media(max-width:900px){
+  .craft-section{padding:4rem 1.5rem;}
+  .craft-grid{grid-template-columns:repeat(2,1fr);grid-auto-rows:200px;}
+  .craft-tile:first-child{grid-row:span 1;}
+  .craft-tile:nth-child(4){grid-column:span 1;}
+}
+@media(max-width:560px){
+  .craft-grid{grid-template-columns:1fr 1fr;grid-auto-rows:160px;gap:8px;}
+}
+
+/* ── UTILITY BAR ── */
+.util-bar{background:var(--dark);border-bottom:1px solid rgba(255,255,255,.06);padding:0 3rem;}
+.util-bar-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:0;flex-wrap:wrap;}
+.util-link{display:flex;align-items:center;gap:7px;padding:13px 22px;font-size:12.5px;font-weight:600;letter-spacing:.03em;color:rgba(250,240,228,.7);text-decoration:none;border-right:1px solid rgba(255,255,255,.07);transition:color .15s,background .15s;white-space:nowrap;}
+.util-link:first-child{border-left:none;padding-left:0;}
+.util-link:hover{color:var(--gold-l);background:rgba(255,255,255,.04);}
+.util-link svg{flex-shrink:0;opacity:.7;}
+.util-link:hover svg{opacity:1;}
+.util-appt{margin-left:auto;display:flex;align-items:center;gap:8px;padding:8px 18px;border:1px solid rgba(200,144,58,.4);border-radius:999px;font-size:12px;font-weight:700;color:var(--gold-l);text-decoration:none;letter-spacing:.03em;transition:all .15s;white-space:nowrap;}
+.util-appt:hover{background:rgba(200,144,58,.12);border-color:var(--gold);}
+@media(max-width:768px){
+  .util-bar{padding:0 1rem;}
+  .util-link{padding:11px 14px;font-size:11.5px;}
+  .util-appt{margin-left:0;margin:8px 0;}
+}
+
+/* ── ACTION CARDS (section below hero) ── */
+.action-cards{background:var(--bg);padding:0 3rem 6rem;}
+.ac-inner{max-width:960px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.ac-card{
+  display:flex;flex-direction:column;
+  padding:3rem 2.75rem 2.5rem;
+  border:1px solid var(--border);
+  border-radius:var(--rLg);
+  background:var(--bg2);
+  text-decoration:none;
+  transition:all .28s ease;
+  position:relative;overflow:hidden;
+}
+.ac-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:transparent;transition:background .28s;}
+.ac-card:hover{border-color:rgba(92,52,32,.3);transform:translateY(-3px);box-shadow:0 12px 40px rgba(92,52,32,.1);}
+.ac-card:hover::before{background:var(--gold);}
+.ac-card--dark{background:var(--dark);border-color:var(--dark);}
+.ac-card--dark:hover{border-color:var(--dark2);box-shadow:0 12px 40px rgba(0,0,0,.3);}
+.ac-card--dark::before{background:transparent;}
+.ac-card--dark:hover::before{background:var(--gold-l);}
+.ac-num{font-family:var(--fd);font-size:56px;font-weight:300;color:var(--border);line-height:1;margin-bottom:1.75rem;display:block;}
+.ac-card--dark .ac-num{color:rgba(250,240,228,.08);}
+.ac-title{font-family:var(--fd);font-size:32px;font-weight:400;color:var(--dark);margin-bottom:.85rem;line-height:1.1;}
+.ac-card--dark .ac-title{color:#FAF0E4;}
+.ac-desc{font-size:14px;color:var(--muted);line-height:1.8;margin-bottom:.75rem;flex:1;}
+.ac-card--dark .ac-desc{color:rgba(250,240,228,.48);}
+.ac-for{font-family:var(--fm);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:1rem;display:block;}
+.ac-card--dark .ac-for{color:var(--gold-l);}
+.ac-who{font-size:14px;color:var(--muted);line-height:1.75;margin-bottom:1.5rem;flex:1;}
+.ac-card--dark .ac-who{color:rgba(250,240,228,.5);}
+.ac-features{list-style:none;display:flex;flex-direction:column;gap:7px;margin-bottom:2rem;padding:0;}
+.ac-features li{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--dark);}
+.ac-card--dark .ac-features li{color:rgba(250,240,228,.75);}
+.ac-features li::before{content:'✓';font-family:var(--fm);font-size:11px;color:var(--gold);font-weight:700;flex-shrink:0;margin-top:1px;}
+.ac-card--dark .ac-features li::before{color:var(--gold-l);}
+.ac-price{font-family:var(--fm);font-size:10px;color:var(--muted);letter-spacing:.06em;margin-bottom:1.5rem;}
+.ac-card--dark .ac-price{color:rgba(250,240,228,.28);}
+.ac-cta{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:13px 28px;
+  background:var(--dark);color:var(--bg);
+  font-family:var(--fm);font-size:11px;letter-spacing:.09em;text-transform:uppercase;
+  border-radius:var(--r);transition:background .2s;width:fit-content;
+}
+.ac-cta:hover{background:var(--brown);}
+.ac-card--dark .ac-cta{background:var(--gold);color:var(--dark);}
+.ac-card--dark .ac-cta:hover{background:var(--gold-l);}
+
+/* ── AI STYLE PREVIEW ── */
+.ai-preview-section{
+  background:var(--dark);
+  padding:6.5rem 3rem 7rem;
+  position:relative;overflow:hidden;
+}
+.ai-preview-section::before{
+  content:'';position:absolute;top:-40%;right:-10%;width:60%;height:140%;
+  background:radial-gradient(circle,rgba(200,144,58,.12),transparent 65%);
+  pointer-events:none;
+}
+.ai-preview-section .section-header .kicker.aip-kicker{
+  color:var(--gold-l);display:inline-flex;align-items:center;gap:6px;
+}
+.ai-preview-section .section-title{color:#FAF0E4;}
+.ai-preview-section .section-sub{color:rgba(250,240,228,.45);}
+.aip-flip{max-width:1100px;margin:2.5rem auto 0;position:relative;z-index:1;}
+.aip-face{display:none;}
+.aip-face.is-active{display:block;animation:aipFaceIn .35s ease;}
+@keyframes aipFaceIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+.aip-cats{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:1.25rem;}
+.aip-cat{
+  flex:0 0 auto;padding:7px 16px;border-radius:30px;
+  border:1.5px solid rgba(250,240,228,.14);background:transparent;
+  color:rgba(250,240,228,.6);font-family:var(--fb);font-size:12.5px;cursor:pointer;
+  white-space:nowrap;transition:all .2s;
+}
+.aip-cat:hover{border-color:rgba(200,144,58,.4);}
+.aip-cat.active{background:var(--gold);border-color:var(--gold);color:var(--dark);font-weight:600;}
+.aip-slider-wrap{position:relative;}
+.aip-slider{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px 2px 10px;}
+.aip-gcard{
+  flex:0 0 128px;scroll-snap-align:start;
+  border:1.5px solid rgba(250,240,228,.1);border-radius:var(--rLg);
+  overflow:hidden;cursor:pointer;transition:all .2s;background:rgba(250,240,228,.03);
+}
+.aip-gcard img{width:100%;height:110px;object-fit:cover;display:block;opacity:.85;transition:opacity .2s;}
+.aip-gcard span{display:block;padding:8px 9px;font-size:11px;color:rgba(250,240,228,.7);font-family:var(--fb);line-height:1.3;}
+.aip-gcard:hover{border-color:rgba(200,144,58,.4);}
+.aip-gcard:hover img{opacity:1;}
+.aip-arrow{
+  position:absolute;top:40px;width:32px;height:32px;border-radius:50%;
+  background:rgba(28,15,6,.85);border:1px solid rgba(250,240,228,.18);color:#FAF0E4;
+  font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  z-index:2;transition:background .2s;
+}
+.aip-arrow:hover{background:var(--gold);color:var(--dark);}
+.aip-arrow--l{left:-14px;}
+.aip-arrow--r{right:-14px;}
+.aip-hint{margin-top:.5rem;font-size:11.5px;color:rgba(250,240,228,.35);text-align:center;}
+.aip-back-btn{
+  background:none;border:none;color:var(--gold-l);font-family:var(--fb);font-size:12.5px;
+  cursor:pointer;padding:0 0 1.5rem;display:inline-block;
+}
+.aip-back-btn:hover{text-decoration:underline;}
+.aip-customize-grid{display:grid;grid-template-columns:320px 1fr;gap:2.5rem;}
+.aip-selected-name{font-family:var(--fd);font-size:20px;color:#FAF0E4;margin-bottom:1.25rem;}
+.aip-opt-group{margin-bottom:1.1rem;}
+.aip-opt-lbl{
+  display:block;font-family:var(--fm);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;
+  color:rgba(250,240,228,.45);margin-bottom:.5rem;
+}
+.aip-chips{display:flex;gap:7px;flex-wrap:wrap;}
+.aip-chip{
+  padding:7px 13px;border:1.5px solid rgba(250,240,228,.12);border-radius:var(--r);
+  font-size:12px;color:rgba(250,240,228,.6);cursor:pointer;transition:all .2s;font-family:var(--fb);
+}
+.aip-chip:hover{border-color:rgba(200,144,58,.4);}
+.aip-chip.active{background:var(--gold);border-color:var(--gold);color:var(--dark);font-weight:500;}
+.aip-generate-btn{
+  width:100%;justify-content:center;margin-top:.75rem;font-size:13px;padding:13px 20px;
+  border:none;
+}
+.aip-generate-btn:disabled{opacity:.6;cursor:wait;}
+.aip-note{
+  margin-top:.85rem;font-size:11.5px;color:rgba(250,240,228,.3);text-align:center;
+}
+.aip-result{display:flex;flex-direction:column;}
+.aip-compare{display:grid;grid-template-columns:1fr 1fr;gap:16px;flex:1;}
+.aip-pane{display:flex;flex-direction:column;gap:10px;align-items:center;}
+.aip-img-wrap{
+  width:100%;aspect-ratio:3/4;border-radius:var(--rLg);overflow:hidden;
+  background:rgba(250,240,228,.04);border:1px solid rgba(250,240,228,.08);
+  position:relative;display:flex;align-items:center;justify-content:center;
+}
+.aip-img-wrap img{width:100%;height:100%;object-fit:cover;display:block;}
+.aip-placeholder{
+  font-size:12.5px;color:rgba(250,240,228,.3);text-align:center;padding:0 1.5rem;line-height:1.6;
+}
+.aip-loading{display:flex;flex-direction:column;align-items:center;gap:14px;padding:0 1.5rem;text-align:center;}
+.aip-spinner{
+  width:34px;height:34px;border-radius:50%;
+  border:2.5px solid rgba(200,144,58,.2);border-top-color:var(--gold);
+  animation:aipSpin .8s linear infinite;
+}
+@keyframes aipSpin{to{transform:rotate(360deg);}}
+.aip-loading span{font-size:12px;color:rgba(250,240,228,.45);}
+.aip-tag{
+  font-family:var(--fm);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;
+  color:rgba(250,240,228,.3);
+}
+.aip-tag--ai{color:var(--gold-l);}
+.aip-cta{margin-top:1.75rem;text-align:center;}
+@media (max-width:860px){
+  .aip-customize-grid{grid-template-columns:1fr;}
+  .aip-arrow{display:none;}
+}
+
+/* ── PRICING SECTION ── */
+.pricing-section{background:var(--dark);padding:6rem 3rem 7rem;}
+.pricing-inner{max-width:1140px;margin:0 auto;}
+.pricing-section .kicker{color:var(--gold-l);}
+.pricing-section .section-title{color:#FAF0E4;}
+.pricing-section .section-sub{color:rgba(250,240,228,.4);}
+/* Category tabs */
+.prc-tabs{
+  display:flex;gap:0;flex-wrap:nowrap;overflow-x:auto;
+  border-bottom:1px solid rgba(250,240,228,.1);
+  margin-bottom:2.5rem;
+  scrollbar-width:none;
+}
+.prc-tabs::-webkit-scrollbar{display:none;}
+.prc-tab{
+  padding:.9rem 1.6rem;
+  font-family:var(--fm);font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+  color:rgba(250,240,228,.35);
+  cursor:pointer;white-space:nowrap;
+  border-bottom:2px solid transparent;
+  transition:color .2s,border-color .2s;
+  user-select:none;flex-shrink:0;
+}
+.prc-tab:hover{color:rgba(250,240,228,.7);}
+.prc-tab.active{color:var(--gold);border-bottom-color:var(--gold);}
+/* Products table per category */
+.prc-pane{display:none;}
+.prc-pane.active{display:block;animation:prcIn .25s ease;}
+@keyframes prcIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.prc-table{width:100%;border-collapse:collapse;}
+.prc-table tr{
+  border-bottom:1px solid rgba(250,240,228,.06);
+  cursor:pointer;
+  transition:background .18s;
+}
+.prc-table tr:last-child{border-bottom:none;}
+.prc-table tr:hover{background:rgba(250,240,228,.03);}
+.prc-table td{padding:1.1rem .75rem;vertical-align:middle;}
+.prc-td-num{
+  font-family:var(--fm);font-size:9px;letter-spacing:.14em;
+  color:rgba(250,240,228,.2);width:36px;
+}
+.prc-td-name{
+  font-family:var(--fd);font-size:20px;font-weight:400;
+  color:rgba(250,240,228,.82);
+}
+.prc-td-price{
+  font-family:var(--fd);font-size:20px;font-weight:400;
+  color:var(--gold);text-align:right;white-space:nowrap;
+}
+.prc-td-action{width:40px;text-align:right;}
+.prc-td-action a{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:32px;height:32px;
+  border:1px solid rgba(250,240,228,.1);
+  color:rgba(250,240,228,.3);
+  font-size:13px;
+  transition:all .2s;text-decoration:none;
+}
+.prc-table tr:hover .prc-td-action a{
+  border-color:var(--gold);color:var(--gold);background:rgba(200,144,58,.08);
+}
+.prc-table tr:hover .prc-td-name{color:#FAF0E4;}
+/* Hover thumbnail tooltip */
+#prc-tip{
+  position:fixed;pointer-events:none;z-index:9999;display:none;
+  width:200px;
+  background:var(--dark);
+  border:1px solid rgba(200,144,58,.3);
+  box-shadow:0 24px 60px rgba(0,0,0,.7);
+  transition:opacity .12s;
+}
+#prc-tip img{width:100%;height:130px;object-fit:cover;display:block;}
+#prc-tip-body{padding:12px 14px 14px;}
+#prc-tip-name{font-family:var(--fd);font-size:15px;color:#FAF0E4;line-height:1.3;margin-bottom:5px;}
+#prc-tip-price{font-family:var(--fm);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);}
+/* Footer bar */
+.prc-footer{
+  margin-top:2.5rem;padding-top:2rem;
+  border-top:1px solid rgba(250,240,228,.07);
+  display:flex;align-items:center;justify-content:space-between;gap:1.5rem;flex-wrap:wrap;
+}
+.prc-footer-note{font-size:12px;color:rgba(250,240,228,.25);line-height:1.75;max-width:460px;}
+.prc-footer-note strong{color:rgba(250,240,228,.5);font-weight:500;}
+.prc-cta{
+  display:inline-flex;align-items:center;gap:10px;
+  padding:13px 28px;
+  background:var(--gold);color:var(--dark);
+  font-family:var(--fm);font-size:11px;letter-spacing:.09em;text-transform:uppercase;
+  font-weight:500;transition:.2s;flex-shrink:0;text-decoration:none;
+}
+.prc-cta:hover{background:var(--gold-l);}
+
+/* ── OCCASION FINDER ── */
+.occasion-section{
+  padding:7rem 3rem 8rem;
+  background:var(--bg);
+  position:relative;
+}
+.occasion-section .section-header .kicker{color:var(--gold);}
+.occasion-section .section-title{color:var(--dark);}
+.occasion-section .section-sub{color:var(--muted);}
+.occ-inner{max-width:1100px;margin:0 auto;}
+
+/* Grid — borderless tile layout, share edges */
+.occ-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  margin-bottom:2.5rem;
+  border-top:1px solid var(--border);
+  border-left:1px solid var(--border);
+}
+.occ-card{
+  position:relative;
+  padding:3rem 2.5rem 4rem;
+  border-right:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+  background:transparent;
+  cursor:pointer;
+  overflow:hidden;
+  user-select:none;
+  transition:color .3s;
+}
+/* Dark fill from bottom on hover/active */
+.occ-card::before{
+  content:'';position:absolute;inset:0;
+  background:var(--dark);
+  transform:translateY(100%);
+  transition:transform .38s cubic-bezier(.4,0,.2,1);
+  z-index:0;
+}
+.occ-card:hover::before,.occ-card.active::before{transform:translateY(0);}
+
+/* Gold top bar on active */
+.occ-card::after{
+  content:'';position:absolute;top:0;left:0;right:0;
+  height:2px;background:var(--gold);
+  transform:scaleX(0);
+  transition:transform .35s .05s ease;
+  z-index:1;
+}
+.occ-card.active::after{transform:scaleX(1);}
+
+/* Card number */
+.occ-card-num{
+  font-family:var(--fm);font-size:9px;
+  letter-spacing:.2em;color:var(--muted);
+  margin-bottom:2.25rem;display:block;
+  position:relative;z-index:1;
+  transition:color .3s;
+}
+.occ-card:hover .occ-card-num,.occ-card.active .occ-card-num{color:rgba(200,144,58,.6);}
+
+.occ-card-icon{
+  font-size:30px;
+  color:rgba(92,52,32,.2);
+  margin-bottom:1.5rem;display:block;
+  position:relative;z-index:1;
+  transition:color .3s,transform .3s;
+}
+.occ-card:hover .occ-card-icon,.occ-card.active .occ-card-icon{
+  color:var(--gold);transform:scale(1.06);
+}
+.occ-card-title{
+  font-family:var(--fd);font-size:30px;font-weight:400;
+  color:var(--dark);
+  margin-bottom:.6rem;line-height:1.1;
+  position:relative;z-index:1;
+  transition:color .3s;
+}
+.occ-card:hover .occ-card-title,.occ-card.active .occ-card-title{color:#FAF0E4;}
+.occ-card-sub{
+  font-family:var(--fm);font-size:10px;
+  color:var(--muted);
+  line-height:2;letter-spacing:.06em;
+  position:relative;z-index:1;
+  transition:color .3s;
+}
+.occ-card:hover .occ-card-sub,.occ-card.active .occ-card-sub{color:rgba(250,240,228,.45);}
+.occ-card-arrow{
+  position:absolute;bottom:1.75rem;right:2rem;
+  font-size:16px;
+  color:rgba(92,52,32,.15);
+  transition:all .35s;
+  transform:translateX(-6px);
+  z-index:1;
+}
+.occ-card:hover .occ-card-arrow,.occ-card.active .occ-card-arrow{
+  color:var(--gold);transform:translateX(0);
+}
+
+/* Result panel */
+.occ-result{
+  display:none;
+  padding:2.75rem 3rem;
+  background:var(--dark);
+  border-top:2px solid var(--gold);
+  animation:occFadeIn .4s ease;
+}
+@keyframes occFadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.occ-result.visible{display:block;}
+.occ-result-head{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:2rem;flex-wrap:wrap;gap:1rem;
+}
+.occ-rec-label{
+  font-family:var(--fm);font-size:9px;
+  color:var(--gold);letter-spacing:.22em;text-transform:uppercase;
+}
+.occ-all-link{
+  font-family:var(--fm);font-size:9px;
+  color:rgba(250,240,228,.3);letter-spacing:.1em;text-transform:uppercase;
+  transition:color .2s;text-decoration:none;
+}
+.occ-all-link:hover{color:var(--gold);}
+.occ-garments{display:flex;flex-wrap:wrap;gap:10px;}
+.occ-garment{
+  display:inline-flex;align-items:center;gap:10px;
+  padding:14px 26px;
+  background:rgba(250,240,228,.04);
+  border:1px solid rgba(250,240,228,.1);
+  font-family:var(--fd);font-size:19px;
+  color:rgba(250,240,228,.75);
+  transition:all .25s;text-decoration:none;
+}
+.occ-garment i{font-size:15px;color:var(--gold);}
+.occ-garment:hover{
+  border-color:var(--gold);
+  background:rgba(200,144,58,.08);
+  color:#FAF0E4;
+}
+
+/* ── FABRIC GUIDE ── */
+.fabric-guide{padding:0 3rem 7rem;background:var(--bg2);}
+.fabric-grid{max-width:1200px;margin:2rem auto 0;display:grid;grid-template-columns:repeat(5,1fr);gap:12px;}
+.fabric-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--rLg);overflow:hidden;transition:all .25s;}
+.fabric-card:hover{border-color:var(--gold-d);box-shadow:0 8px 28px rgba(92,52,32,.12);transform:translateY(-3px);}
+.fabric-swatch{height:7px;width:100%;}
+.fabric-body{padding:1.5rem 1.25rem 1.75rem;}
+.fabric-name{font-family:var(--fd);font-size:21px;color:var(--dark);margin-bottom:2px;}
+.fabric-tagline{font-size:11px;color:var(--muted);margin-bottom:1.25rem;letter-spacing:.03em;}
+.fabric-info-table{display:flex;flex-direction:column;}
+.fib-row{display:flex;justify-content:space-between;align-items:baseline;padding:7px 0;border-bottom:1px solid var(--border);gap:8px;}
+.fib-row:last-child{border-bottom:none;}
+.fib-k{font-family:var(--fm);font-size:9.5px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;flex-shrink:0;}
+.fib-v{font-size:12px;color:var(--dark);font-weight:500;text-align:right;line-height:1.3;}
+.fabric-cta{display:block;margin-top:1.25rem;padding:9px 0;text-align:center;border:1px solid var(--border);border-radius:var(--r);font-family:var(--fm);font-size:10px;color:var(--muted);letter-spacing:.09em;text-transform:uppercase;text-decoration:none;transition:all .2s;}
+.fabric-cta:hover{border-color:var(--gold);color:var(--gold);background:rgba(184,120,48,.05);}
+
+/* ── LIVE SHOP STATUS ── */
+.live-strip{background:var(--dark2);border-top:1px solid rgba(184,120,48,.18);border-bottom:1px solid rgba(184,120,48,.18);padding:1.25rem 0;}
+.live-inner{max-width:1400px;margin:0 auto;padding:0 3rem;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;}
+.live-dot{width:8px;height:8px;border-radius:50%;background:#4ade80;animation:livepulse 2s ease-in-out infinite;flex-shrink:0;}
+@keyframes livepulse{0%,100%{opacity:1;box-shadow:0 0 6px rgba(74,222,128,.6);}50%{opacity:.4;box-shadow:none;}}
+.live-label{font-family:var(--fm);font-size:10px;color:var(--gold-l);letter-spacing:.1em;text-transform:uppercase;}
+.live-count{font-family:var(--fd);font-size:32px;color:#FAF0E4;line-height:1;margin:0 6px;}
+.live-desc{font-size:13px;color:rgba(250,240,228,.5);}
+.live-slot{font-family:var(--fm);font-size:11px;color:var(--gold-l);background:rgba(184,120,48,.1);padding:7px 16px;border:1px solid rgba(184,120,48,.2);border-radius:var(--r);}
+
+/* ── RESPONSIVE ── */
+@media(max-width:1100px){
+  .fabric-grid{grid-template-columns:repeat(3,1fr);}
+}
+@media(max-width:960px){
+  .occ-grid{grid-template-columns:repeat(2,1fr);}
+}
+@media(max-width:900px){
+  .pricing-section{padding-left:1.5rem;padding-right:1.5rem;}
+  .prc-footer{flex-direction:column;align-items:flex-start;}
+  .action-cards{padding-left:1.5rem;padding-right:1.5rem;}
+  .ac-inner{grid-template-columns:1fr;}
+  .est-inner{padding:0 1.5rem;}
+  .occasion-section,.fabric-guide{padding-left:1.5rem;padding-right:1.5rem;}
+  .est-body{grid-template-columns:1fr;gap:2rem;}
+  .occ-grid{grid-template-columns:repeat(2,1fr);}
+  .live-inner{padding:0 1.5rem;flex-direction:column;text-align:center;gap:12px;}
+  .fabric-grid{grid-template-columns:repeat(2,1fr);}
+  .est-result-panel{gap:2rem;}
+  .est-result-actions{align-items:flex-start;}
+}
+@media(max-width:600px){
+  .ac-title{font-size:26px;}
+  .occ-grid{grid-template-columns:1fr 1fr;}
+  .occ-card:nth-child(5),.occ-card:nth-child(6){border-bottom:none;}
+  .fabric-grid{grid-template-columns:1fr 1fr;}
+  .est-result-panel{flex-direction:column;padding:2rem 1.5rem;}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# ── Occasion Countdown Banner (logged-in users only, injected by JS) ── #}
+<div id="occasionBanner" style="display:none;background:#7c3aed;color:#fff;text-align:center;padding:10px 1rem;font-size:13.5px;font-weight:600;position:relative;">
+  <span id="occasionBannerText"></span>
+  <a id="occasionBannerCta" href="/commission" style="color:#fde68a;font-weight:800;margin-left:10px;text-decoration:underline;">Order now →</a>
+  <button onclick="document.getElementById('occasionBanner').style.display='none'" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#fff;font-size:18px;cursor:pointer;">&#x2715;</button>
+</div>
+<script>
+fetch('/api/occasions/upcoming').then(function(r){return r.json();}).then(function(d){
+  if(d.ok && d.days_left<=30){
+    var b=document.getElementById('occasionBanner');
+    var t=document.getElementById('occasionBannerText');
+    t.textContent = (d.days_left===0 ? 'Today is ' : d.days_left+' days until ') + d.name + (d.garment_type?' ('+d.garment_type+')':'') + ' — have your garment ready!';
+    b.style.display='block';
+  }
+}).catch(function(){});
+</script>
+
+{# ═══════ 01 HERO ═══════ #}
+{% if hs_active.get('hero', True) %}
+{% set h = hs.get('hero',{}) %}
+<section class="hero">
+  <div class="hero-img">
+    {% set _hero_img = h.get('bg_image','') %}
+    {% set _hero_img_m = h.get('bg_image_mobile','') %}
+    <picture>
+      {% if _hero_img_m %}<source media="(max-width:768px)" srcset="{{ _hero_img_m }}">{% endif %}
+      <img src="{{ _hero_img if _hero_img else 'https://images.unsplash.com/photo-1593030103066-0093718efeb9?w=1920&q=85&auto=format&fit=crop' }}" alt="Uttam Tailors workshop" loading="eager">
+    </picture>
+  </div>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <a href="#aiPreview" class="hero-ai-badge">✨ AI-Powered Style Preview — see it before you order</a>
+    <div class="hero-eyebrow">
+      <span class="eyebrow-line"></span>
+      {{ h.get('eyebrow','Subhash Chowk, Sikar · Est. 1987') }}
+      <span class="eyebrow-line"></span>
+    </div>
+    <h1 class="hero-title">
+      <span class="hero-t1">{{ h.get('title_line1','Master tailoring,') }}</span>
+      <em>{{ h.get('title_line2','made for you.') }}</em>
+    </h1>
+    <p class="hero-sub">{{ h.get('subtext','Tell us what you need — we stitch it perfectly. WhatsApp updates at every step.') }}</p>
+    <div class="hero-actions">
+      <a href="{{ h.get('card2_url','/commission') }}" class="hero-btn-primary">{{ h.get('card2_btn','Customise Your Garment') }} →</a>
+      <a href="{{ h.get('card1_url','/our-craft') }}" class="hero-btn-ghost">{{ h.get('card1_btn','Browse designs') }}</a>
+      <a href="https://maps.google.com/?q=Uttam+Tailors+Subhash+Chowk+Sikar+Rajasthan" target="_blank" rel="noopener" class="hero-btn-ghost" style="display:inline-flex;align-items:center;gap:6px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        Find Our Store
+      </a>
+    </div>
+    <div class="hero-promise">
+      <span>Free alteration if fit is off</span>
+      <span>Ready in 5–7 days</span>
+      <span>WhatsApp updates</span>
+      <span>Rs. 150 off first order</span>
+    </div>
+  </div>
+  <div class="hero-scroll" aria-hidden="true">
+    <div class="scroll-line"></div><span>scroll</span>
+  </div>
+</section>
+{% endif %}
+
+{# ── UTILITY BAR ── #}
+<div class="util-bar">
+  <div class="util-bar-inner">
+    <a href="https://maps.google.com/?q=Uttam+Tailors+Subhash+Chowk+Sikar+Rajasthan" target="_blank" rel="noopener" class="util-link">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      Find our Store
+    </a>
+    <a href="#hiw" class="util-link">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+      How it Works
+    </a>
+    <a href="/commission" class="util-link">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      Customise with AI
+    </a>
+    <a href="https://wa.me/{{ web_settings.get('web_whatsapp_number','918000684346') }}?text=Hi%2C+I%27d+like+to+book+an+appointment+at+Uttam+Tailors" target="_blank" rel="noopener" class="util-appt">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.116 1.523 5.845L.057 23.7a.5.5 0 0 0 .612.612l5.848-1.47A11.951 11.951 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.734 9.734 0 0 1-5.22-1.512l-.374-.222-3.875.974.99-3.765-.243-.387A9.751 9.751 0 0 1 2.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/></svg>
+      Book Appointment
+    </a>
+  </div>
+</div>
+
+{# ── FLOATING WHATSAPP BUTTON ── #}
+{% set _wa_num = web_settings.get('web_whatsapp_number','918000684346') %}
+<a href="https://wa.me/{{ _wa_num }}?text=Hi%2C+I%27d+like+to+book+an+appointment+at+Uttam+Tailors"
+   target="_blank" rel="noopener" class="wa-fab" title="Book via WhatsApp">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.116 1.523 5.845L.057 23.7a.5.5 0 0 0 .612.612l5.848-1.47A11.951 11.951 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.734 9.734 0 0 1-5.22-1.512l-.374-.222-3.875.974.99-3.765-.243-.387A9.751 9.751 0 0 1 2.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/></svg>
+  <span class="wa-fab-label">Book via WhatsApp</span>
+</a>
+
+{# ═══════ 01b ACTION CARDS ═══════ #}
+{% if hs_active.get('action_cards', True) %}
+{% set ac = hs.get('action_cards',{}) %}
+<section class="action-cards">
+  <div class="section-header section-header--center" style="padding-top:5rem;padding-bottom:2.5rem;">
+    <p class="kicker">{{ ac.get('kicker','How can we help you?') }}</p>
+    <h2 class="section-title" style="font-size:clamp(26px,3vw,40px);">{{ ac.get('title','Two ways to get perfectly fitted clothes') }}</h2>
+  </div>
+  <div class="ac-inner">
+    <a href="{{ ac.get('card1_url','/our-craft') }}" class="ac-card">
+      <span class="ac-num">01</span>
+      <span class="ac-for">{{ ac.get('card1_eyebrow',"Don't know where to start?") }}</span>
+      <div class="ac-title">{{ ac.get('card1_title','Browse our designs') }}</div>
+      <div class="ac-who">{{ ac.get('card1_desc','See 50+ ready styles — shirts, suits, kurtas, pathani and more. Like something? We stitch it in your exact measurements.') }}</div>
+      <ul class="ac-features">
+        <li>{{ ac.get('card1_f1','Photos of every design') }}</li>
+        <li>{{ ac.get('card1_f2','We suggest fabric &amp; fit for you') }}</li>
+        <li>{{ ac.get('card1_f3','No decisions before you see options') }}</li>
+      </ul>
+      <div class="ac-price">{{ ac.get('card1_note','Stitching starts from ₹350') }}</div>
+      <span class="ac-cta">{{ ac.get('card1_btn','See all designs') }} →</span>
+    </a>
+    <a href="{{ ac.get('card2_url','/commission') }}" class="ac-card ac-card--dark">
+      <span class="ac-num">02</span>
+      <span class="ac-for">{{ ac.get('card2_eyebrow','Already know what you want?') }}</span>
+      <div class="ac-title">{{ ac.get('card2_title','Custom stitching') }}</div>
+      <div class="ac-who">{{ ac.get('card2_desc','Your measurements, your fabric, your style. Share the details — we stitch and deliver in 5–7 days. Alteration is free if the fit is off.') }}</div>
+      <ul class="ac-features">
+        <li>{{ ac.get('card2_f1','Bring your fabric or choose ours') }}</li>
+        <li>{{ ac.get('card2_f2','WhatsApp updates during stitching') }}</li>
+        <li>{{ ac.get('card2_f3','Free alteration if fit is off') }}</li>
+      </ul>
+      <div class="ac-price">{{ ac.get('card2_note','Ready in 5–7 days') }}</div>
+      <span class="ac-cta">{{ ac.get('card2_btn','Start your order') }} →</span>
+    </a>
+  </div>
+</section>
+{% endif %}
+
+{# ═══════ 01c AI STYLE PREVIEW ═══════ #}
+{% if hs_active.get('ai_preview', True) %}
+{% set aip = hs.get('ai_preview',{}) %}
+<section class="ai-preview-section" id="aiPreview">
+  <div class="section-header section-header--center">
+    <p class="kicker aip-kicker">✨ {{ aip.get('kicker','AI-Powered') }}</p>
+    <h2 class="section-title">{{ aip.get('title','See your garment before we even thread the needle.') }}</h2>
+    <p class="section-sub">{{ aip.get('subtitle','Pick a garment below — our AI instantly renders a real preview of your style choice.') }}</p>
+  </div>
+  <div class="aip-flip" id="aipFlip">
+    <div class="aip-face aip-face--front is-active" id="aipFaceBrowse">
+      <div class="aip-cats" id="aipCats">
+        <div class="aip-cat active" data-cat="all" onclick="aipFilterCat('all',this)">All</div>
+        {% for cat in pricing_cats %}
+        <div class="aip-cat" data-cat="cat-{{ loop.index }}" onclick="aipFilterCat('cat-{{ loop.index }}',this)">{{ cat.name }}</div>
+        {% endfor %}
+      </div>
+      <div class="aip-slider-wrap">
+        <div class="aip-arrow aip-arrow--l" onclick="aipScroll(-1)" aria-hidden="true">&#8249;</div>
+        <div class="aip-slider" id="aipSlider">
+          {% for cat in pricing_cats %}
+          {% set cat_idx = loop.index %}
+          {% for item in cat.products %}
+          <div class="aip-gcard" data-cat="cat-{{ cat_idx }}" data-id="{{ item.id }}" data-name="{{ item.name }}" data-img="{{ item.image_url or '' }}" onclick="aipSelectGarment(this)">
+            <img src="{{ item.image_url or 'https://images.unsplash.com/photo-1593030103066-0093718efeb9?w=300&q=80' }}" alt="{{ item.name }}" loading="lazy">
+            <span>{{ item.name }}</span>
+          </div>
+          {% endfor %}
+          {% endfor %}
+        </div>
+        <div class="aip-arrow aip-arrow--r" onclick="aipScroll(1)" aria-hidden="true">&#8250;</div>
+      </div>
+      <p class="aip-hint">{{ aip.get('hint','Click any garment to customise it & generate your AI preview') }}</p>
+    </div>
+    <div class="aip-face aip-face--back" id="aipFaceCustomize">
+      <button class="aip-back-btn" onclick="aipBackToBrowse()">&larr; Back to all garments</button>
+      <div class="aip-customize-grid">
+        <div class="aip-options">
+          <div class="aip-selected-name" id="aipSelName">&mdash;</div>
+          <div class="aip-opt-group">
+            <span class="aip-opt-lbl">Fit</span>
+            <div class="aip-chips" data-group="fit">
+              <div class="aip-chip active" data-val="slim fit" onclick="aipPickChip(this)">Slim</div>
+              <div class="aip-chip" data-val="regular fit" onclick="aipPickChip(this)">Regular</div>
+              <div class="aip-chip" data-val="relaxed fit" onclick="aipPickChip(this)">Relaxed</div>
+            </div>
+          </div>
+          <div class="aip-opt-group">
+            <span class="aip-opt-lbl">Collar</span>
+            <div class="aip-chips" data-group="collar">
+              <div class="aip-chip" data-val="classic collar" onclick="aipPickChip(this)">Classic</div>
+              <div class="aip-chip" data-val="mandarin collar" onclick="aipPickChip(this)">Mandarin</div>
+              <div class="aip-chip" data-val="button-down collar" onclick="aipPickChip(this)">Button-down</div>
+              <div class="aip-chip" data-val="cutaway collar" onclick="aipPickChip(this)">Cutaway</div>
+            </div>
+          </div>
+          <div class="aip-opt-group">
+            <span class="aip-opt-lbl">Sleeve</span>
+            <div class="aip-chips" data-group="sleeve">
+              <div class="aip-chip" data-val="full sleeve" onclick="aipPickChip(this)">Full sleeve</div>
+              <div class="aip-chip" data-val="half sleeve" onclick="aipPickChip(this)">Half sleeve</div>
+              <div class="aip-chip" data-val="roll-up sleeve" onclick="aipPickChip(this)">Roll-up</div>
+            </div>
+          </div>
+          <div class="aip-opt-group">
+            <span class="aip-opt-lbl">Pocket</span>
+            <div class="aip-chips" data-group="pocket">
+              <div class="aip-chip" data-val="no pocket" onclick="aipPickChip(this)">None</div>
+              <div class="aip-chip" data-val="one pocket" onclick="aipPickChip(this)">One</div>
+              <div class="aip-chip" data-val="two pockets" onclick="aipPickChip(this)">Two</div>
+            </div>
+          </div>
+          <button class="btn-gold aip-generate-btn" id="aipGenBtn" onclick="aipGenerate()">&#10024; Generate My AI Preview &rarr;</button>
+          <div class="aip-note" id="aipNote">{{ aip.get('note','3 free AI previews — then a quick sign-in to keep generating.') }}</div>
+        </div>
+        <div class="aip-result">
+          <div class="aip-compare">
+            <div class="aip-pane">
+              <div class="aip-img-wrap"><img id="aipBeforeImg" src="" alt="Your pick"></div>
+              <span class="aip-tag">Your pick</span>
+            </div>
+            <div class="aip-pane">
+              <div class="aip-img-wrap" id="aipAfterWrap">
+                <div class="aip-placeholder" id="aipPlaceholder">&#10024;<br>Pick your styles, then hit Generate<br>to see your AI preview</div>
+              </div>
+              <span class="aip-tag aip-tag--ai">AI preview</span>
+            </div>
+          </div>
+          <div class="aip-cta">
+            <a href="/commission" id="aipCtaLink" class="btn-primary">Continue this style on the order page &rarr;</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{# ═══════ 02 HERITAGE STATS ═══════ #}
+{% if hs_active.get('heritage', True) %}
+{% set hh = hs.get('heritage',{}) %}
+<section class="heritage">
+  <div class="heritage-inner">
+    <div class="heritage-item"><span class="h-num">{{ hh.get('stat1_num','1987') }}</span><span class="h-label">{{ hh.get('stat1_label','Est. since') }}</span></div>
+    <div class="heritage-item"><span class="h-num">{{ hh.get('stat2_num','37+') }}</span><span class="h-label">{{ hh.get('stat2_label','Years of craft') }}</span></div>
+    <div class="heritage-item"><span class="h-num">{{ hh.get('stat3_num','1 Lakh+') }}</span><span class="h-label">{{ hh.get('stat3_label','Garments delivered') }}</span></div>
+    <div class="heritage-item"><span class="h-num">{{ hh.get('stat4_num','7') }}</span><span class="h-label">{{ hh.get('stat4_label','Day turnaround') }}</span></div>
+  </div>
+</section>
+{% endif %}
+
+{# ═══════ 03 WHAT WE MAKE (catalogue) ═══════ #}
+{% if hs_active.get('catalogue', True) %}
+{% set hc = hs.get('catalogue',{}) %}
+<section class="catalogue">
+  <div class="section-header section-header--center">
+    <p class="kicker">{{ hc.get('kicker','What we make') }}</p>
+    <h2 class="section-title">{{ hc.get('title','Every garment, made to your exact measure.') }}</h2>
+    <p class="section-sub">{{ hc.get('subtitle','No readymade. No shortcuts. Only what fits you perfectly.') }}</p>
+  </div>
+  <div class="cat-grid">
+    {% for item in home_items %}
+    {% set _m = item_media.get(item.id, {}) %}
+    {% set _img = _m.get('images', [])[0] if _m.get('images') else item.image_url %}
+    <a href="{{ url_for('website.product_detail', item_id=item.id) }}" class="cat-card">
+      <div class="cat-img-wrap">
+        {% if _img %}
+        <img src="{{ _img }}" alt="{{ item.name }}" loading="lazy">
+        {% else %}
+        <img src="https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=600&q=80" alt="{{ item.name }}" loading="lazy">
+        {% endif %}
+        <div class="cat-overlay"><span>View &amp; Order &rarr;</span></div>
+      </div>
+      <div class="cat-info">
+        <div class="cat-name-row">
+          <span class="cat-name">{{ item.name }}</span>
+          <span class="cat-price">from Rs. {{ item.price }}</span>
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  <div class="section-cta">
+    <a href="{{ hc.get('btn_url','/our-craft') }}" class="btn-primary">{{ hc.get('btn_text','See all services & prices →') }}</a>
+  </div>
+</section>
+{% endif %}
+
+{# ═══════ 04 BRANDS TICKER (only if active in admin) ═══════ #}
+{% if hs.get('brands') or hs.get('brands_ticker') %}
+{% set hbr = hs.get('brands_ticker') or hs.get('brands') or {} %}
+{% set brand_list = hbr.get('brands',[
+  {'name':"Raymond's",'logo_url':''},{'name':"Siyaram's",'logo_url':''},
+  {'name':'Grasim','logo_url':''},{'name':'Donear','logo_url':''},
+  {'name':'Arvind','logo_url':''},{'name':'OCM','logo_url':''},
+]) %}
+<section class="brands-bar">
+  <div class="brands-label">{{ hbr.get('label','Fabrics we work with') }}</div>
+  <div class="brands-track-wrap">
+    {% set brand_half = brand_list * 3 %}
+    <div class="brands-track" style="--brands-speed:{{ hbr.get('speed','60') }}s;animation-duration:{{ hbr.get('speed','60') }}s;">
+      {% for b in brand_half + brand_half %}
+      <div class="brand-item">
+        {% if b.logo_url %}<img src="{{ b.logo_url }}" alt="{{ b.name }}" class="brand-logo-img">
+        {% else %}<span class="brand-logo-text">{{ b.name }}</span>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{# ═══════ 05 PRICING ═══════ #}
+<section class="pricing-section">
+  {% set pe = hs.get('price_estimator',{}) %}
+  <div class="pricing-inner">
+    <div class="section-header" style="max-width:100%;padding-left:0;padding-right:0;">
+      <p class="kicker">Our Pricing</p>
+      <h2 class="section-title">Every garment. Every price.</h2>
+      <p class="section-sub">Browse all our services — starting prices shown. Final price confirmed before we begin.</p>
+    </div>
+
+    {% if pricing_cats %}
+    {# Category tabs #}
+    <div class="prc-tabs">
+      {% for cat in pricing_cats %}
+      <div class="prc-tab {% if loop.first %}active{% endif %}" onclick="switchPrcTab(this,'prc-pane-{{ loop.index }}')">
+        {{ cat.name }}
+      </div>
+      {% endfor %}
+    </div>
+
+    {# One pane per category #}
+    {% for cat in pricing_cats %}
+    <div class="prc-pane {% if loop.first %}active{% endif %}" id="prc-pane-{{ loop.index }}">
+      <table class="prc-table">
+        {% for item in cat.products %}
+        <tr onclick="window.location='/commission?g={{ item.name|lower|replace(' ','-') }}'" data-img="{{ item.image_url or '' }}">
+          <td class="prc-td-num">{{ '%02d'|format(loop.index) }}</td>
+          <td class="prc-td-name">{{ item.name }}</td>
+          <td class="prc-td-price">{% if item.price %}Rs. {{ item.price }}{% else %}—{% endif %}</td>
+          <td class="prc-td-action"><a href="/commission?g={{ item.name|lower|replace(' ','-') }}" onclick="event.stopPropagation()">→</a></td>
+        </tr>
+        {% endfor %}
+      </table>
+    </div>
+    {% endfor %}
+
+    {% else %}
+    <p style="color:rgba(250,240,228,.3);font-size:14px;margin-top:2rem;">No services added yet. Add them from the admin panel.</p>
+    {% endif %}
+
+    <div class="prc-footer">
+      <p class="prc-footer-note">
+        <strong>Prices shown are starting rates.</strong> Final price is shared and confirmed before we begin stitching. Free alteration if the fit is off.
+      </p>
+      <a href="/commission" class="prc-cta">Customise your garment →</a>
+    </div>
+  </div>
+</section>
+
+{# ═══════ 06 OCCASION FINDER ═══════ #}
+{% if hs_active.get('occasion_finder', True) %}
+<section class="occasion-section">
+  <div class="section-header section-header--center">
+    {% set of = hs.get('occasion_finder',{}) %}
+    <p class="kicker">{{ of.get('kicker','Occasion finder') }} <span class="ai-tag">AI-assisted</span></p>
+    <h2 class="section-title">{{ of.get('title','What are you dressing for?') }}</h2>
+    <p class="section-sub">{{ of.get('subtitle','Tell us the occasion — we\'ll suggest the perfect garment.') }}</p>
+  </div>
+  <div class="occ-inner">
+    <div class="occ-grid">
+      <div class="occ-card" onclick="pickOcc('wedding',this)">
+        <span class="occ-card-num">01</span>
+        <i class="occ-card-icon ti {{ of.get('occ1_icon','ti-hearts') }}" aria-hidden="true"></i>
+        <div class="occ-card-title">{{ of.get('occ1_title','Wedding') }}</div>
+        <div class="occ-card-sub">{{ of.get('occ1_sub','Suit · Kurta Pajama · Pathani') }}</div>
+        <span class="occ-card-arrow">→</span>
+      </div>
+      <div class="occ-card" onclick="pickOcc('office',this)">
+        <span class="occ-card-num">02</span>
+        <i class="occ-card-icon ti {{ of.get('occ2_icon','ti-briefcase') }}" aria-hidden="true"></i>
+        <div class="occ-card-title">{{ of.get('occ2_title','Office') }}</div>
+        <div class="occ-card-sub">{{ of.get('occ2_sub','Shirt · Trouser · Blazer') }}</div>
+        <span class="occ-card-arrow">→</span>
+      </div>
+      <div class="occ-card" onclick="pickOcc('festival',this)">
+        <span class="occ-card-num">03</span>
+        <i class="occ-card-icon ti {{ of.get('occ3_icon','ti-confetti') }}" aria-hidden="true"></i>
+        <div class="occ-card-title">{{ of.get('occ3_title','Festival') }}</div>
+        <div class="occ-card-sub">{{ of.get('occ3_sub','Kurta Pajama · Pathani · Kurta') }}</div>
+        <span class="occ-card-arrow">→</span>
+      </div>
+      <div class="occ-card" onclick="pickOcc('casual',this)">
+        <span class="occ-card-num">04</span>
+        <i class="occ-card-icon ti {{ of.get('occ4_icon','ti-sun') }}" aria-hidden="true"></i>
+        <div class="occ-card-title">{{ of.get('occ4_title','Casual') }}</div>
+        <div class="occ-card-sub">{{ of.get('occ4_sub','Shirt · Jeans · Kurta') }}</div>
+        <span class="occ-card-arrow">→</span>
+      </div>
+      <div class="occ-card" onclick="pickOcc('party',this)">
+        <span class="occ-card-num">05</span>
+        <i class="occ-card-icon ti {{ of.get('occ5_icon','ti-mood-happy') }}" aria-hidden="true"></i>
+        <div class="occ-card-title">{{ of.get('occ5_title','Party') }}</div>
+        <div class="occ-card-sub">{{ of.get('occ5_sub','Suit · Blazer · Shirt') }}</div>
+        <span class="occ-card-arrow">→</span>
+      </div>
+      <div class="occ-card" onclick="pickOcc('school',this)">
+        <span class="occ-card-num">06</span>
+        <i class="occ-card-icon ti {{ of.get('occ6_icon','ti-school') }}" aria-hidden="true"></i>
+        <div class="occ-card-title">{{ of.get('occ6_title','School') }}</div>
+        <div class="occ-card-sub">{{ of.get('occ6_sub','School Dress · Shirt & Trouser') }}</div>
+        <span class="occ-card-arrow">→</span>
+      </div>
+    </div>
+    <div class="occ-result" id="occResult">
+      <div class="occ-result-head">
+        <span class="occ-rec-label" id="occLabel">Recommended:</span>
+        <a href="/commission" class="occ-all-link">View all options →</a>
+      </div>
+      <div class="occ-garments" id="occGarments"></div>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{# ═══════ 07 MEET THE MASTER (papa_story) ═══════ #}
+{% if hs_active.get('papa_story', True) %}
+<section class="papa-story">
+  <div class="papa-img">
+    <img src="https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=1400&q=80" alt="The craft" loading="lazy">
+  </div>
+  <div class="papa-content">
+    <div>
+      {% set hp = hs.get('papa_story',{}) %}
+      <p class="kicker" style="color:var(--gold-l);">{{ hp.get('kicker','The master') }}</p>
+      <blockquote class="papa-quote">&ldquo;{{ hp.get('quote','My father spent 33 years building this craft. In 2025, I am taking it to every corner of India.') }}&rdquo;</blockquote>
+      <p class="papa-attr">{{ hp.get('attribution','— Nikhil Kumawat, continuing the legacy of Late Mr. Narendra Kumawat') }}</p>
+      <a href="{{ hp.get('link_url','/our-story') }}" class="papa-link">{{ hp.get('link_text','Read our full story →') }}</a>
+    </div>
+    <div>
+      <div class="papa-body">
+        <p>{{ hp.get('body1','In 1987, Mr. Narendra Kumawat started Uttam Tailors at Subhash Chowk, Sikar — with one sewing machine and one rule: if the garment fits perfectly, the customer always comes back.') }}</p>
+        <p>{{ hp.get('body2','He spent over three decades building what Sikar knows today. Lakhs of garments. Thousands of families served. Not one shortcut taken. In 2020, he left us — but not the craft.') }}</p>
+        <p>{{ hp.get('body3','His son Nikhil carries that standard forward today — bringing the same quality online so it reaches not just Sikar, but all of India.') }}</p>
+      </div>
+      <div class="papa-year">{{ hp.get('year_text','Est. 1987 — forever in every stitch') }}</div>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{# ═══════ 08 HOW IT WORKS ═══════ #}
+{% if hs_active.get('hiw', True) %}
+<section class="hiw">
+  <div class="hiw-inner">
+    <div class="hiw-header">
+      {% set hw = hs.get('hiw',{}) %}
+      <p class="kicker">{{ hw.get('kicker','The process') }}</p>
+      <h2 class="section-title" style="color:#FAF0E4;">{{ hw.get('title','Order to your door in four steps.') }}</h2>
+    </div>
+    <div class="hiw-steps">
+      {% for i in [1,2,3,4] %}
+      <div class="hiw-step">
+        <div class="hiw-num">{{ hw.get('step'+i|string+'_num','0'+i|string) }}</div>
+        <h3 class="hiw-title">{{ hw.get('step'+i|string+'_title','Step '+i|string) }}</h3>
+        <p class="hiw-body">{{ hw.get('step'+i|string+'_body','') }}</p>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="hiw-cta">
+      <a href="{{ hw.get('btn_url','/commission') }}" class="btn-gold">{{ hw.get('btn_text','Customise Your Garment →') }}</a>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{# ═══════ 09 FABRIC GUIDE ═══════ #}
+{% if hs_active.get('fabric_guide', True) %}
+<section class="fabric-guide">
+  <div class="section-header section-header--center">
+    {% set fg = hs.get('fabric_guide',{}) %}
+    <p class="kicker">{{ fg.get('kicker','Fabric guide') }} <span class="ai-tag">AI-assisted</span></p>
+    <h2 class="section-title">{{ fg.get('title','Which fabric should you choose?') }}</h2>
+    <p class="section-sub">{{ fg.get('subtitle','Season, occasion, price — everything you need to decide.') }}</p>
+  </div>
+  {% set swatch_map = {
+    'Cotton':     'linear-gradient(135deg,#d9c4a0,#b89060)',
+    'Linen':      'linear-gradient(135deg,#c4d4a8,#8aaa58)',
+    'Wool':       'linear-gradient(135deg,#9aacbe,#587090)',
+    'Silk':       'linear-gradient(135deg,#d8b4cc,#a870a0)',
+    'Poly blend': 'linear-gradient(135deg,#b0c4d8,#7090b8)'
+  } %}
+  {% set fabrics_default = [
+    {'name':'Cotton','tagline':'Everyday comfort','season':'All seasons','best_for':'Shirts, kurtas, daily wear','price':'Budget friendly','care':'Machine washable'},
+    {'name':'Linen','tagline':'Light & breathable','season':'Summer','best_for':'Casual shirts, trousers','price':'Mid range','care':'Gentle wash'},
+    {'name':'Wool','tagline':'Warm & formal','season':'Winter','best_for':'Suits, blazers, coats','price':'Premium','care':'Dry clean'},
+    {'name':'Silk','tagline':'Luxurious finish','season':'Weddings','best_for':'Suit, formal wear','price':'Luxury','care':'Dry clean only'},
+    {'name':'Poly blend','tagline':'Durable & easy care','season':'All seasons','best_for':'Uniforms, trousers','price':'Budget friendly','care':'Machine washable'},
+  ] %}
+  {% set fabrics = fg.get('fabrics', fabrics_default) %}
+  <div class="fabric-grid">
+    {% for f in fabrics %}
+    {% set fname = f.get('name','') %}
+    <div class="fabric-card">
+      <div class="fabric-swatch" style="background:{{ f.get('swatch', swatch_map.get(fname, 'linear-gradient(135deg,#c8b8a8,#a89878)')) }}"></div>
+      <div class="fabric-body">
+        <div class="fabric-name">{{ fname }}</div>
+        <div class="fabric-tagline">{{ f.get('tagline','') }}</div>
+        <div class="fabric-info-table">
+          <div class="fib-row"><span class="fib-k">Season</span><span class="fib-v">{{ f.get('season','') }}</span></div>
+          <div class="fib-row"><span class="fib-k">Best for</span><span class="fib-v">{{ f.get('best_for','') }}</span></div>
+          <div class="fib-row"><span class="fib-k">Price</span><span class="fib-v">{{ f.get('price','') }}</span></div>
+          <div class="fib-row"><span class="fib-k">Care</span><span class="fib-v">{{ f.get('care','') }}</span></div>
+        </div>
+        <a href="/commission?fabric={{ fname | lower | urlencode }}" class="fabric-cta">Choose this fabric →</a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{# ═══════ 10 BEFORE / AFTER ═══════ #}
+{% if hs_active.get('fabric_journey', True) %}
+{% set hfj = hs.get('fabric_journey',{}) %}
+<section class="fabric-journey">
+  <div class="section-header section-header--center">
+    <p class="kicker">{{ hfj.get('kicker','From bolt to body') }}</p>
+    <h2 class="section-title">{{ hfj.get('title','Drag to see the transformation.') }}</h2>
+    <p class="section-sub">{{ hfj.get('subtitle','Raw fabric becomes a garment made precisely for you.') }}</p>
+  </div>
+  <div class="fj-thumbs">
+    {% for i in [1,2,3] %}
+    {% set label = hfj.get('slide'+i|string+'_label', ['Navy → Suit','Khaki → Trouser','Dark → Blazer'][i-1]) %}
+    {% set color = hfj.get('slide'+i|string+'_color', ['#1e2540','#d4c4a0','#2a1a10'][i-1]) %}
+    <button class="fj-thumb {% if i==1 %}active{% endif %}" data-slide="{{ i-1 }}" onclick="setSlide({{ i-1 }},this)">
+      <div class="fj-swatch" style="background:{{ color }}"></div><span>{{ label }}</span>
+    </button>
+    {% endfor %}
+  </div>
+  <div class="fj-slides">
+    {% for i in [1,2,3] %}
+    {% set garment = hfj.get('slide'+i|string+'_garment', ['Two-piece Suit','Tailored Trouser','Blazer'][i-1]) %}
+    {% set fabric_img = hfj.get('slide'+i|string+'_fabric_img','') %}
+    {% set garment_img = hfj.get('slide'+i|string+'_garment_img','') %}
+    {% set def_before = ['photo-1558618666-fcd25c85cd64','photo-1558618666-fcd25c85cd64','photo-1558618666-fcd25c85cd64'][i-1] %}
+    {% set def_after = ['photo-1507679799987-c73779587ccf','photo-1473966968600-fa801b869a1a','photo-1617127365659-c47fa864d8bc'][i-1] %}
+    <div class="fj-slide {% if i==1 %}active{% endif %}" data-slide="{{ i-1 }}">
+      <div class="compare-wrap" id="cmp{{ i-1 }}">
+        <div class="c-before">
+          <img src="{% if fabric_img %}{{ fabric_img }}{% else %}https://images.unsplash.com/{{ def_before }}?w=1040&q=80{% endif %}" alt="Raw fabric" loading="lazy">
+          <div class="c-label c-label--l"><span class="c-label-text">Raw fabric</span></div>
+        </div>
+        <div class="c-after" id="after{{ i-1 }}">
+          <div class="c-after-inner" id="afterinner{{ i-1 }}">
+            <img src="{% if garment_img %}{{ garment_img }}{% else %}https://images.unsplash.com/{{ def_after }}?w=1040&q=80{% endif %}" alt="{{ garment }}" loading="lazy">
+          </div>
+          <div class="c-label c-label--r"><span class="c-label-text">{{ garment }}</span></div>
+        </div>
+        <div class="c-handle" id="hdl{{ i-1 }}"><div class="c-handle-btn">&#8644;</div></div>
+      </div>
+      <div class="fj-cta"><a href="{{ url_for('website.commission') }}" class="btn-primary">Customise this &rarr;</a></div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{# ═══════ 11 LIVE SHOP STATUS ═══════ #}
+{% if hs_active.get('shop_status', True) %}
+{% set ls = hs.get('shop_status',{}) %}
+<div class="live-strip">
+  <div class="live-inner">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="live-dot"></div>
+      <span class="live-label">Live from our shop</span>
+    </div>
+    <div style="display:flex;align-items:center;">
+      <span class="live-count">{{ live_stats.get('active_count', 0) }}</span>
+      <span class="live-desc">orders currently in progress</span>
+    </div>
+    <div class="live-slot">
+      {% if ls.get('custom_message') %}{{ ls.custom_message }}{% else %}Next slot: {{ ls.get('next_slot','3–5 days') }}{% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{# ═══════ 12 REVIEWS ═══════ #}
+{% if hs_active.get('reviews', True) %}
+{% set hr = hs.get('reviews',{}) %}
+{% set rev_list = hr.get('reviews',[
+  {'init':'RK','name':'Rakesh Kumar','loc':'Sikar','text':'Got a suit stitched here for my son\'s wedding. Perfect fit on the first try.'},
+  {'init':'MS','name':'Mohan Sharma','loc':'Subhash Chowk','text':'I have been coming for 12 years. The quality has never dropped once.'},
+  {'init':'AV','name':'Anil Verma','loc':'Piprali Road','text':'Three shirts done. Not one alteration needed. That says everything.'},
+  {'init':'SJ','name':'Sunil Jain','loc':'Sikar','text':'I gave my old kurta as reference. They made an identical one. Perfect fit.'},
+  {'init':'DM','name':'Dinesh Mathur','loc':'Fatehpur Road','text':'Ordered a blazer. They came home to measure. Delivered in 6 days.'},
+  {'init':'VK','name':'Vijay Kumar','loc':'Losal Road','text':'Got a suit stitched for my brother\'s wedding. Superb work. Everyone was asking where we got it.'},
+]) %}
+<section class="reviews">
+  <div class="section-header section-header--center">
+    <p class="kicker">{{ hr.get('kicker','What Sikar says') }}</p>
+    <h2 class="section-title">{{ hr.get('title','Words from our customers.') }}</h2>
+  </div>
+  <div class="reviews-track-wrap">
+    <div class="reviews-track" id="reviewTrack">
+      {% for rev in rev_list + rev_list %}
+      <div class="review-card">
+        <div class="review-top">
+          <div class="review-av">{{ rev.init }}</div>
+          <div><p class="review-name">{{ rev.name }}</p><p class="review-loc">{{ rev.loc }}</p></div>
+          <div class="review-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        </div>
+        <blockquote class="review-text">&ldquo;{{ rev.text }}&rdquo;</blockquote>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{# ═══════ BRING YOUR INSPO ═══════ #}
+<section class="inspo-section">
+  <div class="inspo-inner">
+    <div class="inspo-text reveal-left">
+      <p class="kicker">Your Style, Your Rules</p>
+      <h2 class="inspo-title">Bring Your <em>Inspo</em></h2>
+      <p class="inspo-sub">Found a look you love? Share a photo, screenshot, or magazine cut — and we'll recreate it in your exact measurements, fabric and fit.</p>
+      <div class="inspo-steps">
+        <div class="inspo-step">
+          <span class="inspo-step-num">01</span>
+          <div class="inspo-step-body">
+            <strong>Upload your inspiration</strong>
+            <span>Screenshot, Instagram save, Pinterest pin — anything works</span>
+          </div>
+        </div>
+        <div class="inspo-step">
+          <span class="inspo-step-num">02</span>
+          <div class="inspo-step-body">
+            <strong>Tell us your preferences</strong>
+            <span>Fabric type, colour, occasion — we'll guide you through it</span>
+          </div>
+        </div>
+        <div class="inspo-step">
+          <span class="inspo-step-num">03</span>
+          <div class="inspo-step-body">
+            <strong>We stitch it for you</strong>
+            <span>Handcrafted to your exact measurements in 7 days</span>
+          </div>
+        </div>
+      </div>
+      <a href="/style-request" class="inspo-cta">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Share Your Inspo
+      </a>
+    </div>
+    <div class="inspo-visual reveal-right">
+      <!-- Card 1: Upload -->
+      <div class="inspo-card">
+        <div class="inspo-card-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C8903A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+            <polyline points="21 15 16 10 5 21"/>
+          </svg>
+        </div>
+        <div class="inspo-card-text">
+          <strong>Upload any reference image</strong>
+          <span>Pinterest, Instagram, magazine — any source works</span>
+        </div>
+      </div>
+      <!-- Card 2: Stitch -->
+      <div class="inspo-card">
+        <div class="inspo-card-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C8903A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7z"/>
+            <path d="M12 11V5M9 8h6"/>
+          </svg>
+        </div>
+        <div class="inspo-card-text">
+          <strong>Custom stitched, your measurements</strong>
+          <span>Every stitch made by hand — never mass-produced</span>
+        </div>
+      </div>
+      <!-- Card 3: Delivery -->
+      <div class="inspo-card">
+        <div class="inspo-card-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C8903A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12H3l9-9 9 9h-2"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/>
+            <path d="M9 21v-6h6v6"/>
+          </svg>
+        </div>
+        <div class="inspo-card-text">
+          <strong>Ready in 7 days, delivered free</strong>
+          <span>Free delivery across India — straight to your door</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{# ═══════ FRESH FROM THE WORKSHOP ═══════ #}
+<section class="craft-section" id="workshopSection">
+  <div class="craft-inner">
+    <div class="section-header section-header--center reveal">
+      <p class="kicker">Stitched This Week</p>
+      <h2 class="section-title">Fresh From<br>The Workshop</h2>
+      <p class="section-sub">A live look at what our tailors crafted recently — real work, no stock photos.</p>
+    </div>
+    <div class="craft-grid" id="craftHomeGrid">
+      <!-- JS-loaded from /api/daily-craft/latest; fallback tiles shown until then -->
+      <div class="craft-tile" style="background:#e8e2da;">
+        <div class="craft-placeholder">✂</div>
+        <div class="craft-tile-overlay"><div class="craft-tile-cap">Loading…</div></div>
+      </div>
+    </div>
+    <div class="craft-footer reveal">
+      <a href="/our-work" class="craft-view-all">View Full Gallery &rarr;</a>
+    </div>
+  </div>
+</section>
+
+{# ═══════ 13 FINAL CTA ═══════ #}
+{% if hs_active.get('big_cta', True) %}
+<section class="big-cta">
+  <div class="big-cta-img"><img src="https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=1920&q=80" alt="" aria-hidden="true" loading="lazy"></div>
+  <div class="big-cta-overlay"></div>
+  {% set hb = hs.get('big_cta',{}) %}
+  <div class="big-cta-inner">
+    <p class="kicker" style="color:var(--gold-l);">{{ hb.get('kicker','Ready?') }}</p>
+    <h2 class="big-cta-title">{{ hb.get('title','Your perfect garment is three minutes away.') }}</h2>
+    <p class="big-cta-sub">{{ hb.get('subtitle','Pick what you want. Tell us your size. We stitch. You wear it.') }}</p>
+    <a href="{{ hb.get('btn_url','/commission') }}" class="btn-gold btn-xl">{{ hb.get('btn_text','Customise Your Garment →') }}</a>
+    <p class="big-cta-note">{{ hb.get('note','30% advance · Free alteration · Rs. 100 off first order · Delivery across India') }}</p>
+  </div>
+</section>
+{% endif %}
+
+<!-- Recommended For You (personalised / popular / newest) — rendered by JS -->
+<section id="homeRecoSection" style="display:none;padding:4rem 2rem 2rem;max-width:1280px;margin:0 auto;">
+  <p class="kicker">Just for you</p>
+  <h2 class="section-title" style="font-size:clamp(24px,3vw,36px);margin-bottom:1.4rem;">Recommended For You</h2>
+  <div id="homeRecoGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1.4rem;"></div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/home.js') }}"></script>
+<script>
+/* ── Pricing tabs ── */
+function switchPrcTab(tab, paneId){
+  document.querySelectorAll('.prc-tab').forEach(function(t){t.classList.remove('active');});
+  document.querySelectorAll('.prc-pane').forEach(function(p){p.classList.remove('active');});
+  tab.classList.add('active');
+  var pane=document.getElementById(paneId);
+  if(pane) pane.classList.add('active');
+}
+/* ── Pricing table hover thumbnail ── */
+(function(){
+  /* Most-specific patterns first — order matters */
+  var IMG_MAP=[
+    [/school|uniform/i,        'photo-1503676260728-1c00da094a0b'],
+    [/pathani/i,               'photo-1594938298603-c8148c4b4647'],
+    [/kurta|ethnic/i,          'photo-1594938298603-c8148c4b4647'],
+    [/wedding|occasion/i,      'photo-1519741497674-611481863552'],
+    [/waistcoat/i,             'photo-1617127365659-c47fa9302312'],
+    [/blazer/i,                'photo-1617127365659-c47fa9302312'],
+    [/suit\s*shirt|shirt.*suit/i,'photo-1620012253295-c15cc3e65df4'],
+    [/denim\s*shirt/i,         'photo-1622519407650-3df9883f76a5'],
+    [/shirt/i,                 'photo-1620012253295-c15cc3e65df4'],
+    [/suit/i,                  'photo-1507679799987-c73779587ccf'],
+    [/jeans?/i,                'photo-1542272454315-4c01d7abdf4a'],
+    [/pant|pent/i,             'photo-1473966968600-fa801b869a1a'],
+  ];
+  function getImg(name){
+    for(var i=0;i<IMG_MAP.length;i++) if(IMG_MAP[i][0].test(name)) return IMG_MAP[i][1];
+    return 'photo-1507679799987-c73779587ccf';
+  }
+  var tip=document.createElement('div'); tip.id='prc-tip';
+  tip.innerHTML='<img id="prc-tip-img" src="" alt=""><div id="prc-tip-body"><div id="prc-tip-name"></div><div id="prc-tip-price"></div></div>';
+  document.body.appendChild(tip);
+  function pos(e){
+    var x=e.clientX+20,y=e.clientY-90,w=200,h=200;
+    if(x+w>window.innerWidth-12) x=e.clientX-w-20;
+    if(y<8) y=8;
+    if(y+h>window.innerHeight-8) y=window.innerHeight-h-8;
+    tip.style.left=x+'px'; tip.style.top=y+'px';
+  }
+  document.querySelectorAll('.prc-table tr').forEach(function(row){
+    row.addEventListener('mouseenter',function(e){
+      var nm=row.querySelector('.prc-td-name');
+      var pr=row.querySelector('.prc-td-price');
+      if(!nm) return;
+      var name=nm.textContent.trim();
+      var price=pr?pr.textContent.trim():'';
+      var realImg=row.getAttribute('data-img');
+      var src=realImg?realImg:('https://images.unsplash.com/'+getImg(name)+'?w=400&q=80&auto=format&fit=crop');
+      document.getElementById('prc-tip-img').src=src;
+      document.getElementById('prc-tip-name').textContent=name;
+      document.getElementById('prc-tip-price').textContent=price||'Price on request';
+      tip.style.display='block'; pos(e);
+    });
+    row.addEventListener('mouseleave',function(){ tip.style.display='none'; });
+    row.addEventListener('mousemove',pos);
+  });
+})();
+/* ── Occasion Finder ── */
+var _occData={
+  wedding:{label:'Recommended for weddings:',garments:[{name:'Suit',icon:'ti-tie',url:'/commission?g=suit'},{name:'Kurta Pajama',icon:'ti-star',url:'/commission?g=kurta'},{name:'Pathani',icon:'ti-star',url:'/commission?g=pathani'}]},
+  office:{label:'Recommended for office:',garments:[{name:'Shirt',icon:'ti-shirt',url:'/commission?g=shirt'},{name:'Pant',icon:'ti-layout-bottombar',url:'/commission?g=trouser'},{name:'Blazer',icon:'ti-building',url:'/commission?g=blazer'}]},
+  festival:{label:'Recommended for festivals:',garments:[{name:'Kurta Pajama',icon:'ti-star',url:'/commission?g=kurta'},{name:'Pathani',icon:'ti-star',url:'/commission?g=pathani'},{name:'Kurta',icon:'ti-star',url:'/commission?g=kurta'}]},
+  casual:{label:'Recommended for casual:',garments:[{name:'Shirt',icon:'ti-shirt',url:'/commission?g=shirt'},{name:'Jeans / Cargo',icon:'ti-scissors',url:'/commission?g=jeans'},{name:'Kurta',icon:'ti-star',url:'/commission?g=kurta'}]},
+  party:{label:'Recommended for parties:',garments:[{name:'Suit',icon:'ti-tie',url:'/commission?g=suit'},{name:'Blazer',icon:'ti-building',url:'/commission?g=blazer'},{name:'Shirt',icon:'ti-shirt',url:'/commission?g=shirt'}]},
+  school:{label:'Recommended for school:',garments:[{name:'School Dress',icon:'ti-school',url:'/commission?g=school-dress'},{name:'Shirt & Pant',icon:'ti-shirt',url:'/commission?g=shirt'}]},
+};
+function pickOcc(occ,el){
+  document.querySelectorAll('.occ-card').forEach(function(p){p.classList.remove('active');});
+  el.classList.add('active');
+  var d=_occData[occ]; if(!d) return;
+  document.getElementById('occLabel').textContent=d.label;
+  var h='';
+  d.garments.forEach(function(g){h+='<a href="'+g.url+'" class="occ-garment"><i class="ti '+g.icon+'" aria-hidden="true"></i>'+g.name+'</a>';});
+  document.getElementById('occGarments').innerHTML=h;
+  document.getElementById('occResult').classList.add('visible');
+}
+
+/* ── AI Style Preview: slideable browse + flip-to-customize + live generation ── */
+(function(){
+  var state={itemId:null,name:'',img:'',styles:{fit:'slim fit'}};
+  var slugMap=['shirt','trouser','pant','suit3pc','suit','blazer','kurtaset','kurta','pathani','safari','jeans','pajama'];
+  function guessSlug(name){
+    name=(name||'').toLowerCase();
+    for(var i=0;i<slugMap.length;i++){ if(name.indexOf(slugMap[i])!==-1) return slugMap[i]; }
+    return '';
+  }
+  window.aipFilterCat=function(cat,el){
+    document.querySelectorAll('.aip-cat').forEach(function(c){c.classList.remove('active');});
+    el.classList.add('active');
+    document.querySelectorAll('.aip-gcard').forEach(function(card){
+      var show=(cat==='all')||(card.getAttribute('data-cat')===cat);
+      card.style.display=show?'':'none';
+    });
+    var slider=document.getElementById('aipSlider');
+    if(slider) slider.scrollTo({left:0,behavior:'smooth'});
+  };
+  window.aipScroll=function(dir){
+    var slider=document.getElementById('aipSlider');
+    if(slider) slider.scrollBy({left:dir*300,behavior:'smooth'});
+  };
+  function resetResultPanel(){
+    var afterWrap=document.getElementById('aipAfterWrap');
+    if(afterWrap) afterWrap.innerHTML='<div class="aip-placeholder" id="aipPlaceholder">&#10024;<br>Pick your styles, then hit Generate<br>to see your AI preview</div>';
+  }
+  window.aipSelectGarment=function(el){
+    state.itemId=el.getAttribute('data-id');
+    state.name=el.getAttribute('data-name');
+    state.img=el.getAttribute('data-img');
+    state.styles={fit:'slim fit'};
+    document.querySelectorAll('.aip-chips').forEach(function(grp){
+      grp.querySelectorAll('.aip-chip').forEach(function(c,i){c.classList.toggle('active', grp.getAttribute('data-group')==='fit' && i===0);});
+    });
+    var nameEl=document.getElementById('aipSelName');
+    if(nameEl) nameEl.textContent=state.name;
+    var bi=document.getElementById('aipBeforeImg');
+    if(bi) bi.src=state.img;
+    resetResultPanel();
+    var btn=document.getElementById('aipGenBtn');
+    if(btn){ btn.disabled=false; btn.innerHTML='&#10024; Generate My AI Preview &rarr;'; }
+    var slug=guessSlug(state.name);
+    var link=document.getElementById('aipCtaLink');
+    if(link) link.href='/commission'+(slug?('?garment='+encodeURIComponent(slug)):'');
+    document.getElementById('aipFaceBrowse').classList.remove('is-active');
+    document.getElementById('aipFaceCustomize').classList.add('is-active');
+  };
+  window.aipBackToBrowse=function(){
+    document.getElementById('aipFaceCustomize').classList.remove('is-active');
+    document.getElementById('aipFaceBrowse').classList.add('is-active');
+  };
+  window.aipPickChip=function(el){
+    var group=el.parentElement.getAttribute('data-group');
+    el.parentElement.querySelectorAll('.aip-chip').forEach(function(c){c.classList.remove('active');});
+    el.classList.add('active');
+    state.styles[group]=el.getAttribute('data-val');
+  };
+  window.aipGenerate=function(){
+    if(!state.itemId) return;
+    var btn=document.getElementById('aipGenBtn');
+    var afterWrap=document.getElementById('aipAfterWrap');
+    btn.disabled=true; btn.innerHTML='Generating&hellip;';
+    afterWrap.innerHTML='<div class="aip-loading"><div class="aip-spinner"></div><span>Rendering your AI preview&hellip;</span></div>';
+    fetch('/api/generate-style-preview',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({item_id:state.itemId,garment:state.name,styles:state.styles})
+    }).then(function(r){return r.json();}).then(function(data){
+      btn.disabled=false; btn.innerHTML='&#10024; Generate My AI Preview &rarr;';
+      if(data.ok){
+        afterWrap.innerHTML='<img src="'+data.image_url+'" alt="AI preview">';
+        var note=document.getElementById('aipNote');
+        if(note && typeof data.previews_remaining==='number'){
+          note.textContent=data.previews_remaining+' free preview'+(data.previews_remaining===1?'':'s')+' left.';
+        }
+      } else if(data.need_login){
+        afterWrap.innerHTML='<div class="aip-placeholder">You\'ve used your free previews.<br>Sign in to keep generating.</div>';
+        if(typeof window.openAccountModal==='function') window.openAccountModal();
+      } else {
+        afterWrap.innerHTML='<div class="aip-placeholder">'+(data.error||'Could not generate preview. Please try again.')+'</div>';
+      }
+    }).catch(function(){
+      btn.disabled=false; btn.innerHTML='&#10024; Generate My AI Preview &rarr;';
+      afterWrap.innerHTML='<div class="aip-placeholder">Something went wrong. Please try again.</div>';
+    });
+  };
+  /* Deep-link from a product Quick View: ?ai_item=<id>#aiPreview */
+  try{
+    var _aiItem=new URLSearchParams(window.location.search).get('ai_item');
+    if(_aiItem){
+      var _aiCard=document.querySelector('.aip-gcard[data-id="'+_aiItem+'"]');
+      if(_aiCard){
+        window.aipSelectGarment(_aiCard);
+        setTimeout(function(){
+          var sec=document.getElementById('aiPreview');
+          if(sec) sec.scrollIntoView({behavior:'smooth',block:'start'});
+        },150);
+      }
+    }
+  }catch(e){}
+})();
+
+// Personalised Recommendations — lazy-load widget
+(function(){
+  var section = document.getElementById('aiRecommendSection');
+  if(!section) return;
+  fetch('/api/recommendations').then(function(r){return r.json();}).then(function(d){
+    var items = d.items||[];
+    if(!items.length){ section.style.display='none'; return; }
+    var wrap = document.getElementById('aiRecommendItems');
+    if(!wrap) return;
+    var html='';
+    items.forEach(function(it){
+      html+='<div style="min-width:160px;max-width:200px;flex:0 0 auto;">'+
+        '<a href="'+(it.item_url||'/our-craft')+'" style="text-decoration:none;color:inherit;">'+
+          '<img src="'+(it.image_url||'')+'" style="width:100%;height:190px;object-fit:cover;border-radius:10px;background:#f3ece1;" onerror="this.remove()">'+
+          '<div style="font-size:13px;font-weight:700;margin-top:8px;">'+(it.name||'')+'</div>'+
+          '<div style="font-size:12px;color:var(--gold);">&#8377;'+(it.price||'')+'</div>'+
+        '</a>'+
+      '</div>';
+    });
+    wrap.innerHTML=html;
+  }).catch(function(){if(section)section.style.display='none';});
+})();
+
+/* ── Daily Craft: load latest items into homepage grid ── */
+(function(){
+  var grid = document.getElementById('craftHomeGrid');
+  if(!grid) return;
+
+  /* Placeholder tiles shown while loading or when DB is empty */
+  var placeholderLabels = [
+    {tag:'Suits',cap:'Bespoke suits, handcrafted to measure'},
+    {tag:'Shirts',cap:'Premium custom shirts since 1987'},
+    {tag:'Kurta',cap:'Traditional & fusion ethnic wear'},
+    {tag:'Blazers',cap:'Tailored blazers, your silhouette'},
+    {tag:'Pathani',cap:'Authentic hand-stitched Pathani'},
+    {tag:'Wedding',cap:'Wedding & occasion specials'}
+  ];
+  function buildPlaceholders(){
+    var html = '';
+    placeholderLabels.forEach(function(p,i){
+      html += '<div class="craft-tile craft-tile--ph reveal-scale" onclick="window.location.href=\'/our-work\'" style="transition-delay:'+(i*55)+'ms">';
+      html += '<div class="craft-placeholder-luxury">';
+      html += '<svg width="38" height="38" viewBox="0 0 70 70" fill="none" opacity=".35">';
+      html += '<g><path d="M35 35 L60 10" stroke="#C8903A" stroke-width="3" stroke-linecap="round"/>';
+      html += '<circle cx="22" cy="48" r="10" stroke="#C8903A" stroke-width="2"/></g>';
+      html += '<g><path d="M35 35 L60 60" stroke="#C8903A" stroke-width="3" stroke-linecap="round"/>';
+      html += '<circle cx="22" cy="22" r="10" stroke="#C8903A" stroke-width="2"/></g>';
+      html += '<circle cx="35" cy="35" r="3" fill="#C8903A"/></svg>';
+      html += '</div>';
+      html += '<div class="craft-tile-overlay" style="opacity:1">';
+      html += '<div class="craft-tile-tag">'+p.tag+'</div>';
+      html += '<div class="craft-tile-cap">'+p.cap+'</div>';
+      html += '</div></div>';
+    });
+    return html;
+  }
+
+  /* Show placeholders immediately — section is always visible */
+  grid.innerHTML = buildPlaceholders();
+  if(window._io && typeof window._io.observe === 'function'){
+    grid.querySelectorAll('.reveal-scale').forEach(function(el){ window._io.observe(el); });
+  }
+
+  /* Then try to replace with real photos */
+  fetch('/api/daily-craft/latest?n=6').then(function(r){ return r.json(); }).then(function(d){
+    if(!d.ok || !d.items || !d.items.length) return; /* keep placeholders */
+    var html = '';
+    d.items.forEach(function(it, i){
+      html += '<div class="craft-tile reveal-scale" onclick="window.location.href=\'/our-work\'" style="transition-delay:'+(i*60)+'ms">';
+      if(it.image_url){
+        html += '<img src="'+it.image_url+'" alt="'+(it.caption||'').replace(/"/g,'&quot;')+'" loading="lazy">';
+      } else {
+        html += '<div class="craft-placeholder">✂</div>';
+      }
+      html += '<div class="craft-tile-overlay">';
+      if(it.tag) html += '<div class="craft-tile-tag">'+it.tag+'</div>';
+      if(it.caption) html += '<div class="craft-tile-cap">'+it.caption+'</div>';
+      html += '</div></div>';
+    });
+    grid.innerHTML = html;
+    if(window._io && typeof window._io.observe === 'function'){
+      grid.querySelectorAll('.reveal-scale').forEach(function(el){ window._io.observe(el); });
+    }
+  }).catch(function(){}); /* silently keep placeholders on error */
+})();
+</script>
+{% endblock %}

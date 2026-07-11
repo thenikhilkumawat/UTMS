@@ -3,20 +3,19 @@ from datetime import date, datetime, timedelta
 from database import get_db, get_setting, next_order_code, peek_order_code, next_repeat_code, peek_repeat_code
 import json, os, time
 from config import Config
-from app.common_names import COMMON_NAMES_LOOKUP
 
 bp = Blueprint("employee", __name__)
 
 def check_and_auto_ready(conn, order_code):
-    """Order becomes READY only when ALL garments have completed
-    ALL THREE stages: Naap + Kataai + Silai — each >= required quantity."""
+    """Check if all garments for an order have been fully stitched.
+    If yes, auto-update status to 'ready'. Returns True if became ready."""
     order = conn.execute(
         "SELECT id, status FROM orders WHERE order_code=?", (order_code,)
     ).fetchone()
     if not order or order["status"] in ("ready", "delivered"):
         return False
 
-    # Required quantities per garment type
+    # Total required quantities per garment type
     required = {}
     for r in conn.execute(
         "SELECT garment_type, SUM(quantity) as total FROM order_items WHERE order_id=? GROUP BY garment_type",
@@ -27,32 +26,17 @@ def check_and_auto_ready(conn, order_code):
     if not required:
         return False
 
-    all_logs = conn.execute(
-        "SELECT garment_type, notes, COALESCE(SUM(qty_done),0) as total FROM work_logs WHERE order_code=? GROUP BY garment_type, notes",
+    # Total logged quantities per garment type
+    logged = {}
+    for r in conn.execute(
+        "SELECT garment_type, SUM(qty_done) as total FROM work_logs WHERE order_code=? GROUP BY garment_type",
         (order_code,)
-    ).fetchall()
+    ).fetchall():
+        logged[r["garment_type"]] = r["total"]
 
-    # Group by stage: naap, kataai, silai
-    naap   = {}  # garment_type → qty done
-    kataai = {}
-    silai  = {}
-
-    for r in all_logs:
-        gt  = r["garment_type"]
-        n   = (r["notes"] or "").strip()
-        qty = r["total"] or 0
-        if n.startswith("Naap") or n.startswith("Measure"):
-            naap[gt]   = naap.get(gt, 0) + qty
-        elif n.startswith("Cut") or n.startswith("Kataai"):
-            kataai[gt] = kataai.get(gt, 0) + qty
-        else:
-            silai[gt]  = silai.get(gt, 0) + qty
-
-    # ALL garments must have ALL 3 stages >= required qty
+    # Check if all garments are fully logged
     all_done = all(
-        naap.get(gt, 0)   >= qty and
-        kataai.get(gt, 0) >= qty and
-        silai.get(gt, 0)  >= qty
+        logged.get(gt, 0) >= qty
         for gt, qty in required.items()
     )
 
@@ -83,68 +67,30 @@ def _urgent_count():
     return c
 
 
-
-@bp.route("/api/order-ref-lookup")
-def api_order_ref_lookup():
-    """Lookup customer info from a reference order code."""
-    code = request.args.get("code", "").strip().lstrip("#")
-    if not code:
-        return jsonify({"found": False})
-    conn = get_db()
-    row = conn.execute("""
-        SELECT c.id, c.name, c.mobile, c.address
-        FROM orders o JOIN customers c ON c.id = o.customer_id
-        WHERE o.order_code = ? LIMIT 1
-    """, (code,)).fetchone()
-    conn.close()
-    if row:
-        return jsonify({"found": True, "customer_id": row["id"],
-                        "name": row["name"], "mobile": row["mobile"] or "",
-                        "address": row["address"] or ""})
-    return jsonify({"found": False})
-
-
 @bp.route("/")
 def dashboard():
     conn = get_db()
     today = date.today().isoformat()
-
-    # Fresh start filter
-    fresh_start_enabled = get_setting("utms_fresh_start", "0") == "1"
-    fresh_start_date    = get_setting("utms_fresh_start_date", "2026-06-01") if fresh_start_enabled else None
-
-    if fresh_start_date:
-        todays_orders    = conn.execute("SELECT COUNT(*) as c FROM orders WHERE order_date=? AND status!='delivered' AND order_date >= ?", (today, fresh_start_date)).fetchone()["c"]
-        urgent_today     = conn.execute("SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status!='delivered' AND order_date >= ?", (fresh_start_date,)).fetchone()["c"]
-        pending_delivery = conn.execute("SELECT COUNT(*) as c FROM orders WHERE status!='delivered' AND order_date >= ?", (fresh_start_date,)).fetchone()["c"]
-        urgent_orders    = conn.execute("""
-            SELECT o.id,o.order_code,o.delivery_date,o.status,o.is_urgent,
-                   o.remaining, COALESCE(o.repeat_of,'') as repeat_of,
-                   c.name as customer_name,c.mobile
-            FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
-            WHERE o.is_urgent=1 AND o.status!='delivered' AND o.order_date >= ?
-            ORDER BY o.delivery_date ASC LIMIT 10
-        """, (fresh_start_date,)).fetchall()
-    else:
-        todays_orders    = conn.execute("SELECT COUNT(*) as c FROM orders WHERE order_date=? AND status!='delivered'", (today,)).fetchone()["c"]
-        urgent_today     = conn.execute("SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status!='delivered'").fetchone()["c"]
-        pending_delivery = conn.execute("SELECT COUNT(*) as c FROM orders WHERE status!='delivered'").fetchone()["c"]
-        urgent_orders    = conn.execute("""
-            SELECT o.id,o.order_code,o.delivery_date,o.status,o.is_urgent,
-                   o.remaining, COALESCE(o.repeat_of,'') as repeat_of,
-                   c.name as customer_name,c.mobile
-            FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
-            WHERE o.is_urgent=1 AND o.status!='delivered'
-            ORDER BY o.delivery_date ASC LIMIT 10
-        """).fetchall()
-
+    # Today's orders = created today
+    todays_orders = conn.execute("SELECT COUNT(*) as c FROM orders WHERE order_date=?",(today,)).fetchone()["c"]
+    # Urgent = any pending urgent order
+    urgent_today  = conn.execute("SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status!='delivered'",(noone,)).fetchone()["c"] if False else                     conn.execute("SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status!='delivered'").fetchone()["c"]
+    pending_delivery = conn.execute("SELECT COUNT(*) as c FROM orders WHERE status!='delivered'").fetchone()["c"]
     total_customers  = conn.execute("SELECT COUNT(*) as c FROM customers").fetchone()["c"]
+    urgent_orders = conn.execute("""
+        SELECT o.id,o.order_code,o.delivery_date,o.status,o.is_urgent,
+               o.remaining, COALESCE(o.repeat_of,'') as repeat_of,
+               c.name as customer_name,c.mobile
+        FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
+        WHERE o.is_urgent=1 AND o.status!='delivered'
+        ORDER BY o.delivery_date ASC LIMIT 10
+    """).fetchall()
     conn.close()
     today_str = datetime.today().strftime("%A, %d %B %Y")
     # Build CUSTOMER rate list (what customers pay)
     garment_names = [
         "Shirt","Shirt Linen","Pant","Pant Double","Jeans","Suit 2pc","Suit 3pc",
-        "Blazer","Kurta","Kurta Pajama","Pajama","Pathani","Sherwani","Safari","Waistcoat",
+        "Blazer","Kurta","Kurta Pajama","Pajama","Pathani","Safari","Waistcoat",
         "Alteration","Cutting Only"
     ]
     rate_list = []
@@ -174,8 +120,6 @@ def dashboard():
 
     return render_template("employee/dashboard.html", active_page="dashboard",
         urgent_count=urgent_today, show_voice=True, today_str=today_str,
-        fresh_start_enabled=fresh_start_enabled,
-        fresh_start_date=fresh_start_date or "",
         stats=dict(todays_orders=todays_orders, urgent_today=urgent_today,
                    pending_delivery=pending_delivery, total_customers=total_customers),
         urgent_orders=urgent_list,
@@ -223,7 +167,7 @@ def new_order():
         "Shirt":"350","Shirt Linen":"450","Pant":"450","Pant Double":"550",
         "Jeans":"550","Suit 2pc":"2800","Suit 3pc":"3500","Blazer":"2300",
         "Kurta":"800","Kurta Pajama":"1000","Pajama":"300","Pathani":"800",
-        "Sherwani":"3500","Safari":"1500","Waistcoat":"800",
+        "Safari":"1500","Waistcoat":"800",
         "Alteration":"100","Cutting Only":"100"
     }
     deleted_csv = get_setting("deleted_customer_rates", "")
@@ -237,24 +181,15 @@ def new_order():
             garment_rates[n] = cr
         else:
             garment_rates[n] = get_setting("rate_"+n, default_rate)
-    # Include any custom garment types added via settings (customer_rate_*)
+    # Include any custom garment types added via settings
     custom_rows = conn.execute("SELECT key, value FROM settings WHERE key LIKE 'customer_rate_%'").fetchall()
     for row in custom_rows:
         name = row["key"][14:]
         if name not in garment_rates and name not in deleted_set and row["value"] and row["value"].strip() and row["value"] != "0":
             garment_rates[name] = row["value"]
-    # FIX: Also include garments added via Garment Manager (types_* entries)
-    # These may not have a customer_rate entry yet but should still appear in dropdown
-    types_rows = conn.execute("SELECT key, value FROM settings WHERE key LIKE 'types_%'").fetchall()
-    for row in types_rows:
-        name = row["key"][6:]  # strip "types_"
-        if name not in garment_rates and name not in deleted_set and row["value"]:
-            # Try to find any rate for this garment
-            r = get_setting("customer_rate_"+name, "") or get_setting("rate_"+name, "")
-            garment_rates[name] = r if r else "0"
     # Get measurement fields per garment from DB
     meas_fields = {}
-    mf_rows = conn.execute("SELECT garment_type, field_name FROM measurement_fields ORDER BY sort_order ASC, id ASC").fetchall()
+    mf_rows = conn.execute("SELECT garment_type, field_name FROM measurement_fields ORDER BY sort_order ASC").fetchall()
     for row in mf_rows:
         meas_fields.setdefault(row["garment_type"], []).append(row["field_name"])
     conn.close()
@@ -274,7 +209,6 @@ def new_order():
         "Kurta Pajama": "RG:रेगुलर|CF:चाइनीज़|HF:हाफ आस्तीन|PL:सादा|PR:पार्टी|EM:कढ़ाई|SP:सिंपल|NB:बिना बटन|RB:गोल बटन|CP:चूड़ीदार पाजामा|SC:सीधा पाजामा",
         "Pajama":       "CP:चूड़ीदार|ST:सीधा|EL:इलास्टिक|NS:नाड़ा|NK:नक्का",
         "Pathani":      "RG:रेगुलर|SL:स्लिम|CF:चाइनीज़|PL:सादा|EM:कढ़ाई|PR:पार्टी|SH:छोटा कॉलर|LN:लंबा कॉलर",
-        "Sherwani":     "RG:रेगुलर|SL:स्लिम|PL:सादा|EM:कढ़ाई|PR:पार्टी|SH:शेरवानी कट|BD:ब्रोच डिज़ाइन|MN:मिरर नेक",
         "Safari":       "2P:2 पॉकेट|4P:4 पॉकेट|SL:स्लिम|RS:रेगुलर|HF:हाफ आस्तीन|FH:फुल आस्तीन",
         "Waistcoat":    "2B:2 बटन|3B:3 बटन|4B:4 बटन|SL:स्लिम|RS:रेगुलर|PL:सादा|EM:कढ़ाई|SC:सिंगल ब्रेस्ट|DC:डबल ब्रेस्ट",
         "Alteration":   "SM:स्लिम करें|WT:कमर टाइट|LT:लंबाई कम|LG:लंबाई बढ़ाएं|WD:चौड़ा करें|ZP:ज़िप लगाएं|BT:बटन लगाएं|PT:पैच लगाएं",
@@ -326,7 +260,7 @@ def upload_images(order_code):
         import os as _os
         try:
             files = request.files.getlist("photos")
-            use_cloudinary = bool(_os.environ.get("CLOUDINARY_CLOUD_NAME"))
+            use_cloudinary = False
             saved = 0
             slots = 5
 
@@ -375,42 +309,13 @@ def upload_images(order_code):
                 os.makedirs(folder, exist_ok=True)
                 existing = [f for f in os.listdir(folder) if f.lower().endswith((".jpg",".jpeg",".png",".gif",".webp"))]
                 slots = max(0, 5 - len(existing))
-                saved_files = []
                 for f in files:
                     if saved >= slots: break
                     if f and f.filename:
                         ext = os.path.splitext(f.filename)[1].lower() or ".jpg"
                         fname = f"{int(time.time())}_{len(existing)+saved+1}{ext}"
                         f.save(os.path.join(folder, fname))
-                        saved_files.append(fname)
                         saved += 1
-                # Save to order_images DB table so Diary page can find them
-                conn = get_db()
-                order_row = conn.execute("SELECT id FROM orders WHERE order_code=?", (order_code,)).fetchone()
-                if order_row and saved_files:
-                    for fname in saved_files:
-                        file_path = f"/static/order_images/{order_code}/{fname}"
-                        conn.execute("INSERT INTO order_images(order_id, file_path) VALUES(?,?)",
-                                     (order_row["id"], file_path))
-                    conn.commit()
-                elif not order_row and saved > 0:
-                    # No order in DB yet (uploaded via QR during the New Order wizard,
-                    # before Confirm) — mark as diary-only upload so the Diary page can
-                    # surface it if the order is never completed, AND register each file
-                    # as a temp order_images row (order_id=0) so save_order()'s existing
-                    # claim logic can link it to the real order_id once actually saved.
-                    # Previously only the Cloudinary branch did this temp-row registration,
-                    # so local-storage photos taken before Confirm never got linked to
-                    # the order in the DB (they'd only ever show via the folder fallback).
-                    marker = os.path.join(folder, ".diary_upload")
-                    with open(marker, "w") as mf:
-                        mf.write(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-                    for fname in saved_files:
-                        file_path = f"/static/order_images/{order_code}/{fname}"
-                        conn.execute("INSERT INTO order_images(order_id, file_path) VALUES(?,?)",
-                                     (0, f"temp:{order_code}:{file_path}"))
-                    conn.commit()
-                conn.close()
 
             msg = f"Uploaded {saved} image(s). Max 5 per order." if saved else ("Max 5 images reached." if slots==0 else "No image selected.")
             return f"""<html><body style="font-family:sans-serif;padding:30px;text-align:center;">
@@ -454,35 +359,9 @@ def upload_images(order_code):
 
   input[type=file] {{ display: none; }}
   .uploading {{ text-align: center; padding: 20px; color: #6366f1; font-weight: 600; }}
-
-  /* In-page camera viewfinder — avoids launching external camera app,
-     which kills the page's JS on low-RAM phones (background process gets
-     killed by Android to free memory, losing all captured photo state) */
-  .cam-modal {{ display: none; position: fixed; inset: 0; background: #000; z-index: 9000; flex-direction: column; }}
-  .cam-modal.open {{ display: flex; }}
-  .cam-video-wrap {{ flex: 1; position: relative; overflow: hidden; background: #000; }}
-  .cam-video-wrap video {{ width: 100%; height: 100%; object-fit: cover; }}
-  .cam-controls {{ background: #000; padding: 20px 24px 28px; display: flex; align-items: center; justify-content: space-between; }}
-  .cam-close-btn {{ background: rgba(255,255,255,0.15); border: none; color: #fff; width: 44px; height: 44px; border-radius: 50%; font-size: 20px; cursor: pointer; }}
-  .cam-shutter-btn {{ width: 70px; height: 70px; border-radius: 50%; background: #fff; border: 4px solid rgba(255,255,255,0.4); cursor: pointer; }}
-  .cam-shutter-btn:active {{ background: #e5e7eb; }}
-  .cam-spacer {{ width: 44px; }}
-  .cam-error-box {{ color: #fff; text-align: center; padding: 30px 20px; font-size: 14px; }}
 </style>
 </head>
 <body>
-<!-- In-page camera viewfinder modal -->
-<div class="cam-modal" id="cam-modal">
-  <div class="cam-video-wrap">
-    <video id="cam-video" autoplay playsinline muted></video>
-    <div id="cam-error" class="cam-error-box" style="display:none;"></div>
-  </div>
-  <div class="cam-controls">
-    <button class="cam-close-btn" onclick="closeCameraView()">✕</button>
-    <button class="cam-shutter-btn" id="cam-shutter" onclick="capturePhoto()"></button>
-    <div class="cam-spacer"></div>
-  </div>
-</div>
 <div class="card">
   <h2>📷 Order #{order_code}</h2>
   <p class="subtitle">Take photos to attach to this order</p>
@@ -510,146 +389,19 @@ def upload_images(order_code):
 
 <script>
 var capturedFiles = [];
-var camStream = null;
 
-// In-page camera viewfinder. We avoid launching the phone's external camera
-// APP (via <input capture>) because on lower-RAM phones, Android often kills
-// the backgrounded browser tab while the camera app is open to free memory —
-// when the user returns, the page silently reloads and ALL captured photos
-// + JS state are lost, even though nothing visibly "crashed". Showing the
-// camera feed directly inside the page (getUserMedia) keeps everything in
-// one continuous JS context, so this can never happen.
 function openCamera() {{
   if (capturedFiles.length >= 5) return;
-
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {{
-    // Very old browser with no camera API support — fall back to file picker
-    document.getElementById('cam-input').value = '';
-    document.getElementById('cam-input').click();
-    return;
-  }}
-
-  var modal = document.getElementById('cam-modal');
-  var video = document.getElementById('cam-video');
-  var errBox = document.getElementById('cam-error');
-  var shutter = document.getElementById('cam-shutter');
-  errBox.style.display = 'none';
-  shutter.style.display = 'block';
-  modal.classList.add('open');
-
-  navigator.mediaDevices.getUserMedia({{
-    video: {{ facingMode: {{ ideal: 'environment' }}, width: {{ ideal: 1920 }}, height: {{ ideal: 1080 }} }},
-    audio: false
-  }}).then(function(stream) {{
-    camStream = stream;
-    video.srcObject = stream;
-  }}).catch(function(err) {{
-    console.error('[camera] getUserMedia failed:', err);
-    shutter.style.display = 'none';
-    errBox.style.display = 'block';
-    errBox.innerHTML = '⚠️ Camera access nahi mili.<br><br>' +
-      '<button onclick="closeCameraView();document.getElementById(\\'cam-input\\').value=\\'\\';document.getElementById(\\'cam-input\\').click();" ' +
-      'style="background:#6366f1;color:#fff;border:none;padding:12px 20px;border-radius:10px;font-weight:700;font-size:14px;margin-top:10px;">' +
-      '📁 Gallery se chuno</button>';
-  }});
+  document.getElementById('cam-input').value = '';
+  document.getElementById('cam-input').click();
 }}
 
-function closeCameraView() {{
-  var modal = document.getElementById('cam-modal');
-  modal.classList.remove('open');
-  if (camStream) {{
-    camStream.getTracks().forEach(function(t) {{ t.stop(); }});
-    camStream = null;
-  }}
-  document.getElementById('cam-video').srcObject = null;
-}}
-
-function capturePhoto() {{
-  var video = document.getElementById('cam-video');
-  if (!video.videoWidth || !video.videoHeight) return;  // not ready yet
-
-  var maxDim = 1600;
-  var w = video.videoWidth, h = video.videoHeight;
-  if (w > maxDim || h > maxDim) {{
-    if (w > h) {{ h = Math.round(h * maxDim / w); w = maxDim; }}
-    else       {{ w = Math.round(w * maxDim / h); h = maxDim; }}
-  }}
-  var canvas = document.createElement('canvas');
-  canvas.width = w; canvas.height = h;
-  var ctx = canvas.getContext('2d');
-  ctx.drawImage(video, 0, 0, w, h);
-
-  canvas.toBlob(function(blob) {{
-    closeCameraView();
-    if (!blob) {{ return; }}
-    var file = new File([blob], 'photo_' + Date.now() + '.jpg', {{ type: 'image/jpeg' }});
-    capturedFiles.push(file);
-    renderPreviews();
-  }}, 'image/jpeg', 0.85);
-}}
-
-// Compress + resize image client-side before upload.
-// Raw camera photos can be 5-20MB depending on the phone, which can hit
-// server upload limits and fail silently on some devices but not others.
-// Resizing to a sane max dimension + JPEG compression fixes this for ALL
-// devices, regardless of camera resolution or server config.
-function compressImage(file, maxDim, quality) {{
-  return new Promise(function(resolve) {{
-    var settled = false;
-    var objectUrl = null;
-    function finish(result) {{
-      if (settled) return;
-      settled = true;
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-      resolve(result);
-    }}
-    // Safety net: some low-RAM phones (especially with very high-megapixel
-    // cameras) can hang or silently fail during canvas compression. If
-    // compression doesn't finish within 6 seconds, just use the original
-    // photo instead of leaving the user stuck with no preview.
-    var timeoutId = setTimeout(function() {{ finish(file); }}, 6000);
-
-    try {{
-      objectUrl = URL.createObjectURL(file);  // lighter on memory than base64 (readAsDataURL)
-      var img = new Image();
-      img.onload = function() {{
-        try {{
-          var w = img.width, h = img.height;
-          if (!w || !h) {{ clearTimeout(timeoutId); finish(file); return; }}
-          if (w > maxDim || h > maxDim) {{
-            if (w > h) {{ h = Math.round(h * maxDim / w); w = maxDim; }}
-            else       {{ w = Math.round(w * maxDim / h); h = maxDim; }}
-          }}
-          var canvas = document.createElement('canvas');
-          canvas.width = w; canvas.height = h;
-          var ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, w, h);
-          canvas.toBlob(function(blob) {{
-            clearTimeout(timeoutId);
-            if (!blob) {{ finish(file); return; }}
-            finish(new File([blob], (file.name || 'photo') + '.jpg', {{ type: 'image/jpeg' }}));
-          }}, 'image/jpeg', quality);
-        }} catch(e) {{ clearTimeout(timeoutId); finish(file); }}
-      }};
-      img.onerror = function() {{ clearTimeout(timeoutId); finish(file); }};
-      img.src = objectUrl;
-    }} catch(e) {{ clearTimeout(timeoutId); finish(file); }}
-  }});
-}}
-
-// Fallback file input — used only if getUserMedia is unsupported or denied.
-// No "capture" attribute forced here in JS-triggered fallback path above,
-// so this naturally shows the OS picker (camera + gallery options both).
 document.getElementById('cam-input').addEventListener('change', function() {{
   var file = this.files[0];
   if (!file) return;
   if (capturedFiles.length >= 5) return;
-  var bigBtn = document.getElementById('big-cam-btn');
-  if (bigBtn) bigBtn.innerHTML = '<span class="icon">⏳</span>Processing photo...';
-  compressImage(file, 1600, 0.8).then(function(compressed) {{
-    capturedFiles.push(compressed);
-    renderPreviews();
-  }});
+  capturedFiles.push(file);
+  renderPreviews();
 }});
 
 function renderPreviews() {{
@@ -685,12 +437,7 @@ function renderPreviews() {{
   }}
 
   // Toggle big button
-  if (capturedFiles.length === 0) {{
-    bigBtn.innerHTML = '<span class="icon">📸</span>Tap to take a photo';
-    bigBtn.style.display = 'block';
-  }} else {{
-    bigBtn.style.display = 'none';
-  }}
+  bigBtn.style.display = capturedFiles.length === 0 ? 'block' : 'none';
 
   // Enable upload only when photos added
   uploadBtn.disabled = capturedFiles.length === 0;
@@ -766,37 +513,6 @@ def list_images(order_code):
     )
 
 
-
-@bp.route("/api/apply-current-rates")
-def apply_current_rates():
-    """Update work_log making_rate for today and yesterday entries to current admin stitching rates."""
-    from database import invalidate_settings_cache
-    invalidate_settings_cache()
-    conn = get_db()
-    from datetime import date, timedelta
-    today = date.today().isoformat()
-    yesterday = (date.today() - timedelta(days=1)).isoformat()
-
-    # Get all work logs from today and yesterday
-    logs = conn.execute("""
-        SELECT id, garment_type FROM work_logs
-        WHERE log_date IN (?, ?)
-    """, (today, yesterday)).fetchall()
-
-    updated = 0
-    for log in logs:
-        gt = log["garment_type"]
-        new_rate = get_setting(f"stitch_rate_{gt}", None)
-        if new_rate is not None:
-            conn.execute("UPDATE work_logs SET making_rate=? WHERE id=?",
-                        (float(new_rate), log["id"]))
-            updated += 1
-
-    conn.commit()
-    conn.close()
-    return jsonify({"ok": True, "updated": updated,
-                    "message": f"✅ {updated} work log entries updated with current rates (today & yesterday)"})
-
 @bp.route("/save-order", methods=["POST"])
 def save_order():
     data = request.get_json(silent=True) or {}
@@ -812,7 +528,6 @@ def save_order():
         # - Custom override → use provided code (owner privilege)
         custom_code = (data.get("custom_order_code") or "").strip()
         use_repeat  = data.get("use_repeat_code", False)
-        order_code_issued = False  # tracks whether next_order_code() was called this request
 
         if custom_code:
             clash = conn.execute("SELECT id FROM orders WHERE order_code=?", (custom_code,)).fetchone()
@@ -824,7 +539,6 @@ def save_order():
             order_code = next_repeat_code()
         else:
             order_code = next_order_code()
-            order_code_issued = True
         customer_name   = (data.get("customer_name") or "").strip()
         mobile          = (data.get("mobile") or "").strip()
         address         = (data.get("address") or "").strip()
@@ -848,40 +562,22 @@ def save_order():
 
         # Customer
         if existing_id:
-            existing_id = int(existing_id)
-            ex_row = conn.execute("SELECT id, name FROM customers WHERE id=?", (existing_id,)).fetchone()
-            if ex_row and ex_row["name"].strip().lower() != customer_name.strip().lower():
-                # Different name → new customer (shared phone scenario)
-                new_r = conn.execute(
-                    "INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?) RETURNING id",
-                    (customer_name, mobile, address, now)).fetchone()
-                customer_id = new_r["id"] if new_r else existing_id
-            else:
-                # Same person — update address only, keep name
-                customer_id = existing_id
-                conn.execute("UPDATE customers SET mobile=?,address=? WHERE id=?",
-                             (mobile, address, customer_id))
+            customer_id = int(existing_id)
+            conn.execute("UPDATE customers SET name=?,mobile=?,address=? WHERE id=?",
+                         (customer_name, mobile, address, customer_id))
         else:
             # Check if mobile already exists — auto-link instead of blocking
             if mobile:
                 dup = conn.execute("SELECT id, name FROM customers WHERE mobile=?", (mobile,)).fetchone()
                 if dup:
-                    same_name = dup["name"].strip().lower() == customer_name.strip().lower()
-                    if same_name:
-                        # Same person — reuse, only update address
-                        customer_id = dup["id"]
-                        conn.execute("UPDATE customers SET address=? WHERE id=?",
-                                     (address, customer_id))
-                    else:
-                        # Different person, same mobile (shared phone) — NEW customer record
-                        new_row = conn.execute(
-                            "INSERT INTO customers(name,mobile,address) VALUES(?,?,?) RETURNING id",
-                            (customer_name, mobile, address)).fetchone()
-                        customer_id = new_row["id"] if new_row else dup["id"]
+                    # Link to existing customer and update their details
+                    customer_id = dup["id"]
+                    conn.execute("UPDATE customers SET name=?,mobile=?,address=? WHERE id=?",
+                                 (customer_name, mobile, address, customer_id))
                 else:
-                    row = conn.execute(
-                                "INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?) RETURNING id",
-                                (customer_name, mobile, address, now)).fetchone()
+                    conn.execute("INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?)",
+                                 (customer_name, mobile, address, now))
+                    row = conn.execute("SELECT id FROM customers WHERE name=? AND mobile=? ORDER BY id DESC LIMIT 1", (customer_name, mobile)).fetchone()
                     customer_id = row["id"] if row else None
             else:
                 conn.execute("INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?)",
@@ -961,282 +657,215 @@ def save_order():
     except Exception as e:
         try: conn.rollback(); conn.close()
         except: pass
-        # If we had issued a fresh order code for this attempt, give it back —
-        # otherwise every failed save permanently skips a number.
-        try:
-            if order_code_issued:
-                from database import release_order_code_if_latest
-                release_order_code_if_latest(order_code)
-        except Exception:
-            pass
         return jsonify({"status":"error","message":str(e)}), 500
 
 
 @bp.route("/print-slip/<order_code>")
 def print_slip(order_code):
-    conn = get_db()
-    o = conn.execute("""SELECT o.*,c.name as cname,c.mobile,c.address,
-        COALESCE(o.repeat_of,'') as repeat_of, c.id as customer_id
-        FROM orders o LEFT JOIN customers c ON c.id=o.customer_id WHERE o.order_code=?""",(order_code,)).fetchone()
-    items = conn.execute("SELECT * FROM order_items WHERE order_id=?",(o["id"],)).fetchall() if o else []
-    # Get loyalty code = customer's first ever order code
-    loyalty_code = None
-    if o and o["customer_id"]:
-        first = conn.execute(
-            "SELECT order_code FROM orders WHERE customer_id=? ORDER BY id ASC LIMIT 1",
-            (o["customer_id"],)
+    import logging as _log, traceback as _tb
+    _logger = _log.getLogger(__name__)
+    try:
+        conn = get_db()
+        o = conn.execute(
+            """SELECT o.*,c.name as cname,c.mobile,c.address,
+               COALESCE(o.repeat_of,'') as repeat_of, c.id as customer_id
+               FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
+               WHERE o.order_code=?""",
+            (order_code,)
         ).fetchone()
-        loyalty_code = first["order_code"] if first else order_code
-    conn.close()
-    if not o:
-        return "Order not found", 404
-    def fmt_date(d):
-        if not d: return "—"
-        parts = d.split("-")
-        return f"{parts[2]}-{parts[1]}-{parts[0]}" if len(parts)==3 else d
-    items_rows = "".join(f'''
-        <tr>
-          <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;">
-            <div style="font-weight:600;">{i["garment_type"]}</div>
-            {("<div style=\'font-size:11px;color:#888;margin-top:2px;\'>" + __import__("re").sub(r"\s*\[.*?\]", "", i["notes"]).strip() + "</div>") if i["notes"] and __import__("re").sub(r"\s*\[.*?\]", "", i["notes"]).strip() else ""}
-          </td>
-          <td style="padding:10px 12px;text-align:center;border-bottom:1px solid #f0f0f0;">{i["quantity"]}</td>
-          <td style="padding:10px 12px;text-align:right;border-bottom:1px solid #f0f0f0;">₹{i["rate"]}</td>
-          <td style="padding:10px 12px;text-align:right;border-bottom:1px solid #f0f0f0;font-weight:600;">₹{i["amount"]}</td>
-        </tr>''' for i in items)
-    shop_name = get_setting("shop_name", "Uttam Tailors")
-    shop_name_hi = get_setting("shop_name_hi", "उत्तम टेलर्स")
-    return f"""<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>Order Receipt #{order_code}</title>
-<style>
-  *{{box-sizing:border-box;margin:0;padding:0;}}
-  body{{font-family:'Segoe UI',Arial,sans-serif;background:#fff;color:#1a1d2e;max-width:420px;margin:0 auto;padding:0;}}
-  .header{{background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;padding:24px 24px 20px;text-align:center;}}
-  .shop-name{{font-size:22px;font-weight:800;letter-spacing:-0.5px;}}
-  .loyalty-box{{display:inline-block;background:rgba(255,255,255,0.18);border:2px solid rgba(255,255,255,0.5);border-radius:12px;padding:8px 24px;margin:12px 0 6px;}}
-  .loyalty-label{{font-size:10px;font-weight:700;letter-spacing:2px;opacity:0.8;text-transform:uppercase;margin-bottom:2px;}}
-  .loyalty-code{{font-size:28px;font-weight:900;letter-spacing:4px;}}
-  .order-num{{font-size:18px;font-weight:700;letter-spacing:2px;opacity:0.85;margin:4px 0;}}
-  .header-sub{{font-size:12px;opacity:0.75;}}
-  .section{{padding:16px 20px;border-bottom:1px solid #f0f0f0;}}
-  .section-title{{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#9ca3af;margin-bottom:10px;}}
-  .info-row{{display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px;}}
-  .info-label{{color:#6b7280;}}
-  .info-val{{font-weight:600;}}
-  table{{width:100%;border-collapse:collapse;font-size:13px;}}
-  th{{background:#f9fafb;padding:10px 12px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#9ca3af;border-bottom:2px solid #f0f0f0;}}
-  th:last-child,td:last-child{{text-align:right;}}
-  th:nth-child(2),td:nth-child(2){{text-align:center;}}
-  .totals{{padding:16px 20px;background:#f9fafb;}}
-  .total-row{{display:flex;justify-content:space-between;padding:7px 0;font-size:14px;border-bottom:1px dashed #e5e7eb;}}
-  .total-row:last-child{{border-bottom:none;font-size:16px;font-weight:800;color:#6366f1;padding-top:12px;}}
-  .paid-row{{color:#059669;font-weight:700;}}
-  .due-row{{color:#dc2626;font-weight:700;}}
-  .footer{{padding:20px 24px;text-align:center;background:#fff;}}
-  .thank-you{{font-size:15px;font-weight:700;color:#1a1d2e;margin-bottom:6px;}}
-  .system-note{{font-size:10px;color:#d1d5db;margin-top:14px;line-height:1.5;}}
-  .btn-print{{display:block;width:100%;padding:14px;background:#6366f1;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-top:16px;}}
-  @media print{{.btn-print{{display:none;}}body{{max-width:100%;}}}}
-</style>
-</head><body>
-<div class="header">
-  <div class="shop-name">{shop_name_hi}</div>
-  <div style="font-size:12px;opacity:0.7;margin-top:2px;letter-spacing:0.5px;">{shop_name}</div>
-  {"<!-- repeat order -->" if (loyalty_code and loyalty_code != order_code) else ""}
-  <div class="loyalty-box">
-    <div class="loyalty-label">{"⭐ Customer Code" if (loyalty_code and loyalty_code != order_code) else "⭐ Customer Code"}</div>
-    <div class="loyalty-code">{"#" + loyalty_code if loyalty_code else "#" + order_code}</div>
-  </div>
-  {"<div style='background:rgba(255,255,255,0.15);display:inline-block;border-radius:8px;padding:5px 16px;margin-top:4px;'><span style='font-size:11px;opacity:0.8;'>This Entry: </span><span style='font-size:16px;font-weight:800;letter-spacing:2px;'>#" + order_code + "</span></div>" if (loyalty_code and loyalty_code != order_code) else ""}
-  <div class="order-num">{"Order # " + order_code if not (loyalty_code and loyalty_code != order_code) else ""}</div>
-  <div class="header-sub">{fmt_date(o["order_date"])}</div>
-</div>
+        items = conn.execute(
+            "SELECT * FROM order_items WHERE order_id=?", (o["id"],)
+        ).fetchall() if o else []
+        loyalty_code = None
+        if o and o["customer_id"]:
+            first = conn.execute(
+                "SELECT order_code FROM orders WHERE customer_id=? ORDER BY id ASC LIMIT 1",
+                (o["customer_id"],)
+            ).fetchone()
+            loyalty_code = first["order_code"] if first else order_code
+        conn.close()
+        if not o:
+            return "Order not found", 404
 
-<div class="section">
-  <div class="section-title">Customer Details</div>
-  <div class="info-row"><span class="info-label">Name</span><span class="info-val">{o["cname"]}</span></div>
-  <div class="info-row"><span class="info-label">Mobile</span><span class="info-val">{o["mobile"] or "—"}</span></div>
-  <div class="info-row"><span class="info-label">Address</span><span class="info-val">{o["address"] or "—"}</span></div>
-  <div class="info-row"><span class="info-label">Order Date</span><span class="info-val">{fmt_date(o["order_date"])}</span></div>
-  <div class="info-row"><span class="info-label">Delivery Date</span><span class="info-val" style="color:#6366f1;font-weight:700;">{fmt_date(o["delivery_date"])}</span></div>
-  {('<div class="info-row"><span class="info-label">Note</span><span class="info-val">' + o["note"] + '</span></div>') if o["note"] else ""}
-</div>
+        def fmt_date(d):
+            if not d: return "—"
+            try:
+                parts = str(d).split("-")
+                return f"{parts[2]}-{parts[1]}-{parts[0]}" if len(parts) == 3 else d
+            except Exception:
+                return str(d)
 
-<div class="section" style="padding:0;">
-  <table>
-    <thead><tr><th>Item</th><th>Qty</th><th>Rate</th><th>Amount</th></tr></thead>
-    <tbody>{items_rows}</tbody>
-  </table>
-</div>
+        def _slip_note_html(notes):
+            import re as _re
+            cleaned = _re.sub(r"\s*\[.*?\]", "", str(notes or "")).strip()
+            if not cleaned:
+                return ""
+            return f'<div style="font-size:11px;color:#888;margin-top:2px;">{cleaned}</div>'
 
-<div class="totals">
-  <div class="total-row"><span>Total</span><span>₹{o["total_amount"]}</span></div>
-  {('<div class="total-row"><span>Extra Charges</span><span>₹' + str(o["extra_charges"]) + '</span></div>') if o["extra_charges"] else ""}
-  <div class="total-row" style="font-size:15px;font-weight:800;color:#6366f1;"><span>Net Payable</span><span>₹{o["payable_amount"]}</span></div>
-  <div class="total-row paid-row"><span>✅ Advance Paid</span><span>₹{o["advance_paid"]}</span></div>
-  <div class="total-row due-row"><span>⏳ Remaining Due</span><span>₹{o["remaining"]}</span></div>
-</div>
+        def _safe(v, default="—"):
+            return default if v is None else str(v)
 
-<div class="footer">
-  <div class="thank-you">🙏 Thank you for choosing {shop_name}!</div>
-  <div style="font-size:12px;color:#6b7280;margin-top:4px;">We appreciate your trust and business.</div>
+        def _money(v):
+            if v is None:
+                return "0"
+            try:
+                f = float(v)
+                return str(int(f)) if f == int(f) else str(round(f, 2))
+            except Exception:
+                return str(v)
 
-  <button class="btn-print" onclick="window.print()">🖨️ Print Receipt</button>
-</div>
-</body></html>"""
+        items_html = ""
+        for i in items:
+            items_html += (
+                "<tr>"
+                "<td style=\"padding:10px 12px;border-bottom:1px solid #f0f0f0;\">"
+                "<div style=\"font-weight:600;\">" + _safe(i["garment_type"], "Item") + "</div>"
+                + _slip_note_html(i["notes"]) +
+                "</td>"
+                "<td style=\"padding:10px 12px;text-align:center;border-bottom:1px solid #f0f0f0;\">"
+                + _safe(i["quantity"], "1") +
+                "</td>"
+                "<td style=\"padding:10px 12px;text-align:right;border-bottom:1px solid #f0f0f0;\">"
+                "₹" + _money(i["rate"]) +
+                "</td>"
+                "<td style=\"padding:10px 12px;text-align:right;border-bottom:1px solid #f0f0f0;font-weight:600;\">"
+                "₹" + _money(i["amount"]) +
+                "</td>"
+                "</tr>"
+            )
 
+        shop_name = get_setting("shop_name", "Uttam Tailors")
+        shop_name_hi = get_setting("shop_name_hi", "\u0909\u0924\u094d\u0924\u092e \u091f\u0947\u0932\u0930\u094d\u0938")
+        lc = str(loyalty_code or order_code)
+        is_repeat = loyalty_code and str(loyalty_code) != str(order_code)
+
+        extra_html = ""
+        if o["extra_charges"] and float(o["extra_charges"] or 0) > 0:
+            extra_html = (
+                '<div class="total-row"><span>Extra Charges</span>'
+                '<span>₹' + _money(o["extra_charges"]) + '</span></div>'
+            )
+        note_html = ""
+        if o["note"]:
+            note_html = (
+                '<div class="info-row">'
+                '<span class="info-label">Note</span>'
+                '<span class="info-val">' + str(o["note"]) + '</span></div>'
+            )
+        repeat_html = ""
+        if is_repeat:
+            repeat_html = (
+                '<div style="background:rgba(255,255,255,0.15);display:inline-block;'
+                'border-radius:8px;padding:5px 16px;margin-top:4px;">'
+                '<span style="font-size:11px;opacity:0.8;">This Entry: </span>'
+                '<span style="font-size:16px;font-weight:800;letter-spacing:2px;">#' + order_code + '</span></div>'
+            )
+        order_num_html = "" if is_repeat else '<div class="order-num">Order # ' + order_code + '</div>'
+
+        return (
+            "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><title>Order Receipt #" + order_code + "</title>"
+            "<style>"
+            "*{box-sizing:border-box;margin:0;padding:0;}"
+            "body{font-family:'Segoe UI',Arial,sans-serif;background:#fff;color:#1a1d2e;max-width:420px;margin:0 auto;padding:0;}"
+            ".header{background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;padding:24px 24px 20px;text-align:center;}"
+            ".shop-name{font-size:22px;font-weight:800;letter-spacing:-0.5px;}"
+            ".loyalty-box{display:inline-block;background:rgba(255,255,255,0.18);border:2px solid rgba(255,255,255,0.5);border-radius:12px;padding:8px 24px;margin:12px 0 6px;}"
+            ".loyalty-label{font-size:10px;font-weight:700;letter-spacing:2px;opacity:0.8;text-transform:uppercase;margin-bottom:2px;}"
+            ".loyalty-code{font-size:28px;font-weight:900;letter-spacing:4px;}"
+            ".order-num{font-size:18px;font-weight:700;letter-spacing:2px;opacity:0.85;margin:4px 0;}"
+            ".header-sub{font-size:12px;opacity:0.75;}"
+            ".section{padding:16px 20px;border-bottom:1px solid #f0f0f0;}"
+            ".section-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#9ca3af;margin-bottom:10px;}"
+            ".info-row{display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px;}"
+            ".info-label{color:#6b7280;}"
+            ".info-val{font-weight:600;}"
+            "table{width:100%;border-collapse:collapse;font-size:13px;}"
+            "th{background:#f9fafb;padding:10px 12px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#9ca3af;border-bottom:2px solid #f0f0f0;}"
+            "th:last-child,td:last-child{text-align:right;}"
+            "th:nth-child(2),td:nth-child(2){text-align:center;}"
+            ".totals{padding:16px 20px;background:#f9fafb;}"
+            ".total-row{display:flex;justify-content:space-between;padding:7px 0;font-size:14px;border-bottom:1px dashed #e5e7eb;}"
+            ".total-row:last-child{border-bottom:none;font-size:16px;font-weight:800;color:#6366f1;padding-top:12px;}"
+            ".paid-row{color:#059669;font-weight:700;}"
+            ".due-row{color:#dc2626;font-weight:700;}"
+            ".footer{padding:20px 24px;text-align:center;background:#fff;}"
+            ".thank-you{font-size:15px;font-weight:700;color:#1a1d2e;margin-bottom:6px;}"
+            ".btn-print{display:block;width:100%;padding:14px;background:#6366f1;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-top:16px;}"
+            "@media print{.btn-print{display:none;}body{max-width:100%;}}"
+            "</style></head><body>"
+            "<div class=\"header\">"
+            "<div class=\"shop-name\">" + shop_name_hi + "</div>"
+            "<div style=\"font-size:12px;opacity:0.7;margin-top:2px;letter-spacing:0.5px;\">" + shop_name + "</div>"
+            "<div class=\"loyalty-box\">"
+            "<div class=\"loyalty-label\">\u2b50 Customer Code</div>"
+            "<div class=\"loyalty-code\">#" + lc + "</div>"
+            "</div>"
+            + repeat_html +
+            order_num_html +
+            "<div class=\"header-sub\">" + fmt_date(o["order_date"]) + "</div>"
+            "</div>"
+            "<div class=\"section\">"
+            "<div class=\"section-title\">Customer Details</div>"
+            '<div class="info-row"><span class="info-label">Name</span><span class="info-val">' + _safe(o["cname"], "Unknown") + '</span></div>'
+            '<div class="info-row"><span class="info-label">Mobile</span><span class="info-val">' + _safe(o["mobile"], "—") + '</span></div>'
+            '<div class="info-row"><span class="info-label">Address</span><span class="info-val">' + _safe(o["address"], "—") + '</span></div>'
+            '<div class="info-row"><span class="info-label">Order Date</span><span class="info-val">' + fmt_date(o["order_date"]) + '</span></div>'
+            '<div class="info-row"><span class="info-label">Delivery Date</span><span class="info-val" style="color:#6366f1;font-weight:700;">' + fmt_date(o["delivery_date"]) + '</span></div>'
+            + note_html +
+            "</div>"
+            "<div class=\"section\" style=\"padding:0;\">"
+            "<table><thead><tr><th>Item</th><th>Qty</th><th>Rate</th><th>Amount</th></tr></thead>"
+            "<tbody>" + items_html + "</tbody></table>"
+            "</div>"
+            "<div class=\"totals\">"
+            '<div class="total-row"><span>Total</span><span>₹' + _money(o["total_amount"]) + '</span></div>'
+            + extra_html +
+            '<div class="total-row" style="font-size:15px;font-weight:800;color:#6366f1;">'
+            '<span>Net Payable</span><span>₹' + _money(o["payable_amount"]) + '</span></div>'
+            '<div class="total-row paid-row"><span>\u2705 Advance Paid</span><span>₹' + _money(o["advance_paid"]) + '</span></div>'
+            '<div class="total-row due-row"><span>\u23f3 Remaining Due</span><span>₹' + _money(o["remaining"]) + '</span></div>'
+            "</div>"
+            "<div class=\"footer\">"
+            '<div class="thank-you">\U0001f64f Thank you for choosing ' + shop_name + '!</div>'
+            "<div style=\"font-size:12px;color:#6b7280;margin-top:4px;\">We appreciate your trust and business.</div>"
+            "<div class=\"qr-section\" style=\"margin:18px 0 4px;padding:16px;background:#f9fafb;border-radius:10px;border:1px solid #f0f0f0;text-align:center;\">"
+            "<div style=\"font-size:9px;font-weight:700;letter-spacing:2px;color:#9ca3af;text-transform:uppercase;margin-bottom:10px;\">SCAN TO TRACK YOUR ORDER</div>"
+            "<div id=\"slip_qr\" style=\"display:inline-block;\"></div>"
+            "<div style=\"font-size:10px;color:#6b7280;margin-top:8px;\">uttamtailors.in/track-order?code=" + order_code + "</div>"
+            "</div>"
+            "<button class=\"btn-print\" onclick=\"window.print()\">\U0001f5a8\ufe0f Print Receipt</button>"
+            "</div>"
+            "<script src=\"https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js\"></script>"
+            "<script>try{new QRCode(document.getElementById('slip_qr'),{text:'https://uttamtailors.in/track-order?code=" + order_code + "',width:120,height:120,colorDark:'#1C0F06',colorLight:'#f9fafb'});}catch(e){}</script>"
+            "</body></html>"
+        )
+    except Exception as _e:
+        _logger.error(
+            "print_slip error for order %s: %s\n%s",
+            order_code, _e, _tb.format_exc()
+        )
+        err = str(_e).replace("<", "&lt;").replace(">", "&gt;")
+        return (
+            "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><title>Print Error</title>"
+            "<style>body{font-family:sans-serif;padding:40px;max-width:500px;margin:0 auto;}"
+            ".err{background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:20px;}"
+            "code{background:#f3f4f6;padding:2px 6px;border-radius:4px;font-size:12px;word-break:break-all;}"
+            "</style></head><body>"
+            "<h2>\u26a0\ufe0f Could not generate print slip</h2>"
+            "<div class=\"err\">"
+            "<p><strong>Order:</strong> " + order_code + "</p>"
+            "<p><strong>Error:</strong> <code>" + err + "</code></p>"
+            "<p style=\"margin-top:12px;font-size:13px;color:#6b7280;\">Please screenshot this page and report it.</p>"
+            "</div>"
+            "<button onclick=\"window.close()\" style=\"margin-top:20px;padding:10px 20px;"
+            "background:#6366f1;color:#fff;border:none;border-radius:8px;cursor:pointer;\">Close</button>"
+            "</body></html>"
+        ), 500
 
 @bp.route("/api/peek-repeat-code")
 def api_peek_repeat_code():
     """Return next repeat code without incrementing — for display in UI."""
     return jsonify({"code": peek_repeat_code()})
-
-
-@bp.route("/api/customers/check-mobile")
-def api_check_mobile():
-    """Check if a mobile number already belongs to an existing customer.
-    Used to prevent employees from creating duplicate customers with
-    misspelled names when the customer already exists."""
-    mobile = request.args.get("mobile", "").strip()
-    if not mobile or len(mobile) < 10:
-        return jsonify({"found": False})
-
-    conn = get_db()
-    row = conn.execute(
-        "SELECT id, name, mobile, address FROM customers WHERE mobile=? LIMIT 1",
-        (mobile,)
-    ).fetchone()
-
-    if not row:
-        conn.close()
-        return jsonify({"found": False})
-
-    cnt = conn.execute(
-        "SELECT COUNT(*) as c FROM orders WHERE customer_id=?", (row["id"],)
-    ).fetchone()
-    conn.close()
-    return jsonify({
-        "found":       True,
-        "id":          row["id"],
-        "name":        row["name"],
-        "mobile":      row["mobile"],
-        "address":     row["address"] or "",
-        "order_count": cnt["c"] if cnt else 0,
-    })
-
-
-@bp.route("/api/customers/check-name-similar")
-def api_check_name_similar():
-    """Return a LIST of suggested names — for a visible autosuggest
-    dropdown the employee can tap to select. Combines:
-    1) Existing customers whose name starts with / closely matches input
-    2) Common Indian names dictionary (for first-time customers)
-    Honorifics (ji/jee/jii) are normalized so typos still match correctly."""
-    raw_name = request.args.get("name", "").strip()
-    if len(raw_name) < 2:
-        return jsonify({"suggestions": []})
-
-    def normalize(s):
-        s = s.lower().strip()
-        for suffix in [" jee", " jii", " ji", "jee", "jii"]:
-            if s.endswith(suffix):
-                s = s[: -len(suffix)].strip()
-                break
-        return " ".join(s.split())
-
-    def edit_distance(a, b):
-        if len(a) < len(b): a, b = b, a
-        if len(b) == 0: return len(a)
-        prev = list(range(len(b) + 1))
-        for i, ca in enumerate(a):
-            cur = [i + 1]
-            for j, cb in enumerate(b):
-                cur.append(min(prev[j+1]+1, cur[j]+1, prev[j]+(ca != cb)))
-            prev = cur
-        return prev[-1]
-
-    norm_input = normalize(raw_name)
-    input_len  = len(norm_input)
-    threshold  = max(1, input_len // 4)
-
-    suggestions = []  # list of {name, mobile, order_count, source, score}
-    seen_norm   = set()
-
-    # ── 1) Existing customers — prefix match OR close fuzzy match ──
-    conn = get_db()
-    all_customers = conn.execute(
-        "SELECT c.id, c.name, c.mobile, COUNT(o.id) as order_count "
-        "FROM customers c LEFT JOIN orders o ON o.customer_id=c.id "
-        "GROUP BY c.id"
-    ).fetchall()
-    conn.close()
-
-    for r in all_customers:
-        existing_raw = (r["name"] or "").strip()
-        if not existing_raw:
-            continue
-        norm_existing = normalize(existing_raw)
-        if norm_existing in seen_norm:
-            continue
-        is_prefix = norm_existing.startswith(norm_input) or norm_input.startswith(norm_existing)
-        dist = 0 if is_prefix else edit_distance(norm_input, norm_existing)
-        if is_prefix or (abs(len(norm_existing) - input_len) <= threshold and dist <= threshold):
-            suggestions.append({
-                "name": existing_raw, "mobile": r["mobile"] or "",
-                "order_count": r["order_count"] or 0,
-                "source": "customer", "id": r["id"],
-                "score": (0 if is_prefix else dist + 1),  # prefix matches rank first
-            })
-            seen_norm.add(norm_existing)
-
-    # ── 2) Common Indian names dictionary — prefix + fuzzy match ──
-    # ALWAYS check the dictionary too (previously this was skipped
-    # whenever 8+ DB customers already matched, which happened almost
-    # every time since short prefixes match many existing customers —
-    # that bug meant dictionary names never appeared in practice).
-    for norm_common, canonical in COMMON_NAMES_LOOKUP.items():
-        if norm_common in seen_norm:
-            continue
-        is_prefix = norm_common.startswith(norm_input) or norm_input.startswith(norm_common)
-        if not is_prefix:
-            if abs(len(norm_common) - input_len) > threshold:
-                continue
-            dist = edit_distance(norm_input, norm_common)
-            if dist > threshold:
-                continue
-        else:
-            dist = 0
-        suggestions.append({
-            "name": canonical, "mobile": "", "order_count": 0,
-            "source": "common_dictionary", "id": None,
-            "score": (0 if is_prefix else dist + 1) + 0.5,  # rank slightly below real customers
-        })
-        seen_norm.add(norm_common)
-        if len(suggestions) >= 40:  # performance cap before final sort+slice
-            break
-
-    # Separate by source, sort each group independently
-    customer_matches = sorted(
-        [s for s in suggestions if s["source"] == "customer"],
-        key=lambda x: (x["score"], len(x["name"]))
-    )
-    dictionary_matches = sorted(
-        [s for s in suggestions if s["source"] == "common_dictionary"],
-        key=lambda x: (x["score"], len(x["name"]))
-    )
-
-    # Guarantee a MIX: real customers are prioritized, but at least 2
-    # dictionary suggestions are always included when available — so
-    # dictionary names aren't drowned out when many customers match.
-    final = customer_matches[:4] + dictionary_matches[:2]
-    if len(final) < 6:
-        # Fill remaining slots from whichever list has more left
-        remaining = (customer_matches[4:] + dictionary_matches[2:])
-        remaining.sort(key=lambda x: (x["score"], len(x["name"])))
-        final += remaining[: 6 - len(final)]
-
-    return jsonify({"suggestions": final[:6]})
-
 
 
 @bp.route("/api/customers/search")
@@ -1245,15 +874,15 @@ def api_customer_search():
     if not q:
         return jsonify([])
     conn = get_db()
+    like = f"%{q}%"
     results = []
-
-    # ── Code search (order number / loyalty code) ─────────────────────────
     search_code = q.lstrip("#").lstrip("C-").lstrip("c-") if (
         q.isdigit() or q.startswith("#") or q.upper().startswith("C-")
     ) else None
 
     if search_code and search_code.isdigit():
         code = search_code
+        # Search by exact order code (original OR repeat order)
         order_rows = conn.execute("""
             SELECT c.id, c.name, c.mobile, c.address, o.order_code as matched_code
             FROM orders o JOIN customers c ON c.id = o.customer_id
@@ -1270,44 +899,24 @@ def api_customer_search():
                 })
                 seen_codes.add(r["id"])
 
-    # ── Name / mobile / address search — multi-word AND ───────────────────
-    # Split query into words; each word must appear somewhere in name/mobile/address.
-    # This makes "Kumar Ram" find "Ram Kumar", and "rames" find "Ramesh".
-    words = [w.lower() for w in q.split() if w]
-    if words:
-        # Build: (LOWER(name) LIKE %w1% OR mobile LIKE %w1% OR ...) AND (...w2...) AND ...
-        word_clauses = " AND ".join(
-            "(LOWER(c.name) LIKE ? OR c.mobile LIKE ? OR LOWER(c.address) LIKE ?)"
-            for _ in words
-        )
-        word_params = []
-        for w in words:
-            lk = f"%{w}%"
-            word_params.extend([lk, lk, lk])
+    # Also search by name, mobile, address (case-insensitive)
+    rows = conn.execute("""
+        SELECT c.id, c.name, c.mobile, c.address, COUNT(o.id) as order_count
+        FROM customers c
+        LEFT JOIN orders o ON o.customer_id = c.id
+        WHERE LOWER(c.name) LIKE LOWER(?) OR c.mobile LIKE ? OR LOWER(c.address) LIKE LOWER(?)
+        GROUP BY c.id
+        ORDER BY c.name ASC LIMIT 15
+    """, (like, like, like)).fetchall()
+    seen_ids = {r["id"] for r in results}
+    for r in rows:
+        if r["id"] not in seen_ids:
+            results.append({"id": r["id"], "name": r["name"],
+                "mobile": r["mobile"] or "", "address": r["address"] or "",
+                "matched_code": None, "order_count": r["order_count"] or 0})
+            seen_ids.add(r["id"])
 
-        rows = conn.execute(f"""
-            SELECT c.id, c.name, c.mobile, c.address, COUNT(o.id) as order_count
-            FROM customers c
-            LEFT JOIN orders o ON o.customer_id = c.id
-            WHERE {word_clauses}
-            GROUP BY c.id
-            ORDER BY
-              CASE WHEN LOWER(c.name) LIKE ? THEN 0 ELSE 1 END,
-              c.name ASC
-            LIMIT 15
-        """, word_params + [f"%{words[0]}%"]).fetchall()
-
-        seen_ids = {r["id"] for r in results}
-        for r in rows:
-            if r["id"] not in seen_ids:
-                results.append({
-                    "id": r["id"], "name": r["name"],
-                    "mobile": r["mobile"] or "", "address": r["address"] or "",
-                    "matched_code": None, "order_count": r["order_count"] or 0
-                })
-                seen_ids.add(r["id"])
-
-    # ── Enrich results with order count + loyalty code ────────────────────
+    # Add order_count + permanent code (first order) to all results
     for res in results:
         if "order_count" not in res:
             cnt = conn.execute("SELECT COUNT(*) as c FROM orders WHERE customer_id=?", (res["id"],)).fetchone()
@@ -1317,9 +926,10 @@ def api_customer_search():
             (res["id"],)
         ).fetchone()
         res["loyalty_code"] = first["order_code"] if first else None
-
     conn.close()
     return jsonify(results[:15])
+
+
 
 
 
@@ -1451,28 +1061,19 @@ def order_status():
     today = date.today().isoformat()
     now_dt = datetime.now()
 
-    # Fresh start filter
-    fresh_start_enabled = get_setting("utms_fresh_start", "0") == "1"
-    fresh_start_date    = get_setting("utms_fresh_start_date", "2026-06-01") if fresh_start_enabled else None
-
-    date_clause = "AND o.order_date >= ?" if fresh_start_date else ""
-    date_params = (fresh_start_date,) if fresh_start_date else ()
-
     # Single fast query - no correlated subqueries
-    raw = conn.execute(f"""
+    raw = conn.execute("""
         SELECT o.id, o.order_code, o.status, o.is_urgent, o.note,
                o.order_date, o.delivery_date, o.delivered_at, o.repeat_of,
                o.payable_amount, o.advance_paid, o.remaining, o.customer_id,
-               o.created_at,
                c.name as cname, c.mobile, c.address as caddress
         FROM orders o
         LEFT JOIN customers c ON c.id = o.customer_id
-        WHERE 1=1 {date_clause}
         ORDER BY
           o.is_urgent DESC,
           CASE o.status WHEN 'pending' THEN 0 WHEN 'ready' THEN 1 ELSE 2 END,
           o.id DESC
-    """, date_params).fetchall()
+    """).fetchall()
 
     # Customer order counts in one query
     cust_counts = {}
@@ -1570,7 +1171,6 @@ def order_status():
             "repeat_of":        o["repeat_of"],
             "delivery_date":    o["delivery_date"] or "",
             "delivery_date_fmt":fmtd(o["delivery_date"]),
-            "order_date":       o["order_date"] or "",
             "order_date_fmt":   fmtd(o["order_date"]),
             "payable_amount":   o["payable_amount"] or 0,
             "advance_paid":     o["advance_paid"] or 0,
@@ -1578,7 +1178,7 @@ def order_status():
             "note":             o["note"] or "",
             "overdue":          overdue,
             "due_soon":         due_soon,
-            "days_left":        days_left if dl else 9999,
+            "days_left":        days_left if (dl and not overdue) else 999,
             "delivered_at":     (o["delivered_at"] if "delivered_at" in o.keys() else "") or "",
             "delivered_at_fmt": fmtd(((o["delivered_at"] if "delivered_at" in o.keys() else "") or "")[:10]),
             "garments":         items,
@@ -1586,99 +1186,7 @@ def order_status():
             "pickup_pending":   o["status"] == "ready" and overdue,
         })
 
-    # ── Visit Number + Previous Orders System ─────────────────────────────
-    # Build customer_id lookup from raw rows
-    raw_by_code = {r["order_code"]: r for r in raw}
-
-    # Load ALL orders for customers in current view (ignoring fresh start filter)
-    all_cust_orders = {}
-    try:
-        customer_ids_in_view = list({r["customer_id"] for r in raw if r["customer_id"]})
-        if customer_ids_in_view:
-            ph = ",".join(["?" ] * len(customer_ids_in_view))
-            hist_raw = conn.execute(
-                f"SELECT o.id, o.order_code, o.repeat_of, o.order_date, o.delivery_date, "
-                f"o.status, o.payable_amount, o.advance_paid, o.remaining, o.customer_id "
-                f"FROM orders o WHERE o.customer_id IN ({ph}) ORDER BY o.id ASC",
-                tuple(customer_ids_in_view)
-            ).fetchall()
-
-            # Garments for all historical orders
-            hist_ids = [r["id"] for r in hist_raw]
-            hist_items = {}
-            if hist_ids:
-                ph2 = ",".join(["?"] * len(hist_ids))
-                for it in conn.execute(
-                    f"SELECT order_id, garment_type, quantity FROM order_items WHERE order_id IN ({ph2})",
-                    tuple(hist_ids)
-                ).fetchall():
-                    hist_items.setdefault(it["order_id"], []).append(
-                        {"garment_type": it["garment_type"], "quantity": it["quantity"]}
-                    )
-
-            def _fmt(d):
-                if not d: return "—"
-                p = str(d).split("-")
-                return f"{p[2]}-{p[1]}-{p[0]}" if len(p) == 3 else d
-
-            for r in hist_raw:
-                cid = r["customer_id"]
-                all_cust_orders.setdefault(cid, []).append({
-                    "order_code":        r["order_code"],
-                    "display_code":      r["repeat_of"] if r["repeat_of"] else r["order_code"],
-                    "order_date_fmt":    _fmt(r["order_date"]),
-                    "delivery_date_fmt": _fmt(r["delivery_date"]),
-                    "status":            r["status"],
-                    "payable_amount":    r["payable_amount"] or 0,
-                    "advance_paid":      r["advance_paid"] or 0,
-                    "remaining":         r["remaining"] or 0,
-                    "garments":          hist_items.get(r["id"], []),
-                })
-    except Exception:
-        pass  # visit history optional — never crash main page
-
-    # Group order codes per customer sorted by id ASC (oldest = visit 1)
-    from collections import defaultdict
-    cust_visits = defaultdict(list)
-    for cid, corders in all_cust_orders.items():
-        cust_visits[cid] = [o["order_code"] for o in corders]
-
-    # Pass 1: assign visit_number + is_latest to every order
-    for o in orders:
-        raw_row  = raw_by_code.get(o["order_code"])
-        cid      = raw_row["customer_id"] if raw_row else None
-        visits   = cust_visits.get(cid, [o["order_code"]]) if cid else [o["order_code"]]
-        try:    idx = visits.index(o["order_code"])
-        except: idx = 0
-        o["visit_number"] = idx + 1
-        o["is_latest"]    = (idx == len(visits) - 1)
-
-    # Pass 2: build prev_orders_full for expanded panel (uses ALL historical orders)
-    for o in orders:
-        raw_row = raw_by_code.get(o["order_code"])
-        cid     = raw_row["customer_id"] if raw_row else None
-        if not cid:
-            o["prev_orders_full"] = []
-            continue
-        all_visits = all_cust_orders.get(cid, [])
-        total_visits = len(all_visits)
-        prev = []
-        for idx, ho in enumerate(all_visits):
-            if ho["order_code"] == o["order_code"]:
-                continue
-            prev.append({
-                "visit_number":   idx + 1,
-                "code":           ho["display_code"],
-                "order_date":     ho["order_date_fmt"],
-                "delivery_date":  ho["delivery_date_fmt"],
-                "status":         ho["status"],
-                "total":          ho["payable_amount"],
-                "paid":           ho["advance_paid"],
-                "remaining":      ho["remaining"],
-                "garments":       ho["garments"],
-                "is_latest":      (idx == total_visits - 1),
-            })
-        o["prev_orders_full"] = prev
+    # Images not loaded on order status page (for speed)
 
     # Load images for all orders (batch query)
     all_images = conn.execute("""
@@ -1703,7 +1211,6 @@ def order_status():
         "cancelled": sum(1 for o in orders if o["status"]=="cancelled"),
         "urgent":    sum(1 for o in orders if o["is_urgent"] and o["status"]!="delivered"),
         "pickup_pending": sum(1 for o in orders if o.get("pickup_pending")),
-        "today":     sum(1 for o in orders if o.get("order_date") == date.today().isoformat() and o.get("status") != "delivered"),
     }
     conn.close()
     HINDI_MAP = {
@@ -1718,13 +1225,10 @@ def order_status():
         active_page="order_status", show_voice=True,
         urgent_count=counts["urgent"], orders=orders,
         total=counts["total"], late_count=counts["late"],
-        today_count=counts["today"], today_iso=date.today().isoformat(),
         upcoming_count=counts["upcoming"],
         ready_count=counts["ready"], delivered_count=counts["delivered"],
         cancelled_count=counts["cancelled"],
         pickup_pending_count=counts["pickup_pending"],
-        fresh_start_enabled=fresh_start_enabled,
-        fresh_start_date=fresh_start_date or "",
         hindi_map=HINDI_MAP)
 
 
@@ -1737,6 +1241,16 @@ def api_update_status():
         return jsonify({"ok": False, "error": "Invalid status"})
     conn = get_db()
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    # Fetch order + customer for SMS/email/FCM
+    order_row = conn.execute(
+        """SELECT o.note, o.web_account_id, c.mobile, c.name as cust_name,
+                  COALESCE(c.email,'') as cust_email
+           FROM orders o
+           LEFT JOIN customers c ON c.id=o.customer_id
+           WHERE o.order_code=?""", (code,)
+    ).fetchone()
+
     if new_status == "delivered":
         conn.execute("UPDATE orders SET status=?, delivered_at=? WHERE order_code=?",
                      (new_status, now, code))
@@ -1744,6 +1258,45 @@ def api_update_status():
         conn.execute("UPDATE orders SET status=? WHERE order_code=?", (new_status, code))
     conn.commit()
     conn.close()
+
+    # ── SMS notification ─────────────────────────────────────────────────────
+    try:
+        if order_row and order_row["mobile"]:
+            mobile    = order_row["mobile"]
+            cust_name = order_row["cust_name"] or "Customer"
+            note      = order_row["note"] or ""
+            note_parts = [p.strip() for p in note.split("|")]
+            is_home    = any("delivery:home" in p for p in note_parts)
+            from app.utils.sms import send_ready_sms as _ready_sms, send_status_sms as _status_sms
+            if new_status == "ready":
+                _ready_sms(mobile, code, cust_name, is_home)
+            elif new_status in ("delivered", "pending"):
+                _status_sms(mobile, code, cust_name, new_status)
+    except Exception:
+        pass  # SMS failure never blocks status update
+
+    # ── Email + FCM status notification ──────────────────────────────────────
+    try:
+        if order_row:
+            _email_to = (order_row["cust_email"] or "").strip()
+            _web_acc  = order_row["web_account_id"]
+            # Fallback: look up email from web_accounts if linked
+            if not _email_to and _web_acc:
+                _acc_r = get_db().execute(
+                    "SELECT email FROM web_accounts WHERE id=? LIMIT 1", (_web_acc,)
+                ).fetchone()
+                if _acc_r:
+                    _email_to = (_acc_r["email"] or "").strip()
+            _cname = order_row["cust_name"] or "Customer"
+            if _email_to:
+                from app.utils.email_notify import send_status_email as _se
+                _se(_email_to, code, _cname, new_status)
+            if _web_acc:
+                from app.utils.fcm import push_status_update as _fcm_su
+                _fcm_su(_web_acc, code, new_status)
+    except Exception:
+        pass
+
     return jsonify({"ok": True})
 
 
@@ -2181,8 +1734,6 @@ def api_worklog_add():
         conn.close()
         return jsonify({"ok": False, "error": f"Only {remaining_to_log} piece(s) left to stitch for {gt}."})
 
-    from database import invalidate_settings_cache
-    invalidate_settings_cache()  # Always get fresh stitching rates
     making_rate = float(rate_override) if rate_override is not None else float(get_setting(f"stitch_rate_{gt}", "0"))
     today = date.today().isoformat()
     now   = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -2205,15 +1756,6 @@ def api_worklog_add():
 
     progress = f"{gt}: {total_logged}/{item['quantity']} done"
     return jsonify({"ok": True, "auto_ready": auto_ready, "progress": progress})
-
-
-@bp.route("/api/check-pin", methods=["POST"])
-def api_check_pin():
-    """Verify owner PIN without creating a session — used for action-level confirmation."""
-    data    = request.get_json(silent=True) or {}
-    entered = str(data.get("pin", "")).strip()
-    real    = get_setting("owner_pin", "1234")
-    return jsonify({"ok": entered == real})
 
 
 @bp.route("/api/work-log/delete/<int:log_id>", methods=["POST"])
@@ -2306,7 +1848,7 @@ def api_pickup_search():
         # Exact order_code match
         r = conn.execute("""
             SELECT o.order_code, o.status, o.delivery_date, o.order_date, o.remaining, o.is_urgent,
-                   o.repeat_of, c.name as customer_name, c.mobile, c.address
+                   o.repeat_of, c.name as customer_name, c.mobile
             FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
             WHERE o.order_code=?
         """, (code,)).fetchall()
@@ -2318,7 +1860,7 @@ def api_pickup_search():
         # All orders with repeat_of matching this code (repeat customer's entries)
         r2 = conn.execute("""
             SELECT o.order_code, o.status, o.delivery_date, o.order_date, o.remaining, o.is_urgent,
-                   o.repeat_of, c.name as customer_name, c.mobile, c.address
+                   o.repeat_of, c.name as customer_name, c.mobile
             FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
             WHERE o.repeat_of=?
             ORDER BY o.id DESC
@@ -2328,38 +1870,18 @@ def api_pickup_search():
                 rows.append(row)
                 seen_codes.add(row["order_code"])
 
-    # Search by name, mobile, address, garment type — multi-word AND logic
-    # Each word must match at least one of: name, mobile, address, garment
-    # "Ram Sikar" finds orders for Ram from Sikar
-    # "Kameej" finds all shirt orders
-    words = [w.lower() for w in q.split() if w]
-    if words:
-        word_clauses = " AND ".join(
-            """(LOWER(c.name) LIKE ?
-               OR c.mobile LIKE ?
-               OR LOWER(c.address) LIKE ?
-               OR EXISTS (
-                   SELECT 1 FROM order_items oi
-                   WHERE oi.order_id=o.id AND LOWER(oi.garment_type) LIKE ?
-               ))"""
-            for _ in words
-        )
-        word_params = []
-        for w in words:
-            lk = f"%{w}%"
-            word_params.extend([lk, lk, lk, lk])
-
-        r3 = conn.execute(f"""
-            SELECT o.order_code, o.status, o.delivery_date, o.order_date, o.remaining, o.is_urgent,
-                   o.repeat_of, c.name as customer_name, c.mobile, c.address
-            FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
-            WHERE {word_clauses}
-            ORDER BY o.id DESC LIMIT 40
-        """, word_params).fetchall()
-        for row in r3:
-            if row["order_code"] not in seen_codes:
-                rows.append(row)
-                seen_codes.add(row["order_code"])
+    # Search by name or mobile (case-insensitive)
+    r3 = conn.execute("""
+        SELECT o.order_code, o.status, o.delivery_date, o.order_date, o.remaining, o.is_urgent,
+               o.repeat_of, c.name as customer_name, c.mobile
+        FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
+        WHERE (LOWER(c.name) LIKE LOWER(?) OR c.mobile LIKE ?)
+        ORDER BY o.id DESC LIMIT 20
+    """, (like, like)).fetchall()
+    for row in r3:
+        if row["order_code"] not in seen_codes:
+            rows.append(row)
+            seen_codes.add(row["order_code"])
     conn.close()
 
     return jsonify([{
@@ -2370,7 +1892,6 @@ def api_pickup_search():
         "status":           r["status"],
         "customer_name":    r["customer_name"] or "—",
         "mobile":           r["mobile"] or "",
-        "address":          r["address"] or "" if "address" in r.keys() else "",
         "order_date_fmt":   fmtd(r["order_date"]),
         "delivery_date_fmt":fmtd(r["delivery_date"]),
         "remaining":        r["remaining"] or 0,
@@ -2439,18 +1960,20 @@ def api_pickup_order():
 @bp.route("/api/pickup/collect-and-deliver", methods=["POST"])
 def api_pickup_collect_and_deliver():
     """Collect payment AND mark as delivered in one step."""
-    data     = request.get_json(silent=True) or {}
-    code     = data.get("order_code","").strip().lstrip("#")
-    amount   = float(data.get("amount", 0))
-    mode     = data.get("mode","cash")
-    discount = bool(data.get("discount", False))  # True = waive remaining balance
+    data   = request.get_json(silent=True) or {}
+    code   = data.get("order_code","").strip().lstrip("#")
+    amount = float(data.get("amount", 0))
+    mode   = data.get("mode","cash")
 
     if not code or amount < 0:
         return jsonify({"ok":False, "error":"Invalid request"})
 
     conn = get_db()
     order = conn.execute(
-        "SELECT id, remaining, advance_paid FROM orders WHERE order_code=?", (code,)
+        """SELECT o.id, o.remaining, o.advance_paid, o.web_account_id,
+                  c.mobile, c.name as cust_name, COALESCE(c.email,'') as cust_email
+           FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
+           WHERE o.order_code=?""", (code,)
     ).fetchone()
     if not order:
         conn.close()
@@ -2458,62 +1981,77 @@ def api_pickup_collect_and_deliver():
 
     today = date.today().isoformat()
     now   = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    _sms_mobile = order["mobile"] or ""
+    _sms_name   = order["cust_name"] or "Customer"
+    _notif_email = (order["cust_email"] or "").strip()
+    _notif_acc   = order["web_account_id"]
+    if not _notif_email and _notif_acc:
+        try:
+            _ar = get_db().execute("SELECT email FROM web_accounts WHERE id=? LIMIT 1", (_notif_acc,)).fetchone()
+            if _ar: _notif_email = (_ar["email"] or "").strip()
+        except Exception:
+            pass
 
     current_remaining = float(order["remaining"] or 0)
 
-    order_status_check = conn.execute("SELECT status FROM orders WHERE order_code=?", (code,)).fetchone()
-    if order_status_check and order_status_check["status"] == "pending":
-        conn.close()
-        return jsonify({"ok":False, "error":"Cannot deliver a pending order. Clothes must be stitched and marked Ready first."})
-
-    # ── Discount/Waive: customer pays less than full due (e.g. ₹80 of
-    # ₹100), and the shortfall should NOT keep showing as due forever.
-    # Zero out remaining, log what was actually collected as income, and
-    # log the waived shortfall as a 'discount' expense (for accounting
-    # visibility — total income + discount expense = full payable). ──
-    if discount:
-        waived = round(current_remaining - amount, 2)
-        new_adv = round(order["advance_paid"] + amount, 2)
-        conn.execute(
-            "UPDATE orders SET remaining=0, advance_paid=?, status='delivered', delivered_at=? WHERE order_code=?",
-            (new_adv, now, code)
-        )
-        if amount > 0:
-            conn.execute("""
-                INSERT INTO finance(tx_date,tx_type,category,amount,mode,order_id,note,created_by,created_at)
-                VALUES(?,'income','payment',?,?,?,?,'employee',?)
-            """, (today, amount, mode, order["id"], f"Final payment (discounted) on delivery #{code}", now))
-        if waived > 0:
-            conn.execute("""
-                INSERT INTO finance(tx_date,tx_type,category,amount,mode,order_id,note,created_by,created_at)
-                VALUES(?,'expense','discount',?,?,?,?,'employee',?)
-            """, (today, waived, mode, order["id"], f"Discount/waived on delivery #{code}", now))
-        conn.commit()
-        conn.close()
-        return jsonify({"ok":True})
+    def _send_delivered_sms():
+        try:
+            if _sms_mobile:
+                from app.utils.sms import send_status_sms as _dsms2
+                _dsms2(_sms_mobile, code, _sms_name, "delivered")
+        except Exception:
+            pass
+        try:
+            if _notif_email:
+                from app.utils.email_notify import send_status_email as _de
+                _de(_notif_email, code, _sms_name, "delivered")
+        except Exception:
+            pass
+        try:
+            if _notif_acc:
+                from app.utils.fcm import push_status_update as _dfcm
+                _dfcm(_notif_acc, code, "delivered")
+        except Exception:
+            pass
 
     # If remaining is already 0 and amount is 0, just mark as delivered (no finance entry)
     if amount <= 0 and current_remaining <= 0:
+        order_status_check = conn.execute("SELECT status FROM orders WHERE order_code=?", (code,)).fetchone()
+        if order_status_check and order_status_check["status"] == "pending":
+            conn.close()
+            return jsonify({"ok":False, "error":"Cannot deliver a pending order. Clothes must be stitched and marked Ready first."})
         conn.execute(
             "UPDATE orders SET status='delivered', delivered_at=? WHERE order_code=?",
             (now, code)
         )
         conn.commit()
         conn.close()
+        _send_delivered_sms()
         return jsonify({"ok":True})
 
     # If amount is 0 but there IS remaining, just mark delivered without payment
     if amount <= 0:
+        order_status_check = conn.execute("SELECT status FROM orders WHERE order_code=?", (code,)).fetchone()
+        if order_status_check and order_status_check["status"] == "pending":
+            conn.close()
+            return jsonify({"ok":False, "error":"Cannot deliver a pending order. Clothes must be stitched and marked Ready first."})
         conn.execute(
             "UPDATE orders SET status='delivered', delivered_at=? WHERE order_code=?",
             (now, code)
         )
         conn.commit()
         conn.close()
+        _send_delivered_sms()
         return jsonify({"ok":True})
 
     new_rem = max(0, round(current_remaining - amount, 2))
     new_adv = round(order["advance_paid"] + amount, 2)
+
+    # Check status before delivering
+    order_status_check = conn.execute("SELECT status FROM orders WHERE order_code=?", (code,)).fetchone()
+    if order_status_check and order_status_check["status"] == "pending":
+        conn.close()
+        return jsonify({"ok":False, "error":"Cannot deliver a pending order. Clothes must be stitched and marked Ready first."})
 
     # Update order: payment + delivered
     conn.execute(
@@ -2527,6 +2065,7 @@ def api_pickup_collect_and_deliver():
     """, (today, amount, mode, order["id"], f"Final payment on delivery #{code}", now))
     conn.commit()
     conn.close()
+    _send_delivered_sms()
     return jsonify({"ok":True})
 
 
@@ -2550,6 +2089,11 @@ def api_pickup_deliver():
         conn.close()
         return jsonify({"ok":False, "error":"Order is already delivered."})
 
+    # Fetch customer info for SMS before closing conn
+    sms_row = conn.execute(
+        """SELECT c.mobile, c.name, COALESCE(c.email,'') as cust_email, o.web_account_id
+           FROM orders o LEFT JOIN customers c ON c.id=o.customer_id WHERE o.order_code=?""", (code,)
+    ).fetchone()
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     conn.execute(
         "UPDATE orders SET status='delivered', delivered_at=? WHERE order_code=?",
@@ -2557,111 +2101,29 @@ def api_pickup_deliver():
     )
     conn.commit()
     conn.close()
+    try:
+        if sms_row and sms_row["mobile"]:
+            from app.utils.sms import send_status_sms as _dsms
+            _dsms(sms_row["mobile"], code, sms_row["name"] or "Customer", "delivered")
+    except Exception:
+        pass
+    try:
+        if sms_row:
+            _d_email = (sms_row["cust_email"] or "").strip()
+            _d_acc   = sms_row["web_account_id"]
+            if not _d_email and _d_acc:
+                _dr = get_db().execute("SELECT email FROM web_accounts WHERE id=? LIMIT 1", (_d_acc,)).fetchone()
+                if _dr: _d_email = (_dr["email"] or "").strip()
+            _d_name = sms_row["name"] or "Customer"
+            if _d_email:
+                from app.utils.email_notify import send_status_email as _dse
+                _dse(_d_email, code, _d_name, "delivered")
+            if _d_acc:
+                from app.utils.fcm import push_status_update as _dfcm2
+                _dfcm2(_d_acc, code, "delivered")
+    except Exception:
+        pass
     return jsonify({"ok":True})
-
-
-@bp.route("/api/pickup/force-complete", methods=["POST"])
-def api_pickup_force_complete():
-    """🔓 BYPASS: Force-mark order as Ready by auto-filling work log gaps.
-    Adds work_logs entries for Naap + Kataai + Silai for every item,
-    only adding the *deficit* (idempotent — safe to click twice).
-    Sets status='ready' so delivery flow can proceed.
-    """
-    data = request.get_json(silent=True) or {}
-    code = data.get("order_code", "").strip().lstrip("#")
-    if not code:
-        return jsonify({"ok": False, "error": "No order code"})
-
-    conn = get_db()
-    order = conn.execute(
-        "SELECT id, status FROM orders WHERE order_code=?", (code,)
-    ).fetchone()
-    if not order:
-        conn.close()
-        return jsonify({"ok": False, "error": "Order not found"})
-    if order["status"] == "delivered":
-        conn.close()
-        return jsonify({"ok": False, "error": "Order already delivered"})
-    if order["status"] == "ready":
-        conn.close()
-        return jsonify({"ok": True, "msg": "Order is already Ready"})
-
-    items = conn.execute(
-        "SELECT garment_type, quantity FROM order_items WHERE order_id=?",
-        (order["id"],)
-    ).fetchall()
-    if not items:
-        conn.close()
-        return jsonify({"ok": False, "error": "Order has no items"})
-
-    today = date.today().isoformat()
-    now   = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    added_count = 0
-
-    for item in items:
-        gt  = item["garment_type"]
-        qty = int(item["quantity"] or 0)
-        if qty <= 0:
-            continue
-
-        # ── 1) NAAP (Measurement) ──
-        existing = conn.execute(
-            "SELECT COALESCE(SUM(qty_done),0) as t FROM work_logs "
-            "WHERE order_code=? AND garment_type=? "
-            "AND (notes LIKE 'Naap%' OR notes LIKE 'Measurement%')",
-            (code, gt)
-        ).fetchone()["t"] or 0
-        deficit = qty - existing
-        if deficit > 0:
-            conn.execute("""
-                INSERT INTO work_logs(order_id, order_code, garment_type, qty_done,
-                                      employee_name, log_date, making_rate, notes, created_at)
-                VALUES(?,?,?,?,?,?,?,?,?)
-            """, (order["id"], code, gt, deficit,
-                  "AUTO-BYPASS", today, 0, "Naap (Auto-Bypass)", now))
-            added_count += 1
-
-        # ── 2) KATAAI (Cutting) ──
-        existing = conn.execute(
-            "SELECT COALESCE(SUM(qty_done),0) as t FROM work_logs "
-            "WHERE order_code=? AND garment_type=? "
-            "AND (notes LIKE 'Kataai%' OR notes LIKE 'Cutting%')",
-            (code, gt)
-        ).fetchone()["t"] or 0
-        deficit = qty - existing
-        if deficit > 0:
-            conn.execute("""
-                INSERT INTO work_logs(order_id, order_code, garment_type, qty_done,
-                                      employee_name, log_date, making_rate, notes, created_at)
-                VALUES(?,?,?,?,?,?,?,?,?)
-            """, (order["id"], code, gt, deficit,
-                  "AUTO-BYPASS", today, 0, "Kataai (Auto-Bypass)", now))
-            added_count += 1
-
-        # ── 3) SILAI (Stitching) — anything NOT measurement/cutting ──
-        existing = conn.execute(
-            "SELECT COALESCE(SUM(qty_done),0) as t FROM work_logs "
-            "WHERE order_code=? AND garment_type=? "
-            "AND (notes IS NULL OR "
-            "     (notes NOT LIKE 'Measure%' AND notes NOT LIKE 'Cut%' "
-            "      AND notes NOT LIKE 'Naap%' AND notes NOT LIKE 'Kataai%'))",
-            (code, gt)
-        ).fetchone()["t"] or 0
-        deficit = qty - existing
-        if deficit > 0:
-            conn.execute("""
-                INSERT INTO work_logs(order_id, order_code, garment_type, qty_done,
-                                      employee_name, log_date, making_rate, notes, created_at)
-                VALUES(?,?,?,?,?,?,?,?,?)
-            """, (order["id"], code, gt, deficit,
-                  "AUTO-BYPASS", today, 0, "Silai (Auto-Bypass)", now))
-            added_count += 1
-
-    # Mark order as ready
-    conn.execute("UPDATE orders SET status='ready' WHERE order_code=?", (code,))
-    conn.commit()
-    conn.close()
-    return jsonify({"ok": True, "added": added_count, "msg": "Order force-marked as Ready"})
 
 
 # ══════════════════════════════════════════════
@@ -2671,11 +2133,7 @@ def api_pickup_force_complete():
 @bp.route("/finance")
 def finance():
     conn = get_db()
-    # Use IST date (UTC+5:30) to match browser's local date
-    from datetime import timezone, timedelta as td
-    ist = datetime.now(timezone(td(hours=5, minutes=30)))
-    today     = ist.strftime("%Y-%m-%d")
-    yesterday_ist = (ist - td(days=1)).strftime("%Y-%m-%d")
+    today     = date.today().isoformat()
     month_start = today[:7] + "-01"
 
     def fmt_d(d):
@@ -2704,7 +2162,7 @@ def finance():
         FROM finance WHERE tx_date = ?
     """, (today,)).fetchone()
 
-    yesterday = yesterday_ist
+    yesterday = (date.today() - timedelta(days=1)).isoformat()
     y = conn.execute("""
         SELECT
             COALESCE(SUM(CASE WHEN tx_type='income' THEN amount ELSE 0 END),0) as income,
@@ -2728,19 +2186,10 @@ def finance():
     ).fetchone()["c"]
     conn.close()
 
-    def fmt_12h(t):
-        if not t or len(t) < 5: return t or ""
-        try:
-            h, m = int(t[:2]), t[3:5]
-            ampm = "AM" if h < 12 else "PM"
-            h12 = h % 12 or 12
-            return f"{h12}:{m} {ampm}"
-        except: return t
-
     transactions = [{
         "tx_date":     r["tx_date"],
         "tx_date_fmt": fmt_d(r["tx_date"]),
-        "tx_time":     fmt_12h((r["created_at"] or "")[11:16]),
+        "tx_time":     (r["created_at"] or "")[11:16],
         "tx_type":     r["tx_type"],
         "category":    r["category"] or "",
         "note":        r["note"] or "",
@@ -2764,31 +2213,6 @@ def finance():
     )
 
 
-@bp.route("/api/orders/payment-status/<order_code>")
-def api_order_payment_status(order_code):
-    """Returns paid/remaining amounts for an order — used by the Finance
-    page to show live payment status when an order code is typed for
-    Advance / Payment / Remaining Amount categories."""
-    code = order_code.strip().lstrip("#")
-    conn = get_db()
-    o = conn.execute(
-        "SELECT o.order_code, c.name as cname, o.payable_amount, o.advance_paid, o.remaining "
-        "FROM orders o JOIN customers c ON c.id = o.customer_id WHERE o.order_code=?",
-        (code,)
-    ).fetchone()
-    conn.close()
-    if not o:
-        return jsonify({"ok": False, "error": f"Order #{code} not found"})
-    return jsonify({
-        "ok": True,
-        "order_code": o["order_code"],
-        "customer_name": o["cname"],
-        "payable_amount": float(o["payable_amount"] or 0),
-        "advance_paid":   float(o["advance_paid"] or 0),
-        "remaining":      float(o["remaining"] or 0),
-    })
-
-
 @bp.route("/api/finance/add", methods=["POST"])
 def api_finance_add():
     data      = request.get_json(silent=True) or {}
@@ -2799,14 +2223,11 @@ def api_finance_add():
     tx_date   = data.get("tx_date", date.today().isoformat())
     note      = data.get("note","").strip()
     order_code= data.get("order_code","").strip().lstrip("#")
-    employee_name = data.get("employee_name","").strip()
 
     if amount <= 0 or not category:
         return jsonify({"ok": False, "error": "Amount and category required"})
     if tx_type not in ("income","expense"):
         return jsonify({"ok": False, "error": "Invalid type"})
-
-    cat_lower = category.lower()
 
     conn = get_db()
     order_id = None
@@ -2818,12 +2239,9 @@ def api_finance_add():
             conn.close()
             return jsonify({"ok": False, "error": f"Order #{order_code} not found"})
 
-    # Advance / Payment / Remaining Amount all represent money received
-    # against an order at different stages (booking deposit, mid-process
-    # payment, final settlement) — all three update the order's payment
-    # tracking the same way.
-    is_order_payment = cat_lower in ("advance", "payment", "remaining amount")
-    if is_order_payment and order_id:
+    # If category is Advance, update order's advance_paid and remaining
+    is_advance = category.lower() == "advance"
+    if is_advance and order_id:
         old_advance  = float(o["advance_paid"] or 0)
         old_remaining= float(o["remaining"] or 0)
         new_advance  = old_advance + amount
@@ -2832,27 +2250,13 @@ def api_finance_add():
             UPDATE orders SET advance_paid=?, remaining=? WHERE id=?
         """, (new_advance, new_remaining, order_id))
         if not note:
-            note = f"{category} for order #{order_code}"
-
-    # Salary expense — when an employee is selected, also log it as a
-    # salary advance so it auto-deducts on the Owner Salary page (same
-    # table the Salary page already reads from).
-    if tx_type == "expense" and cat_lower == "salary" and employee_name:
-        today = date.today().isoformat()
-        now0  = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        conn.execute(
-            "INSERT INTO salary_advances(employee_name,amount,note,advance_date,created_at) VALUES(?,?,?,?,?)",
-            (employee_name, amount, note or "Finance page entry", today, now0)
-        )
-        if not note:
-            note = f"Salary — {employee_name}"
+            note = f"Advance for order #{order_code}"
 
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     conn.execute("""
-        INSERT INTO finance(tx_date,tx_type,category,amount,mode,order_id,note,employee_name,created_by,created_at)
-        VALUES(?,?,?,?,?,?,?,?,'employee',?)
-    """, (tx_date, tx_type, category, amount, mode, order_id, note,
-          employee_name if (tx_type=="expense" and cat_lower=="salary") else None, now))
+        INSERT INTO finance(tx_date,tx_type,category,amount,mode,order_id,note,created_by,created_at)
+        VALUES(?,?,?,?,?,?,?,'employee',?)
+    """, (tx_date, tx_type, category, amount, mode, order_id, note, now))
     conn.commit()
     conn.close()
     return jsonify({"ok": True})
@@ -2882,14 +2286,14 @@ def customers():
     customers_list = []
     for c in all_c:
         orders = conn.execute("""
-            SELECT o.*, STRING_AGG(CAST(oi.garment_type||' x'||oi.quantity AS TEXT), ', ') as garments_str
+            SELECT o.*, GROUP_CONCAT(oi.garment_type||' x'||oi.quantity, ', ') as garments_str
             FROM orders o
             LEFT JOIN order_items oi ON oi.order_id = o.id
             WHERE o.customer_id=?
             GROUP BY o.id, o.order_code, o.status, o.order_date, o.delivery_date,
                  o.total_amount, o.extra_charges, o.payable_amount, o.advance_paid,
                  o.remaining, o.payment_mode, o.is_urgent, o.note, o.repeat_of,
-                 o.delivered_at, o.created_at, c.name, c.mobile
+                 o.delivered_at, o.created_at
         ORDER BY o.id DESC
         """, (c["id"],)).fetchall()
         order_list = [{
@@ -2924,7 +2328,7 @@ def customers():
     final_list = []
     for cu in customers_list:
         ords = conn2.execute("""
-            SELECT o.*, STRING_AGG(CAST(oi.garment_type||' x'||oi.quantity AS TEXT), ', ') as garments_str
+            SELECT o.*, GROUP_CONCAT(oi.garment_type||' x'||oi.quantity, ', ') as garments_str
             FROM orders o LEFT JOIN order_items oi ON oi.order_id = o.id
             WHERE o.customer_id=? GROUP BY o.id, o.order_code, o.status, o.order_date,
                  o.delivery_date, o.payable_amount, o.advance_paid, o.remaining,
@@ -2956,27 +2360,10 @@ def public_finance_categories():
     """Public endpoint - returns finance categories for employee use."""
     income_cats  = get_setting("finance_income_cats",  "advance,payment,alteration,other income").split(",")
     expense_cats = get_setting("finance_expense_cats", "thread,buttons,fabric,electricity,rent,salary,transport,maintenance,other expense").split(",")
-    income_cats  = [c.strip() for c in income_cats  if c.strip()]
-    expense_cats = [c.strip() for c in expense_cats if c.strip()]
-    # Always ensure "remaining amount" is available, even if the income
-    # categories were customized before this feature existed.
-    if not any(c.lower() == "remaining amount" for c in income_cats):
-        income_cats.append("remaining amount")
     return jsonify({
-        "income":  income_cats,
-        "expense": expense_cats
+        "income":  [c.strip() for c in income_cats  if c.strip()],
+        "expense": [c.strip() for c in expense_cats if c.strip()]
     })
-
-
-@bp.route("/api/employees-list")
-def api_employees_list():
-    """Active employee names for dropdowns (e.g. Finance page Salary picker)."""
-    conn = get_db()
-    rows = conn.execute(
-        "SELECT id, name, COALESCE(hindi_name,'') as hindi_name FROM employees WHERE active=1 ORDER BY name"
-    ).fetchall()
-    conn.close()
-    return jsonify([{"id": r["id"], "name": r["name"], "hindi_name": r["hindi_name"]} for r in rows])
 
 
 @bp.route("/api/log-notify", methods=["POST"])
@@ -3041,10 +2428,10 @@ def measurements_page():
         garment_types_cfg[gname] = pairs
 
     orders = conn.execute("""
-        SELECT o.*, COALESCE(c.name,'') as customer_name, COALESCE(c.mobile,'') as cust_mobile
+        SELECT o.*, c.name as customer_name, c.mobile
         FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
-        WHERE o.status != 'delivered' AND o.status != 'cancelled'
-        ORDER BY o.is_urgent DESC, o.id DESC
+        WHERE o.status NOT IN ('delivered','cancelled')
+        ORDER BY o.is_urgent DESC, o.delivery_date ASC
     """).fetchall()
 
     urgent_count = conn.execute(
@@ -3096,46 +2483,30 @@ def measurements_page():
                 sel_types = [s.strip() for s in bracket.group(1).split(",") if s.strip()]
                 raw_notes = _re.sub(r'\s*\[[^\]]+\]\s*$', '', raw_notes).strip()
             garments.append({
-                "item_id":      it["id"],
-                "garment_type": it["garment_type"],
-                "quantity":     it["quantity"],
-                "measurements": meas,
-                "notes":        raw_notes,
-                "cut_done":     cut_done,
-                "selectedTypes": sel_types,
+            "garment_type":  it["garment_type"],
+                "quantity":      it["quantity"],
+                "measurements":  meas,
+                "notes":         raw_notes,
+                "sel_types":     sel_types,
+                "cut_done":      cut_done,
             })
         order_list.append({
-            "order_code":        o["order_code"],
-            "display_code":      o["repeat_of"] if o["repeat_of"] else o["order_code"],
-            "entry_code":        o["order_code"] if o["repeat_of"] else "",
-            "repeat_of":         o["repeat_of"] or "",
-            "customer_name":     o["customer_name"] or "—",
-            "mobile":            o["cust_mobile"] or o.get("mobile", "") or "",
-            "status":            o["status"],
-            "is_urgent":         o["is_urgent"],
-            "delivery_date_fmt": fmtd(o["delivery_date"]),
-            "order_date_fmt":    fmtd(o["order_date"]),
-            "note":              o["note"] or "",
-            "garments":          garments
+            "order_code":       o["order_code"],
+            "customer_name":    o["customer_name"] or "—",
+            "mobile":           o["mobile"] or "",
+            "status":           o["status"],
+            "order_date_fmt":   fmtd(o["order_date"]),
+            "delivery_date_fmt":fmtd(o["delivery_date"]),
+            "is_urgent":        o["is_urgent"],
+            "garments":         garments,
         })
 
-    # Load images for each order - DB first (Cloudinary), then filesystem fallback
-    for o in order_list:
-        order_row = conn.execute("SELECT id FROM orders WHERE order_code=?", (o["order_code"],)).fetchone()
-        imgs = []
-        if order_row:
-            img_rows = conn.execute("SELECT file_path FROM order_images WHERE order_id=? ORDER BY id", (order_row["id"],)).fetchall()
-            imgs = [r["file_path"] for r in img_rows if r["file_path"] and not r["file_path"].startswith("temp:")]
-        if not imgs:
-            folder = os.path.join(Config.UPLOAD_FOLDER, o["order_code"])
-            if os.path.isdir(folder):
-                files = sorted(f for f in os.listdir(folder) if f.lower().endswith((".jpg",".jpeg",".png",".gif",".webp")))
-                imgs = [f"/static/order_images/{o['order_code']}/{f}" for f in files]
-        o["images"] = imgs
-
     conn.close()
-    return render_template("employee/measurements.html",
-        active_page="measurements", show_voice=True,
-        urgent_count=urgent_count, orders=order_list,
-        hindi_map=hindi_map, garment_types_cfg=garment_types_cfg,
-        employees=emp_list)
+    return render_template(
+        "employee/measurements.html",
+        orders=order_list,
+        emp_list=emp_list,
+        garment_types_cfg=garment_types_cfg,
+        hindi_map=hindi_map,
+        active_page="measurements",
+    )

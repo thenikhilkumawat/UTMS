@@ -1,0 +1,79 @@
+{% extends "website/base.html" %}
+{% set active = "about" %}
+{% block title %}Our Story &mdash; Uttam Tailors, Sikar{% endblock %}
+{% block content %}
+
+<section class="page-hero">
+  <div class="page-hero-img">
+    <img src="{{ s.hero_img or 'https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=1400&q=80' }}" alt="Our story" loading="eager">
+  </div>
+  <div class="page-hero-overlay"></div>
+  <div class="page-hero-content">
+    <p class="kicker" style="color:var(--gold-l);">{{ s.hero_kicker or 'Our story' }}</p>
+    <h1 class="page-hero-title">{{ s.hero_title or 'The hands that built this shop.' }}</h1>
+    <p class="page-hero-sub" style="color:rgba(250,240,228,.65);">{{ s.hero_sub or 'Three generations. One craft. Never outsourced.' }}</p>
+  </div>
+</section>
+
+<section class="timeline" style="background:var(--bg);">
+  <div class="tl-line" aria-hidden="true"></div>
+
+  {% if timeline %}
+    {% for i, entry in enumerate(timeline) %}
+    <div class="tl-item {{ 'tl-left' if i % 2 == 0 else 'tl-right' }}">
+      <div class="tl-year">{{ entry.year }}</div>
+      <div class="tl-dot {% if loop.last %}tl-dot--gold{% endif %}" aria-hidden="true"></div>
+      <div class="tl-card {% if loop.last %}tl-card--gold{% endif %}">
+        <h3 class="tl-title">{{ entry.title }}</h3>
+        <p class="tl-body">{{ entry.body }}</p>
+        {% if loop.last %}
+        <a href="{{ url_for('website.commission') }}" class="btn-primary" style="margin-top:1.75rem;display:inline-flex;">Customise Your Garment &rarr;</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+  <!-- Default timeline if DB is empty -->
+  <div class="tl-item tl-left">
+    <div class="tl-year">1987</div>
+    <div class="tl-dot" aria-hidden="true"></div>
+    <div class="tl-card">
+      <h3 class="tl-title">The first stitch</h3>
+      <p class="tl-body">Uttam Tailors opens at Subhash Chowk, Sikar. One machine. One measuring tape. The rule from day one: if the garment fits perfectly, the customer always comes back.</p>
+    </div>
+  </div>
+  <div class="tl-item tl-right">
+    <div class="tl-year">2025</div>
+    <div class="tl-dot tl-dot--gold" aria-hidden="true"></div>
+    <div class="tl-card tl-card--gold">
+      <h3 class="tl-title">Taking it online &mdash; all of India</h3>
+      <p class="tl-body">In 2025, Uttam Tailors goes online. Our goal: bring the quality of master tailoring to every city in India.</p>
+      <a href="{{ url_for('website.commission') }}" class="btn-primary" style="margin-top:1.75rem;display:inline-flex;">Customise Your Garment &rarr;</a>
+    </div>
+  </div>
+  {% endif %}
+</section>
+
+<section class="promise-section">
+  <div class="section-header section-header--center">
+    <p class="kicker">What we promise</p>
+    <h2 class="section-title">Rules we never break.</h2>
+  </div>
+  <div class="promise-grid">
+    <div class="promise-card"><span class="promise-num">01</span><h3 class="promise-title">{{ s.promise1_title or 'Your measurements, saved forever' }}</h3><p class="promise-body">{{ s.promise1_body or 'Visit once. Every future order uses your saved measurements.' }}</p></div>
+    <div class="promise-card"><span class="promise-num">02</span><h3 class="promise-title">{{ s.promise2_title or 'Free alteration if fit is off' }}</h3><p class="promise-body">{{ s.promise2_body or 'If a garment does not fit as expected, we alter it at no charge.' }}</p></div>
+    <div class="promise-card"><span class="promise-num">03</span><h3 class="promise-title">{{ s.promise3_title or 'Every stitch made in Sikar' }}</h3><p class="promise-body">{{ s.promise3_body or 'We do not outsource. Every garment is cut and stitched by our tailors, in our shop.' }}</p></div>
+    <div class="promise-card"><span class="promise-num">04</span><h3 class="promise-title">{{ s.promise4_title or 'Quality across India' }}</h3><p class="promise-body">{{ s.promise4_body or 'Our 2025 mission: bring 35 years of Sikar craftsmanship to every home in India.' }}</p></div>
+  </div>
+</section>
+
+<section class="big-cta">
+  <div class="big-cta-img"><img src="https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=1920&q=80" alt="" aria-hidden="true" loading="lazy"></div>
+  <div class="big-cta-overlay"></div>
+  <div class="big-cta-inner">
+    <h2 class="big-cta-title">{{ s.cta_title or '35 years of craft.' }}<br>{{ s.cta_sub or 'Your garment is next.' }}</h2>
+    <a href="{{ url_for('website.commission') }}" class="btn-gold btn-xl">Customise Your Garment &rarr;</a>
+  </div>
+</section>
+
+{% endblock %}

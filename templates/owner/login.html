@@ -68,12 +68,12 @@ function submitPin() {
   fetch("/owner/verify-pin", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ pin: pin })
+    body: JSON.stringify({ pin: pin, next: {{ (next_url or '')|tojson }} })
   })
   .then(r => r.json())
   .then(data => {
     if (data.ok) {
-      window.location.href = "/owner/dashboard";
+      window.location.href = data.next || "/owner/dashboard";
     } else {
       // Shake and show error
       for (let i = 0; i < 4; i++) document.getElementById("d" + i).classList.add("error");

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% set active = "" %}
+{% block title %}Privacy Policy -- Uttam Tailors{% endblock %}
+{% block content %}
+<section class="page-hero" style="min-height:40vh;">
+  <div class="page-hero-img"><img src="https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=1400&q=80" alt="" loading="eager"></div>
+  <div class="page-hero-overlay"></div>
+  <div class="page-hero-content"><p class="kicker" style="color:var(--gold-l);">Legal</p><h1 class="page-hero-title">Privacy Policy</h1></div>
+</section>
+<div style="max-width:860px;margin:0 auto;padding:5rem 3rem;color:var(--dark);">
+  <p style="font-size:13px;color:var(--muted);margin-bottom:3rem;">Last updated: May 2025</p>
+  {% for title, body in [
+    ("Information We Collect", "When you place an order on our website, we collect your name, phone number (WhatsApp), delivery address, and garment measurements. We use this information solely to fulfill your order and communicate with you about it."),
+    ("How We Use Your Information", "Your information is used to: (1) Process and fulfill your tailoring order. (2) Send you updates about your order via WhatsApp. (3) Save your measurements for future orders if you choose. We do not sell, trade, or share your personal information with any third party for marketing purposes."),
+    ("Measurement Data", "If you choose to save your measurements, they are stored securely and can only be accessed by you using your phone number and OTP verification. You may request deletion of your measurements at any time by contacting us."),
+    ("WhatsApp Communication", "By providing your WhatsApp number, you consent to receiving order updates and confirmations from Uttam Tailors. You will not receive promotional messages without your explicit consent."),
+    ("Cookies", "Our website uses minimal cookies to remember your language preference. We do not use tracking cookies or third-party advertising cookies."),
+    ("Data Security", "We take reasonable precautions to protect your personal information. Your data is stored on secure servers and is not accessible to unauthorized parties."),
+    ("Your Rights", "You have the right to: Access the personal data we hold about you. Request correction of incorrect data. Request deletion of your data. Withdraw consent for data storage at any time. To exercise these rights, contact us at info.uttamtailors@gmail.com"),
+    ("Contact Us", "For any privacy-related concerns, contact us at info.uttamtailors@gmail.com or visit us at Subhash Chowk, Sikar, Rajasthan."),
+  ] %}
+  <div style="margin-bottom:2.5rem;">
+    <h2 style="font-family:var(--fd);font-size:24px;font-weight:400;color:var(--dark);margin-bottom:1rem;">{{ title }}</h2>
+    <p style="font-size:15px;color:var(--muted);line-height:1.85;">{{ body }}</p>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

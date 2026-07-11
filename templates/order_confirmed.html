@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Order Confirmed &mdash; Uttam Tailors{% endblock %}
+{% block content %}
+<section class="confirmed-wrap">
+  <div class="confirmed-box">
+    <div class="confirmed-icon">&#10022;</div>
+    <h1 class="confirmed-title">Order confirmed.</h1>
+    {% if order %}
+    <p class="confirmed-id">{{ order.public_id }}</p>
+    <p class="confirmed-body">We will send you a WhatsApp update shortly. Your garment will be ready in approximately 7 days.</p>
+    <div class="confirmed-details">
+      <div class="cd-row"><span>Garment</span><span>{{ order.garment_type | capitalize }}</span></div>
+      <div class="cd-row"><span>Advance paid</span><span>Rs. {{ order.advance_amount }}</span></div>
+      <div class="cd-row"><span>Remaining on delivery</span><span>Rs. {{ (order.total_amount - order.advance_amount) | round(2) }}</span></div>
+    </div>
+    {% else %}
+    <p class="confirmed-body">Your order has been received. We will confirm via WhatsApp shortly.</p>
+    {% endif %}
+    <a href="{{ url_for('website.home') }}" class="btn-primary" style="margin-top:2rem;">Back to home</a>
+  </div>
+</section>
+{% endblock %}

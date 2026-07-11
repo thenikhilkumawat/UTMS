@@ -1,0 +1,620 @@
+{% extends "base.html" %}
+{% block title %}Homepage Admin — Uttam Tailors{% endblock %}
+{% block extra_css %}
+<style>
+.hp-wrap{padding:24px;}
+.hp-title{font-size:22px;font-weight:800;color:#1a0e06;margin-bottom:4px;}
+.hp-sub{font-size:13px;color:#7a6a58;margin-bottom:20px;}
+.hp-section-row{background:#fff;border:1px solid #e8d9c5;border-radius:12px;margin-bottom:12px;overflow:hidden;transition:box-shadow .2s;}
+.hp-section-row.dragging{opacity:.5;box-shadow:0 8px 24px rgba(0,0,0,.15);}
+.hp-section-hdr{display:flex;align-items:center;gap:10px;padding:14px 18px;cursor:pointer;user-select:none;}
+.hp-drag-handle{color:#bbb;font-size:18px;cursor:grab;flex-shrink:0;padding:0 4px;}
+.hp-drag-handle:active{cursor:grabbing;}
+.hp-section-name{flex:1;font-size:14px;font-weight:700;color:#1a0e06;}
+.hp-section-key{font-size:11px;color:#7a6a58;font-family:monospace;background:#f5ede0;padding:2px 8px;border-radius:6px;}
+.hp-badge-new{font-size:10px;background:#d4edda;color:#155724;border-radius:4px;padding:2px 7px;font-weight:700;letter-spacing:.04em;}
+.hp-toggle{display:flex;align-items:center;gap:6px;}
+.hp-toggle input[type=checkbox]{width:16px;height:16px;accent-color:#C8903A;}
+.hp-edit-btn{padding:5px 14px;background:#1a0e06;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.04em;}
+.hp-edit-btn:hover{background:#C8903A;}
+.hp-section-body{display:none;padding:20px 20px 20px;border-top:1px solid #e8d9c5;background:#faf6f0;}
+.hp-section-body.open{display:block;}
+.hp-field{margin-bottom:14px;}
+.hp-lbl{font-size:11px;font-weight:700;color:#7a6a58;text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:5px;}
+.hp-in{width:100%;padding:9px 12px;border:1px solid #e8d9c5;border-radius:8px;font-size:13px;color:#1a0e06;outline:none;background:#fff;}
+.hp-in:focus{border-color:#C8903A;}
+.hp-ta{width:100%;padding:10px 12px;border:1px solid #e8d9c5;border-radius:8px;font-size:13px;color:#1a0e06;outline:none;resize:vertical;min-height:70px;background:#fff;}
+.hp-ta:focus{border-color:#C8903A;}
+.hp-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.hp-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.hp-grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+.hp-save-bar{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid #e8d9c5;}
+.hp-btn-save{padding:9px 22px;background:#C8903A;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.04em;}
+.hp-btn-save:hover{background:#a06820;}
+.hp-btn-cancel{padding:9px 16px;background:none;color:#7a6a58;border:1px solid #e8d9c5;border-radius:8px;font-size:12px;cursor:pointer;}
+.hp-rev-row{display:flex;gap:8px;align-items:flex-start;background:#fff;padding:10px;border-radius:8px;border:1px solid #e8d9c5;margin-bottom:8px;}
+.hp-rev-row input{flex:1;padding:7px 10px;border:1px solid #e8d9c5;border-radius:6px;font-size:12px;}
+.hp-rev-row textarea{flex:2;padding:7px 10px;border:1px solid #e8d9c5;border-radius:6px;font-size:12px;resize:vertical;min-height:55px;}
+.hp-subsection-title{font-size:11px;font-weight:700;color:#C8903A;text-transform:uppercase;letter-spacing:.1em;margin:14px 0 8px;padding-bottom:6px;border-bottom:1px solid #e8d9c5;}
+.hp-price-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px;}
+.hp-price-table th{background:#f5ede0;padding:8px 10px;text-align:left;font-weight:700;color:#1a0e06;border:1px solid #e8d9c5;}
+.hp-price-table td{padding:6px 8px;border:1px solid #e8d9c5;vertical-align:middle;}
+.hp-price-table td:first-child{font-weight:600;color:#7a6a58;font-size:11px;white-space:nowrap;background:#fdf8f3;}
+.hp-price-table input{width:100%;padding:5px 8px;border:1px solid #e8d9c5;border-radius:4px;font-size:12px;outline:none;min-width:110px;}
+.hp-price-table input:focus{border-color:#C8903A;}
+.hp-info{font-size:11.5px;color:#7a6a58;background:#fdf8f3;border:1px solid #e8d9c5;border-radius:6px;padding:8px 12px;margin-bottom:12px;line-height:1.6;}
+</style>
+{% endblock %}
+{% block content %}
+<div class="hp-wrap">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+    <div>
+      <div class="hp-title">Homepage Manager</div>
+      <div class="hp-sub">Drag to reorder · Toggle to show/hide · Click Edit to change content</div>
+    </div>
+    <a href="{{ url_for('owner.website_admin') }}" style="padding:8px 16px;border:1px solid #e8d9c5;border-radius:8px;font-size:12px;color:#7a6a58;text-decoration:none;">← Website Admin</a>
+  </div>
+
+  <div id="sectionsList">
+    {% for s in sections %}
+    <div class="hp-section-row" data-key="{{ s.section_key }}">
+      <div class="hp-section-hdr" onclick="toggleSection('{{ s.section_key }}')">
+        <span class="hp-drag-handle" onclick="event.stopPropagation()">⠿</span>
+        <span class="hp-section-name">{{ s.section_title }}</span>
+        <span class="hp-section-key">#{{ s.section_key }}</span>
+        {% if s.section_key in ['price_estimator','occasion_finder','fabric_guide','shop_status','ai_preview'] %}
+        <span class="hp-badge-new">NEW</span>
+        {% endif %}
+        <div class="hp-toggle" onclick="event.stopPropagation()">
+          <input type="checkbox" id="active_{{ s.section_key }}" {% if s.active %}checked{% endif %} onchange="toggleActive('{{ s.section_key }}',this)">
+          <label for="active_{{ s.section_key }}" style="font-size:11px;color:#7a6a58;">Visible</label>
+        </div>
+        <button class="hp-edit-btn" onclick="event.stopPropagation();toggleSection('{{ s.section_key }}')">Edit ▾</button>
+      </div>
+      <div class="hp-section-body" id="body_{{ s.section_key }}">
+        {% set c = s.content_parsed %}
+
+        {# ── 01 HERO ── #}
+        {% if s.section_key == 'hero' %}
+        <div class="hp-subsection-title">Background Image</div>
+        <div class="hp-info">⚠️ Pasting a link from somewhere else (Shopify, ChatGPT export, a temporary CDN, etc.) is risky — if that link ever expires or gets deleted, your banner breaks. Use <b>Upload Image</b> instead: it saves a permanent copy on this server so it can never go missing.</div>
+        <div class="hp-field">
+          <label class="hp-lbl">Hero background image — Desktop (leave empty for default)</label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input class="hp-in" id="hero_bg_image" value="{{ c.get('bg_image','') }}" placeholder="https://... or /static/website/img/hero.jpg" style="flex:1;">
+            <button type="button" class="hp-edit-btn" onclick="document.getElementById('heroBgUploadDesktop').click()">Upload Image</button>
+            <input type="file" id="heroBgUploadDesktop" accept="image/jpeg,image/png,image/webp" style="display:none;" onchange="heroUploadImage(this,'hero_bg_image')">
+          </div>
+          <div id="heroBgUploadDesktopStatus" style="font-size:11px;margin-top:4px;"></div>
+        </div>
+        <div class="hp-field">
+          <label class="hp-lbl">Hero background image — Mobile <span style="font-weight:400;color:#7a6a58;">(optional — shown on phones &amp; small screens; leave empty to reuse the desktop image above. Tip: use a portrait/vertical photo for best results)</span></label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input class="hp-in" id="hero_bg_image_mobile" value="{{ c.get('bg_image_mobile','') }}" placeholder="https://... (portrait image recommended)" style="flex:1;">
+            <button type="button" class="hp-edit-btn" onclick="document.getElementById('heroBgUploadMobile').click()">Upload Image</button>
+            <input type="file" id="heroBgUploadMobile" accept="image/jpeg,image/png,image/webp" style="display:none;" onchange="heroUploadImage(this,'hero_bg_image_mobile')">
+          </div>
+          <div id="heroBgUploadMobileStatus" style="font-size:11px;margin-top:4px;"></div>
+        </div>
+        <div class="hp-subsection-title">Headline</div>
+        <div class="hp-field"><label class="hp-lbl">Eyebrow text (small, top)</label><input class="hp-in" id="hero_eyebrow" value="{{ c.get('eyebrow','Subhash Chowk, Sikar · Est. 1987') }}"></div>
+        <div class="hp-grid-2">
+          <div class="hp-field"><label class="hp-lbl">Title line 1</label><input class="hp-in" id="hero_title_line1" value="{{ c.get('title_line1','Master tailoring,') }}"></div>
+          <div class="hp-field"><label class="hp-lbl">Title line 2</label><input class="hp-in" id="hero_title_line2" value="{{ c.get('title_line2','made for you.') }}"></div>
+        </div>
+        <div class="hp-field"><label class="hp-lbl">Subtext paragraph</label><textarea class="hp-ta" id="hero_subtext">{{ c.get('subtext','Tell us what you need — we stitch it perfectly. WhatsApp updates at every step.') }}</textarea></div>
+        <div class="hp-subsection-title">Card 1 — Browse Designs (ghost card)</div>
+        <div class="hp-grid-2">
+          <div class="hp-field"><label class="hp-lbl">Title</label><input class="hp-in" id="hero_card1_title" value="{{ c.get('card1_title','Browse designs') }}"></div>
+          <div class="hp-field"><label class="hp-lbl">Description</label><input class="hp-in" id="hero_card1_desc" value="{{ c.get('card1_desc','Pick from our catalog. We stitch it in your measurements.') }}"></div>
+        </div>
+        <div class="hp-grid-2">
+          <div class="hp-field"><label class="hp-lbl">Who it's for (italic hint)</label><input class="hp-in" id="hero_card1_who" value="{{ c.get('card1_who','For: \"Show me options first\"') }}"></div>
+          <div class="hp-field"><label class="hp-lbl">Button text</label><input class="hp-in" id="hero_card1_btn" value="{{ c.get('card1_btn','See designs') }}"></div>
+        </div>
+        <div class="hp-field"><label class="hp-lbl">Card 1 URL</label><input class="hp-in" id="hero_card1_url" value="{{ c.get('card1_url','/our-craft') }}"></div>
+        <div class="hp-subsection-title">Card 2 — Custom Stitching (gold card)</div>
+        <div class="hp-grid-2">
+          <div class="hp-field"><label class="hp-lbl">Title</label><input class="hp-in" id="hero_card2_title" value="{{ c.get('card2_title','Custom stitching') }}"></div>
+          <div class="hp-field"><label class="hp-lbl">Description</label><input class="hp-in" id="hero_card2_desc" value="{{ c.get('card2_desc','Bring your fabric or choose ours. You decide everything.') }}"></div>
+        </div>
+        <div class="hp-grid-2">
+          <div class="hp-field"><label class="hp-lbl">Who it's for (italic hint)</label><input class="hp-in" id="hero_card2_who" value="{{ c.get('card2_who','For: \"I know what I want\"') }}"></div>
+          <div class="hp-field"><label class="hp-lbl">Button text</label><input class="hp-in" id="hero_card2_btn" value="{{ c.get('card2_btn','Place order') }}"></div>
+        </div>
+        <div class="hp-field"><label class="hp-lbl">Card 2 URL</label><input class="hp-in" id="hero_card2_url" value="{{ c.get('card2_url','/commission') }}"></div>
+
+        {# ── 01b ACTION CARDS ── #}
+        {% elif s.section_key == 'action_cards' %}
+        <div class="hp-grid-2">
+          <div class="hp-field"><label class="hp-lbl">Kicker (small text above title)</label><input class="hp-in" id="action_cards_kicker" value="{{ c.get('kicker','How can we help you?') }}"></div>
+          <div class="hp-field"><label class="hp-lbl">Section title</label><input class="hp-in" id="action_cards_title" value="{{ c.get('title','Two ways to get perfectly fitted clothes') }}"></div>
+        </div>
+        <div class="hp-subsection-title">Card 1 — Browse Designs (light card)</div>
+        <div class="hp-grid-2">
+          <div class="hp-field"><label class="hp-lbl">Eyebrow (top small text)</label><input class="hp-in" id="action_cards_card1_eyebrow" value="{{ c.get('card1_eyebrow',"Don't know where to start?") }}"></div>
+          <div class="hp-field"><label class="hp-lbl">Title</label><input class="hp-in" id="action_cards_card1_title" value="{{ c.get('card1_title','Browse our designs') }}"></div>
+        </div>
+        <div class="hp-field"><label class="hp-lbl">Description</label><textarea class="hp-ta" id="action_cards_card1_desc">{{ c.get('card1_desc','See 50+ ready styles — shirts, suits, kurtas, pathani and more. Like something? We stitch it in your exact measurements.') }}</textarea></div>
+        <div class="hp-grid-3">
+          <div class="hp-field"><label class="hp-lbl">Feature point 1</label><input class="hp-in" id="action_cards_card1_f1" value="{{ c.get('card1_f1','Photos of every design') }}"></div>
+          <div class="hp-field"><label class="hp-lbl">Feature point 2</label><input class="hp-in" id="action_cards_card1_f2" value="{{ c.get('card1_f2','We suggest fabric & fit for you') }}"></div>
+          <div class="hp-field"><label class="hp-lbl">Feature point 3</label><input class="hp-in" id="action_cards_card1_f3" value="{{ c.get('card1_f3','No decisions before you see options') }}"></div>
+        </div>
+        <div class="hp-grid-3">
+          <div class="hp-field"><label class="hp-lbl">Bottom note (price/info)</label><input class="hp-in" id="action_cards_card1_note" value="{{ c.get('card1_note','Stitching starts from ₹350') }}"></div>
+          <div class="hp-field"><label class="hp-lbl">Button text</label><input class="hp-in" id="action_cards_card1_btn" value="{{ c.get('card1_btn','See all designs') }}"></div>
+          <div class="hp-field"><label class="hp-lbl">Button URL</label><input class="hp-in" id="action_cards_card1_url" value="{{ c.get('card1_url','/our-craft') }}"></div>
+        </div>
+        <div class="hp-subsection-title">Card 2 — Custom Stitching (dark card)</div>
+        <div class="hp-grid-2">
+          <div class="hp-field"><label class="hp-lbl">Eyebrow (top small text)</label><input class="hp-in" id="action_cards_card2_eyebrow" value="{{ c.get('card2_eyebrow','Already know what you want?') }}"></div>
+          <div class="hp-field"><label class="hp-lbl">Title</label><input class="hp-in" id="action_cards_card2_title" value="{{ c.get('card2_title','Custom stitching') }}"></div>
+        </div>
+        <div class="hp-field"><label class="hp-lbl">Description</label><textarea class="hp-ta" id="action_cards_card2_desc">{{ c.get('card2_desc','Your measurements, your fabric, your style. Share the details — we stitch and deliver in 5–7 days. Alteration is free if the fit is off.') }}</textarea></div>
+        <div class="hp-grid-3">
+          <div class="hp-field"><label class="hp-lbl">Feature point 1</label><input class="hp-in" id="action_cards_card2_f1" value="{{ c.get('card2_f1','Bring your fabric or choose ours') }}"></div>
+          <div class="hp-field"><label class="hp-lbl">Feature point 2</label><input class="hp-in" id="action_cards_card2_f2" value="{{ c.get('card2_f2','WhatsApp updates during stitching') }}"></div>
+          <div class="hp-field"><label class="hp-lbl">Feature point 3</label><input class="hp-in" id="action_cards_card2_f3" value="{{ c.get('card2_f3','Free alteration if fit is off') }}"></div>
+        </div>
+        <div class="hp-grid-3">
+          <div class="hp-field"><label class="hp-lbl">Bottom note (delivery/info)</label><input class="hp-in" id="action_cards_card2_note" value="{{ c.get('card2_note','Ready in 5–7 days') }}"></div>
+          <div class="hp-field"><label class="hp-lbl">Button text</label><input class="hp-in" id="action_cards_card2_btn" value="{{ c.get('card2_btn','Start your order') }}"></div>
+          <div class="hp-field"><label class="hp-lbl">Button URL</label><input class="hp-in" id="action_cards_card2_url" value="{{ c.get('card2_url','/commission') }}"></div>
+        </div>
+
+        {# ── 02 HERITAGE ── #}
+        {% elif s.section_key == 'heritage' %}
+        <div class="hp-grid-2">
+          {% for i in range(1,5) %}
+          <div>
+            <div class="hp-field"><label class="hp-lbl">Stat {{ i }} — Number</label><input class="hp-in" id="heritage_stat{{ i }}_num" value="{{ c.get('stat'+i|string+'_num','') }}"></div>
+            <div class="hp-field"><label class="hp-lbl">Stat {{ i }} — Label</label><input class="hp-in" id="heritage_stat{{ i }}_label" value="{{ c.get('stat'+i|string+'_label','') }}"></div>
+          </div>
+          {% endfor %}
+        </div>
+
+        {# ── 03 CATALOGUE ── #}
+        {% elif s.section_key == 'catalogue' %}
+        <div class="hp-grid-2">
+          <div class="hp-field"><label class="hp-lbl">Kicker text</label><input class="hp-in" id="catalogue_kicker" value="{{ c.get('kicker','What we make') }}"></div>
+          <div class="hp-field"><label class="hp-lbl">Section title</label><input class="hp-in" id="catalogue_title" value="{{ c.get('title','') }}"></div>
+        </div>
+        <div class="hp-field"><label class="hp-lbl">Subtitle</label><input class="hp-in" id="catalogue_subtitle" value="{{ c.get('subtitle','') }}"></div>
+        <div class="hp-grid-2">
+          <div class="hp-field"><label class="hp-lbl">Button text</label><input class="hp-in" id="catalogue_btn_text" value="{{ c.get('btn_text','See all services →') }}"></div>
+          <div class="hp-field"><label class="hp-lbl">Button URL</label><input class="hp-in" id="catalogue_btn_url" value="{{ c.get('btn_url','/our-craft') }}"></div>
+        </div>
+        <input type="hidden" id="catalogue_item_ids" value="{{ c.get('item_ids','') }}">
+        <div class="hp-subsection-title">Choose products to show on homepage <span id="catSelCount" style="font-weight:400;color:#7a6a58;font-size:10px;margin-left:6px;"></span></div>
+        <div class="hp-info" style="margin-bottom:10px;">Click a product to select it. Selected products appear on the homepage in the order shown. Leave all unselected to show first 6 automatically.</div>
+        <div id="catProductGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:10px;">
+          {% for p in all_products %}
+          <div class="cat-prod-card" data-id="{{ p.id }}" onclick="toggleCatProd(this)"
+            style="border:2px solid #e8d9c5;border-radius:10px;overflow:hidden;cursor:pointer;transition:all .2s;position:relative;background:#fff;">
+            {% if p.img %}
+            <img src="{{ p.img }}" alt="{{ p.name }}" style="width:100%;height:90px;object-fit:cover;display:block;">
+            {% else %}
+            <div style="width:100%;height:90px;background:#f5ede0;display:flex;align-items:center;justify-content:center;font-size:28px;">🧵</div>
+            {% endif %}
+            <div style="padding:6px 8px;">
+              <div style="font-size:11px;font-weight:700;color:#1a0e06;line-height:1.3;">{{ p.name }}</div>
+              <div style="font-size:10px;color:#9a8a78;margin-top:2px;">{{ p.cat }}</div>
+            </div>
+            <div class="cat-check" style="display:none;position:absolute;top:6px;right:6px;background:#C8903A;color:#fff;border-radius:50%;width:22px;height:22px;font-size:13px;line-height:22px;text-align:center;font-weight:700;">✓</div>
+          </div>
+          {% endfor %}
+          {% if not all_products %}
+          <div style="grid-column:1/-1;font-size:13px;color:#7a6a58;padding:12px 0;">No products found. Add products in the Website Admin → Services section first.</div>
+          {% endif %}
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:4px;">
+          <button type="button" onclick="catSelectAll()" style="font-size:11px;padding:4px 12px;border:1px solid #e8d9c5;border-radius:6px;background:#fff;cursor:pointer;color:#1a0e06;">Select all</button>
+          <button type="button" onclick="catClearAll()" style="font-size:11px;padding:4px 12px;border:1px solid #e8d9c5;border-radius:6px;background:#fff;cursor:pointer;color:#dc2626;">Clear all</button>
+        </div>
+
+        {# ── 04 BRANDS TICKER ── #}
+        {% elif s.section_key in ('brands', 'brands_ticker') %}
+        <div class="hp-info">⚠️ <strong>Brands Ticker is hidden by default.</strong> Enable it above only when you have official brand logos or permission to use brand names. Fabric names as text (e.g. "Raymond's") are fine.</div>
+        <div class="hp-grid-2" style="margin-bottom:14px;">
+          <div class="hp-field"><label class="hp-lbl">Section label</label><input class="hp-in" id="brands_label" value="{{ c.get('label','Fabrics we work with') }}"></div>
+          <div class="hp-field">
+            <label class="hp-lbl">Scroll speed</label>
+            <select class="hp-in" id="brands_speed">
+              <option value="20" {% if c.get('speed','60')=='20' %}selected{% endif %}>Very Fast</option>
+              <option value="35" {% if c.get('speed','60')=='35' %}selected{% endif %}>Fast</option>
+              <option value="60" {% if c.get('speed','60') in ('60','') or not c.get('speed') %}selected{% endif %}>Normal (default)</option>
+              <option value="100" {% if c.get('speed','60')=='100' %}selected{% endif %}>Slow</option>
+              <option value="160" {% if c.get('speed','60')=='160' %}selected{% endif %}>Very Slow</option>
+            </select>
+          </div>
+        </div>
+        <div class="hp-subsection-title">Brand Logos / Names <button onclick="addBrandRow()" style="background:#1a0e06;color:#fff;border:none;border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer;margin-left:8px;">+ Add</button></div>
+        <p style="font-size:11px;color:#7a6a58;margin-bottom:10px;">Logo URL optional — leave empty to show text name only.</p>
+        <div id="brandRows">
+          {% for brand in c.get('brands',[]) %}
+          <div class="brand-admin-row" style="display:flex;gap:8px;align-items:center;margin-bottom:8px;background:#fff;padding:10px;border-radius:8px;border:1px solid #e8d9c5;">
+            <input class="hp-in brand-name" style="width:160px;flex:none;" placeholder="Brand name" value="{{ brand.name }}">
+            <input class="hp-in brand-url" style="flex:1;" placeholder="Logo image URL (transparent PNG) — optional" value="{{ brand.logo_url }}">
+            {% if brand.logo_url %}<img src="{{ brand.logo_url }}" style="height:32px;width:auto;object-fit:contain;border-radius:4px;background:#f0e8dc;padding:4px;">{% endif %}
+            <button onclick="this.parentNode.remove()" style="background:#dc2626;color:#fff;border:none;border-radius:6px;padding:6px 10px;cursor:pointer;flex-shrink:0;">✕</button>
+          </div>
+          {% endfor %}
+        </div>
+
+        {# ── 05 PRICE ESTIMATOR ── #}
+        {% elif s.section_key == 'price_estimator' %}
+        <div class="hp-grid-2">
+          <div class="hp-field"><label class="hp-lbl">Kicker</label><input class="hp-in" id="price_estimator_kicker" value="{{ c.get('kicker','Instant estimate') }}"></div>
+          <div class="hp-field"><label class="hp-lbl">Title</label><input class="hp-in" id="price_estimator_title" value="{{ c.get('title','How much will it cost?') }}"></div>
+        </div>
+        <div class="hp-field"><label class="hp-lbl">Subtitle</label><input class="hp-in" id="price_estimator_subtitle" value="{{ c.get('subtitle','Select your garment and fabric type — see a price range instantly.') }}"></div>
+        <div class="hp-subsection-title">Price Ranges (enter like: ₹350–500)</div>
+        <table class="hp-price-table">
+          <thead><tr><th>Garment</th><th>Basic</th><th>Premium</th><th>Luxury</th></tr></thead>
+          <tbody>
+            {% set garments = [
+              ('shirt','Shirt'),('pant','Pant'),('kurta','Kurta / Pathani'),
+              ('suit','Suit'),('blazer','Blazer'),('pathani','Pathani'),
+              ('jeans','Jeans / Cargo'),('school','School dress'),('alter','Alteration')
+            ] %}
+            {% set defaults = {
+              'shirt':   ['₹350–500','₹600–900','₹1,000–1,800'],
+              'pant': ['₹300–450','₹500–800','₹900–1,500'],
+              'kurta':   ['₹400–550','₹600–950','₹1,100–2,000'],
+              'suit':    ['₹1,800–2,500','₹2,800–4,500','₹5,000–10,000'],
+              'blazer':  ['₹900–1,400','₹1,500–2,500','₹3,000–6,000'],
+              'pathani':  ['₹400–600','₹650–950','₹1,000–1,800'],
+              'jeans':   ['₹500–700','₹750–1,100','₹1,200–2,200'],
+              'school':  ['₹280–400','₹420–600','₹650–900'],
+              'alter':   ['₹80–200','₹200–400','₹400–800']
+            } %}
+            {% for key, label in garments %}
+            <tr>
+              <td>{{ label }}</td>
+              <td><input id="price_estimator_{{ key }}_basic"   value="{{ c.get(key+'_basic',   defaults[key][0]) }}"></td>
+              <td><input id="price_estimator_{{ key }}_premium" value="{{ c.get(key+'_premium', defaults[key][1]) }}"></td>
+              <td><input id="price_estimator_{{ key }}_luxury"  value="{{ c.get(key+'_luxury',  defaults[key][2]) }}"></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        {# ── 06 OCCASION FINDER ── #}
+        {% elif s.section_key == 'occasion_finder' %}
+        <div class="hp-grid-2">
+          <div class="hp-field"><label class="hp-lbl">Kicker</label><input class="hp-in" id="occasion_finder_kicker" value="{{ c.get('kicker','Occasion finder') }}"></div>
+          <div class="hp-field"><label class="hp-lbl">Title</label><input class="hp-in" id="occasion_finder_title" value="{{ c.get('title','What are you dressing for?') }}"></div>
+        </div>
+        <div class="hp-field"><label class="hp-lbl">Subtitle</label><input class="hp-in" id="occasion_finder_subtitle" value="{{ c.get('subtitle','Tell us the occasion — we\'ll tell you what to get stitched.') }}"></div>
+        {% set occ_defaults = [
+          ('wedding','ti-hearts','Wedding','Suit · Kurta Pajama · Pathani'),
+          ('office','ti-briefcase','Office','Shirt · Pant · Blazer'),
+          ('festival','ti-confetti','Festival','Kurta Pajama · Pathani · Kurta'),
+          ('casual','ti-sun','Casual','Shirt · Jeans · Kurta'),
+          ('party','ti-mood-happy','Party','Suit · Blazer · Shirt'),
+          ('school','ti-school','School','School Dress · Shirt & Pant'),
+        ] %}
+        {% for i in range(1,7) %}
+        {% set od = occ_defaults[i-1] %}
+        <div class="hp-subsection-title">Occasion {{ i }} — {{ od[2] }}</div>
+        <div class="hp-grid-3">
+          <div class="hp-field"><label class="hp-lbl">Title</label><input class="hp-in" id="occasion_finder_occ{{ i }}_title" value="{{ c.get('occ'+i|string+'_title', od[2]) }}"></div>
+          <div class="hp-field"><label class="hp-lbl">Subtitle (garments shown)</label><input class="hp-in" id="occasion_finder_occ{{ i }}_sub" value="{{ c.get('occ'+i|string+'_sub', od[3]) }}"></div>
+          <div class="hp-field"><label class="hp-lbl">Icon (Tabler class, e.g. ti-hearts)</label><input class="hp-in" id="occasion_finder_occ{{ i }}_icon" value="{{ c.get('occ'+i|string+'_icon', od[1]) }}"></div>
+        </div>
+        {% endfor %}
+        <div class="hp-info" style="margin-top:8px;">💡 The garment recommendation panel (shown when user clicks an occasion) is controlled by the website code. Contact your developer to change which garments appear per occasion.</div>
+
+        {# ── 07 PAPA STORY ── #}
+        {% elif s.section_key == 'papa_story' %}
+        <div class="hp-grid-2">
+          <div class="hp-field"><label class="hp-lbl">Kicker</label><input class="hp-in" id="papa_story_kicker" value="{{ c.get('kicker','The master') }}"></div>
+          <div class="hp-field"><label class="hp-lbl">Year text (bottom)</label><input class="hp-in" id="papa_story_year_text" value="{{ c.get('year_text','Est. 1987 — forever in every stitch') }}"></div>
+        </div>
+        <div class="hp-field"><label class="hp-lbl">Pull quote (shown in large italic)</label><textarea class="hp-ta" id="papa_story_quote">{{ c.get('quote','My father spent 33 years building this craft. In 2025, I am taking it to every corner of India.') }}</textarea></div>
+        <div class="hp-field"><label class="hp-lbl">Attribution (name below quote)</label><input class="hp-in" id="papa_story_attribution" value="{{ c.get('attribution','— Nikhil Kumawat, continuing the legacy of Late Mr. Narendra Kumawat') }}"></div>
+        <div class="hp-grid-2">
+          <div class="hp-field"><label class="hp-lbl">Link text</label><input class="hp-in" id="papa_story_link_text" value="{{ c.get('link_text','Read our full story →') }}"></div>
+          <div class="hp-field"><label class="hp-lbl">Link URL</label><input class="hp-in" id="papa_story_link_url" value="{{ c.get('link_url','/our-story') }}"></div>
+        </div>
+        <div class="hp-field"><label class="hp-lbl">Story paragraph 1</label><textarea class="hp-ta" id="papa_story_body1">{{ c.get('body1','In 1987, Mr. Narendra Kumawat started Uttam Tailors at Subhash Chowk, Sikar — with one sewing machine and one rule: if the garment fits perfectly, the customer always comes back.') }}</textarea></div>
+        <div class="hp-field"><label class="hp-lbl">Story paragraph 2</label><textarea class="hp-ta" id="papa_story_body2">{{ c.get('body2','He spent over three decades building what Sikar knows today. Lakhs of garments. Thousands of families served. Not one shortcut taken. In 2020, he left us — but not the craft.') }}</textarea></div>
+        <div class="hp-field"><label class="hp-lbl">Story paragraph 3</label><textarea class="hp-ta" id="papa_story_body3">{{ c.get('body3','His son Nikhil carries that standard forward today — bringing the same quality online so it reaches not just Sikar, but all of India.') }}</textarea></div>
+
+        {# ── 08 HOW IT WORKS ── #}
+        {% elif s.section_key == 'hiw' %}
+        <div class="hp-grid-2">
+          <div class="hp-field"><label class="hp-lbl">Kicker</label><input class="hp-in" id="hiw_kicker" value="{{ c.get('kicker','The process') }}"></div>
+          <div class="hp-field"><label class="hp-lbl">Section title</label><input class="hp-in" id="hiw_title" value="{{ c.get('title','Order to your door in four steps.') }}"></div>
+        </div>
+        {% for i in range(1,5) %}
+        <div class="hp-subsection-title">Step {{ i }}</div>
+        <div class="hp-grid-3">
+          <div class="hp-field"><label class="hp-lbl">Number</label><input class="hp-in" id="hiw_step{{ i }}_num" value="{{ c.get('step'+i|string+'_num','0'+i|string) }}"></div>
+          <div class="hp-field"><label class="hp-lbl">Title</label><input class="hp-in" id="hiw_step{{ i }}_title" value="{{ c.get('step'+i|string+'_title','') }}"></div>
+          <div class="hp-field"><label class="hp-lbl">Body text</label><input class="hp-in" id="hiw_step{{ i }}_body" value="{{ c.get('step'+i|string+'_body','') }}"></div>
+        </div>
+        {% endfor %}
+        <div class="hp-grid-2">
+          <div class="hp-field"><label class="hp-lbl">Button text</label><input class="hp-in" id="hiw_btn_text" value="{{ c.get('btn_text','Customise Your Garment →') }}"></div>
+          <div class="hp-field"><label class="hp-lbl">Button URL</label><input class="hp-in" id="hiw_btn_url" value="{{ c.get('btn_url','/commission') }}"></div>
+        </div>
+
+        {# ── 09 FABRIC GUIDE ── #}
+        {% elif s.section_key == 'fabric_guide' %}
+        <div class="hp-grid-2">
+          <div class="hp-field"><label class="hp-lbl">Kicker</label><input class="hp-in" id="fabric_guide_kicker" value="{{ c.get('kicker','Fabric guide') }}"></div>
+          <div class="hp-field"><label class="hp-lbl">Title</label><input class="hp-in" id="fabric_guide_title" value="{{ c.get('title','Which fabric should you choose?') }}"></div>
+        </div>
+        <div class="hp-field"><label class="hp-lbl">Subtitle</label><input class="hp-in" id="fabric_guide_subtitle" value="{{ c.get('subtitle','Tap any fabric to learn more — season, occasion, price range.') }}"></div>
+        {% set fabrics_default = [
+          {'name':'Cotton','icon':'ti-leaf','tagline':'Everyday comfort','season':'All seasons','best_for':'Shirts, kurtas, daily wear','price':'Budget friendly','care':'Machine washable'},
+          {'name':'Linen','icon':'ti-wind','tagline':'Light & breathable','season':'Summer','best_for':'Casual shirts, pants','price':'Mid range','care':'Gentle wash, light iron'},
+          {'name':'Wool','icon':'ti-cloud-snow','tagline':'Warm & formal','season':'Winter','best_for':'Suits, blazers, coats','price':'Premium','care':'Dry clean recommended'},
+          {'name':'Silk','icon':'ti-sparkles','tagline':'Luxurious finish','season':'Weddings','best_for':'Suit, formal wear','price':'Luxury','care':'Dry clean only'},
+          {'name':'Poly blend','icon':'ti-refresh','tagline':'Durable & easy care','season':'All seasons','best_for':'Uniforms, pants','price':'Budget friendly','care':'Machine washable'},
+        ] %}
+        {% set fabrics_edit = c.get('fabrics', fabrics_default) %}
+        {% for i in range(1,6) %}
+        {% set f = fabrics_edit[i-1] if (i-1) < fabrics_edit|length else {} %}
+        <div class="hp-subsection-title">Fabric {{ i }}</div>
+        <div class="hp-grid-3">
+          <div class="hp-field"><label class="hp-lbl">Name</label><input class="hp-in" id="fabric_guide_fabric{{ i }}_name" value="{{ f.get('name','') }}"></div>
+          <div class="hp-field"><label class="hp-lbl">Tabler icon class (e.g. ti-leaf)</label><input class="hp-in" id="fabric_guide_fabric{{ i }}_icon" value="{{ f.get('icon','ti-diamond') }}"></div>
+          <div class="hp-field"><label class="hp-lbl">Tagline</label><input class="hp-in" id="fabric_guide_fabric{{ i }}_tagline" value="{{ f.get('tagline','') }}"></div>
+        </div>
+        <div class="hp-grid-4">
+          <div class="hp-field"><label class="hp-lbl">Best season</label><input class="hp-in" id="fabric_guide_fabric{{ i }}_season" value="{{ f.get('season','') }}"></div>
+          <div class="hp-field"><label class="hp-lbl">Best for</label><input class="hp-in" id="fabric_guide_fabric{{ i }}_best_for" value="{{ f.get('best_for','') }}"></div>
+          <div class="hp-field"><label class="hp-lbl">Price range</label><input class="hp-in" id="fabric_guide_fabric{{ i }}_price" value="{{ f.get('price','') }}"></div>
+          <div class="hp-field"><label class="hp-lbl">Care tip</label><input class="hp-in" id="fabric_guide_fabric{{ i }}_care" value="{{ f.get('care','') }}"></div>
+        </div>
+        {% endfor %}
+
+        {# ── 10 BEFORE / AFTER ── #}
+        {% elif s.section_key == 'fabric_journey' %}
+        <div class="hp-grid-2">
+          <div class="hp-field"><label class="hp-lbl">Kicker</label><input class="hp-in" id="fabric_journey_kicker" value="{{ c.get('kicker','From bolt to body') }}"></div>
+          <div class="hp-field"><label class="hp-lbl">Title</label><input class="hp-in" id="fabric_journey_title" value="{{ c.get('title','Drag to see the transformation.') }}"></div>
+        </div>
+        <div class="hp-field"><label class="hp-lbl">Subtitle</label><input class="hp-in" id="fabric_journey_subtitle" value="{{ c.get('subtitle','') }}"></div>
+        {% for i in range(1,4) %}
+        <div class="hp-subsection-title">Slide {{ i }}</div>
+        <div class="hp-grid-2" style="margin-bottom:8px;">
+          <div class="hp-field"><label class="hp-lbl">Label (e.g. Navy → Suit)</label><input class="hp-in" id="fabric_journey_slide{{ i }}_label" value="{{ c.get('slide'+i|string+'_label','') }}"></div>
+          <div class="hp-field"><label class="hp-lbl">Garment name</label><input class="hp-in" id="fabric_journey_slide{{ i }}_garment" value="{{ c.get('slide'+i|string+'_garment','') }}"></div>
+        </div>
+        <div class="hp-grid-2">
+          <div class="hp-field">
+            <label class="hp-lbl">Fabric / Before image URL</label>
+            <input class="hp-in" id="fabric_journey_slide{{ i }}_fabric_img" value="{{ c.get('slide'+i|string+'_fabric_img','') }}" placeholder="https://... (fabric swatch image)">
+            {% if c.get('slide'+i|string+'_fabric_img') %}<img src="{{ c.get('slide'+i|string+'_fabric_img') }}" style="height:50px;margin-top:4px;border-radius:4px;object-fit:cover;">{% endif %}
+          </div>
+          <div class="hp-field">
+            <label class="hp-lbl">Garment / After image URL</label>
+            <input class="hp-in" id="fabric_journey_slide{{ i }}_garment_img" value="{{ c.get('slide'+i|string+'_garment_img','') }}" placeholder="https://... (finished garment image)">
+            {% if c.get('slide'+i|string+'_garment_img') %}<img src="{{ c.get('slide'+i|string+'_garment_img') }}" style="height:50px;margin-top:4px;border-radius:4px;object-fit:cover;">{% endif %}
+          </div>
+        </div>
+        {% endfor %}
+
+        {# ── 11 LIVE SHOP STATUS ── #}
+        {% elif s.section_key == 'shop_status' %}
+        <div class="hp-info">ℹ️ <strong>Order count</strong> is pulled live from UTMS automatically — no manual input needed. You can edit the slot message below.</div>
+        <div class="hp-grid-2">
+          <div class="hp-field"><label class="hp-lbl">Next slot text (default)</label><input class="hp-in" id="shop_status_next_slot" value="{{ c.get('next_slot','3–5 days') }}" placeholder="e.g. 3–5 days"></div>
+          <div class="hp-field"><label class="hp-lbl">Custom message (overrides slot text if filled)</label><input class="hp-in" id="shop_status_custom_message" value="{{ c.get('custom_message','') }}" placeholder="e.g. Closed for Eid — reopening May 3"></div>
+        </div>
+
+        {# ── 12 REVIEWS ── #}
+        {% elif s.section_key == 'reviews' %}
+        <div class="hp-grid-2">
+          <div class="hp-field"><label class="hp-lbl">Kicker</label><input class="hp-in" id="reviews_kicker" value="{{ c.get('kicker','What Sikar says') }}"></div>
+          <div class="hp-field"><label class="hp-lbl">Title</label><input class="hp-in" id="reviews_title" value="{{ c.get('title','Words from our customers.') }}"></div>
+        </div>
+        <div class="hp-subsection-title">Customer Reviews <button onclick="addReviewRow()" style="background:#1a0e06;color:#fff;border:none;border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer;margin-left:8px;">+ Add Review</button></div>
+        <div id="reviewRows">
+          {% for rev in c.get('reviews',[]) %}
+          <div class="hp-rev-row">
+            <input placeholder="Initials e.g. RK" value="{{ rev.init }}" style="width:70px;flex:none;">
+            <input placeholder="Full name" value="{{ rev.name }}">
+            <input placeholder="Location" value="{{ rev.loc }}" style="flex:.7;">
+            <textarea placeholder="Review text">{{ rev.text }}</textarea>
+            <button onclick="this.closest('.hp-rev-row').remove()" style="background:#dc2626;color:#fff;border:none;border-radius:6px;padding:4px 8px;cursor:pointer;align-self:flex-start;flex-shrink:0;">✕</button>
+          </div>
+          {% endfor %}
+        </div>
+
+        {# ── 13 BIG CTA ── #}
+        {% elif s.section_key == 'big_cta' %}
+        <div class="hp-grid-2">
+          <div class="hp-field"><label class="hp-lbl">Kicker</label><input class="hp-in" id="big_cta_kicker" value="{{ c.get('kicker','Ready?') }}"></div>
+          <div class="hp-field"><label class="hp-lbl">Title</label><input class="hp-in" id="big_cta_title" value="{{ c.get('title','Your perfect garment is three minutes away.') }}"></div>
+        </div>
+        <div class="hp-field"><label class="hp-lbl">Subtitle</label><textarea class="hp-ta" id="big_cta_subtitle">{{ c.get('subtitle','Pick what you want. Tell us your size. We stitch. You wear it.') }}</textarea></div>
+        <div class="hp-grid-2">
+          <div class="hp-field"><label class="hp-lbl">Button text</label><input class="hp-in" id="big_cta_btn_text" value="{{ c.get('btn_text','Customise Your Garment →') }}"></div>
+          <div class="hp-field"><label class="hp-lbl">Button URL</label><input class="hp-in" id="big_cta_btn_url" value="{{ c.get('btn_url','/commission') }}"></div>
+        </div>
+        <div class="hp-field"><label class="hp-lbl">Note text (small, below button)</label><input class="hp-in" id="big_cta_note" value="{{ c.get('note','30% advance · Free alteration · Rs. 100 off first order · Delivery across India') }}"></div>
+
+        {# ── 01c AI STYLE PREVIEW ── #}
+        {% elif s.section_key == 'ai_preview' %}
+        <div class="hp-grid-2">
+          <div class="hp-field"><label class="hp-lbl">Kicker</label><input class="hp-in" id="ai_preview_kicker" value="{{ c.get('kicker','AI-Powered') }}"></div>
+          <div class="hp-field"><label class="hp-lbl">Title</label><input class="hp-in" id="ai_preview_title" value="{{ c.get('title','See your garment before we even thread the needle.') }}"></div>
+        </div>
+        <div class="hp-field"><label class="hp-lbl">Subtitle</label><textarea class="hp-ta" id="ai_preview_subtitle">{{ c.get('subtitle','Pick a garment below — our AI instantly renders a real preview of your style choice.') }}</textarea></div>
+        <div class="hp-field"><label class="hp-lbl">Note text (below Generate button)</label><input class="hp-in" id="ai_preview_note" value="{{ c.get('note','3 free AI previews — then a quick sign-in to keep generating.') }}"></div>
+        <div class="hp-field"><label class="hp-lbl">Slider hint text (below garment carousel)</label><input class="hp-in" id="ai_preview_hint" value="{{ c.get('hint','Click any garment to customise it & generate your AI preview') }}"></div>
+
+        {% else %}
+        <div style="font-size:13px;color:#7a6a58;padding:8px 0;">No editable fields for this section yet.</div>
+        {% endif %}
+
+        <div class="hp-save-bar">
+          <button class="hp-btn-cancel" onclick="toggleSection('{{ s.section_key }}')">Cancel</button>
+          <button class="hp-btn-save" onclick="saveSection('{{ s.section_key }}')">Save Section</button>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<div id="hpToast" style="position:fixed;bottom:20px;right:20px;background:#1a0e06;color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;z-index:9999;display:none;"></div>
+
+<script>
+function hpToast(msg,err){
+  var t=document.getElementById('hpToast');
+  t.textContent=msg; t.style.background=err?'#dc2626':'#1a0e06';
+  t.style.display='block'; setTimeout(function(){t.style.display='none';},2500);
+}
+
+function toggleSection(key){
+  var body=document.getElementById('body_'+key);
+  if(!body) return;
+  var isOpen=body.classList.contains('open');
+  document.querySelectorAll('.hp-section-body.open').forEach(function(b){b.classList.remove('open');});
+  if(!isOpen) body.classList.add('open');
+}
+
+// Deep-link support: opening this page as /owner/website/homepage#hero auto-expands that section
+document.addEventListener('DOMContentLoaded', function(){
+  var key=(location.hash||'').replace('#','').trim();
+  if(!key) return;
+  var row=document.querySelector('.hp-section-row[data-key="'+key+'"]');
+  if(!row) return;
+  toggleSection(key);
+  setTimeout(function(){ row.scrollIntoView({behavior:'smooth',block:'start'}); },150);
+});
+
+function toggleActive(key,cb){
+  fetch('/owner/website/homepage/section/get/'+key)
+    .then(function(r){return r.json();})
+    .then(function(d){
+      var cur=d.ok?d.content:{};
+      fetch('/owner/website/homepage/section/save',{method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({section_key:key,content:cur,active:cb.checked?1:0})
+      }).then(function(r){return r.json();}).then(function(d){
+        hpToast(cb.checked?'Section visible':'Section hidden');
+      });
+    });
+}
+
+function collectSection(key){
+  var data={};
+  var prefix=key+'_';
+  // Collect all inputs/textareas with id starting with key_
+  document.querySelectorAll('[id^="'+prefix+'"]').forEach(function(el){
+    var field=el.id.slice(prefix.length);
+    data[field]=el.value;
+  });
+  // Special: reviews list
+  if(key==='reviews'){
+    var revs=[];
+    document.querySelectorAll('#reviewRows .hp-rev-row').forEach(function(row){
+      var ins=row.querySelectorAll('input');var ta=row.querySelector('textarea');
+      var init=(ins[0]||{}).value||'';var name=(ins[1]||{}).value||'';
+      var loc=(ins[2]||{}).value||'';var text=(ta||{}).value||'';
+      if(name) revs.push({init:init,name:name,loc:loc,text:text});
+    });
+    data['reviews']=revs;
+  }
+  // Special: brands list
+  if(key==='brands'){
+    var brands=[];
+    document.querySelectorAll('#brandRows .brand-admin-row').forEach(function(row){
+      var nm=(row.querySelector('.brand-name')||{}).value||'';
+      var url=(row.querySelector('.brand-url')||{}).value||'';
+      if(nm) brands.push({name:nm,logo_url:url});
+    });
+    data['brands']=brands;
+  }
+  // Special: fabric_guide list (fixed 5 fabrics)
+  if(key==='fabric_guide'){
+    var fabrics=[];
+    for(var i=1;i<=5;i++){
+      var nm=document.getElementById('fabric_guide_fabric'+i+'_name');
+      if(nm&&nm.value){
+        var ic=document.getElementById('fabric_guide_fabric'+i+'_icon');
+        var tg=document.getElementById('fabric_guide_fabric'+i+'_tagline');
+        var se=document.getElementById('fabric_guide_fabric'+i+'_season');
+        var bf=document.getElementById('fabric_guide_fabric'+i+'_best_for');
+        var pr=document.getElementById('fabric_guide_fabric'+i+'_price');
+        var ca=document.getElementById('fabric_guide_fabric'+i+'_care');
+        fabrics.push({
+          name:nm.value,icon:ic?ic.value:'ti-diamond',tagline:tg?tg.value:'',
+          season:se?se.value:'',best_for:bf?bf.value:'',
+          price:pr?pr.value:'',care:ca?ca.value:''
+        });
+      }
+    }
+    data['fabrics']=fabrics;
+    // Remove flat fabric keys from data (they were collected by prefix but are now in list)
+    Object.keys(data).forEach(function(k){
+      if(/^fabric\d+_/.test(k)) delete data[k];
+    });
+  }
+  return data;
+}
+
+function heroUploadImage(fileInput, targetFieldId){
+  var f = fileInput.files && fileInput.files[0];
+  if (!f) return;
+  var statusEl = document.getElementById(fileInput.id+'Status');
+  if (statusEl){ statusEl.style.color='#7a6a58'; statusEl.textContent='Uploading…'; }
+  var fd = new FormData();
+  fd.append('image', f);
+  fetch('/owner/website/homepage/hero/upload-image', { method:'POST', body: fd })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (d.ok){
+        document.getElementById(targetFieldId).value = d.url;
+        if (statusEl){ statusEl.style.color='#1f7a3a'; statusEl.textContent='✓ Uploaded — click Save below to publish it.'; }
+      } else {
+        if (statusEl){ statusEl.style.color='#b3261e'; statusEl.textContent='Error: '+(d.error||'upload failed'); }
+      }
+    })
+    .catch(function(){
+      if (statusEl){ statusEl.style.color='#b3261e'; statusEl.textContent='Upload failed — check your connection and try again.'; }
+    });
+  fileInput.value = '';
+}
+function saveSection(key){
+  var content=collectSection(key);
+  var cb=document.getElementById('active_'+key);
+  var active=cb?cb.checked?1:0:1;
+  fetch('/owner/website/homepage/section/save',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({section_key:key,content:content,active:active})
+  }).then(function(r){return r.json();}).then(function(d){
+    if(d.ok) hpToast('✓ Saved!');
+    else hpToast('Error: '+(d.error||'unknown'),true);
+  });
+}
+
+/* ── Catalogue product picker ── */
+function catUpdateHidden(){
+  var selected=Array.from(document.querySelectorAll('.cat-prod-card.selected')).map(function(c){return c.dataset.id;});
+  var inp=document.getElementById('catalogue_item_ids');
+  if(inp) inp.value=selected.join(',');
+  var cnt=document.getElementById('catSelCount');
+  if(cnt) cnt.textContent=selected.length?'('+selected.length+' selected)':'(none — showing first 6)';
+}
+function toggleCatProd(el){
+  el.classList.toggle('selected');
+  var chk=el.querySelector('.cat-check');
+  if(el.classList.contains('selected')){
+    el.style.borderColor='#C8903A';el.style.boxShadow='0 0 0 2px rgba(200,144,58,.25)';
+    if(chk) chk.style.display='flex';
+  } else {
+    el.style.borderColor='';el.style.boxShadow='';
+    if(chk) chk.style.display='none';
+  }
+  catUpdateHidden();
+}
+</script>
+{% endblock %}

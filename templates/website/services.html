@@ -1,0 +1,830 @@
+{% extends "website/base.html" %}
+{% set active = "services" %}
+{% block title %}Our Craft &mdash; Shirts, Suits, Kurta &amp; More &mdash; Uttam Tailors{% endblock %}
+
+{% block head %}
+<style>
+/* ── Breadcrumb trail ── */
+.bc-trail{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:14px 3rem 0;font-size:12px;color:var(--muted);}
+.bc-trail a{color:var(--muted);text-decoration:none;}
+.bc-trail a:hover{color:var(--gold);}
+.bc-trail .bc-sep{opacity:.5;}
+.bc-trail .bc-current{color:var(--dark);font-weight:500;}
+
+/* ── Sticky toolbar ── */
+.plp-toolbar{display:flex;align-items:center;gap:10px;padding:1rem 3rem;background:rgba(247,240,230,.97);border-bottom:1px solid var(--border);position:sticky;top:106px;z-index:100;backdrop-filter:blur(12px);box-shadow:0 2px 12px rgba(28,15,6,.07);flex-wrap:wrap;}
+.plp-search-wrap{position:relative;flex:1;min-width:200px;max-width:340px;}
+.plp-search{width:100%;padding:9px 14px 9px 36px;border:1px solid var(--border);border-radius:999px;font-size:13px;color:var(--dark);background:var(--bg2);outline:none;font-family:inherit;}
+.plp-search:focus{border-color:var(--gold);}
+.plp-search-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;}
+.plp-search-clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px;display:none;padding:2px;}
+.plp-suggest{position:absolute;top:calc(100% + 6px);left:0;right:0;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 28px rgba(28,15,6,.15);z-index:200;max-height:320px;overflow-y:auto;display:none;}
+.plp-suggest.open{display:block;}
+.plp-suggest-item{display:flex;align-items:center;gap:10px;padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);}
+.plp-suggest-item:last-child{border-bottom:none;}
+.plp-suggest-item:hover{background:var(--bg2);}
+.plp-suggest-item img{width:34px;height:34px;border-radius:6px;object-fit:cover;flex-shrink:0;background:#eee;}
+.plp-suggest-name{font-size:13px;color:var(--dark);flex:1;}
+.plp-suggest-price{font-size:12px;color:var(--gold);font-weight:600;white-space:nowrap;}
+.plp-suggest-empty{padding:14px 12px;font-size:12px;color:var(--muted);text-align:center;}
+.plp-btn{display:flex;align-items:center;gap:6px;padding:9px 16px;border:1px solid var(--border);border-radius:999px;font-size:13px;font-weight:500;color:var(--dark);background:var(--bg2);cursor:pointer;white-space:nowrap;position:relative;font-family:inherit;}
+.plp-btn:hover{border-color:var(--gold);color:var(--gold);}
+.plp-btn .plp-badge-count{background:var(--gold);color:#fff;border-radius:999px;font-size:10px;min-width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;padding:0 4px;}
+.plp-right{display:flex;align-items:center;gap:10px;margin-left:auto;flex-wrap:wrap;}
+.results-count{font-size:12px;color:var(--muted);white-space:nowrap;}
+.view-btns{display:flex;gap:4px;}
+.view-btn{width:34px;height:34px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--muted);transition:all .15s;}
+.view-btn.active{background:var(--dark);color:#fff;border-color:var(--dark);}
+
+/* ── Off-canvas panels (Filters / Sort) ── */
+.plp-overlay{position:fixed;inset:0;background:rgba(20,12,5,.45);z-index:998;opacity:0;visibility:hidden;transition:opacity .2s;}
+.plp-overlay.open{opacity:1;visibility:visible;}
+.plp-panel{position:fixed;top:0;right:0;height:100%;width:min(360px,90vw);background:var(--bg2);z-index:999;box-shadow:-8px 0 30px rgba(0,0,0,.2);transform:translateX(100%);transition:transform .25s ease;display:flex;flex-direction:column;}
+.plp-panel.open{transform:translateX(0);}
+.plp-panel-hdr{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--border);}
+.plp-panel-hdr h3{margin:0;font-size:16px;color:var(--dark);}
+.plp-panel-close{background:none;border:none;font-size:22px;color:var(--muted);cursor:pointer;line-height:1;padding:0 4px;}
+.plp-panel-body{flex:1;overflow-y:auto;padding:20px;}
+.plp-panel-ftr{padding:16px 20px;border-top:1px solid var(--border);display:flex;gap:10px;}
+.plp-section-lbl{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin:0 0 10px;}
+.plp-pill-group{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:26px;}
+.cat-pill{padding:7px 14px;border:1px solid var(--border);border-radius:999px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;background:#fff;transition:all .15s;white-space:nowrap;}
+.cat-pill.active{background:var(--dark);color:#fff;border-color:var(--dark);}
+.cat-pill:hover:not(.active){border-color:var(--gold);color:var(--gold);}
+.plp-price-row{display:flex;align-items:center;gap:10px;margin-bottom:26px;}
+.plp-price-row input{width:100%;padding:9px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:#fff;outline:none;font-family:inherit;}
+.plp-price-row input:focus{border-color:var(--gold);}
+.plp-price-hint{font-size:11px;color:var(--muted);margin:-18px 0 22px;}
+.sort-opt,.stock-opt{display:flex;align-items:center;gap:10px;padding:11px 4px;border-bottom:1px solid var(--border);cursor:pointer;font-size:13px;color:var(--dark);}
+.sort-opt:last-child,.stock-opt:last-child{border-bottom:none;}
+.sort-opt input,.stock-opt input{accent-color:var(--gold);width:16px;height:16px;}
+
+/* ── Stock status: minimal frosted pill + colour dot, single badge only ── */
+.stk-badge{position:absolute;left:10px;bottom:10px;font-size:10.5px;font-weight:600;letter-spacing:.01em;padding:5px 10px 5px 8px;border-radius:999px;color:var(--dark);z-index:2;background:rgba(255,255,255,.94);backdrop-filter:blur(4px);display:inline-flex;align-items:center;gap:6px;box-shadow:0 1px 4px rgba(0,0,0,.08);}
+.stk-badge::before{content:'';width:7px;height:7px;border-radius:50%;flex-shrink:0;background:var(--dot);}
+.stk-instock{--dot:#1f7a3d;}
+.stk-low{--dot:#b8780f;}
+.stk-out{--dot:#9c1f1f;color:#9c1f1f;}
+.stk-mto{--dot:#7a6a9c;}
+
+/* ── Fabric / Model image toggle ── */
+.img-toggle-wrap{display:flex;align-items:center;gap:2px;background:var(--bg);border:1px solid var(--border);border-radius:999px;padding:3px;flex-shrink:0;}
+.img-toggle-btn{padding:5px 13px;border-radius:999px;border:none;font-size:12px;font-weight:600;cursor:pointer;background:transparent;color:var(--muted);font-family:inherit;transition:all .15s;white-space:nowrap;}
+.img-toggle-btn.active{background:var(--dark);color:#fff;}
+.svc-card .card-img-el{transition:opacity .2s;}
+
+/* ── Card: compare toggle (lives in the icon column, not a separate floating chip) ── */
+.cmp-icon-btn{position:relative;}
+.cmp-icon-btn input{position:absolute;inset:0;opacity:0;cursor:pointer;margin:0;}
+.cmp-icon-btn.active{background:var(--gold);color:#1a0e06;}
+
+/* ── Card actions: one bold CTA + one minimal link, never two competing button sizes ── */
+.svc-card .svc-actions{display:flex;flex-direction:column;align-items:stretch;gap:2px;flex-wrap:nowrap;}
+.svc-card .svc-order-btn{width:100%;justify-content:center;}
+.svc-link-details{display:block;text-align:center;font-size:11.5px;font-weight:600;letter-spacing:.04em;color:var(--muted);text-decoration:none;padding:10px 0 2px;transition:color .15s;}
+.svc-link-details:hover{color:var(--gold);}
+
+/* ── Grid view override ── */
+.svc-list.grid-view{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;padding:2rem 3rem;}
+.svc-order-btn{flex:1;justify-content:center;}
+.svc-details-btn{padding:13px 20px;}
+.svc-card{position:relative;}
+.svc-card-icons{position:absolute;top:10px;right:10px;display:flex;flex-direction:column;gap:6px;opacity:1;transition:opacity .2s;z-index:3;}
+.svc-icon-btn{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.92);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#1a0e06;transition:all .15s;backdrop-filter:blur(4px);}
+.svc-icon-btn:hover{background:#fff;color:var(--gold);}
+.svc-icon-btn.wl-active svg{fill:var(--gold);stroke:var(--gold);}
+.svc-icon-btn.cart-active svg{fill:var(--gold);stroke:var(--gold);}
+.qv-sec-btn.wl-active,.qv-sec-btn.cart-active{border-color:var(--gold);color:var(--gold-d);background:#fbf5ea;}
+.qv-sec-btn.wl-active svg,.qv-sec-btn.cart-active svg{fill:var(--gold);stroke:var(--gold);}
+.svc-list.grid-view .svc-card{display:flex;flex-direction:column;}
+.svc-list.grid-view .svc-img-wrap{height:220px;}
+.svc-list.grid-view .svc-img-wrap img{width:100%;height:100%;object-fit:cover;object-position:top center;min-height:unset;}
+.svc-list.grid-view .svc-body{padding:1rem;}
+.svc-list.grid-view .svc-desc{display:none;}
+.svc-list.grid-view .svc-turnaround{display:none;}
+.svc-list.grid-view .svc-tags{margin-bottom:.5rem;}
+@media(min-width:901px){
+  .svc-card-icons{opacity:0;}
+  .svc-card:hover .svc-card-icons,.svc-card-icons:focus-within{opacity:1;}
+}
+
+/* ── Hidden card ── */
+.svc-card.hidden{display:none!important;}
+
+/* ── Pagination ── */
+.plp-pagination{display:flex;align-items:center;justify-content:center;gap:6px;padding:1rem 3rem 2.5rem;flex-wrap:wrap;}
+.pg-btn{min-width:36px;height:36px;padding:0 8px;border:1px solid var(--border);border-radius:8px;background:#fff;font-size:13px;color:var(--dark);cursor:pointer;}
+.pg-btn.active{background:var(--dark);color:#fff;border-color:var(--dark);}
+.pg-btn:disabled{opacity:.35;cursor:not-allowed;}
+.pg-ellipsis{color:var(--muted);font-size:13px;padding:0 4px;}
+.plp-empty{padding:4rem 2rem;text-align:center;color:var(--muted);}
+
+/* ── Compare bar ── */
+.cmp-bar{position:fixed;left:0;right:0;bottom:0;background:var(--dark);color:#fff;z-index:500;display:none;align-items:center;gap:14px;padding:12px 3rem;box-shadow:0 -4px 20px rgba(0,0,0,.2);}
+.cmp-bar.open{display:flex;}
+.cmp-thumbs{display:flex;gap:6px;}
+.cmp-thumb{width:34px;height:34px;border-radius:6px;object-fit:cover;border:1px solid rgba(255,255,255,.3);}
+.cmp-bar-text{font-size:13px;flex:1;}
+.cmp-bar .plp-btn{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.25);color:#fff;}
+.cmp-bar .plp-btn.gold{background:var(--gold);border-color:var(--gold);color:#1a0e06;font-weight:600;}
+
+/* ── Modals (Quick View / Compare) ── */
+.plp-modal-overlay{position:fixed;inset:0;background:rgba(20,12,5,.55);z-index:998;opacity:0;visibility:hidden;transition:opacity .2s;display:flex;align-items:center;justify-content:center;padding:20px;}
+.plp-modal-overlay.open{opacity:1;visibility:visible;}
+.plp-modal{background:#fff;border-radius:14px;max-width:760px;width:100%;max-height:88vh;overflow-y:auto;position:relative;}
+.plp-modal-close{position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:50%;background:rgba(0,0,0,.06);border:none;font-size:18px;color:var(--dark);cursor:pointer;z-index:3;}
+.qv-body{display:grid;grid-template-columns:1fr 1fr;gap:0;}
+.qv-img{position:relative;background:#f3ece2;min-height:320px;}
+.qv-img img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;}
+.qv-info{padding:28px;}
+.qv-info h2{margin:0 0 6px;font-size:22px;color:var(--dark);}
+.qv-price{display:flex;align-items:baseline;gap:6px;margin-bottom:12px;}
+.qv-price .qv-cur{font-family:var(--fm);font-size:12px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--gold-d);}
+.qv-price .qv-amt{font-size:25px;font-weight:700;color:var(--dark);letter-spacing:-.01em;}
+.qv-desc{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:16px;}
+.qv-ai-customize{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;box-sizing:border-box;background:linear-gradient(90deg,rgba(184,120,48,.14),rgba(184,120,48,.06));border:1px solid rgba(184,120,48,.35);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12.5px;font-weight:600;line-height:1;white-space:nowrap;color:var(--gold-d);text-decoration:none;transition:background .15s,border-color .15s;}
+.qv-ai-customize:hover{background:linear-gradient(90deg,rgba(184,120,48,.22),rgba(184,120,48,.1));border-color:rgba(184,120,48,.55);}
+.qv-ai-customize .ai-spark{flex-shrink:0;font-size:14px;}
+.qv-order-btn{display:flex;width:100%;box-sizing:border-box;height:50px;justify-content:center;align-items:center;gap:8px;background:linear-gradient(135deg,var(--gold-l),var(--gold-d));color:#fff;font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;border-radius:8px;border:none;box-shadow:0 4px 14px rgba(138,88,32,.32);transition:filter .15s,transform .15s,box-shadow .15s;}
+.qv-order-btn:hover{filter:brightness(1.07);transform:translateY(-1px);box-shadow:0 6px 18px rgba(138,88,32,.4);}
+.qv-secondary-row{display:flex;gap:10px;margin-top:10px;}
+.qv-sec-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;height:42px;border-radius:8px;background:#fff;border:1.5px solid var(--border);color:var(--dark);font-size:11.5px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;cursor:pointer;transition:all .15s;font-family:inherit;}
+.qv-sec-btn svg{flex-shrink:0;}
+.qv-sec-btn:hover{border-color:var(--gold);color:var(--gold-d);background:#fbf5ea;}
+.qv-sec-btn:disabled{opacity:.45;cursor:not-allowed;}
+.qv-link-details{display:block;text-align:center;margin-top:10px;font-size:12px;font-weight:600;letter-spacing:.03em;color:var(--muted);text-decoration:none;}
+.qv-link-details:hover{color:var(--gold);}
+.cmp-table-wrap{overflow-x:auto;padding:30px;}
+.cmp-table{width:100%;border-collapse:collapse;min-width:480px;}
+.cmp-table th,.cmp-table td{padding:12px 14px;border-bottom:1px solid var(--border);text-align:left;font-size:13px;vertical-align:top;}
+.cmp-table th{color:var(--muted);font-weight:600;width:120px;}
+.cmp-table img{width:90px;height:90px;object-fit:cover;border-radius:8px;}
+.cmp-remove{font-size:11px;color:#9c1f1f;cursor:pointer;background:none;border:none;padding:0;margin-top:6px;text-decoration:underline;}
+
+@media(max-width:900px){
+  .plp-toolbar{padding:1rem 1.25rem;}
+  .svc-list.grid-view{grid-template-columns:1fr 1fr;padding:1.5rem 1.25rem;}
+  .bc-trail{padding:12px 1.25rem 0;}
+  .plp-pagination{padding:1rem 1.25rem 2rem;}
+  .cmp-bar{padding:10px 1.25rem;}
+  .qv-body{grid-template-columns:1fr;}
+  .qv-img{min-height:240px;}
+}
+@media(max-width:600px){
+  .svc-list.grid-view{grid-template-columns:1fr;}
+  .plp-right{margin-left:0;}
+  .plp-search-wrap{max-width:none;flex:1 1 100%;order:1;}
+  .plp-btn{order:2;}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<nav class="bc-trail" aria-label="Breadcrumb">
+  <a href="{{ url_for('website.home') }}">Home</a>
+  <span class="bc-sep">/</span>
+  <span class="bc-current">Our Craft</span>
+</nav>
+
+<section class="page-hero">
+  <div class="page-hero-img"><img src="https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=1400&q=80" alt="Our craft" loading="eager"></div>
+  <div class="page-hero-overlay"></div>
+  <div class="page-hero-content">
+    <p class="kicker" style="color:var(--gold-l);">Our craft</p>
+    <h1 class="page-hero-title">Every garment we make.<br>Every price we charge.</h1>
+    <p class="page-hero-sub" style="color:rgba(250,240,228,.65);">No surprises. Prices shown are stitching charges only.</p>
+  </div>
+</section>
+
+<!-- TOOLBAR -->
+<div class="plp-toolbar">
+  <div class="plp-search-wrap">
+    <span class="plp-search-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+    <input type="text" class="plp-search" id="plpSearch" placeholder="Search garments…" autocomplete="off" oninput="onSearchInput(this.value)" onkeydown="if(event.key==='Enter'){applySearch(this.value);this.blur();}" onfocus="if(this.value)showSuggest(this.value)">
+    <button class="plp-search-clear" id="plpSearchClear" onclick="clearSearch()" title="Clear search">✕</button>
+    <div class="plp-suggest" id="plpSuggest"></div>
+  </div>
+  <button class="plp-btn" onclick="openPanel('filterPanel')">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+    Filters <span class="plp-badge-count" id="filterCount" style="display:none;">0</span>
+  </button>
+  <button class="plp-btn" onclick="openPanel('sortPanel')">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M6 12h12M10 18h4"/></svg>
+    Sort
+  </button>
+  <div class="plp-right">
+    <span class="results-count" id="resultsCount"></span>
+    <div class="img-toggle-wrap" title="Switch between model photo and fabric swatch">
+      <button class="img-toggle-btn active" id="imgToggleModel" onclick="setImgMode('model')">Model</button>
+      <button class="img-toggle-btn" id="imgToggleFabric" onclick="setImgMode('fabric')">Fabric</button>
+    </div>
+    <div class="view-btns">
+      <button class="view-btn" id="listBtn" onclick="setView('list')" title="List view">☰</button>
+      <button class="view-btn active" id="gridBtn" onclick="setView('grid')" title="Grid view">⊞</button>
+    </div>
+  </div>
+</div>
+
+<!-- FILTER PANEL -->
+<div class="plp-overlay" id="filterOverlay" onclick="closePanel('filterPanel')"></div>
+<div class="plp-panel" id="filterPanel">
+  <div class="plp-panel-hdr"><h3>Filters</h3><button class="plp-panel-close" onclick="closePanel('filterPanel')">✕</button></div>
+  <div class="plp-panel-body">
+    <p class="plp-section-lbl">Category</p>
+    <div class="plp-pill-group" id="catPillGroup">
+      <button class="cat-pill active" data-cat="all" onclick="pickCat('all',this)">All</button>
+      {% if services %}
+        {% for cat, items in services %}
+          {% if items %}
+          <button class="cat-pill" data-cat="{{ cat.name|lower|replace(' ','-') }}" onclick="pickCat('{{ cat.name|lower|replace(' ','-') }}',this)">{{ cat.name }}</button>
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+    </div>
+    <p class="plp-section-lbl">Price range (Rs.)</p>
+    <div class="plp-price-row">
+      <input type="number" id="priceMin" placeholder="Min" min="0">
+      <span style="color:var(--muted);">–</span>
+      <input type="number" id="priceMax" placeholder="Max" min="0">
+    </div>
+    <p class="plp-price-hint" id="priceHint">&nbsp;</p>
+    <p class="plp-section-lbl">Availability</p>
+    <label class="stock-opt"><input type="radio" name="stockOpt" value="all" checked onchange="pickStock('all')"> Show all</label>
+    <label class="stock-opt"><input type="radio" name="stockOpt" value="instock" onchange="pickStock('instock')"> In stock</label>
+    <label class="stock-opt"><input type="radio" name="stockOpt" value="mto" onchange="pickStock('mto')"> Made to order</label>
+    <label class="stock-opt"><input type="radio" name="stockOpt" value="out" onchange="pickStock('out')"> Out of stock</label>
+  </div>
+  <div class="plp-panel-ftr">
+    <button class="plp-btn" style="flex:1;justify-content:center;" onclick="resetFilters()">Reset</button>
+    <button class="plp-btn" style="flex:1;justify-content:center;background:var(--dark);color:#fff;border-color:var(--dark);" onclick="applyFiltersPanel()">Apply</button>
+  </div>
+</div>
+
+<!-- SORT PANEL -->
+<div class="plp-overlay" id="sortOverlay" onclick="closePanel('sortPanel')"></div>
+<div class="plp-panel" id="sortPanel">
+  <div class="plp-panel-hdr"><h3>Sort by</h3><button class="plp-panel-close" onclick="closePanel('sortPanel')">✕</button></div>
+  <div class="plp-panel-body">
+    <label class="sort-opt"><input type="radio" name="sortOpt" value="default" checked onchange="pickSort('default')"> Default order</label>
+    <label class="sort-opt"><input type="radio" name="sortOpt" value="price-asc" onchange="pickSort('price-asc')"> Price: Low to High</label>
+    <label class="sort-opt"><input type="radio" name="sortOpt" value="price-desc" onchange="pickSort('price-desc')"> Price: High to Low</label>
+    <label class="sort-opt"><input type="radio" name="sortOpt" value="name-asc" onchange="pickSort('name-asc')"> Name: A &rarr; Z</label>
+    <label class="sort-opt"><input type="radio" name="sortOpt" value="name-desc" onchange="pickSort('name-desc')"> Name: Z &rarr; A</label>
+  </div>
+</div>
+
+<div class="svc-list grid-view" id="svcList">
+  {% if services %}
+    {% for cat, items in services %}
+      {% for item in items %}
+  {% set _m = item_media.get(item.id, {}) %}
+  {% set _imgs = _m.get('images', []) %}
+  {% set _vid = _m.get('video', '') %}
+  {% set _fi = _imgs[0] if _imgs else item.image_url %}
+  {% set _sq = item.stock_qty if (item.stock_qty is defined and item.stock_qty is not none) else -1 %}
+  {% set _qv = {
+      'id': item.id, 'name': item.name, 'price': item.price,
+      'desc': (item.description or item.subtitle or ('Custom-stitched to your exact measurements. Every detail confirmed before we cut.')),
+      'images': (_imgs if _imgs else ([item.image_url] if item.image_url else [])),
+      'stock_qty': _sq, 'cat': cat.name,
+      'url': url_for('website.product_detail', item_id=item.id),
+      'order_url': url_for('website.commission') ~ '?garment=' ~ (item.name|urlencode)
+  } %}
+  {% set _fabric_img = fabric_imgs.get(item.id, '') %}
+  <div class="svc-card"
+    data-id="{{ item.id }}"
+    data-cat="{{ cat.name|lower|replace(' ','-') }}"
+    data-price="{{ item.price }}"
+    data-name="{{ item.name|lower }}"
+    data-stock="{{ _sq }}"
+    data-qv='{{ _qv|tojson }}'
+    data-model-img="{{ (_imgs[0] if _imgs else item.image_url)|e }}"
+    data-fabric-img="{{ _fabric_img|e }}"
+    id="svc-{{ item.name|lower|replace(' ','-') }}">
+    <a href="{{ url_for('website.product_detail', item_id=item.id) }}" class="svc-img-wrap" style="display:block;text-decoration:none;">
+      {% if _vid %}
+      <video src="{{ _vid }}" autoplay loop muted playsinline style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;"></video>
+      {% elif _imgs %}
+      <img class="card-img-el" src="{{ _imgs[0] }}" alt="{{ item.name }}" loading="lazy">
+      {% elif item.image_url %}
+      <img class="card-img-el" src="{{ item.image_url }}" alt="{{ item.name }}" loading="lazy">
+      {% else %}
+      <img class="card-img-el" src="https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=680&q=82" alt="{{ item.name }}" loading="lazy">
+      {% endif %}
+      {% if _imgs|length > 1 %}
+      <div class="svc-img-dots">{% for img in _imgs %}<span class="svc-dot {% if loop.first %}active{% endif %}" data-src="{{ img }}"></span>{% endfor %}</div>
+      {% endif %}
+      {% if _sq == 0 %}
+      <span class="stk-badge stk-out">Out of stock</span>
+      {% elif _sq > 0 and _sq <= 5 %}
+      <span class="stk-badge stk-low">Only {{ _sq }} left</span>
+      {% elif _sq > 5 %}
+      <span class="stk-badge stk-instock">In stock</span>
+      {% else %}
+      <span class="stk-badge stk-mto">Made to order</span>
+      {% endif %}
+      </a>
+      <div class="svc-card-icons">
+        <label class="svc-icon-btn cmp-icon-btn" title="Add to compare" onclick="event.stopPropagation()">
+          <input type="checkbox" id="cmp-{{ item.id }}" onchange="toggleCompare({{ item.id }},this)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3v18M9 7h7a2 2 0 0 1 2 2v1M9 17h7a2 2 0 0 0 2-2v-1"/><path d="M5 5L9 7M5 19l4-2"/></svg>
+        </label>
+        <button class="svc-icon-btn" data-id="{{ item.id }}" data-name="{{ item.name|e }}" data-price="{{ item.price|e }}" data-img="{{ (_fi or '')|e }}" onclick="wlFromBtn(this);event.stopPropagation()" data-wl-id="{{ item.id }}" title="Save to wishlist">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        </button>
+        <button class="svc-icon-btn" onclick="openQuickView({{ item.id }});event.stopPropagation()" title="Quick view">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+        {% if _sq == 0 %}
+        <button class="svc-icon-btn" disabled title="Out of stock" style="opacity:.4;cursor:not-allowed;" onclick="event.stopPropagation()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+        </button>
+        {% else %}
+        <button class="svc-icon-btn" data-id="{{ item.id }}" data-name="{{ item.name|e }}" data-price="{{ item.price|e }}" data-img="{{ (_fi or '')|e }}" data-cart-id="{{ item.id }}" onclick="cartFromBtn(this);event.stopPropagation()" title="Add to cart">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+        </button>
+        {% endif %}
+    </div>
+    <div class="svc-body">
+      <div class="svc-name-row">
+        <h2 class="svc-name">{{ item.name }}</h2>
+        <span class="svc-range">Rs. {{ item.price }}</span>
+      </div>
+      <p class="svc-desc">{% if item.subtitle %}{{ item.subtitle }}. {% endif %}Custom-stitched to your exact measurements. Every detail confirmed before we cut.</p>
+      <div class="svc-tags">
+        <span class="svc-tag">{{ cat.name }}</span>
+        <span class="svc-tag">Custom fit</span>
+      </div>
+      <p class="svc-turnaround">Ready in 5&ndash;14 days</p>
+      <span class="svc-viewers-badge" id="svcv-{{ item.id }}" style="display:none;font-size:11px;color:var(--gold);font-weight:600;letter-spacing:.02em;margin-bottom:4px;"></span>
+      <div class="svc-actions">
+        <a href="{{ url_for('website.commission') }}?garment={{ item.name|urlencode }}" class="btn-primary svc-order-btn">Order this &rarr;</a>
+        <a href="{{ url_for('website.product_detail', item_id=item.id) }}" class="svc-link-details">View full details &rarr;</a>
+      </div>
+    </div>
+  </div>
+      {% endfor %}
+    {% endfor %}
+  {% else %}
+  {% for val, name, from_p, range_p, days, img, desc, tags in [
+    ("shirt","Formal Shirt","Rs. " ~ prices.shirt,"Rs. " ~ prices.shirt,"5&ndash;7 days","photo-1596755094514-f87e34085b2c","The garment you wear every working day.",["Regular collar","Button-down","Mandarin","Full sleeve","Half sleeve"]),
+    ("pant","Pants","Rs. " ~ prices.pant,"Rs. " ~ prices.pant,"5&ndash;7 days","photo-1473966968600-fa801b869a1a","Pants that break perfectly at the shoe.",["Flat-front","Single pleat","Double pleat"]),
+    ("suit","Two-Piece Suit","Rs. " ~ prices.suit,"Rs. " ~ prices.suit,"10&ndash;14 days","photo-1507679799987-c73779587ccf","The garment that changes how a room treats you.",["Notch lapel","Peak lapel","Single-breasted"]),
+    ("blazer","Blazer","Rs. " ~ prices.blazer,"Rs. " ~ prices.blazer ~ "+","7&ndash;10 days","photo-1617127365659-c47fa864d8bc","Over a shirt, over a kurta.",["Notch lapel","1 button","2 buttons"]),
+    ("kurta","Kurta &amp; Pajama","Rs. " ~ prices.kurtaset,"Rs. " ~ prices.kurta ~ " / Rs. " ~ prices.kurtaset ~ " (set)","5&ndash;7 days","photo-1583391733956-3750e0ff4e8b","From Eid prayers to family functions.",["Mandarin neck","V-neck","Round neck"]),
+  ] %}
+  <div class="svc-card" data-cat="all" data-price="{{ from_p|replace('Rs. ','') }}" data-name="{{ name|lower }}" data-stock="-1" id="svc-{{ val }}">
+    <div class="svc-img-wrap">
+      <img src="https://images.unsplash.com/{{ img }}?w=680&q=82" alt="{{ name }}" loading="lazy">
+      <span class="stk-badge stk-mto">Made to order</span>
+    </div>
+    <div class="svc-body">
+      <div class="svc-name-row"><h2 class="svc-name">{{ name }}</h2><span class="svc-range">{{ range_p }}</span></div>
+      <p class="svc-desc">{{ desc }}</p>
+      <div class="svc-tags">{% for t in tags[:4] %}<span class="svc-tag">{{ t }}</span>{% endfor %}</div>
+      <p class="svc-turnaround">Ready in {{ days }}</p>
+      <div class="svc-actions">
+        <a href="{{ url_for('website.commission') }}?garment={{ val }}" class="btn-primary svc-order-btn">Order this &rarr;</a>
+        <a href="{{ url_for('website.our_services') }}" class="svc-link-details">Full price list &rarr;</a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+  {% endif %}
+</div>
+
+<div class="plp-pagination" id="plpPagination"></div>
+
+<section class="ref-section">
+  <div class="ref-inner">
+    <div style="padding-bottom:3rem;">
+      <p class="kicker">The easiest measurement method</p>
+      <h2 class="section-title" style="color:#FAF0E4;">Have a garment that fits you perfectly?</h2>
+    </div>
+    <p class="ref-body">Give it to us &mdash; we replicate it exactly. Same fit, same measurements, same feel. In your new fabric.</p>
+    <div class="ref-steps">
+      <div class="ref-step"><span class="ref-n">1</span><div><strong>Drop at our shop</strong><span>Subhash Chowk, Sikar &middot; Mon &ndash; Sat, 9am &ndash; 7pm</span></div></div>
+      <div class="ref-step"><span class="ref-n" style="color:rgba(250,240,228,.3);font-size:20px;">or</span></div>
+      <div class="ref-step"><span class="ref-n">1</span><div><strong>We pick up from you</strong><span>Sikar city only &middot; Rs. 50 charge</span></div></div>
+      <div class="ref-step"><span class="ref-n">2</span><div><strong>We measure every detail</strong><span>Chest, waist, shoulder, length, sleeve &mdash; all noted precisely.</span></div></div>
+      <div class="ref-step"><span class="ref-n">3</span><div><strong>New garment stitched and delivered with yours</strong><span>Your reference returned with the new garment.</span></div></div>
+    </div>
+    <a href="{{ url_for('website.commission') }}?method=reference" class="btn-gold" style="margin-top:2.5rem;display:inline-flex;">Use this method &rarr;</a>
+  </div>
+</section>
+
+<section class="big-cta">
+  <div class="big-cta-img"><img src="https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=1920&q=80" alt="" aria-hidden="true" loading="lazy"></div>
+  <div class="big-cta-overlay"></div>
+  <div class="big-cta-inner">
+    <h2 class="big-cta-title">Every garment above can<br>be yours in 7 days.</h2>
+    <a href="{{ url_for('website.commission') }}" class="btn-gold btn-xl">Customise Your Garment &rarr;</a>
+  </div>
+</section>
+
+<!-- COMPARE BAR -->
+<div class="cmp-bar" id="cmpBar">
+  <div class="cmp-thumbs" id="cmpThumbs"></div>
+  <span class="cmp-bar-text" id="cmpBarText">0 selected</span>
+  <button class="plp-btn" onclick="clearCompare()">Clear</button>
+  <button class="plp-btn gold" onclick="openCompareModal()">Compare Now</button>
+</div>
+
+<!-- QUICK VIEW MODAL -->
+<div class="plp-modal-overlay" id="qvOverlay" onclick="if(event.target===this)closeQuickView()">
+  <div class="plp-modal" id="qvModal">
+    <button class="plp-modal-close" onclick="closeQuickView()">✕</button>
+    <div class="qv-body" id="qvBody"></div>
+  </div>
+</div>
+
+<!-- COMPARE MODAL -->
+<div class="plp-modal-overlay" id="cmpOverlay" onclick="if(event.target===this)closeCompareModal()">
+  <div class="plp-modal" id="cmpModal" style="max-width:900px;">
+    <button class="plp-modal-close" onclick="closeCompareModal()">✕</button>
+    <div class="cmp-table-wrap" id="cmpTableWrap"></div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+var HOME_URL = "{{ url_for('website.home') }}";
+var _state = { cat:'all', sort:'default', stock:'all', priceMin:null, priceMax:null, q:'', page:1, pageSize:12 };
+var _pendingCat = 'all', _pendingStock = 'all';
+
+function getAllCards() { return Array.from(document.querySelectorAll('#svcList .svc-card')); }
+
+/* ---------- Panels ---------- */
+function openPanel(id){
+  var ov = id==='filterPanel' ? 'filterOverlay' : 'sortOverlay';
+  document.getElementById(id).classList.add('open');
+  document.getElementById(ov).classList.add('open');
+}
+function closePanel(id){
+  var ov = id==='filterPanel' ? 'filterOverlay' : 'sortOverlay';
+  document.getElementById(id).classList.remove('open');
+  document.getElementById(ov).classList.remove('open');
+}
+function pickCat(cat, btn){
+  _pendingCat = cat;
+  document.querySelectorAll('#catPillGroup .cat-pill').forEach(function(p){ p.classList.remove('active'); });
+  btn.classList.add('active');
+}
+function pickStock(val){ _pendingStock = val; }
+function pickSort(val){
+  _state.sort = val; _state.page = 1;
+  closePanel('sortPanel');
+  render();
+}
+function resetFilters(){
+  _pendingCat='all'; _pendingStock='all';
+  document.querySelectorAll('#catPillGroup .cat-pill').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelector('#catPillGroup .cat-pill[data-cat="all"]').classList.add('active');
+  document.querySelector('input[name="stockOpt"][value="all"]').checked = true;
+  document.getElementById('priceMin').value='';
+  document.getElementById('priceMax').value='';
+}
+function applyFiltersPanel(){
+  _state.cat = _pendingCat;
+  _state.stock = _pendingStock;
+  var min = document.getElementById('priceMin').value;
+  var max = document.getElementById('priceMax').value;
+  _state.priceMin = min ? parseInt(min) : null;
+  _state.priceMax = max ? parseInt(max) : null;
+  _state.page = 1;
+  closePanel('filterPanel');
+  updateFilterCount();
+  render();
+}
+function updateFilterCount(){
+  var n = 0;
+  if (_state.cat !== 'all') n++;
+  if (_state.stock !== 'all') n++;
+  if (_state.priceMin !== null || _state.priceMax !== null) n++;
+  var el = document.getElementById('filterCount');
+  if (n>0){ el.style.display='inline-flex'; el.textContent=n; } else { el.style.display='none'; }
+}
+
+/* ---------- Search & autosuggest ---------- */
+function onSearchInput(val){
+  document.getElementById('plpSearchClear').style.display = val ? 'block' : 'none';
+  showSuggest(val);
+}
+function showSuggest(val){
+  var box = document.getElementById('plpSuggest');
+  val = (val||'').trim().toLowerCase();
+  if (!val){ box.classList.remove('open'); box.innerHTML=''; return; }
+  var matches = getAllCards().filter(function(c){ return c.dataset.name.indexOf(val) > -1; }).slice(0,6);
+  if (!matches.length){ box.innerHTML = '<div class="plp-suggest-empty">No garments match “'+escapeHtml(val)+'”</div>'; box.classList.add('open'); return; }
+  box.innerHTML = matches.map(function(c){
+    var qv = JSON.parse(c.dataset.qv||'{}');
+    var img = (qv.images && qv.images[0]) || '';
+    return '<div class="plp-suggest-item" onmousedown="selectSuggest(\''+ (qv.name||'').replace(/'/g,"\\'") +'\')">'+
+      (img ? '<img src="'+img+'" alt="">' : '<div class="plp-suggest-item-noimg" style="width:34px;height:34px;border-radius:6px;background:#eee;"></div>') +
+      '<span class="plp-suggest-name">'+escapeHtml(qv.name||'')+'</span>'+
+      '<span class="plp-suggest-price">Rs. '+(qv.price||'')+'</span></div>';
+  }).join('');
+  box.classList.add('open');
+}
+function selectSuggest(name){
+  document.getElementById('plpSearch').value = name;
+  document.getElementById('plpSuggest').classList.remove('open');
+  applySearch(name);
+}
+function applySearch(val){
+  _state.q = (val||'').trim().toLowerCase();
+  _state.page = 1;
+  document.getElementById('plpSuggest').classList.remove('open');
+  render();
+}
+function clearSearch(){
+  document.getElementById('plpSearch').value='';
+  document.getElementById('plpSearchClear').style.display='none';
+  document.getElementById('plpSuggest').classList.remove('open');
+  applySearch('');
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+document.addEventListener('click', function(e){
+  if (!e.target.closest('.plp-search-wrap')) document.getElementById('plpSuggest').classList.remove('open');
+});
+
+/* ---------- Filter + sort + paginate + render ---------- */
+function stockBucket(sq){
+  if (sq === 0) return 'out';
+  if (sq < 0) return 'mto';
+  return 'instock'; // includes low-stock 1-5 and >5
+}
+function render(){
+  var cards = getAllCards();
+  var filtered = cards.filter(function(c){
+    if (_state.cat !== 'all' && c.dataset.cat !== _state.cat) return false;
+    if (_state.stock !== 'all' && stockBucket(parseInt(c.dataset.stock||'-1')) !== _state.stock) return false;
+    var price = parseInt(c.dataset.price||'0');
+    if (_state.priceMin !== null && price < _state.priceMin) return false;
+    if (_state.priceMax !== null && price > _state.priceMax) return false;
+    if (_state.q && c.dataset.name.indexOf(_state.q) === -1) return false;
+    return true;
+  });
+
+  filtered.sort(function(a,b){
+    if (_state.sort === 'price-asc') return parseInt(a.dataset.price||0) - parseInt(b.dataset.price||0);
+    if (_state.sort === 'price-desc') return parseInt(b.dataset.price||0) - parseInt(a.dataset.price||0);
+    if (_state.sort === 'name-asc') return (a.dataset.name||'').localeCompare(b.dataset.name||'');
+    if (_state.sort === 'name-desc') return (b.dataset.name||'').localeCompare(a.dataset.name||'');
+    return 0;
+  });
+
+  // Hide everything first
+  cards.forEach(function(c){ c.classList.add('hidden'); });
+
+  var total = filtered.length;
+  var pageSize = _state.pageSize;
+  var totalPages = Math.max(1, Math.ceil(total / pageSize));
+  if (_state.page > totalPages) _state.page = totalPages;
+  var startIdx = (_state.page - 1) * pageSize;
+  var pageItems = filtered.slice(startIdx, startIdx + pageSize);
+
+  var list = document.getElementById('svcList');
+  pageItems.forEach(function(c){ c.classList.remove('hidden'); list.appendChild(c); });
+
+  var countEl = document.getElementById('resultsCount');
+  if (countEl) countEl.textContent = total + ' garment' + (total !== 1 ? 's' : '');
+
+  renderPagination(totalPages);
+  renderEmptyState(total);
+}
+function renderEmptyState(total){
+  var list = document.getElementById('svcList');
+  var existing = document.getElementById('plpEmptyMsg');
+  if (existing) existing.remove();
+  if (total === 0){
+    var div = document.createElement('div');
+    div.id = 'plpEmptyMsg';
+    div.className = 'plp-empty';
+    div.style.gridColumn = '1/-1';
+    div.innerHTML = '<p style="font-size:15px;color:var(--dark);margin-bottom:6px;">No garments match your filters.</p><p style="font-size:13px;">Try clearing the search or filters and browse the full range.</p>';
+    list.appendChild(div);
+  }
+}
+function renderPagination(totalPages){
+  var box = document.getElementById('plpPagination');
+  if (totalPages <= 1){ box.innerHTML=''; return; }
+  var p = _state.page, html = '';
+  html += '<button class="pg-btn" '+(p<=1?'disabled':'')+' onclick="goPage('+(p-1)+')">&larr; Prev</button>';
+  for (var i=1;i<=totalPages;i++){
+    if (totalPages > 7 && i!==1 && i!==totalPages && Math.abs(i-p) > 1){
+      if (i === 2 || i === totalPages-1) html += '<span class="pg-ellipsis">…</span>';
+      continue;
+    }
+    html += '<button class="pg-btn '+(i===p?'active':'')+'" onclick="goPage('+i+')">'+i+'</button>';
+  }
+  html += '<button class="pg-btn" '+(p>=totalPages?'disabled':'')+' onclick="goPage('+(p+1)+')">Next &rarr;</button>';
+  box.innerHTML = html;
+}
+function goPage(n){
+  _state.page = n;
+  render();
+  var toolbar = document.querySelector('.plp-toolbar');
+  if (toolbar) toolbar.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function setView(mode) {
+  var list = document.getElementById('svcList');
+  var listBtn = document.getElementById('listBtn');
+  var gridBtn = document.getElementById('gridBtn');
+  if (mode === 'grid') {
+    list.classList.add('grid-view'); gridBtn.classList.add('active'); listBtn.classList.remove('active');
+  } else {
+    list.classList.remove('grid-view'); listBtn.classList.add('active'); gridBtn.classList.remove('active');
+  }
+}
+
+/* ---------- Fabric / Model image toggle ---------- */
+var _imgMode = 'model';
+function setImgMode(mode) {
+  _imgMode = mode;
+  var mBtn = document.getElementById('imgToggleModel');
+  var fBtn = document.getElementById('imgToggleFabric');
+  if (mBtn) { mBtn.classList.toggle('active', mode === 'model'); }
+  if (fBtn) { fBtn.classList.toggle('active', mode === 'fabric'); }
+
+  document.querySelectorAll('.svc-card').forEach(function(card) {
+    var img = card.querySelector('.card-img-el');
+    if (!img) return;
+    if (mode === 'fabric') {
+      var fab = card.getAttribute('data-fabric-img');
+      if (fab) {
+        img.style.opacity = '0';
+        img.src = fab;
+        img.onload = function() { img.style.opacity = '1'; };
+      } else {
+        /* No fabric image — show a placeholder overlay */
+        img.style.opacity = '0.35';
+      }
+    } else {
+      var model = card.getAttribute('data-model-img');
+      if (model) { img.src = model; }
+      img.style.opacity = '1';
+    }
+  });
+}
+
+/* ---------- Quick View ---------- */
+var GARMENT_WORDS = [
+  [/shirt/, 'shirt', false], [/suit/, 'suit', false], [/blazer/, 'blazer', false],
+  [/kurta/, 'kurta', false], [/sherwani/, 'sherwani', false], [/waistcoat|vest/, 'waistcoat', false],
+  [/jean/, 'jeans', true], [/trouser|pant/, 'trousers', true], [/coat/, 'coat', false],
+  [/dress/, 'dress', false], [/jacket/, 'jacket', false]
+];
+function garmentPhrase(qv){
+  var hay = ((qv.cat||'')+' '+(qv.name||'')).toLowerCase();
+  for (var i=0;i<GARMENT_WORDS.length;i++){
+    if (GARMENT_WORDS[i][0].test(hay)) return (GARMENT_WORDS[i][2] ? 'these ' : 'this ') + GARMENT_WORDS[i][1];
+  }
+  return 'this garment';
+}
+function openQuickView(id){
+  var card = document.querySelector('.svc-card[data-id="'+id+'"]');
+  if (!card) return;
+  var qv;
+  try { qv = JSON.parse(card.dataset.qv); } catch(e){ return; }
+  var imgs = (qv.images && qv.images.length) ? qv.images : ['https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=680&q=82'];
+  var stockTxt = qv.stock_qty === 0 ? '<span class="stk-badge stk-out" style="position:static;display:inline-block;">Out of stock</span>' :
+    qv.stock_qty < 0 ? '' :
+    qv.stock_qty <= 5 ? '<span class="stk-badge stk-low" style="position:static;display:inline-block;">Only '+qv.stock_qty+' left</span>' :
+    '<span class="stk-badge stk-instock" style="position:static;display:inline-block;">In stock</span>';
+  var disabled = qv.stock_qty === 0 ? 'disabled style="opacity:.5;cursor:not-allowed;"' : '';
+  var cartActive = (typeof isInCart==='function' && isInCart(qv.id)) ? ' cart-active' : '';
+  var wlActive = (typeof isWishlisted==='function' && isWishlisted(qv.id)) ? ' wl-active' : '';
+  document.getElementById('qvBody').innerHTML =
+    '<div class="qv-img"><img src="'+imgs[0]+'" alt=""></div>'+
+    '<div class="qv-info">'+
+      '<h2>'+escapeHtml(qv.name)+'</h2>'+
+      '<div class="qv-price"><span class="qv-cur">Rs.</span><span class="qv-amt">'+qv.price+'</span></div>'+
+      (stockTxt ? '<div style="margin-bottom:14px;">'+stockTxt+'</div>' : '')+
+      '<p class="qv-desc">'+escapeHtml(qv.desc||'')+'</p>'+
+      '<a href="'+HOME_URL+'?ai_item='+qv.id+'#aiPreview" class="qv-ai-customize"><span class="ai-spark">&#10024;</span> Customize '+garmentPhrase(qv)+' with AI &rarr;</a>'+
+      '<a href="'+qv.order_url+'" class="qv-order-btn" style="text-decoration:none;">Order Now &rarr;</a>'+
+      '<div class="qv-secondary-row">'+
+        '<button class="qv-sec-btn'+cartActive+'" data-cart-id="'+qv.id+'" '+disabled+' title="Add to Cart" onclick="addToCart('+qv.id+',\''+String(qv.name).replace(/'/g,"\\'")+'\',\''+qv.price+'\',\''+imgs[0]+'\');closeQuickView();">'+
+          '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg> Add to Cart'+
+        '</button>'+
+        '<button class="qv-sec-btn'+wlActive+'" data-wl-id="'+qv.id+'" title="Save to Wishlist" onclick="toggleWishlist('+qv.id+',\''+String(qv.name).replace(/'/g,"\\'")+'\',\''+qv.price+'\',\''+imgs[0]+'\')">'+
+          '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> Wishlist'+
+        '</button>'+
+      '</div>'+
+      '<a href="'+qv.url+'" class="qv-link-details">View full product &rarr;</a>'+
+    '</div>';
+  document.getElementById('qvOverlay').classList.add('open');
+}
+function closeQuickView(){ document.getElementById('qvOverlay').classList.remove('open'); }
+
+/* ---------- Compare ---------- */
+function _cmpGet(){ try{ return JSON.parse(sessionStorage.getItem('ut_compare')||'[]'); }catch(e){ return []; } }
+function _cmpSave(list){ try{ sessionStorage.setItem('ut_compare', JSON.stringify(list)); }catch(e){} }
+function toggleCompare(id, checkbox){
+  var list = _cmpGet();
+  var idx = list.indexOf(id);
+  if (checkbox.checked){
+    if (idx === -1){
+      if (list.length >= 4){
+        checkbox.checked = false;
+        alert('You can compare up to 4 garments at a time.');
+        return;
+      }
+      list.push(id);
+    }
+  } else {
+    if (idx > -1) list.splice(idx,1);
+  }
+  if (checkbox.closest('.cmp-icon-btn')) checkbox.closest('.cmp-icon-btn').classList.toggle('active', checkbox.checked);
+  _cmpSave(list);
+  renderCompareBar();
+}
+function renderCompareBar(){
+  var list = _cmpGet();
+  var bar = document.getElementById('cmpBar');
+  document.querySelectorAll('.cmp-icon-btn input').forEach(function(cb){
+    var checked = list.indexOf(parseInt(cb.id.replace('cmp-',''))) > -1;
+    cb.checked = checked;
+    cb.closest('.cmp-icon-btn').classList.toggle('active', checked);
+  });
+  if (list.length < 2){ bar.classList.remove('open'); return; }
+  bar.classList.add('open');
+  var thumbs = list.map(function(id){
+    var card = document.querySelector('.svc-card[data-id="'+id+'"]');
+    if (!card) return '';
+    try{ var qv = JSON.parse(card.dataset.qv); var img=(qv.images&&qv.images[0])||''; return img?'<img class="cmp-thumb" src="'+img+'" alt="">':''; }catch(e){ return ''; }
+  }).join('');
+  document.getElementById('cmpThumbs').innerHTML = thumbs;
+  document.getElementById('cmpBarText').textContent = list.length + ' selected';
+}
+function clearCompare(){ _cmpSave([]); renderCompareBar(); }
+function openCompareModal(){
+  var list = _cmpGet();
+  if (list.length < 2) return;
+  var items = list.map(function(id){
+    var card = document.querySelector('.svc-card[data-id="'+id+'"]');
+    if (!card) return null;
+    try{ return JSON.parse(card.dataset.qv); }catch(e){ return null; }
+  }).filter(Boolean);
+  if (items.length < 2) return;
+  var html = '<table class="cmp-table"><tr><th>Garment</th>' + items.map(function(it){
+    return '<td><img src="'+((it.images&&it.images[0])||'')+'" alt=""><div style="margin-top:8px;font-weight:600;">'+escapeHtml(it.name)+'</div><button class="cmp-remove" onclick="removeFromCompare('+it.id+')">Remove</button></td>';
+  }).join('') + '</tr>';
+  html += '<tr><th>Price</th>' + items.map(function(it){ return '<td>Rs. '+it.price+'</td>'; }).join('') + '</tr>';
+  html += '<tr><th>Category</th>' + items.map(function(it){ return '<td>'+escapeHtml(it.cat||'')+'</td>'; }).join('') + '</tr>';
+  html += '<tr><th>Availability</th>' + items.map(function(it){
+    var t = it.stock_qty===0?'Out of stock':it.stock_qty<0?'Made to order':it.stock_qty<=5?'Only '+it.stock_qty+' left':'In stock';
+    return '<td>'+t+'</td>';
+  }).join('') + '</tr>';
+  html += '<tr><th>Description</th>' + items.map(function(it){ return '<td>'+escapeHtml(it.desc||'')+'</td>'; }).join('') + '</tr>';
+  html += '<tr><th></th>' + items.map(function(it){ return '<td><a href="'+it.order_url+'" class="btn-primary" style="text-decoration:none;display:inline-flex;">Order this</a></td>'; }).join('') + '</tr>';
+  html += '</table>';
+  document.getElementById('cmpTableWrap').innerHTML = html;
+  document.getElementById('cmpOverlay').classList.add('open');
+}
+function removeFromCompare(id){
+  var list = _cmpGet().filter(function(x){ return x !== id; });
+  _cmpSave(list);
+  renderCompareBar();
+  if (list.length < 2) closeCompareModal(); else openCompareModal();
+}
+function closeCompareModal(){ document.getElementById('cmpOverlay').classList.remove('open'); }
+
+/* ---------- Init ---------- */
+document.addEventListener('DOMContentLoaded', function(){
+  var cards = getAllCards();
+  if (cards.length){
+    var prices = cards.map(function(c){ return parseInt(c.dataset.price||'0'); }).filter(function(n){ return !isNaN(n); });
+    if (prices.length){
+      var hint = document.getElementById('priceHint');
+      if (hint) hint.textContent = 'Range: Rs. ' + Math.min.apply(null,prices) + ' - Rs. ' + Math.max.apply(null,prices);
+    }
+  }
+  renderCompareBar();
+  render();
+});
+document.addEventListener('keydown', function(e){
+  if (e.key === 'Escape'){ closeQuickView(); closeCompareModal(); closePanel('filterPanel'); closePanel('sortPanel'); }
+});
+
+// -- Social proof: viewer badges on PLP cards --
+(function(){
+  var cards = document.querySelectorAll('.svc-card[data-id]');
+  cards.forEach(function(c){
+    var id = c.dataset.id;
+    if(!id || id === '') return;
+    fetch('/api/item/viewers/'+id).then(function(r){return r.json();}).then(function(d){
+      if(d && d.viewers >= 2){
+        var el = document.getElementById('svcv-'+id);
+        if(el){ el.textContent = '● '+d.viewers+' people viewing now'; el.style.display='inline-block'; }
+      }
+    }).catch(function(){});
+  });
+})();
+</script>
+{% endblock %}
