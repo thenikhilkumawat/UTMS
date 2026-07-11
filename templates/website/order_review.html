@@ -84,6 +84,9 @@
 .rv-spec-v{color:var(--dark);font-weight:500;text-align:right;max-width:60%;}
 
 /* ── Mobile ── */
+@media(min-width:741px){
+  .rv-wrap{padding-right:calc(340px + 2.5rem);}
+}
 @media(max-width:740px){
   .rv-grid{flex-direction:column;}
   .rv-left{padding-right:0;}
@@ -126,9 +129,9 @@
         <div id="revLoginSection">
           <div class="rv-card-label">Account Required</div>
           <p style="font-size:12.5px;color:var(--muted);margin-bottom:12px;line-height:1.5;">Please log in or create a free account to place and track your order.</p>
-          <div class="rv-tab-bar">
-            <button type="button" id="revTabLogin" class="rv-tab active" onclick="revSwitchTab('login')" style="border-right:1px solid var(--border);">Log In</button>
-            <button type="button" id="revTabSignup" class="rv-tab" onclick="revSwitchTab('signup')">Sign Up</button>
+          <div style="display:flex;border:1px solid var(--border);border-radius:7px;overflow:hidden;margin-bottom:12px;">
+            <button type="button" id="revTabLogin" onclick="revSwitchTab('login')" style="flex:1;padding:9px 0;font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase;border:none;border-right:1px solid var(--border);cursor:pointer;background:var(--dark);color:#fff;transition:all .2s;">Log In</button>
+            <button type="button" id="revTabSignup" onclick="revSwitchTab('signup')" style="flex:1;padding:9px 0;font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase;border:none;cursor:pointer;background:#f5f2ee;color:var(--muted);transition:all .2s;">Sign Up</button>
           </div>
           <div id="revFormLogin">
             <input type="tel" id="revLoginMobile" class="rv-input" placeholder="Mobile number" maxlength="10" style="margin-bottom:6px;">
@@ -513,8 +516,11 @@ function revSwitchTab(tab){
   var isLogin=tab==='login';
   document.getElementById('revFormLogin').style.display=isLogin?'':'none';
   document.getElementById('revFormSignup').style.display=isLogin?'none':'';
-  document.getElementById('revTabLogin').className='rv-tab'+(isLogin?' active':'');
-  document.getElementById('revTabSignup').className='rv-tab'+(isLogin?'':' active');
+  var tl=document.getElementById('revTabLogin'),ts=document.getElementById('revTabSignup');
+  tl.style.background=isLogin?'var(--dark)':'#f5f2ee';
+  tl.style.color=isLogin?'#fff':'var(--muted)';
+  ts.style.background=isLogin?'#f5f2ee':'var(--dark)';
+  ts.style.color=isLogin?'var(--muted)':'#fff';
   document.getElementById('revLoginMsg').textContent='';
 }
 
