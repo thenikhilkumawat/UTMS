@@ -196,12 +196,10 @@ if(_fromCart){
 }
 
 function init(){
+  try {
   if(!_order.item_name){
-    if(_fromCart){
-      window.location.href='/cart';
-    } else {
-      document.querySelector('.review-wrap').innerHTML='<div style="text-align:center;padding:4rem;"><h2>No order found.</h2><a href="/our-craft">← Browse garments</a></div>';
-    }
+    // No data from either cart or product page — send to cart
+    window.location.href = '/cart';
     return;
   }
 
@@ -591,10 +589,18 @@ function revDoLogin(){
   }).catch(function(){ msg.textContent = 'Could not connect. Try again.'; });
 }
 
+} catch(e){ console.error('order-review init error:', e); }
+}
+
 document.addEventListener('DOMContentLoaded', function(){
   init();
   ['custAddress'].forEach(function(id){ attachLocationBtn(id); });
   try{if(window.fbq)fbq('track','InitiateCheckout');}catch(e){}
 });
+
+// Fallback: if DOMContentLoaded already fired (script loaded late), run now
+if(document.readyState === 'complete' || document.readyState === 'interactive'){
+  setTimeout(function(){ if(document.getElementById('revSub') && document.getElementById('revSub').textContent === 'Loading...') init(); }, 200);
+}
 </script>
 {% endblock %}
