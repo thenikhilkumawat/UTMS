@@ -2504,3 +2504,27 @@ def api_verify_otp():
         return jsonify({"success": True, "message": "OTP verified"})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
+
+
+# ── GitHub Auto-Deploy Webhook ─────────────────────────────────────────────────
+import hmac as _hmac, hashlib as _hashlib, subprocess as _subprocess
+
+_DEPLOY_SECRET = b"069cca859f8c1f274de1683ed40455798bccb3902add9e2916fec3acaff7dbb5"
+
+@website_bp.route("/webhook/deploy", methods=["POST"])
+def webhook_deploy():
+    sig = request.headers.get("X-Hub-Signature-256", "")
+    body = request.get_data()
+    expected = "sha256=" + _hmac.new(_DEPLOY_SECRET, body, _hashlib.sha256).hexdigest()
+    if not _hmac.compare_digest(sig, expected):
+        return jsonify({"ok": False, "error": "forbidden"}), 403
+    payload = request.get_json(silent=True) or {}
+    if payload.get("ref") != "refs/heads/website":
+        return jsonify({"ok": True, "msg": "ignored branch"})
+    _subprocess.Popen(
+        ["/home/ubuntu/deploy_website.sh"],
+        stdout=_subprocess.DEVNULL,
+        stderr=_subprocess.DEVNULL,
+        close_fds=True
+    )
+    return jsonify({"ok": True, "msg": "deploying"})
