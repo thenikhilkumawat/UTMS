@@ -642,6 +642,15 @@ def support_send(chat_id):
                 send_support_owner_email(chat_id, customer_name, message, customer_email)
             except Exception as e:
                 import logging; logging.getLogger(__name__).warning("Support owner email error: %s", e)
+            try:
+                from app.utils.fcm import get_tokens_for_account, send_push
+                owner_tokens = get_tokens_for_account(0)
+                if owner_tokens:
+                    send_push(owner_tokens, title="New Support Message",
+                        body=customer_name + ": " + message[:80],
+                        data={"url": "https://dashboard.uttamtailors.in"})
+            except Exception as e:
+                import logging; logging.getLogger(__name__).warning("Owner push error: %s", e)
         threading.Thread(target=_notify_owner, daemon=True).start()
 
     elif sender == "admin":
@@ -1852,7 +1861,10 @@ def register_fcm_token():
     if not token:
         return jsonify({"ok": False, "error": "Token required"})
     acc = _get_account()
-    account_id = acc["id"] if acc else None
+    if session.get("owner_logged_in"):
+        account_id = 0  # owner devices
+    else:
+        account_id = acc["id"] if acc else None
     try:
         from app.utils.fcm import save_token as _save_tok
         _save_tok(account_id, token)
