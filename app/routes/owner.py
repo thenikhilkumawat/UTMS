@@ -3889,6 +3889,38 @@ def homepage_sections_list():
     except Exception as e: return jsonify({"ok":False,"error":str(e)})
 
 
+# ── Hero background image upload ──────────────────────────────────
+@bp.route("/website/homepage/hero/upload-image", methods=["POST"])
+def homepage_hero_upload_image():
+    if not session.get("owner_logged_in"):
+        return jsonify({"ok": False, "error": "Unauthorized"}), 403
+    import os as _os, uuid as _uuid
+    try:
+        file = request.files.get("image")
+        if not file or not file.filename:
+            return jsonify({"ok": False, "error": "No file received"})
+        ext = _os.path.splitext(file.filename)[1].lower()
+        if ext not in [".jpg", ".jpeg", ".png", ".webp", ".gif"]:
+            ext = ".jpg"
+        folder = _os.path.join(
+            _os.path.dirname(_os.path.dirname(_os.path.dirname(__file__))),
+            "static", "website", "img", "hero"
+        )
+        _os.makedirs(folder, exist_ok=True)
+        fname = f"hero_{_uuid.uuid4().hex[:10]}{ext}"
+        fpath = _os.path.join(folder, fname)
+        file.save(fpath)
+        try:
+            from app.utils.image_optimize import optimize_image as _oi
+            fpath = _oi(fpath)
+            fname = _os.path.basename(fpath)
+        except Exception:
+            pass
+        url = "/static/website/img/hero/" + fname
+        return jsonify({"ok": True, "url": url})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
 # ── Item Tiles ────────────────────────────────────────────────────
 @bp.route("/website/item/tiles/<int:iid>")
 def item_tiles_list(iid):
