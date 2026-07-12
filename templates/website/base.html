@@ -964,10 +964,7 @@ function _acctRenderProfile(){
   h += '<div style="font-size:17px;font-weight:700;color:var(--dark,#1a0e06);">'+(s.name||'')+'</div>';
   h += '<div style="font-size:12.5px;color:var(--muted);margin-top:2px;">'+(s.mobile||'')+'</div>';
   h += '</div>';
-  h += '<div style="background:var(--bg,#faf3e8);border-radius:10px;padding:14px 16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;">';
-  h += '<span style="font-size:12.5px;color:var(--muted);">AI style previews used</span>';
-  h += '<span style="font-size:14px;font-weight:700;color:var(--gold,#C8903A);">'+(s.preview_count||0)+'</span>';
-  h += '</div>';
+
   h += '<a href="/account" style="display:block;text-align:center;padding:12px;margin-bottom:10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-weight:700;color:var(--dark,#1a0e06);text-decoration:none;">Manage account, orders &amp; wishlist &rarr;</a>';
   h += '<a href="{{ url_for("website.commission") }}" class="nav-cta" style="display:block;text-align:center;padding:13px;margin-bottom:10px;">Customise Your Garment &rarr;</a>';
   h += '<button type="button" onclick="_acctLogout()" style="width:100%;background:transparent;border:1px solid var(--border);border-radius:8px;padding:12px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;">Log out</button>';
