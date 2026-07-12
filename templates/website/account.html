@@ -251,24 +251,29 @@
   }
 
   window.acctPgShowAddrForm = function(){
+    var a = acctPgState.acc || {};
     var wrap = document.getElementById('acctPgAddrFormWrap');
     wrap.innerHTML = '<div class="acctpg-card">' +
       '<div class="acctpg-row">' +
         '<div><label class="acctpg-lbl">Label</label><input class="acctpg-in" id="afLabel" value="Home"></div>' +
-        '<div><label class="acctpg-lbl">Full name</label><input class="acctpg-in" id="afName"></div>' +
+        '<div><label class="acctpg-lbl">Full name</label><input class="acctpg-in" id="afName" value="'+esc(a.name||'')+'"></div>' +
       '</div>' +
-      '<label class="acctpg-lbl">Mobile</label><input class="acctpg-in" id="afMobile">' +
-      '<label class="acctpg-lbl">Address line 1</label><input class="acctpg-in" id="afLine1">' +
-      '<label class="acctpg-lbl">Address line 2</label><input class="acctpg-in" id="afLine2">' +
+      '<label class="acctpg-lbl">Mobile</label><input class="acctpg-in" id="afMobile" value="'+esc(a.mobile||'')+'">' +
+      '<label class="acctpg-lbl">Address line 1</label><input class="acctpg-in" id="afLine1" value="'+esc(a.address_line1||'')+'">' +
+      '<label class="acctpg-lbl">Address line 2</label><input class="acctpg-in" id="afLine2" value="'+esc(a.address_line2||'')+'">' +
       '<div class="acctpg-row">' +
-        '<div><label class="acctpg-lbl">City</label><input class="acctpg-in" id="afCity"></div>' +
-        '<div><label class="acctpg-lbl">State</label><input class="acctpg-in" id="afState"></div>' +
+        '<div><label class="acctpg-lbl">City</label><input class="acctpg-in" id="afCity" value="'+esc(a.address_city||'')+'"></div>' +
+        '<div><label class="acctpg-lbl">State</label><input class="acctpg-in" id="afState" value="'+esc(a.address_state||'')+'"></div>' +
       '</div>' +
-      '<label class="acctpg-lbl">Pincode</label><input class="acctpg-in" id="afPincode">' +
-      '<label style="font-size:12.5px;display:flex;align-items:center;gap:6px;margin-bottom:12px;"><input type="checkbox" id="afDefault"> Set as default address</label>' +
+      '<label class="acctpg-lbl">Pincode</label><input class="acctpg-in" id="afPincode" value="'+esc(a.address_pincode||'')+'">' +
+      '<label style="font-size:12.5px;display:flex;align-items:center;gap:6px;margin-bottom:12px;"><input type="checkbox" id="afDefault" checked> Set as default address</label>' +
       '<div class="acctpg-msg" id="afMsg"></div>' +
-      '<button class="acctpg-btn" onclick="acctPgSaveAddr()">Save address</button>' +
+      '<div style="display:flex;gap:8px;">' +
+        '<button class="acctpg-btn" onclick="acctPgSaveAddr()">Save address</button>' +
+        '<button class="acctpg-btn-ghost" onclick="document.getElementById(&quot;acctPgAddrFormWrap&quot;).innerHTML=''">Cancel</button>' +
+      '</div>' +
     '</div>';
+    wrap.scrollIntoView({behavior:'smooth',block:'nearest'});
   };
 
   window.acctPgSaveAddr = function(){
@@ -308,11 +313,12 @@
         return;
       }
       var html = '';
-      orders.forEach(function(o){
+      orders.forEach(function(o, idx){
         var statusColor = o.status && o.status.toLowerCase().indexOf('deliver')>-1 ? '#dcfce7;color:#15803d' :
                            o.status && o.status.toLowerCase().indexOf('ready')>-1 ? '#ede9fe;color:#6d28d9' :
                            o.status && o.status.toLowerCase()==='cancelled' ? '#fee2e2;color:#dc2626' : '#dbeafe;color:#1e40af';
-        html += '<div class="acctpg-card">' +
+        var did = 'ord-d-'+idx;
+        html += '<div class="acctpg-card" style="cursor:pointer;" onclick="var el=document.getElementById(''+did+'');el.style.display=el.style.display==='none'?'block':'none'">' +
           '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">' +
             '<div>' +
               '<strong style="font-size:14px;">'+esc(o.order_code)+'</strong> <span class="acctpg-status" style="background:'+statusColor+';">'+esc((o.status||'').toUpperCase())+'</span>' +
@@ -322,9 +328,20 @@
             '<div style="text-align:right;">' +
               '<div style="font-weight:700;font-size:14px;">₹'+esc(o.payable_amount||o.total_amount||0)+'</div>' +
               (o.remaining ? '<div style="font-size:11.5px;color:#b45309;">₹'+esc(o.remaining)+' due</div>' : '<div style="font-size:11.5px;color:#15803d;">Fully paid</div>') +
+              '<div style="font-size:10.5px;color:var(--muted);margin-top:3px;">Tap for details ▼</div>' +
             '</div>' +
           '</div>' +
           acctPgTrackingHtml(o.tracking) +
+          '<div id="'+did+'" style="display:none;margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">' +
+            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">' +
+              '<div><span style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;display:block;">Payment</span><span style="font-size:13px;font-weight:600;">'+esc(o.payment_mode||'—')+'</span></div>' +
+              '<div><span style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;display:block;">Customer</span><span style="font-size:13px;font-weight:600;">'+esc(o.customer_name||'—')+'</span></div>' +
+              (o.payable_amount ? '<div><span style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;display:block;">Total</span><span style="font-size:13px;font-weight:600;">₹'+esc(o.payable_amount)+'</span></div>' : '') +
+              (o.remaining ? '<div><span style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;display:block;">Balance Due</span><span style="font-size:13px;font-weight:600;color:#b45309;">₹'+esc(o.remaining)+'</span></div>' : '') +
+            '</div>' +
+            (o.note ? '<div style="font-size:12.5px;color:var(--muted);padding:8px 10px;background:#faf3e8;border-radius:6px;margin-bottom:8px;">Note: '+esc(o.note)+'</div>' : '') +
+            '<a href="/track-order" style="font-size:12.5px;color:var(--gold);font-weight:700;text-decoration:none;" onclick="event.stopPropagation()">Track this order →</a>' +
+          '</div>' +
         '</div>';
       });
       pane.innerHTML = html;
@@ -499,37 +516,24 @@
   // ── Wishlist ─────────────────────────────────────────────────────────────
   function acctPgRenderWishlist(pane){
     fetch('/api/account/wishlist').then(function(r){ return r.json(); }).then(function(d){
-      var items = d.items || [];
+      var items = d.wishlist || d.items || [];
       if (!items.length) {
         pane.innerHTML = '<div class="acctpg-card" style="text-align:center;color:var(--muted);font-size:13px;">Your wishlist is empty. <a href="/our-craft" style="color:var(--gold);font-weight:700;">Browse garments →</a></div>';
         return;
       }
-      var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;">';
+      var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;">';
       items.forEach(function(it){
-        var badges = '';
-        var curPrice = parseFloat(it.price), oldPrice = parseFloat(it.price_snapshot);
-        if (!isNaN(curPrice) && !isNaN(oldPrice) && curPrice < oldPrice) {
-          badges += '<span style="display:inline-block;background:#1f7a3d;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;margin-right:4px;">PRICE DROP &#8595; ₹'+Math.round(oldPrice-curPrice)+'</span>';
-        }
-        if (typeof it.stock_qty === 'number' && it.stock_qty >= 0) {
-          var wasOut = (it.stock_snapshot === 0);
-          if (it.stock_qty === 0) {
-            badges += '<span style="display:inline-block;background:#9c1f1f;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;">OUT OF STOCK</span>';
-          } else if (wasOut && it.stock_qty > 0) {
-            badges += '<span style="display:inline-block;background:#1f7a3d;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;">BACK IN STOCK</span>';
-          } else if (it.stock_qty <= 5) {
-            badges += '<span style="display:inline-block;background:#b8780f;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;">ONLY '+it.stock_qty+' LEFT</span>';
-          }
-        }
-        var outOfStock = (it.stock_qty === 0);
+        var name  = it.item_name || it.name || '';
+        var price = it.item_price || it.price || 0;
+        var img   = it.item_img  || it.image_url || '';
+        var itemId = it.item_id || it.id || 0;
         html += '<div class="acctpg-card" style="padding:10px;">' +
-          '<img src="'+esc(it.image_url||'')+'" style="width:100%;height:120px;object-fit:cover;border-radius:6px;background:#f3ece1;" onerror="this.style.display=\'none\'">' +
-          '<div style="font-size:12.5px;font-weight:700;margin-top:8px;">'+esc(it.name)+'</div>' +
-          '<div style="font-size:12px;color:var(--gold);font-weight:700;">₹'+esc(it.price)+'</div>' +
-          (badges ? '<div style="margin-top:5px;">'+badges+'</div>' : '') +
-          '<div style="display:flex;gap:6px;margin-top:8px;">' +
-            '<a href="'+esc(it.item_url||'/our-craft')+'" style="flex:1;text-align:center;font-size:11.5px;padding:7px;background:var(--dark);color:#fff;border-radius:6px;text-decoration:none;font-weight:700;">'+(outOfStock?'View':'Order Now')+'</a>' +
-            (!outOfStock ? '<button onclick="addToCartFromWishlist('+it.item_id+')" style="padding:7px 10px;border:1.5px solid var(--border);border-radius:6px;background:#fff;cursor:pointer;font-size:13px;">🛒</button>' : '') +
+          (img ? '<img src="'+esc(img)+'" style="width:100%;height:130px;object-fit:cover;border-radius:6px;background:#f3ece1;">' :
+                 '<div style="width:100%;height:130px;border-radius:6px;background:#f3ece1;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px;">No image</div>') +
+          '<div style="font-size:13px;font-weight:700;margin-top:8px;line-height:1.3;">'+esc(name)+'</div>' +
+          '<div style="font-size:13px;color:var(--gold);font-weight:700;margin-top:4px;">₹'+esc(price)+'</div>' +
+          '<div style="display:flex;gap:6px;margin-top:10px;">' +
+            '<a href="/commission" style="flex:1;text-align:center;font-size:11.5px;padding:8px 4px;background:var(--dark);color:#fff;border-radius:6px;text-decoration:none;font-weight:700;">Order Now</a>' +
           '</div>' +
         '</div>';
       });
@@ -537,44 +541,94 @@
       pane.innerHTML = html;
     });
   }
-  window.addToCartFromWishlist = function(itemId){
-    fetch('/api/cart/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({item_id:itemId,qty:1})})
-      .then(function(r){return r.json();}).then(function(d){
-        if(d.ok){ if(typeof refreshCartCount==='function')refreshCartCount(); alert('Added to cart!'); }
-      });
-  };
 
   // ── Payments ─────────────────────────────────────────────────────────────
+  function _pmIcon(type){
+    var icons = {upi:'📱',card:'💳',cash:'💵',netbanking:'🏦'};
+    return icons[type] || '💳';
+  }
   function acctPgRenderPayments(pane){
     fetch('/api/account/payment-methods').then(function(r){ return r.json(); }).then(function(d){
       var methods = d.methods || [];
-      var html = '<div class="acctpg-card"><p style="font-size:12.5px;color:var(--muted);margin-bottom:1rem;">'+
-        'These are saved here just for your own reference — Uttam Tailors does not have online payment yet, so orders are still settled via WhatsApp/cash/UPI directly. We never ask for or store your CVV or full card number.</p>';
+      var html = '<div class="acctpg-card">';
+      html += '<p style="font-size:12px;color:var(--muted);margin-bottom:1rem;">Saved for your reference only — payments are settled directly via WhatsApp / cash / UPI. CVV is never stored.</p>';
       if (!methods.length) {
-        html += '<div style="color:var(--muted);font-size:13px;margin-bottom:1rem;">No payment info saved.</div>';
+        html += '<div style="color:var(--muted);font-size:13px;margin-bottom:1rem;">No payment methods saved yet.</div>';
       }
       methods.forEach(function(m){
-        html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">' +
-          '<span style="font-size:13.5px;">'+esc(m.label||m.type||'Card')+'</span>' +
-          '<button onclick="acctPgDeletePayment('+m.id+')" style="font-size:11px;color:#dc2626;background:none;border:none;cursor:pointer;">Remove</button>' +
+        var detail = '';
+        if(m.last4) detail = '•••• '+m.last4+(m.expiry_month?' · '+m.expiry_month+'/'+m.expiry_year:'');
+        else if(m.upi_id) detail = m.upi_id;
+        else detail = m.masked_detail||m.label||'';
+        html += '<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);">' +
+          '<span style="font-size:22px;">'+_pmIcon(m.method_type)+'</span>' +
+          '<div style="flex:1;">' +
+            '<div style="font-size:13.5px;font-weight:700;">'+esc(m.label||m.method_type||'Card')+'</div>' +
+            (detail ? '<div style="font-size:12px;color:var(--muted);">'+esc(detail)+'</div>' : '') +
+          '</div>' +
+          (m.is_default ? '<span style="font-size:10px;background:#dcfce7;color:#15803d;padding:2px 7px;border-radius:5px;font-weight:700;">DEFAULT</span>' : '') +
+          '<button onclick="acctPgDeletePayment('+m.id+')" style="font-size:11px;color:#dc2626;background:none;border:none;cursor:pointer;padding:4px 6px;">✕</button>' +
         '</div>';
       });
-      html += '<div style="margin-top:1rem;display:flex;gap:8px;">' +
-        '<input id="pmLabel" placeholder="Label e.g. UPI/HDFC card" style="flex:1;padding:9px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;">' +
-        '<button class="btn-primary" style="padding:9px 16px;font-size:13px;" onclick="acctPgAddPayment()">Save</button>' +
-        '</div>';
-      html += '</div>';
+      html += '<div style="margin-top:1.25rem;">' +
+        '<div style="font-size:12px;font-weight:700;margin-bottom:8px;color:var(--dark);">Add payment method</div>' +
+        '<div style="display:flex;gap:6px;margin-bottom:12px;">' +
+          '<button id="pmTypeCard" onclick="pmSelectType(&quot;card&quot;)" style="flex:1;padding:8px;border:2px solid var(--dark);border-radius:7px;font-size:12px;font-weight:700;background:var(--dark);color:#fff;cursor:pointer;">💳 Card</button>' +
+          '<button id="pmTypeUpi" onclick="pmSelectType(&quot;upi&quot;)" style="flex:1;padding:8px;border:2px solid var(--border);border-radius:7px;font-size:12px;font-weight:700;background:#fff;color:var(--muted);cursor:pointer;">📱 UPI</button>' +
+          '<button id="pmTypeCash" onclick="pmSelectType(&quot;cash&quot;)" style="flex:1;padding:8px;border:2px solid var(--border);border-radius:7px;font-size:12px;font-weight:700;background:#fff;color:var(--muted);cursor:pointer;">💵 Cash</button>' +
+        '</div>' +
+        '<div id="pmCardFields">' +
+          '<input class="acctpg-in" id="pmLabel" placeholder="Label (e.g. HDFC Visa)">' +
+          '<input class="acctpg-in" id="pmCard" placeholder="Card number (last 4 digits only)" maxlength="4" inputmode="numeric">' +
+          '<div class="acctpg-row">' +
+            '<div><label class="acctpg-lbl">Expiry month</label><input class="acctpg-in" id="pmMM" placeholder="MM" maxlength="2" inputmode="numeric"></div>' +
+            '<div><label class="acctpg-lbl">Expiry year</label><input class="acctpg-in" id="pmYY" placeholder="YY" maxlength="2" inputmode="numeric"></div>' +
+          '</div>' +
+        '</div>' +
+        '<div id="pmUpiFields" style="display:none;">' +
+          '<input class="acctpg-in" id="pmUpiId" placeholder="UPI ID (e.g. name@upi)">' +
+          '<input class="acctpg-in" id="pmUpiLabel" placeholder="Label (e.g. GPay)">' +
+        '</div>' +
+        '<div id="pmCashFields" style="display:none;">' +
+          '<input class="acctpg-in" id="pmCashLabel" placeholder="Label (e.g. Cash on delivery)">' +
+        '</div>' +
+        '<div class="acctpg-msg" id="pmMsg"></div>' +
+        '<button class="acctpg-btn" onclick="acctPgAddPayment()">Save method</button>' +
+      '</div>' +
+      '</div>';
       pane.innerHTML = html;
+      window._pmType = 'card';
     });
   }
+  window.pmSelectType = function(t){
+    window._pmType = t;
+    ['card','upi','cash'].forEach(function(k){
+      var btn = document.getElementById('pmType'+k.charAt(0).toUpperCase()+k.slice(1));
+      if(btn){ btn.style.background=k===t?'var(--dark)':''; btn.style.color=k===t?'#fff':'var(--muted)'; btn.style.borderColor=k===t?'var(--dark)':' var(--border)'; }
+      var fields = document.getElementById('pm'+k.charAt(0).toUpperCase()+k.slice(1)+'Fields');
+      if(fields) fields.style.display = k===t?'block':'none';
+    });
+  };
   window.acctPgDeletePayment = function(id){
     fetch('/api/account/payment-methods/'+id+'/delete',{method:'POST'}).then(function(){acctPgRenderPayments(document.getElementById('acctPgPane'));});
   };
   window.acctPgAddPayment = function(){
-    var label = document.getElementById('pmLabel').value.trim();
-    if(!label) return;
-    fetch('/api/account/payment-methods/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({label:label,type:'other'})})
-      .then(function(r){return r.json();}).then(function(d){if(d.ok)acctPgRenderPayments(document.getElementById('acctPgPane'));});
+    var t = window._pmType||'card';
+    var body = {method_type: t};
+    var msg = document.getElementById('pmMsg'); if(msg) msg.textContent='';
+    if(t==='card'){
+      body.label = (document.getElementById('pmLabel')||{}).value||'Card';
+      body.last4 = ((document.getElementById('pmCard')||{}).value||'').replace(/\D/g,'').slice(-4);
+      body.expiry_month = (document.getElementById('pmMM')||{}).value||'';      body.expiry_year  = (document.getElementById('pmYY')||{}).value||'';      if(!body.last4){ if(msg) msg.textContent='Enter last 4 digits of card'; return; }
+    } else if(t==='upi'){
+      body.upi_id = (document.getElementById('pmUpiId')||{}).value||'';      body.label  = (document.getElementById('pmUpiLabel')||{}).value||'UPI';      if(!body.upi_id){ if(msg) msg.textContent='Enter UPI ID'; return; }
+    } else {
+      body.label = (document.getElementById('pmCashLabel')||{}).value||'Cash';    }
+    fetch('/api/account/payment-methods/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+      .then(function(r){return r.json();}).then(function(d){
+        if(d.ok) acctPgRenderPayments(document.getElementById('acctPgPane'));
+        else if(msg) msg.textContent = d.error||'Save failed';
+      });
   };
 
   // ── Settings ─────────────────────────────────────────────────────────────
@@ -584,8 +638,8 @@
       '<h3 style="font-size:15px;font-weight:700;margin-bottom:1rem;">Account Settings</h3>' +
       '<div style="margin-bottom:1.25rem;">' +
         '<label style="font-size:12px;font-weight:700;display:block;margin-bottom:6px;">Change Password</label>' +
-        '<input id="acctPgPwOld" type="password" placeholder="Current password" class="acctpg-input" style="margin-bottom:6px;">' +
-        '<input id="acctPgPwNew" type="password" placeholder="New password (min 6 chars)" class="acctpg-input" style="margin-bottom:6px;">' +
+        '<input id="acctPgPwOld" type="password" placeholder="Current password" class="acctpg-in" style="margin-bottom:6px;">' +
+        '<input id="acctPgPwNew" type="password" placeholder="New password (min 6 chars)" class="acctpg-in" style="margin-bottom:6px;">' +
         '<button class="btn-primary" style="padding:9px 20px;font-size:13px;" onclick="acctPgChangePassword()">Update Password</button>' +
       '</div>' +
       '<div style="border-top:1px solid var(--border);padding-top:1.25rem;">' +

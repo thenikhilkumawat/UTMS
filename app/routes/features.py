@@ -132,6 +132,48 @@ def _get_account():
 def _now():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+def _ensure_addresses_table():
+    db = get_db()
+    db.execute("""CREATE TABLE IF NOT EXISTS web_addresses (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        account_id INTEGER NOT NULL,
+        label      TEXT DEFAULT 'Home',
+        full_name  TEXT DEFAULT '',
+        mobile     TEXT DEFAULT '',
+        line1      TEXT DEFAULT '',
+        line2      TEXT DEFAULT '',
+        city       TEXT DEFAULT '',
+        state      TEXT DEFAULT '',
+        pincode    TEXT DEFAULT '',
+        is_default INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT (datetime('now','localtime'))
+    )""")
+    db.commit()
+
+def _ensure_payment_methods_table():
+    db = get_db()
+    db.execute("""CREATE TABLE IF NOT EXISTS web_payment_methods (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        account_id   INTEGER NOT NULL,
+        method_type  TEXT DEFAULT '',
+        label        TEXT DEFAULT '',
+        masked_detail TEXT DEFAULT '',
+        last4        TEXT DEFAULT '',
+        expiry_month TEXT DEFAULT '',
+        expiry_year  TEXT DEFAULT '',
+        upi_id       TEXT DEFAULT '',
+        is_default   INTEGER DEFAULT 0,
+        created_at   TEXT DEFAULT (datetime('now','localtime'))
+    )""")
+    # Migrate existing table
+    for col in ["last4 TEXT DEFAULT ''", "expiry_month TEXT DEFAULT ''",
+                "expiry_year TEXT DEFAULT ''", "upi_id TEXT DEFAULT ''"]:
+        try:
+            db.execute(f"ALTER TABLE web_payment_methods ADD COLUMN {col}")
+        except Exception:
+            pass
+    db.commit()
+
 def _save_upload(file_obj, prefix="img"):
     if not file_obj:
         return ""
@@ -1075,6 +1117,7 @@ def account_profile_update():
 @features_bp.route("/api/account/profile-image", methods=["POST"])
 def account_profile_image():
     """Upload / replace the account profile photo."""
+    _ensure_auth_tables()
     acc = _get_account()
     if not acc:
         return jsonify({"ok": False, "error": "Not logged in"}), 401
@@ -1110,7 +1153,7 @@ def account_addresses_list():
     acc = _get_account()
     if not acc:
         return jsonify({"ok": False, "error": "Not logged in"}), 401
-    _ensure_auth_tables()
+    _ensure_addresses_table()
     rows = get_db().execute(
         "SELECT * FROM web_addresses WHERE account_id=? ORDER BY is_default DESC, id DESC",
         (acc["id"],)
@@ -1123,7 +1166,7 @@ def account_addresses_add():
     acc = _get_account()
     if not acc:
         return jsonify({"ok": False, "error": "Not logged in"}), 401
-    _ensure_auth_tables()
+    _ensure_addresses_table()
     d        = request.get_json(force=True, silent=True) or {}
     label     = (d.get("label")     or "Home").strip()
     full_name = (d.get("full_name") or "").strip()
@@ -1428,6 +1471,7 @@ def account_payment_methods_list():
     acc = _get_account()
     if not acc:
         return jsonify({"ok": False, "error": "Not logged in"}), 401
+    _ensure_payment_methods_table()
     rows = get_db().execute(
         "SELECT * FROM web_payment_methods WHERE account_id=? ORDER BY is_default DESC, id DESC",
         (acc["id"],)
@@ -1440,21 +1484,27 @@ def account_payment_methods_add():
     acc = _get_account()
     if not acc:
         return jsonify({"ok": False, "error": "Not logged in"}), 401
+    _ensure_payment_methods_table()
     d            = request.get_json(force=True, silent=True) or {}
-    method_type  = (d.get("method_type")  or "").strip()
+    method_type  = (d.get("method_type")  or "card").strip()
     label        = (d.get("label")        or "").strip()
     masked_detail= (d.get("masked_detail")or "").strip()
-    if not method_type:
-        return jsonify({"ok": False, "error": "method_type required"})
+    last4        = (d.get("last4")        or "").strip()[-4:]
+    expiry_month = (d.get("expiry_month") or "").strip()
+    expiry_year  = (d.get("expiry_year")  or "").strip()
+    upi_id       = (d.get("upi_id")       or "").strip()
+    if not label and not last4 and not upi_id:
+        return jsonify({"ok": False, "error": "Please fill in the payment details"})
     db = get_db()
     count = db.execute(
         "SELECT COUNT(*) FROM web_payment_methods WHERE account_id=?", (acc["id"],)
     ).fetchone()[0]
     is_default = 1 if count == 0 else 0
     db.execute(
-        """INSERT INTO web_payment_methods(account_id, method_type, label, masked_detail, is_default)
-           VALUES(?,?,?,?,?)""",
-        (acc["id"], method_type, label, masked_detail, is_default)
+        """INSERT INTO web_payment_methods
+           (account_id, method_type, label, masked_detail, last4, expiry_month, expiry_year, upi_id, is_default)
+           VALUES(?,?,?,?,?,?,?,?,?)""",
+        (acc["id"], method_type, label, masked_detail, last4, expiry_month, expiry_year, upi_id, is_default)
     )
     db.commit()
     return jsonify({"ok": True})
