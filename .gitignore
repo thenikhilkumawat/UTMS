@@ -23,3 +23,10 @@ Db/
 Server/
 *.bak*
 .fuse_hidden*
+
+# SQLite WAL files (auto-created by running server)
+uttam.db-shm
+uttam.db-wal
+*.db-shm
+*.db-wal
+
