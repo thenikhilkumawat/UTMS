@@ -305,6 +305,11 @@
   };
 
   // ── Orders ───────────────────────────────────────────────────────────────
+  window.acctPgToggleOrder = function(card){
+    var detail = card.querySelector('.ord-detail');
+    if(detail) detail.style.display = detail.style.display === 'none' ? 'block' : 'none';
+  };
+
   function acctPgRenderOrders(pane){
     fetch('/api/account/orders').then(function(r){ return r.json(); }).then(function(d){
       var orders = d.orders || [];
@@ -317,8 +322,7 @@
         var statusColor = o.status && o.status.toLowerCase().indexOf('deliver')>-1 ? '#dcfce7;color:#15803d' :
                            o.status && o.status.toLowerCase().indexOf('ready')>-1 ? '#ede9fe;color:#6d28d9' :
                            o.status && o.status.toLowerCase()==='cancelled' ? '#fee2e2;color:#dc2626' : '#dbeafe;color:#1e40af';
-        var did = 'ord-d-'+idx;
-        html += '<div class="acctpg-card" style="cursor:pointer;" onclick="var el=document.getElementById(''+did+'');el.style.display=el.style.display==='none'?'block':'none'">' +
+        html += '<div class="acctpg-card" style="cursor:pointer;" onclick="acctPgToggleOrder(this)">' +
           '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">' +
             '<div>' +
               '<strong style="font-size:14px;">'+esc(o.order_code)+'</strong> <span class="acctpg-status" style="background:'+statusColor+';">'+esc((o.status||'').toUpperCase())+'</span>' +
@@ -332,7 +336,7 @@
             '</div>' +
           '</div>' +
           acctPgTrackingHtml(o.tracking) +
-          '<div id="'+did+'" style="display:none;margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">' +
+          '<div class="ord-detail" style="display:none;margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">' +
             '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">' +
               '<div><span style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;display:block;">Payment</span><span style="font-size:13px;font-weight:600;">'+esc(o.payment_mode||'—')+'</span></div>' +
               '<div><span style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;display:block;">Customer</span><span style="font-size:13px;font-weight:600;">'+esc(o.customer_name||'—')+'</span></div>' +
