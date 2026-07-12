@@ -492,10 +492,12 @@ function _doPlaceOrder(){
           theme: { color: '#C8903A' },
           modal: {
             ondismiss: function(){
-              // User closed — still go to confirmed (COD at shop)
-              sessionStorage.removeItem('pdp_order');sessionStorage.removeItem('cart_checkout');
-              if(_fromCart){try{localStorage.removeItem('uttam_cart');}catch(e){}if(typeof _updateCartBadge==='function')_updateCartBadge();}
-              window.location.href='/order-confirmed?code='+orderCode+'&pay=later';
+              // User cancelled — delete the order
+              fetch('/api/orders/'+orderId+'/cancel',{method:'POST',headers:{'Content-Type':'application/json'}})
+                .finally(function(){
+                  btn.textContent='Place Order & Pay Advance →';btn.disabled=false;
+                  alert('Payment cancelled. Your order was not placed. Please try again.');
+                });
             }
           },
           handler: function(response){
@@ -521,7 +523,11 @@ function _doPlaceOrder(){
         };
         var rzp = new Razorpay(options);
         rzp.on('payment.failed',function(resp){
-          window.location.href='/order-confirmed?code='+orderCode+'&pay=later';
+          fetch('/api/orders/'+orderId+'/cancel',{method:'POST',headers:{'Content-Type':'application/json'}})
+            .finally(function(){
+              btn.textContent='Place Order & Pay Advance →';btn.disabled=false;
+              alert('Payment failed. Your order was not placed. Please try again.');
+            });
         });
         btn.textContent='Place Order & Pay Advance →';btn.disabled=false;
         rzp.open();

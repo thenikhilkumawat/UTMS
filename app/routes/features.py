@@ -2227,3 +2227,16 @@ def razorpay_verify_payment():
 
     return jsonify({"ok": True, "order_code": order_code, "advance_paid": advance_rs})
 
+
+
+@features_bp.route("/api/orders/<int:order_id>/cancel", methods=["POST"])
+def order_cancel(order_id):
+    """Cancel (delete) an unpaid order — called when Razorpay is dismissed or payment fails."""
+    try:
+        db = get_db()
+        db.execute("DELETE FROM order_items WHERE order_id=?", (order_id,))
+        db.execute("DELETE FROM orders WHERE id=? AND advance_paid=0", (order_id,))
+        db.commit()
+        return jsonify({"ok": True})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
