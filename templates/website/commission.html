@@ -478,7 +478,7 @@ body{overflow-x:clip!important}
             <input type="hidden" name="coupon_discount" id="couponDiscount" value="0">
             <button type="submit" class="reserve-btn" id="reserveBtn" disabled>
               <span>Complete Your Order</span>
-              <span class="reserve-sub">Pay {{ cs.advance_pct|default(30) }}% advance — rest on delivery</span>
+              <span class="reserve-sub">Pay {{ cs.advance_pct|default(50) }}% advance — rest on delivery</span>
             </button>
             <ul class="trust-pills">
               {% if cs.trust_pill_1 %}<li>{{ cs.trust_pill_1 }}</li>{% endif %}
@@ -706,7 +706,7 @@ var _fcPopupOpen = false; // guards against the popup re-opening if another garm
 var GPRICES = {};
 {% for item in db_items %}GPRICES[{{ item.name|tojson }}] = parseInt({{ item.price|tojson }},10)||0;{% endfor %}
 var PRESELECT_NAME = {{ (garment_name or '')|tojson }};
-var ADVANCE_PCT = parseInt('{{ advance_pct|default(30) }}') || 30;
+var ADVANCE_PCT = parseInt('{{ advance_pct|default(50) }}') || 50;
 
 // ── PER-GARMENT SIZE STATE (Standard Size method) ──
 var GARMENT_SIZES = {}; // { "Denim Shirt": {size:'M', fit:'regular'}, ... }
@@ -1254,6 +1254,7 @@ function refreshSummary() {
   rows.innerHTML = html;
 }
 
+function toggleUrgent(cb){ refreshPrice(); }
 function refreshPrice() {
   var checked = Array.from(document.querySelectorAll('input[name="garment_type[]"]:checked'));
   var pe = document.getElementById('summary-price');

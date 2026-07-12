@@ -240,7 +240,7 @@
 
         <div class="rv-advance-box">
           <div style="font-family:var(--fm);font-size:8.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);margin-bottom:3px;">Payment</div>
-          <div style="font-size:12.5px;color:var(--dark);margin-bottom:5px;">30% advance · rest on delivery</div>
+          <div style="font-size:12.5px;color:var(--dark);margin-bottom:5px;">Full payment required upfront</div>
           <div style="font-size:13px;">Advance: <strong id="sumAdvance" style="color:var(--gold);font-size:15px;">—</strong></div>
         </div>
 
@@ -343,7 +343,7 @@ function updateSummary(){
   var total=base+urgent+delCharge;
   var disc=_couponDiscount||0;
   var finalTotal=Math.max(0,total-disc);
-  var finalAdv=Math.ceil(finalTotal*0.3);
+  var finalAdv=finalTotal;
 
   document.getElementById('sumStitch').textContent='Rs. '+base;
   var ur=document.getElementById('sumUrgentRow'); if(ur)ur.style.display=urgent?'':'none';
@@ -461,7 +461,7 @@ function _doPlaceOrder(){
       var orderId   = d.order_id;
       var orderCode = d.order_code;
       var totalRs   = parseFloat(d.payable_amount||0);
-      var advancePct= 30;
+      var advancePct= 100;
       var advanceRs = Math.max(1, Math.round(totalRs * advancePct / 100));
       // Create Razorpay order
       fetch('/api/payment/razorpay/create-order',{
