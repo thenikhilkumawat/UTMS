@@ -119,12 +119,12 @@
 .wa-fab:hover .wa-fab-label{max-width:160px;opacity:1;}
 
 /* ── DAILY CRAFT SECTION ── */
-.craft-section{background:var(--dark);padding:7rem 3rem;position:relative;overflow:hidden;}
-.craft-section::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(200,144,58,.07) 0%,transparent 70%);pointer-events:none;}
+.craft-section{background:#F5F0EA;padding:7rem 3rem;position:relative;overflow:hidden;}
+.craft-section::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(200,144,58,.05) 0%,transparent 70%);pointer-events:none;}
 .craft-inner{max-width:1220px;margin:0 auto;position:relative;z-index:1;}
-.craft-section .section-header .kicker{color:var(--gold-l);}
-.craft-section .section-title{color:#FAF0E4;}
-.craft-section .section-sub{color:rgba(250,240,228,.45);}
+.craft-section .section-header .kicker{color:var(--gold);}
+.craft-section .section-title{color:var(--dark);}
+.craft-section .section-sub{color:rgba(28,15,6,.5);}
 /* Masonry-style grid */
 .craft-grid{
   display:grid;
@@ -175,12 +175,12 @@
 .craft-view-all{
   display:inline-flex;align-items:center;gap:11px;
   padding:14px 40px;
-  border:1.5px solid rgba(200,144,58,.4);border-radius:var(--r);
+  border:1.5px solid var(--dark);border-radius:var(--r);
   font-family:var(--fm);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
-  color:rgba(250,240,228,.75);text-decoration:none;
+  color:var(--dark);text-decoration:none;
   transition:all .25s ease;background:transparent;
 }
-.craft-view-all:hover{border-color:var(--gold);color:#FAF0E4;background:rgba(200,144,58,.1);box-shadow:0 0 28px rgba(200,144,58,.15);}
+.craft-view-all:hover{border-color:var(--gold);color:var(--dark);background:rgba(200,144,58,.12);}
 @media(max-width:900px){
   .craft-section{padding:4.5rem 1.5rem;}
   .craft-grid{grid-template-columns:1fr 1fr;grid-template-rows:auto;grid-auto-rows:200px;gap:9px;}
@@ -1318,7 +1318,7 @@ fetch('/api/occasions/upcoming').then(function(r){return r.json();}).then(functi
             <span class="inspo-mosaic-label">Wedding wear</span>
           </div>
           <div class="inspo-mosaic-sm">
-            <img src="https://images.unsplash.com/photo-1583743089695-4b816a340f82?w=400&q=85&auto=format&fit=crop" alt="Ethnic kurta" loading="lazy">
+            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=85&auto=format&fit=crop" alt="Ethnic kurta" loading="lazy">
             <span class="inspo-mosaic-label">Ethnic &amp; kurta</span>
           </div>
           <div class="inspo-mosaic-sm">
@@ -1405,6 +1405,47 @@ fetch('/api/occasions/upcoming').then(function(r){return r.json();}).then(functi
 })();
 </script>
 <script>
+/* ── Reviews — seamless RAF auto-scroll ── */
+(function(){
+  var track = document.getElementById('reviewTrack');
+  if(!track) return;
+  var pos = 0;
+  var halfW = 0;
+  var pxPerMs = 0;
+  var lastTs = null;
+  var paused = false;
+
+  function measure(){
+    /* Track is 2× the content — seamless at halfW */
+    halfW = track.scrollWidth / 2;
+    /* 60s for one full pass across all reviews */
+    pxPerMs = halfW / 60000;
+  }
+
+  function tick(ts){
+    if(!paused && lastTs !== null){
+      var delta = ts - lastTs;
+      pos -= pxPerMs * delta;
+      if(pos <= -halfW) pos += halfW;
+      track.style.transform = 'translate3d('+pos.toFixed(2)+'px,0,0)';
+    }
+    lastTs = ts;
+    requestAnimationFrame(tick);
+  }
+
+  /* Pause on hover so users can read */
+  var wrap = track.parentElement;
+  if(wrap){ wrap.addEventListener('mouseenter',function(){paused=true;},{passive:true}); }
+  if(wrap){ wrap.addEventListener('mouseleave',function(){paused=false;},{passive:true}); }
+
+  requestAnimationFrame(function(){
+    measure();
+    window.addEventListener('resize', measure, {passive:true});
+    requestAnimationFrame(tick);
+  });
+})();
+</script>
+<script>
 /* ── Pricing tabs ── */
 function switchPrcTab(tab, paneId){
   document.querySelectorAll('.prc-tab').forEach(function(t){t.classList.remove('active');});
@@ -1418,8 +1459,8 @@ function switchPrcTab(tab, paneId){
   /* Most-specific patterns first — order matters */
   var IMG_MAP=[
     [/school|uniform/i,        'photo-1503676260728-1c00da094a0b'],
-    [/pathani/i,               'photo-1583743089695-4b816a340f82'],
-    [/kurta|ethnic/i,          'photo-1583743089695-4b816a340f82'],
+    [/pathani/i,               'photo-1507003211169-0a1dd7228f2d'],
+    [/kurta|ethnic/i,          'photo-1507003211169-0a1dd7228f2d'],
     [/wedding|occasion/i,      'photo-1519741497674-611481863552'],
     [/waistcoat/i,             'photo-1617127365659-c47fa9302312'],
     [/blazer/i,                'photo-1617127365659-c47fa9302312'],
@@ -1618,7 +1659,7 @@ function pickOcc(occ,el){
     {img:'photo-1507679799987-c73779587ccf',tag:'Suits',cap:'Bespoke suits, crafted to your measure'},
     {img:'photo-1519741497674-611481863552',tag:'Wedding',cap:'Wedding & occasion — flawless every time'},
     {img:'photo-1620012253295-c15cc3e65df4',tag:'Shirts',cap:'Premium custom shirts since 1987'},
-    {img:'photo-1583743089695-4b816a340f82',tag:'Kurta',cap:'Traditional & fusion ethnic wear'},
+    {img:'photo-1507003211169-0a1dd7228f2d',tag:'Kurta',cap:'Traditional & fusion ethnic wear'},
     {img:'photo-1617127365659-c47fa864d8bc',tag:'Blazers',cap:'Tailored blazers, your silhouette'},
     {img:'photo-1503676260728-1c00da094a0b',tag:'Uniforms',cap:'School & corporate uniforms, precise fits'}
   ];

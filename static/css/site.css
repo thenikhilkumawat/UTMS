@@ -31,11 +31,11 @@ button{cursor:pointer;font-family:var(--fb);border:none;background:none;}
 
 /* ANNOUNCEMENT BAR */
 .ann-bar{background:var(--dark2);color:var(--bg);height:36px;overflow:hidden;position:relative;z-index:200;}
-.ann-track{display:flex;gap:0;white-space:nowrap;animation:annScroll 28s linear infinite;}
+.ann-track{display:flex;gap:0;white-space:nowrap;will-change:transform;}
 .ann-item{padding:0 3rem;font-family:var(--fm);font-size:11px;letter-spacing:.1em;height:36px;display:inline-flex;align-items:center;gap:12px;flex-shrink:0;}
 .ann-item span{color:var(--gold-l);}
 .ann-dot{color:var(--gold);font-size:8px;}
-@keyframes annScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+
 
 /* NAV */
 .nav{position:fixed;top:36px;left:0;right:0;z-index:100;border-bottom:1px solid transparent;transition:background var(--t),border-color var(--t),top var(--t);}
@@ -180,9 +180,10 @@ button{cursor:pointer;font-family:var(--fb);border:none;background:none;}
 
 /* REVIEWS */
 .reviews{padding:0 3rem 7rem;background:var(--bg);}
-.reviews-track{display:flex;gap:1.5rem;max-width:1400px;margin:0 auto;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding-bottom:1rem;}
+.reviews-track-wrap{overflow:hidden;max-width:1400px;margin:0 auto;}
+.reviews-track{display:flex;gap:1.5rem;white-space:nowrap;will-change:transform;padding-bottom:1rem;}
 .reviews-track::-webkit-scrollbar{display:none;}
-.review-card{flex:0 0 340px;scroll-snap-align:start;background:var(--bg2);border:1px solid var(--border);border-radius:var(--rLg);padding:2rem;}
+.review-card{flex:0 0 320px;flex-shrink:0;background:var(--bg2);border:1px solid var(--border);border-radius:var(--rLg);padding:2rem;}
 .review-top{display:flex;align-items:center;gap:12px;margin-bottom:1.25rem;}
 .review-av{width:44px;height:44px;border-radius:50%;background:var(--dark);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:17px;color:var(--gold-l);flex-shrink:0;}
 .review-name{font-size:14px;font-weight:500;color:var(--dark);}
