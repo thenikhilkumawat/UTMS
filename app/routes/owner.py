@@ -3857,8 +3857,16 @@ def homepage_section_save():
     active = int(d.get("active", 1))
     if not section_key: return jsonify({"ok":False,"error":"section_key required"})
     try:
-        db.execute("UPDATE home_sections SET content=?, active=? WHERE section_key=?",
-                   (json.dumps(content), active, section_key))
+        # UPSERT: insert if missing, then update — so hero (and any new section) is always saved
+        db.execute(
+            "INSERT OR IGNORE INTO home_sections(section_key, section_title, content, sort_order, active)"
+            " VALUES(?, ?, '{}', 99, 1)",
+            (section_key, section_key.replace('_', ' ').title())
+        )
+        db.execute(
+            "UPDATE home_sections SET content=?, active=? WHERE section_key=?",
+            (json.dumps(content), active, section_key)
+        )
         db.commit()
         return jsonify({"ok":True})
     except Exception as e: return jsonify({"ok":False,"error":str(e)})
