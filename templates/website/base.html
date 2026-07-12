@@ -377,7 +377,8 @@
     </div>
     <a href="{{ url_for('website.about') }}" class="drawer-link {% if active=='about' %}active-link{% endif %}">Our Story</a>
     <a href="{{ url_for('website.contact') }}" class="drawer-link {% if active=='contact' %}active-link{% endif %}">Contact</a>
-    <a href="#" class="drawer-link" onclick="mmClose();setTimeout(function(){toggleSuppPanel();},200);return false;">Support</a>
+    <a href="{{ url_for('website.track_order') }}" class="drawer-link {% if active=='track' %}active-link{% endif %}">Track Your Order</a>
+    <a href="/ai-customize" class="drawer-link {% if active=='ai_customize' %}active-link{% endif %}" style="color:var(--gold);font-weight:700;">✦ AI Style Studio</a>
   </nav>
   <div class="drawer-footer">
     <a href="{{ url_for('website.commission') }}" class="nav-cta" style="display:block;text-align:center;">Customise Your Garment &rarr;</a>
@@ -501,7 +502,8 @@
         <a href="{{ url_for('website.services') }}">Our Craft</a>
         <a href="{{ url_for('website.about') }}">Our Story</a>
         <a href="{{ url_for('website.contact') }}">Contact Us</a>
-        <a href="{{ url_for('website.track_order') }}">Track your order</a>
+        <a href="{{ url_for('website.track_order') }}">Track Your Order</a>
+        <a href="/ai-customize" style="color:var(--gold);">✦ AI Style Studio</a>
         <a href="/style-request">Bring Your Inspo</a>
         <a href="/our-work">Fresh From The Workshop</a>
         {% for page in footer_pages if page.show_in_footer %}
