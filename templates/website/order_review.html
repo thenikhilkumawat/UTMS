@@ -161,6 +161,8 @@
             <input class="rv-input" id="custPhone" placeholder="Mobile *" type="tel" inputmode="numeric" maxlength="10" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)">
           </div>
           <input class="rv-input" id="custEmail" placeholder="Email (for order updates)" type="email" style="margin-bottom:7px;">
+          <!-- Saved address picker (shows if logged in + has saved addresses) -->
+          <div id="savedAddrPicker" style="display:none;margin-bottom:8px;"></div>
           <div class="rv-addr-wrap">
             <input class="rv-input" id="custAddress" placeholder="Delivery address (optional)" type="text" style="flex:1;margin-bottom:0;">
             <button type="button" class="rv-loc-btn" id="locBtn" title="Detect location" onclick="detectLocation('custAddress',this)">
@@ -672,7 +674,45 @@ _manageSummary();
 window.addEventListener('scroll',_manageSummary,{passive:true});
 window.addEventListener('resize',_manageSummary);
 
-document.addEventListener('DOMContentLoaded',function(){init();_manageSummary();});
+document.addEventListener('DOMContentLoaded',function(){init();_manageSummary();_loadSavedAddresses();});
+
+function _loadSavedAddresses(){
+  fetch('/api/account/addresses').then(function(r){return r.json();}).then(function(d){
+    if(!d.ok||!d.addresses||!d.addresses.length) return;
+    var picker = document.getElementById('savedAddrPicker');
+    if(!picker) return;
+    var addrs = d.addresses;
+    var html = '<div style="font-size:11px;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;margin-bottom:5px;">Saved Addresses</div>';
+    html += '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
+    addrs.forEach(function(a,i){
+      var full = [a.line1, a.line2, a.city, a.state, a.pincode].filter(Boolean).join(', ');
+      html += '<button type="button" onclick="_selectSavedAddr(this,''+full.replace(/'/g,"\'")+'')" '+
+        'style="background:'+(i===0?'var(--gold)':'#f5f0e8')+';color:'+(i===0?'#fff':'var(--dark)')+';'+
+        'border:1px solid '+(i===0?'var(--gold)':'#ddd4c4')+';border-radius:20px;padding:5px 12px;font-size:12px;cursor:pointer;text-align:left;max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" '+
+        'title="'+full+'">'+
+        (a.label||'Address')+': '+a.city+
+      '</button>';
+    });
+    html += '</div>';
+    picker.innerHTML = html;
+    picker.style.display = 'block';
+    // Auto-fill first (default) address
+    var first = addrs[0];
+    var full = [first.line1, first.line2, first.city, first.state, first.pincode].filter(Boolean).join(', ');
+    var el = document.getElementById('custAddress');
+    if(el && !el.value) el.value = full;
+  }).catch(function(){});
+}
+
+function _selectSavedAddr(btn, full){
+  // Highlight selected
+  var btns = btn.parentNode.querySelectorAll('button');
+  btns.forEach(function(b){
+    b.style.background='#f5f0e8'; b.style.color='var(--dark)'; b.style.borderColor='#ddd4c4';
+  });
+  btn.style.background='var(--gold)'; btn.style.color='#fff'; btn.style.borderColor='var(--gold)';
+  document.getElementById('custAddress').value = full;
+}
 if(document.readyState==='complete'||document.readyState==='interactive'){
   setTimeout(function(){if(document.getElementById('revSub')&&document.getElementById('revSub').textContent==='Loading...')init();},200);
 }

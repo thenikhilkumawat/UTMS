@@ -602,6 +602,18 @@ def account_me():
         k = acc.keys()
         def _g(field, default=""):
             return acc[field] if field in k else default
+        # Load default address from web_addresses
+        addr = {}
+        try:
+            _ensure_addresses_table()
+            row = get_db().execute(
+                "SELECT * FROM web_addresses WHERE account_id=? ORDER BY is_default DESC, id DESC LIMIT 1",
+                (acc["id"],)
+            ).fetchone()
+            if row:
+                addr = dict(row)
+        except Exception:
+            pass
         return jsonify({
             "ok": True, "logged_in": True,
             "name":            _g("name"),
@@ -609,11 +621,11 @@ def account_me():
             "email":           _g("email"),
             "preview_count":   _g("preview_count", 0) or 0,
             "profile_image":   _g("profile_image"),
-            "address_line1":   _g("address_line1"),
-            "address_line2":   _g("address_line2"),
-            "address_city":    _g("address_city"),
-            "address_state":   _g("address_state"),
-            "address_pincode": _g("address_pincode"),
+            "address_line1":   addr.get("line1",""),
+            "address_line2":   addr.get("line2",""),
+            "address_city":    addr.get("city",""),
+            "address_state":   addr.get("state",""),
+            "address_pincode": addr.get("pincode",""),
         })
     return jsonify({"ok": True, "logged_in": False})
 
@@ -1128,20 +1140,45 @@ def account_logout():
 
 @features_bp.route("/api/account/profile", methods=["POST"])
 def account_profile_update():
-    """Update name / email on the account."""
+    """Update name / email + default address on the account."""
     acc = _get_account()
     if not acc:
         return jsonify({"ok": False, "error": "Not logged in"}), 401
-    d    = request.get_json(force=True, silent=True) or {}
+    d     = request.get_json(force=True, silent=True) or {}
     name  = (d.get("name")  or "").strip()
     email = (d.get("email") or "").strip()
     if not name:
         return jsonify({"ok": False, "error": "Name required"})
+    line1   = (d.get("address_line1")   or "").strip()
+    line2   = (d.get("address_line2")   or "").strip()
+    city    = (d.get("address_city")    or "").strip()
+    state   = (d.get("address_state")   or "").strip()
+    pincode = (d.get("address_pincode") or "").strip()
     db = get_db()
-    db.execute(
-        "UPDATE web_accounts SET name=?, email=? WHERE id=?",
-        (name, email, acc["id"])
-    )
+    db.execute("UPDATE web_accounts SET name=?, email=? WHERE id=?", (name, email, acc["id"]))
+    # Save/update default address in web_addresses
+    if line1 and city:
+        try:
+            _ensure_addresses_table()
+            existing = db.execute(
+                "SELECT id FROM web_addresses WHERE account_id=? AND is_default=1 LIMIT 1",
+                (acc["id"],)
+            ).fetchone()
+            if existing:
+                db.execute(
+                    "UPDATE web_addresses SET full_name=?,line1=?,line2=?,city=?,state=?,pincode=? WHERE id=?",
+                    (name, line1, line2, city, state, pincode, existing["id"])
+                )
+            else:
+                mobile = acc["mobile"] if "mobile" in acc.keys() else ""
+                db.execute(
+                    """INSERT INTO web_addresses
+                       (account_id,label,full_name,mobile,line1,line2,city,state,pincode,is_default)
+                       VALUES(?,?,?,?,?,?,?,?,?,1)""",
+                    (acc["id"], "Home", name, mobile, line1, line2, city, state, pincode)
+                )
+        except Exception:
+            pass
     db.commit()
     return jsonify({"ok": True})
 
