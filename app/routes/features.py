@@ -452,42 +452,49 @@ def style_request_page():
 
 @features_bp.route("/api/style-request/start", methods=["POST"])
 def style_request_start():
-    ensure_tables()
-    db  = get_db()
-    acc = _get_account()
+    import traceback
+    try:
+        ensure_tables()
+        db  = get_db()
+        acc = _get_account()
 
-    # Session key for guest ownership
-    sess_key = session.get("style_session_key") or uuid.uuid4().hex
-    session["style_session_key"] = sess_key
+        # Session key for guest ownership
+        sess_key = session.get("style_session_key") or uuid.uuid4().hex
+        session["style_session_key"] = sess_key
 
-    image_url = _save_upload(request.files.get("image"), "inspo")
-    name      = request.form.get("customer_name","").strip()
-    mobile    = request.form.get("customer_mobile","").strip()
-    garment   = request.form.get("garment_type","").strip()
-    stitch    = request.form.get("stitching_type","standard").strip()
-    notes     = request.form.get("style_notes","").strip()
-    now       = _now()
+        image_url = _save_upload(request.files.get("image"), "inspo")
+        name      = request.form.get("customer_name","").strip()
+        mobile    = request.form.get("customer_mobile","").strip()
+        garment   = request.form.get("garment_type","").strip()
+        stitch    = request.form.get("stitching_type","standard").strip()
+        notes     = request.form.get("style_notes","").strip()
+        now       = _now()
 
-    cur = db.execute(
-        "INSERT INTO style_requests"
-        "(account_id,session_key,customer_name,customer_mobile,"
-        "garment_type,stitching_type,style_notes,image_url,status,created_at,updated_at)"
-        "VALUES(?,?,?,?,?,?,?,?,?,?,?)",
-        (acc["id"] if acc else None, sess_key, name, mobile,
-         garment, stitch, notes, image_url, "pending", now, now)
-    )
-    req_id = cur.lastrowid
+        cur = db.execute(
+            "INSERT INTO style_requests"
+            " (account_id,session_key,customer_name,customer_mobile,"
+            "garment_type,stitching_type,style_notes,image_url,status,created_at,updated_at)"
+            " VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+            (acc["id"] if acc else None, sess_key, name, mobile,
+             garment, stitch, notes, image_url, "pending", now, now)
+        )
+        req_id = cur.lastrowid
 
-    # First message = the customer's notes + image
-    first_msg = notes or "Hi! I'd like a custom garment based on my inspo image."
-    db.execute(
-        "INSERT INTO style_request_messages(request_id,sender,message,image_url,created_at)"
-        "VALUES(?,?,?,?,?)",
-        (req_id, "customer", first_msg, image_url, now)
-    )
-    db.commit()
-    session[f"sr_{req_id}"] = True
-    return jsonify({"ok": True, "request_id": req_id})
+        # First message = the customer's notes + image
+        first_msg = notes or "Hi! I'd like a custom garment based on my inspo image."
+        db.execute(
+            "INSERT INTO style_request_messages(request_id,sender,message,image_url,created_at)"
+            " VALUES(?,?,?,?,?)",
+            (req_id, "customer", first_msg, image_url, now)
+        )
+        db.commit()
+        session[f"sr_{req_id}"] = True
+        return jsonify({"ok": True, "request_id": req_id})
+    except Exception as e:
+        import traceback as _tb
+        err_detail = _tb.format_exc()
+        print("style_request_start ERROR:", err_detail)
+        return jsonify({"ok": False, "error": str(e), "detail": err_detail[-500:]}), 500
 
 @features_bp.route("/api/style-request/<int:req_id>/messages")
 def style_request_messages(req_id):

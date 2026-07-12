@@ -365,7 +365,10 @@ function submitInspo(){
   fd.append('stitching_type', stitch ? stitch.dataset.val : 'standard');
   fd.append('style_notes', styleNotes);
   fetch('/api/style-request/start', {method:'POST', body:fd})
-    .then(function(r){return r.json();})
+    .then(function(r){
+      if(!r.ok){ return r.text().then(function(t){ throw new Error('HTTP '+r.status+': '+t.slice(0,200)); }); }
+      return r.json();
+    })
     .then(function(d){
       if(d.ok){
         _reqId = d.request_id;
@@ -373,11 +376,12 @@ function submitInspo(){
         showPhase(4);
         startChatPoll();
       } else {
-        alert('Something went wrong. Please try again.');
+        alert('Error: '+(d.error||'Something went wrong. Please try again.'));
         btn.disabled=false; btn.textContent='Submit Request →';
       }
-    }).catch(function(){
-      alert('Network error. Please try again.');
+    }).catch(function(e){
+      console.error('style-request error:', e);
+      alert('Submit failed: '+(e.message||'Network error'));
       btn.disabled=false; btn.textContent='Submit Request →';
     });
 }
