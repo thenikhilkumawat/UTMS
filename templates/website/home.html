@@ -1640,10 +1640,22 @@ function pickOcc(occ,el){
   grid.innerHTML = buildFallback();
   observeAll();
 
-  /* Replace with real uploaded photos if available */
+  /* Replace with real uploaded photos; pad with fallback if fewer than 5 */
   fetch('/api/daily-craft/latest?n=6').then(function(r){ return r.json(); }).then(function(d){
     if(!d.ok || !d.items || !d.items.length) return; /* keep beautiful fallback */
-    grid.innerHTML = buildFromDB(d.items);
+    var items = d.items;
+    /* Pad to 5 tiles minimum so the CSS grid layout fills correctly */
+    if(items.length < 5){
+      var needed = 5 - items.length;
+      FALLBACK.slice(0, needed).forEach(function(p){
+        items.push({
+          image_url: 'https://images.unsplash.com/'+p.img+'?w=600&q=82&auto=format&fit=crop',
+          tag: p.tag,
+          caption: p.cap
+        });
+      });
+    }
+    grid.innerHTML = buildFromDB(items);
     observeAll();
   }).catch(function(){}); /* silently keep fallback on error */
 })();
