@@ -1194,6 +1194,9 @@ function closePopup(){
     var p = document.getElementById('suppPanel');
     p.classList.toggle('open');
     document.getElementById('suppNotif').style.display = 'none';
+    /* hide WA FAB when support panel is open */
+    var waFab = document.querySelector('.wa-fab');
+    if(waFab) waFab.style.display = p.classList.contains('open') ? 'none' : '';
     if(p.classList.contains('open')){
       if(_suppChatId){
         showSuppChat();
