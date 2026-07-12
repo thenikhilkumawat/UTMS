@@ -2896,7 +2896,7 @@ def website_admin():
                    COALESCE(c.name,'—') as cname, COALESCE(c.mobile,'') as mobile
             FROM orders o
             LEFT JOIN customers c ON c.id = o.customer_id
-            WHERE o.note LIKE '[WEB/%' OR o.payment_mode = 'online'
+            WHERE o.note LIKE '[WEB/%' OR o.payment_mode IN ('online','razorpay')
             ORDER BY o.id DESC LIMIT 100
         """).fetchall()
     except: web_orders = []
@@ -2907,9 +2907,9 @@ def website_admin():
     try: pages = db.execute("SELECT * FROM web_pages ORDER BY sort_order,id").fetchall()
     except: pages = []
     total_web = len(web_orders)
-    try: today_web = db.execute("SELECT COUNT(*) FROM orders WHERE (note LIKE '[WEB/%' OR payment_mode='online') AND DATE(order_date)=DATE('now')").fetchone()[0]
+    try: today_web = db.execute("SELECT COUNT(*) FROM orders WHERE (note LIKE '[WEB/%' OR payment_mode IN ('online','razorpay')) AND DATE(order_date)=DATE('now')").fetchone()[0]
     except: today_web = 0
-    try: pending_web = db.execute("SELECT COUNT(*) FROM orders WHERE (note LIKE '[WEB/%' OR payment_mode='online') AND status NOT IN ('delivered','cancelled')").fetchone()[0]
+    try: pending_web = db.execute("SELECT COUNT(*) FROM orders WHERE (note LIKE '[WEB/%' OR payment_mode IN ('online','razorpay')) AND status NOT IN ('delivered','cancelled')").fetchone()[0]
     except: pending_web = 0
     fabric_count = len(fabrics)
     try:

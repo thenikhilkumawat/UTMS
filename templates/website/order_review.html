@@ -216,7 +216,7 @@
               <div class="rv-del-name">Home delivery</div>
               <div class="rv-del-sub" id="delHomeSub">Within Sikar · 1–2 days after ready</div>
             </div>
-            <div class="rv-del-price" id="delHomePrice">Rs. 100</div>
+            <div class="rv-del-price" id="delHomePrice">Free</div>
           </div>
         </div>
 
@@ -339,7 +339,7 @@ function updateSummary(){
   var cb=document.getElementById('revUrgent');
   var isUrgent=cb?cb.checked:(_order.urgent||false);
   var urgent=isUrgent?99:0;
-  var delCharge=_delivery==='home'?(base+urgent)>=FREE_DELIVERY_ABOVE?0:100:0;
+  var delCharge=0; // Delivery always free
   var total=base+urgent+delCharge;
   var disc=_couponDiscount||0;
   var finalTotal=Math.max(0,total-disc);
@@ -394,7 +394,7 @@ function applyCoupon(){
   var base=(_order.item_price||0)*(_order.qty||1);
   var cb=document.getElementById('revUrgent');
   var urgent=(cb&&cb.checked)?99:0;
-  var delCharge=_delivery==='home'&&(base+urgent)<FREE_DELIVERY_ABOVE?100:0;
+  var delCharge=0; // Delivery always free
   fetch('/api/validate-coupon',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:code,order_total:base+urgent+delCharge})})
   .then(function(r){return r.json();}).then(function(d){
     if(d.valid){_couponDiscount=d.discount;_couponCode=code;if(msg){msg.style.color='#16a34a';msg.textContent=d.message;}}
@@ -613,7 +613,7 @@ function revDoLogin(){
   if((!mobile&&!email)||!pass){msg.textContent='Please enter your mobile/email and password.';return;}
   fetch('/api/account/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({identifier:mobile||email,password:pass})})
   .then(function(r){return r.json();}).then(function(d){
-    if(d.ok){_prefillAccount(d.account||d);if(_pendingPlaceOrder){_pendingPlaceOrder=false;setTimeout(function(){_doPlaceOrder();},400);}}
+    if(d.ok){_prefillAccount(d.account||d);_loadSavedAddresses();if(_pendingPlaceOrder){_pendingPlaceOrder=false;setTimeout(function(){_doPlaceOrder();},400);}}
     else{msg.textContent=d.error||'Login failed. Please check your credentials.';}
   }).catch(function(){msg.textContent='Connection error. Please try again.';});
 }
@@ -629,7 +629,7 @@ function revDoSignup(){
   if(!pass||pass.length<6){msg.textContent='Password must be at least 6 characters.';return;}
   fetch('/api/account/signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,mobile:mobile,email:email,password:pass})})
   .then(function(r){return r.json();}).then(function(d){
-    if(d.ok){_prefillAccount({name:name,mobile:mobile,email:email});if(_pendingPlaceOrder){_pendingPlaceOrder=false;setTimeout(function(){_doPlaceOrder();},400);}}
+    if(d.ok){_prefillAccount({name:name,mobile:mobile,email:email});_loadSavedAddresses();if(_pendingPlaceOrder){_pendingPlaceOrder=false;setTimeout(function(){_doPlaceOrder();},400);}}
     else{msg.textContent=d.error||'Could not create account. Please try again.';}
   }).catch(function(){msg.textContent='Connection error. Please try again.';});
 }

@@ -90,6 +90,12 @@
       <div class="tracker-note" id="trackerNote" style="display:none;"></div>
     </div>
     {% endif %}
+    <div style="background:#fdf6ee;border:1px solid #e8d9c5;border-radius:10px;padding:14px 18px;margin-bottom:1.25rem;text-align:left;">
+      <div style="font-size:11px;font-weight:700;color:#7a6a58;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;">✂ For Alterations</div>
+      <div style="font-size:13px;color:#3a2a18;line-height:1.6;">Please visit our shop with your garment.<br>
+      <strong>Uttam Tailors</strong> · Subhash Chowk, Sikar, Rajasthan 332001<br>
+      <a href="tel:+916375471453" style="color:var(--gold);font-weight:600;">+91 63754 71453</a></div>
+    </div>
     <div style="display:flex;flex-direction:column;gap:12px;align-items:center;">
       {% if order %}
       <a href="{{ url_for('website.track_order') }}?code={{ order.order_code }}" class="btn-primary" style="display:inline-flex;align-items:center;gap:.5rem;justify-content:center;padding:14px 32px;background:#2e1a0e;">
