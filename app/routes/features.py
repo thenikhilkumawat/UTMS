@@ -1892,7 +1892,7 @@ def orders_create():
 
     # ── Coupon validation ────────────────────────────────────────────────────
     base_amount     = round(garment_price * quantity, 2)
-    extra_charges   = round(base_amount * 0.10, 2) if urgent else 0.0
+    extra_charges   = 99.0 if urgent else 0.0
     payable_amount  = round(base_amount + extra_charges, 2)
     coupon_discount = 0.0
     coupon_row      = None

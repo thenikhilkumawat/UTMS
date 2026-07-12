@@ -917,8 +917,8 @@ def create_order():
         fabric_cost = float(request.form.get("fabric_cost", 0) or 0)
         total_amount += fabric_cost
 
-        # Urgent surcharge 10%
-        extra_charges = round(total_amount * 0.10, 2) if is_urgent else 0.0
+        # Urgent surcharge — flat Rs. 99
+        extra_charges = 99.0 if is_urgent else 0.0
         payable_amount = round(total_amount + extra_charges, 2)
 
         # ── Coupon discount (server-side re-validation) ──

@@ -189,7 +189,7 @@
           <button type="button" class="rv-seg-opt" id="priUrg" onclick="selectPriority('urgent',this)">
             <div>
               <div class="rv-seg-label">⚡ Urgent</div>
-              <div class="rv-seg-desc">2–3 days · +10%</div>
+              <div class="rv-seg-desc">2–3 days · +Rs. 99</div>
             </div>
           </button>
         </div>
@@ -232,7 +232,7 @@
       <div class="rv-card" style="margin-bottom:0;">
         <div class="rv-card-label">Order Summary</div>
         <div class="rv-sum-line"><span>Stitching</span><span id="sumStitch">—</span></div>
-        <div class="rv-sum-line" id="sumUrgentRow" style="display:none;"><span>⚡ Urgent (+10%)</span><span id="sumUrgent">—</span></div>
+        <div class="rv-sum-line" id="sumUrgentRow" style="display:none;"><span>⚡ Urgent (+Rs. 99)</span><span id="sumUrgent">—</span></div>
         <div class="rv-sum-line"><span id="sumDeliveryLabel">Delivery</span><span id="sumDelivery">Free</span></div>
         <div class="rv-sum-line" id="couponRow" style="display:none;color:#16a34a;"><span>Coupon</span><span id="couponDiscount">—</span></div>
         <div class="rv-sum-div"></div>
@@ -338,7 +338,7 @@ function updateSummary(){
   var base=(_order.item_price||0)*(_order.qty||1);
   var cb=document.getElementById('revUrgent');
   var isUrgent=cb?cb.checked:(_order.urgent||false);
-  var urgent=isUrgent?Math.round(base*0.1):0;
+  var urgent=isUrgent?99:0;
   var delCharge=_delivery==='home'?(base+urgent)>=FREE_DELIVERY_ABOVE?0:100:0;
   var total=base+urgent+delCharge;
   var disc=_couponDiscount||0;
@@ -393,7 +393,7 @@ function applyCoupon(){
   if(!code){if(msg)msg.textContent='';return;}
   var base=(_order.item_price||0)*(_order.qty||1);
   var cb=document.getElementById('revUrgent');
-  var urgent=(cb&&cb.checked)?Math.round(base*0.1):0;
+  var urgent=(cb&&cb.checked)?99:0;
   var delCharge=_delivery==='home'&&(base+urgent)<FREE_DELIVERY_ABOVE?100:0;
   fetch('/api/validate-coupon',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:code,order_total:base+urgent+delCharge})})
   .then(function(r){return r.json();}).then(function(d){
