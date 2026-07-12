@@ -1484,35 +1484,29 @@ function loadStitchOrders(){
     document.getElementById('st_oc_addr').textContent=o.address||'—';
     document.getElementById('st_oc_del').textContent=o.delivery_date||'—';
     document.getElementById('st_oc_status').textContent=o.status||'—';
-    var paid=o.advance||0, rem=o.remaining||0, total=o.total_amount||0;
+    var paid=o.advance_paid||0, rem=o.remaining||0, total=o.payable_amount||0;
     document.getElementById('st_oc_amt').innerHTML='Total ₹'+total+' | Paid ₹'+paid+' | <span style="color:'+(rem>0?'#dc2626':'#15803d')+'">Due ₹'+rem+'</span>';
-    /* Parse garments JSON */
+    /* Garments — array of {name, qty, measurements, notes} from order_items */
+    var garments=o.garments||[];
     var gStr='';
-    try{
-      var garments=typeof o.garments==='string'?JSON.parse(o.garments):o.garments||[];
-      if(Array.isArray(garments)){
-        garments.forEach(function(g,i){
-          gStr+=(i+1)+'. '+(g.name||g.garment||g.type||JSON.stringify(g));
-          if(g.qty&&g.qty>1) gStr+=' ×'+g.qty;
-          if(g.fabric) gStr+=' ['+g.fabric+']';
-          gStr+='
-';
-        });
-      } else { gStr=o.garments||'—'; }
-    }catch(e){ gStr=o.garments||'—'; }
+    garments.forEach(function(g,i){
+      gStr+=(i+1)+'. '+g.name;
+      if(g.qty&&g.qty>1) gStr+=' ×'+g.qty;
+      if(g.notes) gStr+=' ('+g.notes+')';
+      gStr+='\n';
+    });
     document.getElementById('st_oc_garments').textContent=gStr.trim()||'No items listed';
-    /* Measurements */
+    /* Measurements — per-item from order_items */
     var mWrap=document.getElementById('st_oc_meas_wrap');
     var mEl=document.getElementById('st_oc_meas');
-    if(o.measurements){
-      var mStr='';
-      try{
-        var m=typeof o.measurements==='string'?JSON.parse(o.measurements):o.measurements;
-        Object.entries(m).forEach(function(kv){ if(kv[1]) mStr+=kv[0]+': '+kv[1]+'
-'; });
-      }catch(e){ mStr=o.measurements; }
-      mEl.textContent=mStr.trim();
-      mWrap.style.display=mStr.trim()?'block':'none';
+    var mStr='';
+    garments.forEach(function(g){
+      if(g.measurements&&g.measurements.trim()){
+        mStr+=g.name+': '+g.measurements.trim()+'\n';
+      }
+    });
+    mEl.textContent=mStr.trim();
+    mWrap.style.display=mStr.trim()?'block':'none';
     } else { mWrap.style.display='none'; }
     card.style.display='block';
     toast('Loaded — '+code+' · Stage '+d.stage+' ('+( sl[d.stage]||'Unknown')+')');

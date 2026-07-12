@@ -203,17 +203,31 @@ def order_stage_get(order_code):
         "SELECT stage, note, updated_at FROM order_stages WHERE order_code=?",
         (order_code,)
     ).fetchone()
-    # Fetch full order + customer details
+    # Fetch full order + customer details (garments from order_items)
     order = db.execute(
-        """SELECT o.order_code, o.garments, o.measurements, o.status,
-                  o.delivery_date, o.total_amount, o.advance, o.remaining,
-                  o.note as order_note, o.is_urgent,
+        """SELECT o.order_code, o.status, o.is_urgent, o.note as order_note,
+                  o.delivery_date, o.payable_amount, o.advance_paid, o.remaining,
                   c.name as cname, c.mobile, c.address
            FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
            WHERE o.order_code=?""",
         (order_code,)
     ).fetchone()
-    order_data = dict(order) if order else {}
+    order_data = {}
+    if order:
+        order_data = dict(order)
+        # Get garments from order_items
+        items = db.execute(
+            """SELECT oi.garment_type, oi.quantity, oi.measurements, oi.notes
+               FROM order_items oi
+               JOIN orders o ON o.id = oi.order_id
+               WHERE o.order_code=?""",
+            (order_code,)
+        ).fetchall()
+        order_data["garments"] = [
+            {"name": it["garment_type"], "qty": it["quantity"],
+             "measurements": it["measurements"] or "", "notes": it["notes"] or ""}
+            for it in items
+        ]
     stage_val = row["stage"] if row else 1
     note_val  = row["note"] or "" if row else ""
     updated   = row["updated_at"] if row else ""
