@@ -783,9 +783,32 @@
     <div class="wa-card">
       <div class="wa-card-title">Live Stitch Tracker - Update Order Stage</div>
       <p style="font-size:12.5px;color:#7a6a58;margin-bottom:1rem;">Enter an order code, load its stage, then update. Customer sees it live on their order page.</p>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:1rem;">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:1.2rem;">
         <input class="wa-in" id="st_order_code" placeholder="Order code e.g. 3601" style="max-width:200px;">
         <button class="wa-btn" style="background:#1a0e06;color:#fff;" onclick="loadStitchOrders()">Load Stage</button>
+      </div>
+      <!-- Order details card — shown after load -->
+      <div id="st_order_card" style="display:none;background:#fdf8f2;border:1.5px solid #e8d9c4;border-radius:12px;padding:1rem 1.25rem;margin-bottom:1.25rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.7rem;">
+          <strong id="st_oc_code" style="font-size:15px;color:#1a0e06;"></strong>
+          <span id="st_oc_urgent" style="display:none;background:#dc2626;color:#fff;font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;letter-spacing:.05em;">URGENT</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem .75rem;font-size:12.5px;margin-bottom:.7rem;">
+          <div><span style="color:#7a6a58;">Customer</span><br><strong id="st_oc_name"></strong></div>
+          <div><span style="color:#7a6a58;">Mobile</span><br><strong id="st_oc_mobile"></strong></div>
+          <div><span style="color:#7a6a58;">Address</span><br><span id="st_oc_addr" style="color:#5a3e1b;"></span></div>
+          <div><span style="color:#7a6a58;">Delivery By</span><br><strong id="st_oc_del"></strong></div>
+          <div><span style="color:#7a6a58;">Status</span><br><span id="st_oc_status" style="text-transform:capitalize;font-weight:600;color:#15803d;"></span></div>
+          <div><span style="color:#7a6a58;">Amount</span><br><span id="st_oc_amt"></span></div>
+        </div>
+        <div style="border-top:1px solid #e8d9c4;padding-top:.6rem;margin-bottom:.4rem;">
+          <span style="color:#7a6a58;font-size:11.5px;">Garments &amp; Items</span>
+          <div id="st_oc_garments" style="font-size:12.5px;color:#1a0e06;margin-top:3px;white-space:pre-wrap;"></div>
+        </div>
+        <div id="st_oc_meas_wrap" style="border-top:1px solid #e8d9c4;padding-top:.6rem;display:none;">
+          <span style="color:#7a6a58;font-size:11.5px;">Measurements</span>
+          <div id="st_oc_meas" style="font-size:12px;color:#5a3e1b;margin-top:3px;white-space:pre-wrap;"></div>
+        </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1rem;">
         <div>
@@ -1450,7 +1473,49 @@ function loadStitchOrders(){
     document.getElementById('st_stage_sel').value=d.stage;
     document.getElementById('st_note').value=d.note||'';
     var sl={1:'Order Received',2:'Fabric Cut',3:'Stitching',4:'Quality Check',5:'Ready'};
-    toast('Loaded — '+code+' is at Stage '+d.stage+' ('+( sl[d.stage]||'Unknown')+')');
+    /* ── Show order detail card ── */
+    var o=d.order||{};
+    var card=document.getElementById('st_order_card');
+    document.getElementById('st_oc_code').textContent=code;
+    var urg=document.getElementById('st_oc_urgent');
+    urg.style.display=o.is_urgent?'inline':'none';
+    document.getElementById('st_oc_name').textContent=o.cname||'—';
+    document.getElementById('st_oc_mobile').textContent=o.mobile||'—';
+    document.getElementById('st_oc_addr').textContent=o.address||'—';
+    document.getElementById('st_oc_del').textContent=o.delivery_date||'—';
+    document.getElementById('st_oc_status').textContent=o.status||'—';
+    var paid=o.advance||0, rem=o.remaining||0, total=o.total_amount||0;
+    document.getElementById('st_oc_amt').innerHTML='Total ₹'+total+' | Paid ₹'+paid+' | <span style="color:'+(rem>0?'#dc2626':'#15803d')+'">Due ₹'+rem+'</span>';
+    /* Parse garments JSON */
+    var gStr='';
+    try{
+      var garments=typeof o.garments==='string'?JSON.parse(o.garments):o.garments||[];
+      if(Array.isArray(garments)){
+        garments.forEach(function(g,i){
+          gStr+=(i+1)+'. '+(g.name||g.garment||g.type||JSON.stringify(g));
+          if(g.qty&&g.qty>1) gStr+=' ×'+g.qty;
+          if(g.fabric) gStr+=' ['+g.fabric+']';
+          gStr+='
+';
+        });
+      } else { gStr=o.garments||'—'; }
+    }catch(e){ gStr=o.garments||'—'; }
+    document.getElementById('st_oc_garments').textContent=gStr.trim()||'No items listed';
+    /* Measurements */
+    var mWrap=document.getElementById('st_oc_meas_wrap');
+    var mEl=document.getElementById('st_oc_meas');
+    if(o.measurements){
+      var mStr='';
+      try{
+        var m=typeof o.measurements==='string'?JSON.parse(o.measurements):o.measurements;
+        Object.entries(m).forEach(function(kv){ if(kv[1]) mStr+=kv[0]+': '+kv[1]+'
+'; });
+      }catch(e){ mStr=o.measurements; }
+      mEl.textContent=mStr.trim();
+      mWrap.style.display=mStr.trim()?'block':'none';
+    } else { mWrap.style.display='none'; }
+    card.style.display='block';
+    toast('Loaded — '+code+' · Stage '+d.stage+' ('+( sl[d.stage]||'Unknown')+')');
   }).catch(function(){toast('Error loading order',true);});
 }
 function saveStitchStage(){

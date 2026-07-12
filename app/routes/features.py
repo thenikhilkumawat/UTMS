@@ -198,15 +198,27 @@ def _save_upload(file_obj, prefix="img"):
 @features_bp.route("/api/order/stage/<order_code>")
 def order_stage_get(order_code):
     ensure_tables()
-    row = get_db().execute(
+    db = get_db()
+    row = db.execute(
         "SELECT stage, note, updated_at FROM order_stages WHERE order_code=?",
         (order_code,)
     ).fetchone()
-    if row:
-        return jsonify({"ok": True, "stage": row["stage"],
-                        "note": row["note"] or "", "updated_at": row["updated_at"],
-                        "stages": [{"num": s[0], "name": s[1], "desc": s[2]} for s in STITCH_STAGES]})
-    return jsonify({"ok": True, "stage": 1, "note": "",
+    # Fetch full order + customer details
+    order = db.execute(
+        """SELECT o.order_code, o.garments, o.measurements, o.status,
+                  o.delivery_date, o.total_amount, o.advance, o.remaining,
+                  o.note as order_note, o.is_urgent,
+                  c.name as cname, c.mobile, c.address
+           FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
+           WHERE o.order_code=?""",
+        (order_code,)
+    ).fetchone()
+    order_data = dict(order) if order else {}
+    stage_val = row["stage"] if row else 1
+    note_val  = row["note"] or "" if row else ""
+    updated   = row["updated_at"] if row else ""
+    return jsonify({"ok": True, "stage": stage_val, "note": note_val,
+                    "updated_at": updated, "order": order_data,
                     "stages": [{"num": s[0], "name": s[1], "desc": s[2]} for s in STITCH_STAGES]})
 
 @features_bp.route("/api/admin/order/stage", methods=["POST"])
