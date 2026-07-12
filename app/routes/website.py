@@ -753,7 +753,7 @@ def api_track_order():
         db = get_db()
         if code:
             row = db.execute(
-                "SELECT o.*, c.name as cust_name, c.mobile as cust_mobile "
+                "SELECT o.*, c.name as cust_name, c.mobile as cust_mobile, c.email as cust_email "
                 "FROM orders o LEFT JOIN customers c ON c.id=o.customer_id "
                 "WHERE o.order_code=? LIMIT 1", (code,)
             ).fetchone()
@@ -765,7 +765,7 @@ def api_track_order():
             if not cust:
                 return jsonify({"ok": False, "error": "Not found"})
             row = db.execute(
-                "SELECT o.*, c.name as cust_name, c.mobile as cust_mobile "
+                "SELECT o.*, c.name as cust_name, c.mobile as cust_mobile, c.email as cust_email "
                 "FROM orders o LEFT JOIN customers c ON c.id=o.customer_id "
                 "WHERE o.customer_id=? ORDER BY o.id DESC LIMIT 1", (cust["id"],)
             ).fetchone()
@@ -813,6 +813,7 @@ def api_track_order():
                 "cust_name":        cust_name,
                 "cust_mobile":      cust_mobile,
                 "cust_address":     cust_address,
+                "cust_email":       o.get("cust_email") or "",
                 "order_date":       o.get("order_date", ""),
                 "delivery_date":    o.get("delivery_date", ""),
                 "remaining":        o.get("remaining", 0),
