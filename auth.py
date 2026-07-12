@@ -3,7 +3,7 @@ from flask import session, redirect, url_for, request
 from datetime import datetime, timedelta
 from database import get_setting
 
-OWNER_TIMEOUT_MINUTES = 5
+OWNER_TIMEOUT_MINUTES = 480  # 8 hours
 
 
 def owner_login(pin):
@@ -23,7 +23,7 @@ def owner_logout():
 
 
 def is_owner_active():
-    """Returns True only if logged in AND active within last 5 minutes."""
+    """Returns True only if logged in AND active within last 8 hours."""
     if not session.get("owner_logged_in"):
         return False
     last = session.get("owner_last_active")
@@ -41,7 +41,7 @@ def is_owner_active():
 
 
 def touch_owner_session():
-    """Call this on every owner request to reset the 5-min timer."""
+    """Reset the 8-hour timer on every owner request."""
     if session.get("owner_logged_in"):
         session["owner_last_active"] = datetime.now().isoformat()
 
