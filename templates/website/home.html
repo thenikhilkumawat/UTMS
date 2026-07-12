@@ -58,36 +58,84 @@
 .inspo-cta{display:inline-flex;align-items:center;gap:11px;padding:15px 36px;background:var(--gold);color:var(--dark);font-family:var(--fm);font-size:11px;letter-spacing:.13em;text-transform:uppercase;border-radius:var(--r);text-decoration:none;font-weight:700;transition:background .2s,transform .15s,box-shadow .2s;}
 .inspo-cta:hover{background:var(--gold-l);transform:translateY(-2px);box-shadow:0 10px 32px rgba(200,144,58,.32);}
 /* Right-side feature cards */
-.inspo-visual{display:flex;flex-direction:column;gap:1rem;position:relative;}
-/* Photo mosaic */
-.inspo-mosaic{display:grid;grid-template-columns:1.45fr 1fr;gap:10px;}
-.inspo-mosaic-main{position:relative;border-radius:18px;overflow:hidden;aspect-ratio:3/4;}
-.inspo-mosaic-main img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s ease;}
-.inspo-mosaic-main:hover img{transform:scale(1.05);}
-.inspo-mosaic-badge{
-  position:absolute;bottom:14px;left:12px;right:12px;
-  display:flex;align-items:center;gap:7px;
-  background:rgba(28,15,6,.82);backdrop-filter:blur(8px);
-  color:#FAF0E4;font-size:12px;font-weight:600;
-  padding:8px 13px;border-radius:30px;
-  border:1px solid rgba(200,144,58,.25);letter-spacing:.01em;
+/* ── Inspo polaroid stack ── */
+.inspo-visual{position:relative;height:420px;display:flex;align-items:center;justify-content:center;}
+.inspo-pstack{position:relative;width:320px;height:380px;}
+.inspo-pol{
+  position:absolute;
+  background:#FEFCF8;
+  border-radius:3px;
+  box-shadow:0 8px 32px rgba(0,0,0,.16),0 2px 6px rgba(0,0,0,.08);
+  padding:10px 10px 38px;
+  transition:transform .35s ease,box-shadow .35s ease;
 }
-.inspo-mosaic-badge svg{color:var(--gold);flex-shrink:0;}
-.inspo-mosaic-stack{display:flex;flex-direction:column;gap:10px;}
-.inspo-mosaic-sm{position:relative;border-radius:14px;overflow:hidden;flex:1;}
-.inspo-mosaic-sm img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s ease;}
-.inspo-mosaic-sm:hover img{transform:scale(1.08);}
-.inspo-mosaic-label{
-  position:absolute;bottom:0;left:0;right:0;
-  padding:22px 10px 8px;
-  background:linear-gradient(to top,rgba(28,15,6,.75) 0%,transparent 100%);
-  font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
-  color:rgba(250,240,228,.85);text-align:center;
+.inspo-pol img{display:block;object-fit:cover;border-radius:2px;}
+.inspo-pol-lbl{
+  display:block;text-align:center;margin-top:0;padding-top:8px;
+  font-size:10.5px;color:#9a7e66;letter-spacing:.03em;
+  font-family:var(--fd);
 }
-.inspo-mosaic-note{
-  display:flex;align-items:flex-start;gap:8px;
-  font-size:12px;color:rgba(250,240,228,.38);line-height:1.6;
-  padding:0 2px;
+/* back-left card */
+.inspo-pol--bl{
+  width:178px;left:0px;top:60px;
+  transform:rotate(-9deg);z-index:1;opacity:.82;
+}
+.inspo-pol--bl img{width:158px;height:200px;}
+/* back-right card */
+.inspo-pol--br{
+  width:162px;right:0px;top:80px;
+  transform:rotate(7deg);z-index:2;opacity:.88;
+}
+.inspo-pol--br img{width:142px;height:185px;}
+/* front card */
+.inspo-pol--front{
+  width:210px;left:50%;top:20px;
+  transform:translateX(-50%) rotate(-2deg);z-index:3;
+}
+.inspo-pol--front img{width:190px;height:248px;}
+.inspo-pol--front:hover{transform:translateX(-50%) rotate(-2deg) translateY(-6px);box-shadow:0 20px 50px rgba(0,0,0,.22);}
+/* "Your inspo" pill on front card */
+.inspo-pol-pill{
+  position:absolute;top:-13px;left:50%;transform:translateX(-50%);
+  background:var(--gold);color:#fff;
+  font-size:9.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  padding:4px 13px;border-radius:20px;white-space:nowrap;
+}
+/* Bottom confirmation badge */
+.inspo-confirm{
+  position:absolute;bottom:0;right:-10px;
+  background:#1C1006;color:#FAF0E4;
+  border-radius:12px;padding:11px 15px;
+  display:flex;align-items:center;gap:10px;
+  box-shadow:0 6px 24px rgba(0,0,0,.3);
+  border:1px solid rgba(200,144,58,.28);
+  font-size:11.5px;z-index:10;
+}
+.inspo-confirm-icon{
+  width:28px;height:28px;border-radius:50%;
+  background:rgba(200,144,58,.15);border:1px solid rgba(200,144,58,.4);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--gold);
+}
+.inspo-confirm strong{display:block;font-size:12px;color:#FAF0E4;margin-bottom:1px;}
+.inspo-confirm span{font-size:10.5px;color:rgba(250,240,228,.5);display:block;}
+/* Sticky note */
+.inspo-sticky{
+  position:absolute;top:10px;right:-18px;z-index:10;
+  background:#FFF9C4;color:#5a4a1e;
+  padding:7px 10px;border-radius:2px;
+  box-shadow:2px 3px 8px rgba(0,0,0,.12);
+  font-size:10px;line-height:1.5;max-width:110px;
+  transform:rotate(3deg);
+}
+.inspo-sticky::before{content:'📌';position:absolute;top:-8px;right:6px;font-size:12px;}
+@media(max-width:900px){
+  .inspo-inner{grid-template-columns:1fr;gap:3rem;}
+  .inspo-section{padding:4.5rem 1.5rem;}
+  .inspo-visual{height:360px;}
+  .inspo-pstack{width:280px;height:330px;}
+  .inspo-pol--bl{width:150px;} .inspo-pol--bl img{width:130px;height:170px;}
+  .inspo-pol--br{width:138px;} .inspo-pol--br img{width:118px;height:155px;}
+  .inspo-pol--front{width:178px;} .inspo-pol--front img{width:158px;height:208px;}
 }
 @media(max-width:900px){
   .inspo-inner{grid-template-columns:1fr;gap:3rem;}
@@ -1304,32 +1352,43 @@ fetch('/api/occasions/upcoming').then(function(r){return r.json();}).then(functi
       </a>
     </div>
     <div class="inspo-visual reveal-right">
-      <div class="inspo-mosaic">
-        <div class="inspo-mosaic-main">
-          <img src="https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=600&q=85&auto=format&fit=crop" alt="Bespoke suit" loading="lazy">
-          <div class="inspo-mosaic-badge">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="20 6 9 17 4 12"/></svg>
-            Recreated in 7 days
+      <div class="inspo-pstack">
+
+        <!-- Back-left polaroid -->
+        <div class="inspo-pol inspo-pol--bl">
+          <img src="https://images.unsplash.com/photo-1519741497674-611481863552?w=400&q=82&auto=format&fit=crop" alt="Wedding wear inspo" loading="lazy">
+          <span class="inspo-pol-lbl">Saved from Pinterest</span>
+        </div>
+
+        <!-- Back-right polaroid -->
+        <div class="inspo-pol inspo-pol--br">
+          <img src="https://images.unsplash.com/photo-1617127365659-c47fa864d8bc?w=400&q=82&auto=format&fit=crop" alt="Blazer inspo" loading="lazy">
+          <span class="inspo-pol-lbl">Screenshot from Insta</span>
+        </div>
+
+        <!-- Front / main polaroid -->
+        <div class="inspo-pol inspo-pol--front">
+          <span class="inspo-pol-pill">Your Inspo</span>
+          <img src="https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=500&q=85&auto=format&fit=crop" alt="Bespoke suit inspiration" loading="lazy">
+          <span class="inspo-pol-lbl">Magazine clipping ✦</span>
+        </div>
+
+        <!-- Sticky note -->
+        <div class="inspo-sticky">
+          Any photo works —<br>we match it exactly
+        </div>
+
+        <!-- Confirmation badge -->
+        <div class="inspo-confirm">
+          <div class="inspo-confirm-icon">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div>
+            <strong>Stitched &amp; delivered</strong>
+            <span>7 days · your measurements</span>
           </div>
         </div>
-        <div class="inspo-mosaic-stack">
-          <div class="inspo-mosaic-sm">
-            <img src="https://images.unsplash.com/photo-1519741497674-611481863552?w=400&q=85&auto=format&fit=crop" alt="Wedding kurta" loading="lazy">
-            <span class="inspo-mosaic-label">Wedding wear</span>
-          </div>
-          <div class="inspo-mosaic-sm">
-            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=85&auto=format&fit=crop" alt="Ethnic kurta" loading="lazy">
-            <span class="inspo-mosaic-label">Ethnic &amp; kurta</span>
-          </div>
-          <div class="inspo-mosaic-sm">
-            <img src="https://images.unsplash.com/photo-1620012253295-c15cc3e65df4?w=400&q=85&auto=format&fit=crop" alt="Tailored shirt" loading="lazy">
-            <span class="inspo-mosaic-label">Custom shirts</span>
-          </div>
-        </div>
-      </div>
-      <div class="inspo-mosaic-note">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        Share any photo — screenshot, Pinterest pin, magazine clip — and we match it exactly
+
       </div>
     </div>
   </div>
