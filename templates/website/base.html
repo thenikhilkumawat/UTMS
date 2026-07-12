@@ -595,6 +595,9 @@ function _checkOverlay(){
   });
   document.getElementById('navOverlay').classList.toggle('open',anyOpen);
   if(!anyOpen)document.body.style.overflow='';
+  /* hide WA FAB whenever any drawer is open */
+  var waFab=document.querySelector('.wa-fab');
+  if(waFab)waFab.style.display=anyOpen?'none':'';
 }
 
 /* ── Wishlist ── */
