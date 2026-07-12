@@ -1384,6 +1384,27 @@ fetch('/api/occasions/upcoming').then(function(r){return r.json();}).then(functi
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/home.js') }}"></script>
 <script>
+/* ── Reveal animation observer ── */
+(function(){
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){
+      if(!entry.isIntersecting) return;
+      entry.target.classList.add('visible');
+      io.unobserve(entry.target);
+    });
+  }, {rootMargin:'0px 0px -50px 0px', threshold:0.07});
+  window._io = io; /* expose so dynamic content (craft tiles) can register */
+  function initReveal(){
+    document.querySelectorAll('.reveal,.reveal-left,.reveal-right,.reveal-scale').forEach(function(el){
+      io.observe(el);
+    });
+  }
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded', initReveal);
+  } else { initReveal(); }
+})();
+</script>
+<script>
 /* ── Pricing tabs ── */
 function switchPrcTab(tab, paneId){
   document.querySelectorAll('.prc-tab').forEach(function(t){t.classList.remove('active');});
