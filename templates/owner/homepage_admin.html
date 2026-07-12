@@ -561,27 +561,55 @@ function collectSection(key){
   return data;
 }
 
+function _compressImage(file, maxPx, qualityJpeg, cb){
+  var reader = new FileReader();
+  reader.onload = function(e){
+    var img = new Image();
+    img.onload = function(){
+      var w = img.width, h = img.height;
+      if(w > maxPx || h > maxPx){ var s=Math.min(maxPx/w,maxPx/h); w=Math.round(w*s); h=Math.round(h*s); }
+      var canvas = document.createElement('canvas');
+      canvas.width=w; canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      canvas.toBlob(function(blob){ cb(blob||file); },'image/jpeg', qualityJpeg);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
 function heroUploadImage(fileInput, targetFieldId){
   var f = fileInput.files && fileInput.files[0];
   if (!f) return;
   var statusEl = document.getElementById(fileInput.id+'Status');
-  if (statusEl){ statusEl.style.color='#7a6a58'; statusEl.textContent='Uploading…'; }
+  if (statusEl){ statusEl.style.color='#7a6a58'; statusEl.textContent='Compressing image…'; }
+  _compressImage(f, 1920, 0.82, function(blob){
+    if (statusEl){ statusEl.style.color='#7a6a58'; statusEl.textContent='Uploading… ('+Math.round(blob.size/1024)+'KB)'; }
   var fd = new FormData();
-  fd.append('image', f);
-  fetch('/owner/website/homepage/hero/upload-image', { method:'POST', body: fd })
-    .then(function(r){ return r.json(); })
-    .then(function(d){
-      if (d.ok){
-        document.getElementById(targetFieldId).value = d.url;
-        if (statusEl){ statusEl.style.color='#1f7a3a'; statusEl.textContent='✓ Uploaded — click Save below to publish it.'; }
-      } else {
-        if (statusEl){ statusEl.style.color='#b3261e'; statusEl.textContent='Error: '+(d.error||'upload failed'); }
+  fd.append('image', blob, 'hero.jpg');
+  var httpStatus = 0;
+  fetch('/owner/website/homepage/hero/upload-image', { method:'POST', body: fd, credentials:'same-origin' })
+    .then(function(r){
+      httpStatus = r.status;
+      return r.text();
+    })
+    .then(function(txt){
+      try {
+        var d = JSON.parse(txt);
+        if (d.ok){
+          document.getElementById(targetFieldId).value = d.url;
+          if (statusEl){ statusEl.style.color='#1f7a3a'; statusEl.textContent='✓ Uploaded — click Save below to publish it.'; }
+        } else {
+          if (statusEl){ statusEl.style.color='#b3261e'; statusEl.textContent='Server error '+httpStatus+': '+(d.error||'upload failed'); }
+        }
+      } catch(e){
+        if (statusEl){ statusEl.style.color='#b3261e'; statusEl.textContent='HTTP '+httpStatus+' — '+(txt.slice(0,120)||'unexpected response'); }
       }
     })
-    .catch(function(){
-      if (statusEl){ statusEl.style.color='#b3261e'; statusEl.textContent='Upload failed — check your connection and try again.'; }
+    .catch(function(err){
+      if (statusEl){ statusEl.style.color='#b3261e'; statusEl.textContent='Network error: '+err.message; }
     });
   fileInput.value = '';
+  }); // end _compressImage
 }
 function saveSection(key){
   var content=collectSection(key);
