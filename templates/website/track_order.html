@@ -277,6 +277,7 @@
           <div style="flex:1;min-width:0;">
             <div class="oc-label">Garment</div>
             <div class="oc-val big" id="resGarment" style="font-size:18px;margin-bottom:6px;">—</div>
+            <div id="resGarmentPrice" style="font-size:16px;font-weight:800;color:#C8903A;margin-bottom:6px;display:none;"></div>
             <div id="resGarmentTags" style="display:flex;flex-wrap:wrap;gap:5px;"></div>
           </div>
         </div>
@@ -475,6 +476,9 @@ function renderResult(o){
 
   // Garment name + tags
   document.getElementById('resGarment').textContent=o.garment||'Custom Order';
+  var prEl=document.getElementById('resGarmentPrice');
+  if(o.total&&parseFloat(o.total)>0){prEl.textContent='Rs. '+Math.round(parseFloat(o.total));prEl.style.display='';}
+  else{prEl.style.display='none';}
   var tags='';
   if(o.size_info) tags+='<span style="display:inline-flex;align-items:center;padding:3px 10px;background:#fdf6ee;border:1px solid #e8d9c5;border-radius:20px;font-size:11px;font-weight:600;color:#7a6a58;">📐 '+esc(o.size_info)+'</span>';
   if(o.meas_method) tags+='<span style="display:inline-flex;align-items:center;padding:3px 10px;background:#fdf6ee;border:1px solid #e8d9c5;border-radius:20px;font-size:11px;font-weight:600;color:#7a6a58;">📏 '+esc(o.meas_method)+'</span>';
