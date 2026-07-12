@@ -1252,7 +1252,11 @@ def account_addresses_add():
     count = db.execute(
         "SELECT COUNT(*) FROM web_addresses WHERE account_id=?", (acc["id"],)
     ).fetchone()[0]
-    is_default = 1 if count == 0 else 0
+    # First address is always default; otherwise respect the request flag
+    want_default = bool(d.get("is_default", False)) or count == 0
+    if want_default:
+        db.execute("UPDATE web_addresses SET is_default=0 WHERE account_id=?", (acc["id"],))
+    is_default = 1 if want_default else 0
     db.execute(
         """INSERT INTO web_addresses
            (account_id, label, full_name, mobile, line1, line2, city, state, pincode, is_default)
