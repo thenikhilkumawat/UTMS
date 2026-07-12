@@ -259,7 +259,7 @@
   <div class="tp-result" id="trackResult">
     <div class="oc">
 
-      <!-- Head: order code + stage status -->
+      <!-- Head -->
       <div class="oc-head">
         <div>
           <div class="oc-code-label">Order Code</div>
@@ -268,12 +268,29 @@
         <div class="oc-stage-chip" id="resChip"></div>
       </div>
 
-      <!-- Info grid: all details -->
-      <div class="oc-info" id="resInfo">
-        <div>
-          <div class="oc-label">Garment</div>
-          <div class="oc-val big" id="resGarment">—</div>
+      <!-- Product + Customer row -->
+      <div style="display:flex;gap:0;border-bottom:1px solid #f0e8dc;">
+
+        <!-- Product image + name -->
+        <div id="resProductBlock" style="display:flex;gap:14px;align-items:flex-start;padding:1.4rem 1.75rem;flex:1;min-width:0;">
+          <img id="resProductImg" src="" alt="" style="display:none;width:80px;height:100px;object-fit:cover;object-position:top;border-radius:10px;flex-shrink:0;border:1px solid #f0e8dc;">
+          <div style="flex:1;min-width:0;">
+            <div class="oc-label">Garment</div>
+            <div class="oc-val big" id="resGarment" style="font-size:18px;margin-bottom:6px;">—</div>
+            <div id="resGarmentTags" style="display:flex;flex-wrap:wrap;gap:5px;"></div>
+          </div>
         </div>
+
+        <!-- Customer -->
+        <div id="resCustBlock" style="display:none;padding:1.4rem 1.75rem;border-left:1px solid #f0e8dc;min-width:180px;flex-shrink:0;">
+          <div class="oc-label">Customer</div>
+          <div class="oc-val" style="font-weight:700;font-size:15px;margin-bottom:6px;" id="resCustName">—</div>
+          <div id="resCustMeta" style="display:flex;flex-direction:column;gap:4px;"></div>
+        </div>
+      </div>
+
+      <!-- Order meta grid -->
+      <div class="oc-info" style="grid-template-columns:repeat(4,1fr);">
         <div>
           <div class="oc-label">Order Date</div>
           <div class="oc-val" id="resDate">—</div>
@@ -286,14 +303,9 @@
           <div class="oc-label">Delivery</div>
           <div class="oc-val" id="resDelivType">—</div>
         </div>
-        <div id="resCustBlock" class="oc-info-full" style="display:none;">
-          <div class="oc-label">Customer</div>
-          <div class="oc-val big" id="resCustName">—</div>
-          <div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:.5rem .9rem;" id="resCustMeta"></div>
-        </div>
-        <div id="resAddrBlock" style="display:none;grid-column:1/-1;">
-          <div class="oc-label">Delivery Address</div>
-          <div class="oc-val" id="resAddr">—</div>
+        <div id="resAddrCell" style="display:none;">
+          <div class="oc-label">Address</div>
+          <div class="oc-val" id="resAddr" style="font-size:12px;"></div>
         </div>
       </div>
 
@@ -304,7 +316,7 @@
           <div class="oc-pay-val" id="resTotal">—</div>
         </div>
         <div class="oc-pay-cell">
-          <div class="oc-pay-label">Paid</div>
+          <div class="oc-pay-label">Amount Paid</div>
           <div class="oc-pay-val paid" id="resPaid">—</div>
         </div>
         <div class="oc-pay-cell">
@@ -446,44 +458,51 @@ function renderResult(o){
   var stage=parseInt(o.stage||1,10);
   var isHome=o.is_home_delivery;
 
-  // Code
+  // Order code
   var num=(o.order_code||'').replace(/^UT-/i,'');
   document.getElementById('resCode').innerHTML='<span style="color:#C8903A;">UT-</span>'+esc(num);
 
-  // Stage chip (derived from stitch stage, NOT payment status)
+  // Stage chip — from stitch stage, NOT payment status
   var chip=document.getElementById('resChip');
-  var stCls  = o.status==='cancelled' ? 'sc-cancelled' : (stage>=6?'sc-delivered':STAGE_CLS[stage]||'sc-received');
-  var stLabel= o.status==='cancelled' ? 'Cancelled' : (stage>=6?'Delivered':STAGE_LABEL[stage]||'Order Received');
-  chip.textContent=stLabel;
-  chip.className='oc-stage-chip '+stCls;
+  var stCls  = o.status==='cancelled'?'sc-cancelled':(stage>=6?'sc-delivered':STAGE_CLS[stage]||'sc-received');
+  var stLabel= o.status==='cancelled'?'Cancelled':(stage>=6?'Delivered':STAGE_LABEL[stage]||'Order Received');
+  chip.textContent=stLabel; chip.className='oc-stage-chip '+stCls;
 
-  // Garment
+  // Product image
+  var img=document.getElementById('resProductImg');
+  if(o.garment_img){img.src=o.garment_img;img.style.display='block';}
+  else{img.style.display='none';}
+
+  // Garment name + tags
   document.getElementById('resGarment').textContent=o.garment||'Custom Order';
+  var tags='';
+  if(o.size_info) tags+='<span style="display:inline-flex;align-items:center;padding:3px 10px;background:#fdf6ee;border:1px solid #e8d9c5;border-radius:20px;font-size:11px;font-weight:600;color:#7a6a58;">📐 '+esc(o.size_info)+'</span>';
+  if(o.meas_method) tags+='<span style="display:inline-flex;align-items:center;padding:3px 10px;background:#fdf6ee;border:1px solid #e8d9c5;border-radius:20px;font-size:11px;font-weight:600;color:#7a6a58;">📏 '+esc(o.meas_method)+'</span>';
+  if(isHome) tags+='<span style="display:inline-flex;align-items:center;padding:3px 10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:20px;font-size:11px;font-weight:600;color:#1d4ed8;">🚚 Home Delivery</span>';
+  document.getElementById('resGarmentTags').innerHTML=tags;
 
-  // Dates (DD-MM-YY)
+  // Dates
   document.getElementById('resDate').textContent=fmtDate(o.order_date);
   document.getElementById('resReady').textContent=fmtDate(o.delivery_date)||'—';
 
   // Delivery type
-  document.getElementById('resDelivType').textContent=isHome?'🚚 Home Delivery':'🏪 Pickup from Shop';
+  document.getElementById('resDelivType').textContent=isHome?'🚚 Home Delivery':'🏪 Pickup · Subhash Chowk';
 
-  // Customer info (no avatar/face)
+  // Address
+  var ac=document.getElementById('resAddrCell');
+  if(o.cust_address){document.getElementById('resAddr').textContent=o.cust_address;ac.style.display='';}
+  else{ac.style.display='none';}
+
+  // Customer block
   var cb=document.getElementById('resCustBlock');
   if(o.cust_name){
     document.getElementById('resCustName').textContent=o.cust_name;
     var meta='';
-    if(o.cust_mobile)meta+='<span style="font-size:12.5px;color:#9a8878;display:flex;align-items:center;gap:4px;">📞 '+esc(o.cust_mobile)+'</span>';
-    if(o.cust_email)meta+='<span style="font-size:12.5px;color:#9a8878;display:flex;align-items:center;gap:4px;">✉ '+esc(o.cust_email)+'</span>';
+    if(o.cust_mobile) meta+='<span style="font-size:12px;color:#9a8878;display:flex;align-items:center;gap:5px;">📞 '+esc(o.cust_mobile)+'</span>';
+    if(o.cust_email)  meta+='<span style="font-size:12px;color:#9a8878;display:flex;align-items:center;gap:5px;">✉ '+esc(o.cust_email)+'</span>';
     document.getElementById('resCustMeta').innerHTML=meta;
     cb.style.display='';
-  }else{cb.style.display='none';}
-
-  // Address
-  var ab=document.getElementById('resAddrBlock');
-  if(o.cust_address&&isHome){
-    document.getElementById('resAddr').textContent=o.cust_address;
-    ab.style.display='';
-  }else{ab.style.display='none';}
+  } else { cb.style.display='none'; }
 
   // Payment
   var total=parseFloat(o.total||0), adv=parseFloat(o.advance||0), due=parseFloat(o.remaining||0);
@@ -493,7 +512,7 @@ function renderResult(o){
   dueEl.textContent='Rs. '+Math.round(due);
   dueEl.className='oc-pay-val '+(due>0?'due':'zero');
 
-  // Stitch steps
+  // Tracker steps
   var stages=isHome?STAGES_DEL:STAGES_PICKUP;
   var steps=document.getElementById('resSteps');
   steps.innerHTML='';

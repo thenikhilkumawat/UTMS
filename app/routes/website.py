@@ -785,6 +785,27 @@ def api_track_order():
         cust_name    = o.get("cust_name") or (note_parts[0] if note_parts else "")
         cust_mobile  = o.get("cust_mobile") or ""
         cust_address = o.get("address") or ""
+        # Email from web_accounts
+        cust_email = o.get("cust_email") or ""
+        if not cust_email and cust_mobile:
+            try:
+                wa_row = db.execute("SELECT email FROM web_accounts WHERE mobile=? LIMIT 1", (cust_mobile,)).fetchone()
+                if wa_row: cust_email = wa_row["email"] or ""
+            except Exception: pass
+        # Product image from web_service_items
+        garment_img = ""
+        try:
+            gi = db.execute("SELECT image_url FROM web_service_items WHERE LOWER(name)=LOWER(?) LIMIT 1", (garment,)).fetchone()
+            if gi: garment_img = gi["image_url"] or ""
+        except Exception: pass
+        # Size / measurement method from note
+        size_info = ""
+        meas_method = ""
+        for p in note_parts:
+            if p.lower().startswith("meas:"):
+                meas_method = p[5:].strip().replace("_"," ").title()
+            elif p.lower().startswith("size:"):
+                size_info = p[5:].strip()
 
         # Live stitch stage
         stage_row = None
@@ -812,13 +833,16 @@ def api_track_order():
                 "garment":          garment,
                 "cust_name":        cust_name,
                 "cust_mobile":      cust_mobile,
+                "cust_email":       cust_email,
                 "cust_address":     cust_address,
-                "cust_email":       o.get("cust_email") or "",
+                "garment_img":      garment_img,
+                "size_info":        size_info,
+                "meas_method":      meas_method,
                 "order_date":       o.get("order_date", ""),
                 "delivery_date":    o.get("delivery_date", ""),
                 "remaining":        o.get("remaining", 0),
                 "total":            o.get("total_amount", 0),
-                "advance":          o.get("advance_amount", 0),
+                "advance":          o.get("advance_paid", 0),
                 "stage":            stage,
                 "stitch_note":      stage_row["note"] if stage_row else "",
                 "is_home_delivery": is_home_delivery,
