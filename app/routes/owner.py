@@ -2947,9 +2947,9 @@ def website_settings_save():
         if db.execute("SELECT 1 FROM settings WHERE key=?", (key,)).fetchone():
             db.execute("UPDATE settings SET value=? WHERE key=?", (val, key))
         else:
-            db.execute("INSERT INTO settings(key,value) VALUES('commission_header_image',?)", (url,))
+            db.execute("INSERT INTO settings(key,value) VALUES(?,?)", (key, val))
     db.commit()
-    return jsonify({"ok": True, "url": url})
+    return jsonify({"ok": True})
 
 
 @bp.route("/website/fabrics/list")
@@ -3922,7 +3922,7 @@ def homepage_hero_upload_image():
         except Exception:
             pass
         url = "/static/website/img/hero/" + fname
-        return jsonify({"ok": True, "url": url})
+        return jsonify({"ok": True})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
 
@@ -4636,6 +4636,6 @@ def commission_upload_header_image():
     if db.execute("SELECT 1 FROM settings WHERE key='commission_header_image'").fetchone():
         db.execute("UPDATE settings SET value=? WHERE key='commission_header_image'", (url,))
     else:
-        db.execute("INSERT INTO settings(key,value) VALUES('commission_header_image',?)", (url,))
+        db.execute("INSERT INTO settings(key,value) VALUES(?,?)", (key, val))
     db.commit()
-    return jsonify({"ok": True, "url": url})
+    return jsonify({"ok": True})
