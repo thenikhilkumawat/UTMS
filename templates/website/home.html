@@ -58,25 +58,37 @@
 .inspo-cta{display:inline-flex;align-items:center;gap:11px;padding:15px 36px;background:var(--gold);color:var(--dark);font-family:var(--fm);font-size:11px;letter-spacing:.13em;text-transform:uppercase;border-radius:var(--r);text-decoration:none;font-weight:700;transition:background .2s,transform .15s,box-shadow .2s;}
 .inspo-cta:hover{background:var(--gold-l);transform:translateY(-2px);box-shadow:0 10px 32px rgba(200,144,58,.32);}
 /* Right-side feature cards */
-.inspo-visual{display:flex;flex-direction:column;gap:.9rem;position:relative;}
-.inspo-card{
-  display:flex;align-items:center;gap:1.25rem;
-  padding:1.3rem 1.6rem;
-  background:rgba(250,240,228,.04);
-  border:1px solid rgba(200,144,58,.14);
-  border-radius:14px;
-  transition:background .25s,border-color .25s,transform .3s;
+.inspo-visual{display:flex;flex-direction:column;gap:1rem;position:relative;}
+/* Photo mosaic */
+.inspo-mosaic{display:grid;grid-template-columns:1.45fr 1fr;gap:10px;}
+.inspo-mosaic-main{position:relative;border-radius:18px;overflow:hidden;aspect-ratio:3/4;}
+.inspo-mosaic-main img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s ease;}
+.inspo-mosaic-main:hover img{transform:scale(1.05);}
+.inspo-mosaic-badge{
+  position:absolute;bottom:14px;left:12px;right:12px;
+  display:flex;align-items:center;gap:7px;
+  background:rgba(28,15,6,.82);backdrop-filter:blur(8px);
+  color:#FAF0E4;font-size:12px;font-weight:600;
+  padding:8px 13px;border-radius:30px;
+  border:1px solid rgba(200,144,58,.25);letter-spacing:.01em;
 }
-.inspo-card:hover{background:rgba(200,144,58,.08);border-color:rgba(200,144,58,.35);transform:translateX(6px);}
-.inspo-card-icon{
-  width:50px;height:50px;border-radius:12px;
-  background:rgba(200,144,58,.1);border:1px solid rgba(200,144,58,.2);
-  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+.inspo-mosaic-badge svg{color:var(--gold);flex-shrink:0;}
+.inspo-mosaic-stack{display:flex;flex-direction:column;gap:10px;}
+.inspo-mosaic-sm{position:relative;border-radius:14px;overflow:hidden;flex:1;}
+.inspo-mosaic-sm img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s ease;}
+.inspo-mosaic-sm:hover img{transform:scale(1.08);}
+.inspo-mosaic-label{
+  position:absolute;bottom:0;left:0;right:0;
+  padding:22px 10px 8px;
+  background:linear-gradient(to top,rgba(28,15,6,.75) 0%,transparent 100%);
+  font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:rgba(250,240,228,.85);text-align:center;
 }
-.inspo-card-text strong{display:block;font-size:14px;font-weight:700;color:#FAF0E4;margin-bottom:4px;letter-spacing:.01em;}
-.inspo-card-text span{font-size:12.5px;color:rgba(250,240,228,.4);line-height:1.5;}
-/* Accent stripe on first card */
-.inspo-card:first-child{border-color:rgba(200,144,58,.28);background:rgba(200,144,58,.06);}
+.inspo-mosaic-note{
+  display:flex;align-items:flex-start;gap:8px;
+  font-size:12px;color:rgba(250,240,228,.38);line-height:1.6;
+  padding:0 2px;
+}
 @media(max-width:900px){
   .inspo-inner{grid-template-columns:1fr;gap:3rem;}
   .inspo-section{padding:4.5rem 1.5rem;}
@@ -107,54 +119,76 @@
 .wa-fab:hover .wa-fab-label{max-width:160px;opacity:1;}
 
 /* ── DAILY CRAFT SECTION ── */
-.craft-section{background:#F5F0EA;padding:6rem 3rem;}
-.craft-inner{max-width:1180px;margin:0 auto;}
+.craft-section{background:var(--dark);padding:7rem 3rem;position:relative;overflow:hidden;}
+.craft-section::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(200,144,58,.07) 0%,transparent 70%);pointer-events:none;}
+.craft-inner{max-width:1220px;margin:0 auto;position:relative;z-index:1;}
+.craft-section .section-header .kicker{color:var(--gold-l);}
+.craft-section .section-title{color:#FAF0E4;}
+.craft-section .section-sub{color:rgba(250,240,228,.45);}
+/* Masonry-style grid */
 .craft-grid{
   display:grid;
-  grid-template-columns:repeat(3,1fr);
-  grid-auto-rows:240px;
-  gap:14px;
-  margin:3rem auto;
+  grid-template-columns:1.6fr 1fr 1fr;
+  grid-template-rows:280px 200px;
+  gap:12px;
+  margin:3.5rem auto;
 }
 .craft-tile{
-  position:relative;overflow:hidden;border-radius:14px;cursor:pointer;
-  background:var(--dark);
-  transition:transform .35s ease,box-shadow .35s ease;
+  position:relative;overflow:hidden;border-radius:16px;cursor:pointer;
+  background:#1C1006;
+  transition:transform .4s cubic-bezier(.2,0,.2,1),box-shadow .4s ease;
+  box-shadow:0 4px 20px rgba(0,0,0,.35);
 }
-.craft-tile:hover{transform:translateY(-5px);box-shadow:0 18px 50px rgba(28,15,6,.2);}
-.craft-tile:first-child{grid-row:span 2;}
-.craft-tile:nth-child(4){grid-column:span 2;}
-.craft-tile img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .55s ease;opacity:.92;}
-.craft-tile:hover img{transform:scale(1.07);opacity:1;}
+.craft-tile:hover{transform:translateY(-6px) scale(1.01);box-shadow:0 24px 60px rgba(0,0,0,.55),0 0 0 1px rgba(200,144,58,.18);}
+/* Layout spans */
+.craft-tile:nth-child(1){grid-row:span 2;}
+.craft-tile:nth-child(5){grid-column:span 2;}
+.craft-tile img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .7s cubic-bezier(.2,0,.2,1);filter:brightness(.88);}
+.craft-tile:hover img{transform:scale(1.09);filter:brightness(1);}
 .craft-tile-overlay{
   position:absolute;inset:0;
-  background:linear-gradient(to top,rgba(28,15,6,.72) 0%,transparent 55%);
-  opacity:0;transition:opacity .3s;
-  display:flex;flex-direction:column;justify-content:flex-end;padding:1.25rem 1.4rem;
+  background:linear-gradient(170deg,transparent 40%,rgba(10,5,0,.8) 100%);
+  display:flex;flex-direction:column;justify-content:flex-end;padding:1.4rem 1.5rem;
+  opacity:0;transition:opacity .35s ease;
 }
 .craft-tile:hover .craft-tile-overlay{opacity:1;}
-.craft-tile-tag{font-family:var(--fm);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-l);margin-bottom:4px;}
-.craft-tile-cap{font-size:13px;font-weight:600;color:#FAF0E4;line-height:1.4;}
-.craft-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:40px;opacity:.25;background:var(--dark2);}
-.craft-tile--ph{background:linear-gradient(135deg,#1E1008 0%,#2A160A 100%);}
-.craft-tile--ph .craft-tile-overlay{opacity:1!important;background:linear-gradient(to top,rgba(28,15,6,.88) 0%,rgba(28,15,6,.2) 60%,transparent 100%);}
-.craft-placeholder-luxury{width:100%;height:100%;display:flex;align-items:center;justify-content:center;}
-.craft-footer{text-align:center;margin-top:2.5rem;}
-.craft-view-all{
-  display:inline-flex;align-items:center;gap:10px;
-  padding:13px 32px;border:1.5px solid var(--dark);border-radius:var(--r);
-  font-family:var(--fm);font-size:11px;letter-spacing:.09em;text-transform:uppercase;
-  color:var(--dark);text-decoration:none;transition:all .2s;
+.craft-tile-tag{
+  font-family:var(--fm);font-size:9px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--gold);margin-bottom:5px;
+  display:inline-flex;align-items:center;gap:6px;
 }
-.craft-view-all:hover{background:var(--dark);color:#FAF0E4;}
+.craft-tile-tag::before{content:'';width:18px;height:1px;background:var(--gold);}
+.craft-tile-cap{font-size:13.5px;font-weight:600;color:#FAF0E4;line-height:1.4;}
+/* Placeholder tiles */
+.craft-tile--ph{background:linear-gradient(135deg,#180C04 0%,#231006 50%,#180C04 100%);}
+.craft-tile--ph .craft-tile-overlay{opacity:1;background:linear-gradient(170deg,transparent 30%,rgba(10,5,0,.9) 100%);}
+.craft-placeholder-luxury{
+  width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+  position:relative;
+}
+.craft-placeholder-luxury::after{
+  content:'';position:absolute;inset:20%;
+  border:1px solid rgba(200,144,58,.08);border-radius:12px;
+}
+/* Footer */
+.craft-footer{text-align:center;margin-top:3rem;}
+.craft-view-all{
+  display:inline-flex;align-items:center;gap:11px;
+  padding:14px 40px;
+  border:1.5px solid rgba(200,144,58,.4);border-radius:var(--r);
+  font-family:var(--fm);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+  color:rgba(250,240,228,.75);text-decoration:none;
+  transition:all .25s ease;background:transparent;
+}
+.craft-view-all:hover{border-color:var(--gold);color:#FAF0E4;background:rgba(200,144,58,.1);box-shadow:0 0 28px rgba(200,144,58,.15);}
 @media(max-width:900px){
-  .craft-section{padding:4rem 1.5rem;}
-  .craft-grid{grid-template-columns:repeat(2,1fr);grid-auto-rows:200px;}
-  .craft-tile:first-child{grid-row:span 1;}
-  .craft-tile:nth-child(4){grid-column:span 1;}
+  .craft-section{padding:4.5rem 1.5rem;}
+  .craft-grid{grid-template-columns:1fr 1fr;grid-template-rows:auto;grid-auto-rows:200px;gap:9px;}
+  .craft-tile:nth-child(1){grid-row:span 1;}
+  .craft-tile:nth-child(5){grid-column:span 1;}
 }
 @media(max-width:560px){
-  .craft-grid{grid-template-columns:1fr 1fr;grid-auto-rows:160px;gap:8px;}
+  .craft-grid{grid-template-columns:1fr 1fr;grid-auto-rows:155px;gap:7px;}
 }
 
 /* ── UTILITY BAR ── */
@@ -1136,7 +1170,7 @@ fetch('/api/occasions/upcoming').then(function(r){return r.json();}).then(functi
 {% endif %}
 
 {# ═══════ 10 BEFORE / AFTER ═══════ #}
-{% if hs_active.get('fabric_journey', True) %}
+{% if false %}
 {% set hfj = hs.get('fabric_journey',{}) %}
 <section class="fabric-journey">
   <div class="section-header section-header--center">
@@ -1270,44 +1304,32 @@ fetch('/api/occasions/upcoming').then(function(r){return r.json();}).then(functi
       </a>
     </div>
     <div class="inspo-visual reveal-right">
-      <!-- Card 1: Upload -->
-      <div class="inspo-card">
-        <div class="inspo-card-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C8903A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
-            <polyline points="21 15 16 10 5 21"/>
-          </svg>
+      <div class="inspo-mosaic">
+        <div class="inspo-mosaic-main">
+          <img src="https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=600&q=85&auto=format&fit=crop" alt="Bespoke suit" loading="lazy">
+          <div class="inspo-mosaic-badge">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="20 6 9 17 4 12"/></svg>
+            Recreated in 7 days
+          </div>
         </div>
-        <div class="inspo-card-text">
-          <strong>Upload any reference image</strong>
-          <span>Pinterest, Instagram, magazine — any source works</span>
-        </div>
-      </div>
-      <!-- Card 2: Stitch -->
-      <div class="inspo-card">
-        <div class="inspo-card-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C8903A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7z"/>
-            <path d="M12 11V5M9 8h6"/>
-          </svg>
-        </div>
-        <div class="inspo-card-text">
-          <strong>Custom stitched, your measurements</strong>
-          <span>Every stitch made by hand — never mass-produced</span>
+        <div class="inspo-mosaic-stack">
+          <div class="inspo-mosaic-sm">
+            <img src="https://images.unsplash.com/photo-1519741497674-611481863552?w=400&q=85&auto=format&fit=crop" alt="Wedding kurta" loading="lazy">
+            <span class="inspo-mosaic-label">Wedding wear</span>
+          </div>
+          <div class="inspo-mosaic-sm">
+            <img src="https://images.unsplash.com/photo-1594938298603-c8148c4b4647?w=400&q=85&auto=format&fit=crop" alt="Ethnic kurta" loading="lazy">
+            <span class="inspo-mosaic-label">Ethnic &amp; kurta</span>
+          </div>
+          <div class="inspo-mosaic-sm">
+            <img src="https://images.unsplash.com/photo-1620012253295-c15cc3e65df4?w=400&q=85&auto=format&fit=crop" alt="Tailored shirt" loading="lazy">
+            <span class="inspo-mosaic-label">Custom shirts</span>
+          </div>
         </div>
       </div>
-      <!-- Card 3: Delivery -->
-      <div class="inspo-card">
-        <div class="inspo-card-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C8903A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M5 12H3l9-9 9 9h-2"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/>
-            <path d="M9 21v-6h6v6"/>
-          </svg>
-        </div>
-        <div class="inspo-card-text">
-          <strong>Ready in 7 days, delivered free</strong>
-          <span>Free delivery across India — straight to your door</span>
-        </div>
+      <div class="inspo-mosaic-note">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Share any photo — screenshot, Pinterest pin, magazine clip — and we match it exactly
       </div>
     </div>
   </div>
@@ -1570,28 +1592,22 @@ function pickOcc(occ,el){
   var grid = document.getElementById('craftHomeGrid');
   if(!grid) return;
 
-  /* Placeholder tiles shown while loading or when DB is empty */
-  var placeholderLabels = [
-    {tag:'Suits',cap:'Bespoke suits, handcrafted to measure'},
-    {tag:'Shirts',cap:'Premium custom shirts since 1987'},
-    {tag:'Kurta',cap:'Traditional & fusion ethnic wear'},
-    {tag:'Blazers',cap:'Tailored blazers, your silhouette'},
-    {tag:'Pathani',cap:'Authentic hand-stitched Pathani'},
-    {tag:'Wedding',cap:'Wedding & occasion specials'}
+  /* Beautiful fallback photos — shown when DB has no uploaded items yet */
+  var FALLBACK = [
+    {img:'photo-1507679799987-c73779587ccf',tag:'Suits',cap:'Bespoke suits, crafted to your measure'},
+    {img:'photo-1519741497674-611481863552',tag:'Wedding',cap:'Wedding & occasion — flawless every time'},
+    {img:'photo-1620012253295-c15cc3e65df4',tag:'Shirts',cap:'Premium custom shirts since 1987'},
+    {img:'photo-1594938298603-c8148c4b4647',tag:'Kurta',cap:'Traditional & fusion ethnic wear'},
+    {img:'photo-1617127365659-c47fa864d8bc',tag:'Blazers',cap:'Tailored blazers, your silhouette'},
+    {img:'photo-1503676260728-1c00da094a0b',tag:'Uniforms',cap:'School & corporate uniforms, precise fits'}
   ];
-  function buildPlaceholders(){
+
+  function buildFallback(){
     var html = '';
-    placeholderLabels.forEach(function(p,i){
-      html += '<div class="craft-tile craft-tile--ph reveal-scale" onclick="window.location.href=\'/our-work\'" style="transition-delay:'+(i*55)+'ms">';
-      html += '<div class="craft-placeholder-luxury">';
-      html += '<svg width="38" height="38" viewBox="0 0 70 70" fill="none" opacity=".35">';
-      html += '<g><path d="M35 35 L60 10" stroke="#C8903A" stroke-width="3" stroke-linecap="round"/>';
-      html += '<circle cx="22" cy="48" r="10" stroke="#C8903A" stroke-width="2"/></g>';
-      html += '<g><path d="M35 35 L60 60" stroke="#C8903A" stroke-width="3" stroke-linecap="round"/>';
-      html += '<circle cx="22" cy="22" r="10" stroke="#C8903A" stroke-width="2"/></g>';
-      html += '<circle cx="35" cy="35" r="3" fill="#C8903A"/></svg>';
-      html += '</div>';
-      html += '<div class="craft-tile-overlay" style="opacity:1">';
+    FALLBACK.forEach(function(p,i){
+      html += '<div class="craft-tile reveal-scale" onclick="window.location.href=\'/our-work\'" style="transition-delay:'+(i*70)+'ms">';
+      html += '<img src="https://images.unsplash.com/'+p.img+'?w=600&q=82&auto=format&fit=crop" alt="'+p.cap+'" loading="lazy">';
+      html += '<div class="craft-tile-overlay">';
       html += '<div class="craft-tile-tag">'+p.tag+'</div>';
       html += '<div class="craft-tile-cap">'+p.cap+'</div>';
       html += '</div></div>';
@@ -1599,33 +1615,37 @@ function pickOcc(occ,el){
     return html;
   }
 
-  /* Show placeholders immediately — section is always visible */
-  grid.innerHTML = buildPlaceholders();
-  if(window._io && typeof window._io.observe === 'function'){
-    grid.querySelectorAll('.reveal-scale').forEach(function(el){ window._io.observe(el); });
-  }
-
-  /* Then try to replace with real photos */
-  fetch('/api/daily-craft/latest?n=6').then(function(r){ return r.json(); }).then(function(d){
-    if(!d.ok || !d.items || !d.items.length) return; /* keep placeholders */
+  function buildFromDB(items){
     var html = '';
-    d.items.forEach(function(it, i){
-      html += '<div class="craft-tile reveal-scale" onclick="window.location.href=\'/our-work\'" style="transition-delay:'+(i*60)+'ms">';
+    items.forEach(function(it, i){
+      html += '<div class="craft-tile reveal-scale" onclick="window.location.href=\'/our-work\'" style="transition-delay:'+(i*70)+'ms">';
       if(it.image_url){
         html += '<img src="'+it.image_url+'" alt="'+(it.caption||'').replace(/"/g,'&quot;')+'" loading="lazy">';
-      } else {
-        html += '<div class="craft-placeholder">✂</div>';
       }
       html += '<div class="craft-tile-overlay">';
       if(it.tag) html += '<div class="craft-tile-tag">'+it.tag+'</div>';
       if(it.caption) html += '<div class="craft-tile-cap">'+it.caption+'</div>';
       html += '</div></div>';
     });
-    grid.innerHTML = html;
+    return html;
+  }
+
+  function observeAll(){
     if(window._io && typeof window._io.observe === 'function'){
       grid.querySelectorAll('.reveal-scale').forEach(function(el){ window._io.observe(el); });
     }
-  }).catch(function(){}); /* silently keep placeholders on error */
+  }
+
+  /* Show fallback photos immediately — beautiful even before API responds */
+  grid.innerHTML = buildFallback();
+  observeAll();
+
+  /* Replace with real uploaded photos if available */
+  fetch('/api/daily-craft/latest?n=6').then(function(r){ return r.json(); }).then(function(d){
+    if(!d.ok || !d.items || !d.items.length) return; /* keep beautiful fallback */
+    grid.innerHTML = buildFromDB(d.items);
+    observeAll();
+  }).catch(function(){}); /* silently keep fallback on error */
 })();
 </script>
 {% endblock %}
