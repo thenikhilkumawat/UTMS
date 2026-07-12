@@ -2137,3 +2137,93 @@ def account_wishlist_remove(item_id):
     )
     db.commit()
     return jsonify({"ok": True})
+# ── Razorpay Payment Routes ──────────────────────────────────────────────────
+
+@features_bp.route("/api/payment/razorpay/create-order", methods=["POST"])
+def razorpay_create_order():
+    """Step 1: Create a Razorpay order for advance payment."""
+    import os as _os, hmac as _hmac, hashlib as _hl
+    try:
+        import razorpay as _rzp
+    except ImportError:
+        return jsonify({"ok": False, "error": "Razorpay package not installed on server"}), 500
+
+    d = request.get_json(force=True, silent=True) or {}
+    order_id     = d.get("order_id")
+    amount_rs    = float(d.get("amount", 0))
+    order_code   = str(d.get("order_code", ""))
+
+    if not order_id or amount_rs < 1:
+        return jsonify({"ok": False, "error": "Invalid order details"})
+
+    key_id     = _os.environ.get("RAZORPAY_KEY_ID", "")
+    key_secret = _os.environ.get("RAZORPAY_KEY_SECRET", "")
+    if not key_id or not key_secret:
+        return jsonify({"ok": False, "error": "Payment gateway not configured on server"}), 500
+
+    try:
+        client   = _rzp.Client(auth=(key_id, key_secret))
+        rz_order = client.order.create({
+            "amount":   int(amount_rs * 100),  # paise
+            "currency": "INR",
+            "receipt":  f"ut_{order_code}",
+            "notes":    {"order_id": str(order_id), "order_code": order_code}
+        })
+        return jsonify({
+            "ok":               True,
+            "razorpay_order_id": rz_order["id"],
+            "amount_paise":     int(amount_rs * 100),
+            "key_id":           key_id,
+        })
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@features_bp.route("/api/payment/razorpay/verify", methods=["POST"])
+def razorpay_verify_payment():
+    """Step 2: Verify Razorpay signature + update order advance in DB."""
+    import os as _os, hmac as _hmac, hashlib as _hl
+    d = request.get_json(force=True, silent=True) or {}
+
+    rz_order_id   = d.get("razorpay_order_id", "")
+    rz_payment_id = d.get("razorpay_payment_id", "")
+    rz_signature  = d.get("razorpay_signature", "")
+    order_id      = d.get("order_id")
+    order_code    = d.get("order_code", "")
+    advance_rs    = float(d.get("advance_amount", 0))
+
+    key_secret = _os.environ.get("RAZORPAY_KEY_SECRET", "")
+    if not key_secret:
+        return jsonify({"ok": False, "error": "Payment gateway not configured"}), 500
+
+    # Verify HMAC-SHA256 signature
+    try:
+        msg          = f"{rz_order_id}|{rz_payment_id}"
+        expected_sig = _hmac.new(
+            key_secret.encode("utf-8"),
+            msg.encode("utf-8"),
+            _hl.sha256
+        ).hexdigest()
+        if expected_sig != rz_signature:
+            return jsonify({"ok": False, "error": "Payment verification failed — signature mismatch"}), 400
+    except Exception as e:
+        return jsonify({"ok": False, "error": f"Signature error: {e}"}), 500
+
+    # Update order in DB — record advance paid
+    try:
+        db = get_db()
+        db.execute(
+            """UPDATE orders
+               SET advance_paid  = ?,
+                   remaining     = MAX(0, payable_amount - ?),
+                   payment_mode  = 'razorpay',
+                   note          = note || ' | rpay:' || ?
+               WHERE id = ?""",
+            (advance_rs, advance_rs, rz_payment_id, order_id)
+        )
+        db.commit()
+    except Exception as e:
+        return jsonify({"ok": False, "error": f"DB error: {e}"}), 500
+
+    return jsonify({"ok": True, "order_code": order_code, "advance_paid": advance_rs})
+

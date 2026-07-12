@@ -455,10 +455,82 @@ function _doPlaceOrder(){
   }
   fetch('/api/orders/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
   .then(function(r){return r.json();}).then(function(d){
-    if(d.success||d.payment_url||d.ok){
-      sessionStorage.removeItem('pdp_order');sessionStorage.removeItem('cart_checkout');
-      if(_fromCart){try{localStorage.removeItem('uttam_cart');}catch(e){}if(typeof _updateCartBadge==='function')_updateCartBadge();}
-      window.location.href=d.payment_url||(d.order_code?'/order-confirmed?code='+d.order_code:(d.order_id?'/order-confirmed?id='+d.order_id:'/order-confirmed'));
+    if(d.success||d.ok){
+      var orderId   = d.order_id;
+      var orderCode = d.order_code;
+      var totalRs   = parseFloat(d.payable_amount||0);
+      var advancePct= 30;
+      var advanceRs = Math.max(1, Math.round(totalRs * advancePct / 100));
+      // Create Razorpay order
+      fetch('/api/payment/razorpay/create-order',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({order_id:orderId,order_code:orderCode,amount:advanceRs})
+      }).then(function(r2){return r2.json();}).then(function(rz){
+        if(!rz.ok){
+          // Razorpay not configured — still confirm order (COD fallback)
+          sessionStorage.removeItem('pdp_order');sessionStorage.removeItem('cart_checkout');
+          if(_fromCart){try{localStorage.removeItem('uttam_cart');}catch(e){}if(typeof _updateCartBadge==='function')_updateCartBadge();}
+          window.location.href='/order-confirmed?code='+orderCode;
+          return;
+        }
+        var custName  = (document.getElementById('custName')||{value:''}).value||name;
+        var custPhone = (document.getElementById('custPhone')||{value:''}).value||phone;
+        var custEmail = (document.getElementById('custEmail')||{value:''}).value||'';
+        var options = {
+          key:          rz.key_id,
+          amount:       rz.amount_paise,
+          currency:     'INR',
+          name:         'Uttam Tailors',
+          description:  'Advance for Order #'+orderCode+' ('+advancePct+'% of ₹'+totalRs+')',
+          image:        '/static/website/img/logo.png',
+          order_id:     rz.razorpay_order_id,
+          prefill: {
+            name:    custName,
+            contact: custPhone,
+            email:   custEmail
+          },
+          theme: { color: '#C8903A' },
+          modal: {
+            ondismiss: function(){
+              // User closed — still go to confirmed (COD at shop)
+              sessionStorage.removeItem('pdp_order');sessionStorage.removeItem('cart_checkout');
+              if(_fromCart){try{localStorage.removeItem('uttam_cart');}catch(e){}if(typeof _updateCartBadge==='function')_updateCartBadge();}
+              window.location.href='/order-confirmed?code='+orderCode+'&pay=later';
+            }
+          },
+          handler: function(response){
+            // Verify payment on backend
+            fetch('/api/payment/razorpay/verify',{
+              method:'POST',headers:{'Content-Type':'application/json'},
+              body:JSON.stringify({
+                razorpay_order_id:   response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature:  response.razorpay_signature,
+                order_id:     orderId,
+                order_code:   orderCode,
+                advance_amount: advanceRs
+              })
+            }).then(function(r3){return r3.json();}).then(function(vd){
+              sessionStorage.removeItem('pdp_order');sessionStorage.removeItem('cart_checkout');
+              if(_fromCart){try{localStorage.removeItem('uttam_cart');}catch(e){}if(typeof _updateCartBadge==='function')_updateCartBadge();}
+              window.location.href='/order-confirmed?code='+orderCode+'&paid=1';
+            }).catch(function(){
+              window.location.href='/order-confirmed?code='+orderCode;
+            });
+          }
+        };
+        var rzp = new Razorpay(options);
+        rzp.on('payment.failed',function(resp){
+          window.location.href='/order-confirmed?code='+orderCode+'&pay=later';
+        });
+        btn.textContent='Place Order & Pay Advance →';btn.disabled=false;
+        rzp.open();
+      }).catch(function(){
+        // Network error creating Razorpay order — fallback to confirmation
+        sessionStorage.removeItem('pdp_order');sessionStorage.removeItem('cart_checkout');
+        if(_fromCart){try{localStorage.removeItem('uttam_cart');}catch(e){}if(typeof _updateCartBadge==='function')_updateCartBadge();}
+        window.location.href='/order-confirmed?code='+orderCode;
+      });
     } else {
       btn.textContent='Place Order & Pay Advance →';btn.disabled=false;
       alert(d.message||'Something went wrong. Please try again.');
@@ -599,4 +671,5 @@ if(document.readyState==='complete'||document.readyState==='interactive'){
   setTimeout(function(){if(document.getElementById('revSub')&&document.getElementById('revSub').textContent==='Loading...')init();},200);
 }
 </script>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 {% endblock %}

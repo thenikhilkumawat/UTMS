@@ -33,3 +33,7 @@ class Config:
     # Get free API key at https://fast2sms.com  (Settings → Dev API)
     # Can also be set live via Admin → Settings → "Fast2SMS API Key"
     FAST2SMS_KEY  = os.environ.get("FAST2SMS_KEY", "")
+    # Razorpay — set these in .env on the server
+    RAZORPAY_KEY_ID     = os.environ.get("RAZORPAY_KEY_ID", "")
+    RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "")
+    RAZORPAY_ADVANCE_PCT = float(os.environ.get("RAZORPAY_ADVANCE_PCT", "30"))  # % advance to collect
