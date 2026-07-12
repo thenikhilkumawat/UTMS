@@ -490,7 +490,7 @@ function renderResult(o){
 
   // Address
   var ac=document.getElementById('resAddrCell');
-  if(o.cust_address){document.getElementById('resAddr').textContent=o.cust_address;ac.style.display='';}
+  if(o.cust_address){document.getElementById('resAddr').textContent=o.cust_address;document.getElementById('resAddr').style.cssText='white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px;';ac.style.display='';}
   else{ac.style.display='none';}
 
   // Customer block
