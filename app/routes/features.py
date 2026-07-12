@@ -534,6 +534,7 @@ def account_me():
             "mobile":          _g("mobile"),
             "email":           _g("email"),
             "preview_count":   _g("preview_count", 0) or 0,
+            "profile_image":   _g("profile_image"),
             "address_line1":   _g("address_line1"),
             "address_line2":   _g("address_line2"),
             "address_city":    _g("address_city"),
@@ -833,6 +834,12 @@ def _ensure_auth_tables():
     );
     """)
     db.commit()
+    # Migrate: add profile_image column if it doesn't exist yet
+    try:
+        db.execute("ALTER TABLE web_accounts ADD COLUMN profile_image TEXT DEFAULT ''")
+        db.commit()
+    except Exception:
+        pass
 
 
 def _generate_otp():
@@ -1063,6 +1070,39 @@ def account_profile_update():
     )
     db.commit()
     return jsonify({"ok": True})
+
+
+@features_bp.route("/api/account/profile-image", methods=["POST"])
+def account_profile_image():
+    """Upload / replace the account profile photo."""
+    acc = _get_account()
+    if not acc:
+        return jsonify({"ok": False, "error": "Not logged in"}), 401
+    f = request.files.get("image")
+    if not f:
+        return jsonify({"ok": False, "error": "No file"})
+    ext = os.path.splitext(f.filename)[1].lower() or ".jpg"
+    if ext not in [".jpg", ".jpeg", ".png", ".webp", ".gif"]:
+        return jsonify({"ok": False, "error": "Only JPG/PNG/WEBP allowed"})
+    import uuid as _uuid
+    fname = f"avatar_{acc['id']}_{_uuid.uuid4().hex[:8]}{ext}"
+    save_dir = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+        "static", "website", "img", "avatars"
+    )
+    os.makedirs(save_dir, exist_ok=True)
+    fpath = os.path.join(save_dir, fname)
+    f.save(fpath)
+    try:
+        from app.utils.image_optimize import optimize_image as _oi
+        fpath = _oi(fpath); fname = os.path.basename(fpath)
+    except Exception:
+        pass
+    url = "/static/website/img/avatars/" + fname
+    db = get_db()
+    db.execute("UPDATE web_accounts SET profile_image=? WHERE id=?", (url, acc["id"]))
+    db.commit()
+    return jsonify({"ok": True, "url": url})
 
 
 @features_bp.route("/api/account/addresses")
