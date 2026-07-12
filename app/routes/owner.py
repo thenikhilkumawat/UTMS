@@ -2889,6 +2889,8 @@ def website_admin():
     web_settings = {r["key"]: r["value"] for r in db.execute("SELECT key,value FROM settings").fetchall()}
     try: fabrics = db.execute("SELECT * FROM web_fabrics ORDER BY sort_order").fetchall()
     except: fabrics = []
+    try: web_items = db.execute("SELECT id,name FROM web_service_items ORDER BY sort_order,id").fetchall()
+    except: web_items = []
     try:
         web_orders = db.execute("""
             SELECT o.order_code, o.status, o.order_date, o.payable_amount,
@@ -2929,7 +2931,7 @@ def website_admin():
         web_settings=web_settings, fabrics=fabrics, web_orders=web_orders,
         nav_items=nav_items, footer_make=footer_make, pages=pages,
         total_web=total_web, today_web=today_web, pending_web=pending_web, fabric_count=fabric_count,
-        web_accounts=web_accounts)
+        web_accounts=web_accounts, web_items=web_items)
 
 @bp.route("/website/settings/save", methods=["POST"])
 def website_settings_save():
@@ -4037,6 +4039,59 @@ def item_questions_delete(qid):
         db.execute("DELETE FROM web_item_questions WHERE id=?", (qid,))
         db.commit(); return jsonify({"ok":True})
     except Exception as e: return jsonify({"ok":False,"error":str(e)})
+
+
+# ── AI Stats API ──────────────────────────────────────────────────────────────
+@bp.route("/api/ai-stats")
+def api_ai_stats():
+    if not session.get("owner_logged_in"): return jsonify({"ok":False}), 403
+    from database import get_db
+    db = get_db()
+    try:
+        total_accounts = db.execute("SELECT COUNT(*) FROM web_accounts WHERE is_active=1").fetchone()[0]
+    except: total_accounts = 0
+    try:
+        total_tryon = db.execute("SELECT COALESCE(SUM(tryon_count),0) FROM web_accounts").fetchone()[0]
+    except: total_tryon = 0
+    try:
+        style_items = db.execute("SELECT COUNT(DISTINCT item_id) FROM garment_style_options").fetchone()[0]
+    except: style_items = 0
+    try:
+        style_options = db.execute("SELECT COUNT(*) FROM garment_style_options").fetchone()[0]
+    except: style_options = 0
+    try:
+        top_tryon = [dict(r) for r in db.execute("SELECT name, mobile, tryon_count FROM web_accounts WHERE tryon_count>0 ORDER BY tryon_count DESC LIMIT 10").fetchall()]
+    except: top_tryon = []
+    return jsonify({"ok":True,"stats":{
+        "total_accounts":total_accounts,
+        "total_tryon_used":total_tryon,
+        "style_items":style_items,
+        "style_options":style_options,
+        "top_tryon":top_tryon
+    }})
+
+# ── All style options (for AI admin panel) ────────────────────────────────────
+@bp.route("/website/services/item/style-options/all")
+def style_options_all():
+    if not session.get("owner_logged_in"): return jsonify({"ok":False}), 403
+    from database import get_db
+    db = get_db()
+    try:
+        items = db.execute("SELECT id,name FROM web_service_items ORDER BY sort_order,id").fetchall()
+        result = []
+        for item in items:
+            opts_rows = db.execute("SELECT * FROM garment_style_options WHERE item_id=? ORDER BY sort_order,id", (item["id"],)).fetchall()
+            options = []
+            for o in opts_rows:
+                vals = [dict(v) for v in db.execute("SELECT * FROM garment_style_values WHERE option_id=? ORDER BY sort_order,id", (o["id"],)).fetchall()]
+                d = dict(o)
+                d["values"] = vals
+                options.append(d)
+            if options:
+                result.append({"id":item["id"],"name":item["name"],"options":options})
+        return jsonify({"ok":True,"items":result})
+    except Exception as e:
+        return jsonify({"ok":False,"error":str(e)})
 
 
 # ── Garment Style Options ──────────────────────────────────────────────────────

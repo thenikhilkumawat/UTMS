@@ -231,6 +231,9 @@
 
     <div class="adm-group" style="padding-bottom:20px;">
       <div class="adm-group-label">Configuration</div>
+      <button class="nav-item" onclick="waTab('ai',this)">
+        <span class="ni-icon">✦</span> AI Studio
+      </button>
       <button class="nav-item" onclick="waTab('settings',this)">
         <span class="ni-icon">⚙️</span> Settings
       </button>
@@ -588,6 +591,199 @@
   </div>
 
   <!-- SETTINGS -->
+  <!-- ═══════════════ AI STUDIO ADMIN ═══════════════ -->
+  <div class="wa-pnl" id="wp-ai">
+  <style>
+  .ai-adm-tabs{display:flex;gap:0;border-bottom:1px solid #e8d9c5;margin-bottom:20px;}
+  .ai-adm-tab{padding:10px 18px;font-size:12px;font-weight:700;color:#7a6a58;cursor:pointer;border-bottom:2px solid transparent;background:none;border-top:none;border-left:none;border-right:none;transition:all .2s;}
+  .ai-adm-tab.active{color:#1a0e06;border-bottom-color:#C8903A;}
+  .ai-adm-pnl{display:none;} .ai-adm-pnl.active{display:block;}
+  .ai-cfg-card{background:#fff;border:1px solid #e8d9c5;border-radius:10px;padding:18px 20px;margin-bottom:14px;}
+  .ai-cfg-label{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#C8903A;margin-bottom:12px;}
+  .ai-lmt-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f0e8dc;}
+  .ai-lmt-row:last-child{border:none;}
+  .ai-lmt-lbl{font-size:13px;color:#1a0e06;font-weight:600;}
+  .ai-lmt-sub{font-size:11px;color:#7a6a58;margin-top:2px;}
+  .ai-lmt-val{display:flex;align-items:center;gap:8px;}
+  .ai-lmt-inp{width:70px;padding:6px 10px;border:1px solid #e8d9c5;border-radius:6px;font-size:14px;font-weight:700;text-align:center;color:#1a0e06;}
+  .ai-stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:16px;}
+  .ai-stat-card{background:#fff;border:1px solid #e8d9c5;border-radius:10px;padding:14px 16px;text-align:center;}
+  .ai-stat-num{font-size:26px;font-weight:800;color:#C8903A;}
+  .ai-stat-lbl{font-size:10px;color:#7a6a58;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-top:4px;}
+  /* Style rules */
+  .ai-gsel{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;}
+  .ai-gchip{padding:7px 16px;border-radius:20px;border:1.5px solid #e8d9c5;font-size:12px;cursor:pointer;background:#fff;color:#7a6a58;font-weight:600;transition:all .18s;}
+  .ai-gchip.sel{background:#C8903A;border-color:#C8903A;color:#fff;}
+  .ai-opt-row{display:flex;align-items:flex-start;gap:10px;padding:12px 0;border-bottom:1px solid #f0e8dc;}
+  .ai-opt-row:last-child{border:none;}
+  .ai-opt-body{flex:1;}
+  .ai-opt-label{font-size:13px;font-weight:700;color:#1a0e06;}
+  .ai-opt-group{font-size:10px;color:#C8903A;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-top:2px;}
+  .ai-val-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;}
+  .ai-val-tag{padding:3px 10px;background:#fdf6ee;border:1px solid #e8d9c5;border-radius:12px;font-size:11px;color:#5a4a38;}
+  .ai-val-prompt{font-size:10px;color:#a08060;font-style:italic;padding:2px 10px;}
+  </style>
+
+  <!-- Tab bar -->
+  <div class="ai-adm-tabs">
+    <button class="ai-adm-tab active" onclick="aiAdmTab('config',this)">🔑 API Config</button>
+    <button class="ai-adm-tab" onclick="aiAdmTab('limits',this)">🎛 Limits</button>
+    <button class="ai-adm-tab" onclick="aiAdmTab('rules',this)">🎨 Style Rules</button>
+    <button class="ai-adm-tab" onclick="aiAdmTab('stats',this)">📊 Usage</button>
+  </div>
+
+  <!-- ── CONFIG TAB ── -->
+  <div class="ai-adm-pnl active" id="aiAdmConfig">
+    <div class="ai-cfg-card">
+      <div class="ai-cfg-label">Replicate API</div>
+      <p style="font-size:12px;color:#7a6a58;margin-bottom:12px;">AI garment previews are powered by Replicate. Get your free API key from <strong>replicate.com/account/api-tokens</strong> — free $5 credits (~1,600 images).</p>
+      <label class="wa-lbl">API Key</label>
+      <div style="display:flex;gap:8px;margin-bottom:6px;">
+        <input class="wa-in" id="ai_replicate_key" type="password" value="{{ web_settings.get('replicate_api_key','') }}" placeholder="r8_xxxxxxxxxxxxxxxxxxxx" style="flex:1;font-family:monospace;">
+        <button class="wa-btn" style="background:#2e1a0e;color:#f7f0e6;white-space:nowrap;" onclick="aiToggleKeyVis()">👁 Show</button>
+      </div>
+      <div style="font-size:11px;color:#7a6a58;margin-bottom:14px;">⚠ Never share this key publicly. It grants access to your Replicate billing.</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="wa-btn gold" onclick="aiSaveKey()">Save Key</button>
+        <button class="wa-btn ghost" onclick="aiTestKey()">Test Connection</button>
+        <span id="aiKeyStatus" style="font-size:12px;"></span>
+      </div>
+    </div>
+
+    <div class="ai-cfg-card">
+      <div class="ai-cfg-label">AI Preview Page</div>
+      <p style="font-size:12px;color:#7a6a58;margin-bottom:12px;">The AI Style Studio is live at <code style="background:#fdf6ee;padding:2px 6px;border-radius:4px;font-size:12px;">/ai-customize</code>. Share this link with customers to let them design their garment before ordering.</p>
+      <div style="display:flex;gap:8px;">
+        <a href="/ai-customize" target="_blank" class="wa-btn gold" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;">↗ Open AI Studio</a>
+        <button class="wa-btn ghost" onclick="copyAiLink()">📋 Copy Link</button>
+      </div>
+      <div id="aiLinkCopied" style="font-size:11px;color:green;margin-top:6px;display:none;">Link copied!</div>
+    </div>
+
+    <div class="ai-cfg-card">
+      <div class="ai-cfg-label">Models Used</div>
+      <div style="display:grid;gap:8px;">
+        <div style="background:#fdf6ee;border-radius:8px;padding:10px 14px;">
+          <div style="font-size:12px;font-weight:700;color:#1a0e06;">Flux Kontext Pro</div>
+          <div style="font-size:11px;color:#7a6a58;margin-top:2px;">Used for style editing on product reference photos (collar, sleeve, placket changes)</div>
+        </div>
+        <div style="background:#fdf6ee;border-radius:8px;padding:10px 14px;">
+          <div style="font-size:12px;font-weight:700;color:#1a0e06;">Flux Kontext Pro (Multi-Image)</div>
+          <div style="font-size:11px;color:#7a6a58;margin-top:2px;">Used when both fabric swatch + product photo are available — most accurate output</div>
+        </div>
+        <div style="background:#fdf6ee;border-radius:8px;padding:10px 14px;">
+          <div style="font-size:12px;font-weight:700;color:#1a0e06;">IDM-VTON + GFPGAN</div>
+          <div style="font-size:11px;color:#7a6a58;margin-top:2px;">Virtual try-on: drapes the garment onto the customer's uploaded photo</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── LIMITS TAB ── -->
+  <div class="ai-adm-pnl" id="aiAdmLimits">
+    <div class="ai-cfg-card">
+      <div class="ai-cfg-label">Free Preview Limits</div>
+      <p style="font-size:12px;color:#7a6a58;margin-bottom:14px;">Control how many free AI previews anonymous and logged-in customers get before they must create an account.</p>
+      <div class="ai-lmt-row">
+        <div>
+          <div class="ai-lmt-lbl">Free Style Previews (Anonymous)</div>
+          <div class="ai-lmt-sub">Visitors without an account get this many free generations</div>
+        </div>
+        <div class="ai-lmt-val">
+          <input class="ai-lmt-inp" type="number" id="lmt_free_preview" min="0" max="50" value="{{ web_settings.get('ai_free_preview_limit','3') }}">
+          <span style="font-size:11px;color:#7a6a58;">per session</span>
+        </div>
+      </div>
+      <div class="ai-lmt-row">
+        <div>
+          <div class="ai-lmt-lbl">Free Try-On (Anonymous)</div>
+          <div class="ai-lmt-sub">Virtual try-on uses for visitors without an account</div>
+        </div>
+        <div class="ai-lmt-val">
+          <input class="ai-lmt-inp" type="number" id="lmt_tryon_anon" min="0" max="20" value="{{ web_settings.get('ai_tryon_anon_limit','1') }}">
+          <span style="font-size:11px;color:#7a6a58;">per session</span>
+        </div>
+      </div>
+      <div class="ai-lmt-row">
+        <div>
+          <div class="ai-lmt-lbl">Bonus Try-Ons (After Login)</div>
+          <div class="ai-lmt-sub">Extra try-ons after creating an account — incentivises sign-up</div>
+        </div>
+        <div class="ai-lmt-val">
+          <input class="ai-lmt-inp" type="number" id="lmt_tryon_account" min="0" max="100" value="{{ web_settings.get('ai_tryon_account_limit','5') }}">
+          <span style="font-size:11px;color:#7a6a58;">per account</span>
+        </div>
+      </div>
+      <button class="wa-btn gold" style="margin-top:14px;" onclick="aiSaveLimits()">Save Limits</button>
+      <span id="aiLimitsStatus" style="font-size:12px;margin-left:10px;"></span>
+      <div style="background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:10px 14px;margin-top:14px;font-size:11px;color:#795548;">
+        ⚠ Limit changes take effect on next server restart. Current values are applied from the Python constants at startup.
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STYLE RULES TAB ── -->
+  <div class="ai-adm-pnl" id="aiAdmRules">
+    <p style="font-size:12px;color:#7a6a58;margin-bottom:14px;">Style rules define what options appear when a customer selects a garment. Each value can have a custom AI prompt that overrides the built-in description — use this for precise control over what the AI generates.</p>
+
+    <div class="ai-cfg-label">Filter by Garment</div>
+    <div class="ai-gsel" id="aiGarmentFilter">
+      <div class="ai-gchip sel" data-gf="" onclick="aiFilterRules('',this)">All Garments</div>
+    </div>
+
+    <div id="aiStyleRulesWrap">
+      <p style="font-size:12px;color:#7a6a58;">Loading style rules…</p>
+    </div>
+
+    <!-- Add new option group -->
+    <div class="ai-cfg-card" style="margin-top:18px;">
+      <div class="ai-cfg-label">Add Style Option Group</div>
+      <p style="font-size:12px;color:#7a6a58;margin-bottom:12px;">Select a garment from your catalog, then add a new option group (e.g. "Collar", "Sleeves") and its values with AI prompts.</p>
+      <div style="display:grid;gap:8px;">
+        <div>
+          <label class="wa-lbl">Garment (Service Item)</label>
+          <select class="wa-in" id="aiNewItemId" style="width:100%;">
+            <option value="">— Select garment —</option>
+            {% for item in web_items %}
+            <option value="{{ item.id }}">{{ item.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="wa-lbl">Option Group Key</label>
+          <input class="wa-in" id="aiNewGroup" placeholder="e.g. Collar" style="width:100%;">
+        </div>
+        <div>
+          <label class="wa-lbl">Display Label</label>
+          <input class="wa-in" id="aiNewLabel" placeholder="e.g. Collar Style" style="width:100%;">
+        </div>
+        <div>
+          <label class="wa-lbl">Values (comma-separated)</label>
+          <input class="wa-in" id="aiNewValues" placeholder="Spread Collar, Band Collar, Mandarin Collar" style="width:100%;">
+        </div>
+      </div>
+      <button class="wa-btn gold" style="margin-top:10px;" onclick="aiAddOptionGroup()">Add Option Group</button>
+      <span id="aiAddOptStatus" style="font-size:12px;margin-left:8px;"></span>
+    </div>
+  </div>
+
+  <!-- ── STATS TAB ── -->
+  <div class="ai-adm-pnl" id="aiAdmStats">
+    <div class="ai-stat-grid" id="aiStatGrid">
+      <div class="ai-stat-card"><div class="ai-stat-num" id="stTotalAccounts">—</div><div class="ai-stat-lbl">Total Accounts</div></div>
+      <div class="ai-stat-card"><div class="ai-stat-num" id="stTotalTryon">—</div><div class="ai-stat-lbl">Try-Ons Used</div></div>
+      <div class="ai-stat-card"><div class="ai-stat-num" id="stStyleItems">—</div><div class="ai-stat-lbl">Styled Items</div></div>
+      <div class="ai-stat-card"><div class="ai-stat-num" id="stStyleOptions">—</div><div class="ai-stat-lbl">Style Options</div></div>
+    </div>
+    <div class="ai-cfg-card">
+      <div class="ai-cfg-label">Top Try-On Users</div>
+      <div id="aiTryonTable" style="font-size:12px;color:#7a6a58;">Loading…</div>
+    </div>
+  </div>
+
+  </div><!-- /wp-ai -->
+
+
   <div class="wa-pnl" id="wp-settings">
     <div class="wa-card">
       <div class="wa-card-title">Delivery and Order Settings</div>
@@ -1089,7 +1285,7 @@ function waTab(n,b){try{
   if(b){b.classList.add('active');}
   var panel=document.getElementById('wp-'+n);
   if(panel){panel.classList.add('active');}else{console.error('Panel not found: wp-'+n);return;}
-  var titles={orders:'Orders',accounts:'Customers',stitch_tracker:'Stitch Tracker',products:'Products',fabrics:'Fabrics',sizes:'Sizes',story:'Our Story',daily_craft:'Daily Craft',offers:'Offers & Popups',content:'Page Content',commission:'Commission Page',navfooter:'Header & Footer',coupons:'Coupons',style_requests:'Inspo Requests',support_chats:'Support Chat',settings:'Settings'};
+  var titles={orders:'Orders',accounts:'Customers',ai:'AI Studio',stitch_tracker:'Stitch Tracker',products:'Products',fabrics:'Fabrics',sizes:'Sizes',story:'Our Story',daily_craft:'Daily Craft',offers:'Offers & Popups',content:'Page Content',commission:'Commission Page',navfooter:'Header & Footer',coupons:'Coupons',style_requests:'Inspo Requests',support_chats:'Support Chat',settings:'Settings'};
   var titleEl=document.getElementById('adminPageTitle');
   if(titleEl)titleEl.textContent=titles[n]||n;
   var sb=document.getElementById('adminSidebar');if(sb)sb.classList.remove('open');
@@ -1970,6 +2166,197 @@ function dcDelete(id){
     else toast(d.error||'Error',true);
   });
 }
+
+// ═══════════════════════════════════
+// AI STUDIO ADMIN
+// ═══════════════════════════════════
+
+function aiAdmTab(name, btn){
+  document.querySelectorAll('.ai-adm-tab').forEach(function(t){t.classList.remove('active');});
+  document.querySelectorAll('.ai-adm-pnl').forEach(function(p){p.classList.remove('active');});
+  btn.classList.add('active');
+  document.getElementById('aiAdm'+name.charAt(0).toUpperCase()+name.slice(1)).classList.add('active');
+  if(name==='rules') loadAiStyleRules();
+  if(name==='stats') loadAiStats();
+}
+
+// ── Key config ──
+function aiToggleKeyVis(){
+  var inp=document.getElementById('ai_replicate_key');
+  if(!inp)return;
+  inp.type=inp.type==='password'?'text':'password';
+}
+function aiSaveKey(){
+  var val=(document.getElementById('ai_replicate_key')||{}).value||'';
+  if(!val.trim()){toast('Enter the API key first',true);return;}
+  var st=document.getElementById('aiKeyStatus');
+  if(st){st.textContent='Saving…';st.style.color='#7a6a58';}
+  apiFetch('/owner/website/settings/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'replicate_api_key',value:val.trim()})})
+    .then(function(r){return r.json();}).then(function(d){
+      if(d.ok){toast('Key saved!');if(st){st.innerHTML='<span style="color:green">✓ Saved</span>';}}
+      else{if(st){st.innerHTML='<span style="color:red">✗ Error</span>';}}
+    });
+}
+function aiTestKey(){
+  var st=document.getElementById('aiKeyStatus');
+  if(st){st.textContent='Saving key…';st.style.color='#7a6a58';}
+  var val=(document.getElementById('ai_replicate_key')||{}).value||'';
+  if(!val.trim()){toast('Enter the API key first',true);return;}
+  apiFetch('/owner/website/settings/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'replicate_api_key',value:val.trim()})})
+    .then(function(){
+      if(st){st.textContent='Testing…';}
+      return apiFetch('/api/generate-style-preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({garment:'Formal Shirt',styles:{Collar:'Spread',Sleeves:'Full Sleeve'}})});
+    })
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.ok&&d.image_url){
+        if(st){st.innerHTML='<span style="color:green">✓ Connected — AI is working!</span>';}
+        toast('Replicate connected!');
+      } else {
+        var msg=d.error||'Unknown error';
+        if(st){st.innerHTML='<span style="color:red">✗ '+msg+'</span>';}
+        toast('Test failed: '+msg,true);
+      }
+    }).catch(function(e){if(st){st.innerHTML='<span style="color:red">✗ Error</span>';}});
+}
+function copyAiLink(){
+  navigator.clipboard.writeText(window.location.origin+'/ai-customize');
+  var el=document.getElementById('aiLinkCopied');if(el){el.style.display='block';setTimeout(function(){el.style.display='none';},2000);}
+}
+
+// ── Limits ──
+function aiSaveLimits(){
+  var st=document.getElementById('aiLimitsStatus');
+  var free=document.getElementById('lmt_free_preview').value;
+  var tAnon=document.getElementById('lmt_tryon_anon').value;
+  var tAcc=document.getElementById('lmt_tryon_account').value;
+  if(st){st.textContent='Saving…';st.style.color='#7a6a58';}
+  var pairs={ai_free_preview_limit:free,ai_tryon_anon_limit:tAnon,ai_tryon_account_limit:tAcc};
+  apiFetch('/owner/website/settings/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(pairs)})
+    .then(function(r){return r.json();}).then(function(d){
+      if(d.ok){if(st){st.innerHTML='<span style="color:green">✓ Saved (restart server to apply)</span>';}}
+      else{if(st){st.innerHTML='<span style="color:red">✗ Error</span>';}}
+    });
+}
+
+// ── Style Rules ──
+var _aiAllRules=[], _aiActiveFilter='';
+function loadAiStyleRules(){
+  fetch('/owner/website/services/item/style-options/all')
+    .then(function(r){return r.json();}).then(function(d){
+      _aiAllRules=d.items||[];
+      buildGarmentFilterChips();
+      renderAiStyleRules('');
+    }).catch(function(){
+      document.getElementById('aiStyleRulesWrap').innerHTML='<p style="color:#dc2626;font-size:12px;">Failed to load style rules.</p>';
+    });
+}
+function buildGarmentFilterChips(){
+  var wrap=document.getElementById('aiGarmentFilter');
+  wrap.innerHTML='<div class="ai-gchip sel" data-gf="" onclick="aiFilterRules(\'\',this)">All Garments</div>';
+  _aiAllRules.forEach(function(item){
+    wrap.innerHTML+='<div class="ai-gchip" data-gf="'+item.id+'" onclick="aiFilterRules(\''+item.id+'\',this)">'+item.name+'</div>';
+  });
+}
+function aiFilterRules(iid,el){
+  document.querySelectorAll('.ai-gchip').forEach(function(c){c.classList.remove('sel');});
+  el.classList.add('sel');
+  _aiActiveFilter=iid;
+  renderAiStyleRules(iid);
+}
+function renderAiStyleRules(filterItemId){
+  var wrap=document.getElementById('aiStyleRulesWrap');
+  var items=filterItemId?_aiAllRules.filter(function(i){return String(i.id)===String(filterItemId);}):_aiAllRules;
+  if(!items.length){wrap.innerHTML='<p style="font-size:12px;color:#7a6a58;">No style options configured yet. Add your first option group below.</p>';return;}
+  var html='';
+  items.forEach(function(item){
+    html+='<div class="ai-cfg-card" style="margin-bottom:10px;">';
+    html+='<div style="font-size:13px;font-weight:700;color:#1a0e06;margin-bottom:10px;">'+item.name+'</div>';
+    if(!item.options||!item.options.length){html+='<p style="font-size:12px;color:#7a6a58;">No options yet.</p></div>';return;}
+    item.options.forEach(function(opt){
+      html+='<div class="ai-opt-row">';
+      html+='<div class="ai-opt-body">';
+      html+='<div class="ai-opt-label">'+opt.label+'</div>';
+      html+='<div class="ai-opt-group">'+opt.group+'</div>';
+      html+='<div class="ai-val-tags">';
+      (opt.values||[]).forEach(function(v){
+        html+='<span class="ai-val-tag" title="'+(v.ai_prompt?'AI: '+v.ai_prompt:'No custom AI prompt')+'">'+v.label+(v.ai_prompt?' ✦':'')+'</span>';
+      });
+      html+='</div></div>';
+      html+='<button onclick="deleteAiOption('+opt.id+')" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:16px;padding:4px;" title="Delete">🗑</button>';
+      html+='</div>';
+    });
+    html+='</div>';
+  });
+  wrap.innerHTML=html;
+}
+function deleteAiOption(oid){
+  if(!confirm('Delete this option group and all its values?'))return;
+  apiFetch('/owner/website/services/item/style-options/delete/'+oid,{method:'POST'})
+    .then(function(r){return r.json();}).then(function(d){
+      if(d.ok){toast('Deleted');loadAiStyleRules();}
+      else toast(d.error||'Error',true);
+    });
+}
+function aiAddOptionGroup(){
+  var iid=document.getElementById('aiNewItemId').value;
+  var group=document.getElementById('aiNewGroup').value.trim();
+  var label=document.getElementById('aiNewLabel').value.trim();
+  var vals=document.getElementById('aiNewValues').value.trim();
+  if(!iid||!group||!label||!vals){toast('Fill all fields',true);return;}
+  var st=document.getElementById('aiAddOptStatus');
+  if(st){st.textContent='Adding…';st.style.color='#7a6a58';}
+  apiFetch('/owner/website/services/item/style-options/add/'+iid,{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({option_group:group,option_label:label,option_values:vals,is_required:0})})
+    .then(function(r){return r.json();}).then(function(d){
+      if(d.ok){
+        toast('Option group added!');
+        if(st){st.innerHTML='<span style="color:green">✓ Added</span>';}
+        document.getElementById('aiNewGroup').value='';
+        document.getElementById('aiNewLabel').value='';
+        document.getElementById('aiNewValues').value='';
+        if(_aiActiveFilter||document.getElementById('aiAdmRules').classList.contains('active')) loadAiStyleRules();
+      } else {
+        if(st){st.innerHTML='<span style="color:red">✗ '+(d.error||'Error')+'</span>';}
+      }
+    });
+}
+
+// ── Stats ──
+function loadAiStats(){
+  apiFetch('/owner/api/ai-stats').then(function(r){return r.json();}).then(function(d){
+    if(!d.ok)return;
+    var s=d.stats||{};
+    document.getElementById('stTotalAccounts').textContent=s.total_accounts||'0';
+    document.getElementById('stTotalTryon').textContent=s.total_tryon_used||'0';
+    document.getElementById('stStyleItems').textContent=s.style_items||'0';
+    document.getElementById('stStyleOptions').textContent=s.style_options||'0';
+    var tbl=document.getElementById('aiTryonTable');
+    if(tbl){
+      if(!s.top_tryon||!s.top_tryon.length){tbl.innerHTML='<p style="color:#7a6a58;">No try-on usage yet.</p>';return;}
+      var h='<table style="width:100%;border-collapse:collapse;">';
+      h+='<tr style="font-size:10px;color:#7a6a58;border-bottom:1px solid #f0e8dc;"><th style="text-align:left;padding:5px 0;">Customer</th><th style="text-align:right;padding:5px 0;">Try-Ons</th></tr>';
+      s.top_tryon.forEach(function(u){
+        h+='<tr style="border-bottom:1px solid #f9f5f0;"><td style="padding:6px 0;font-size:12px;">'+(u.name||u.mobile||'—')+'</td><td style="text-align:right;font-size:12px;font-weight:700;color:#C8903A;">'+u.tryon_count+'</td></tr>';
+      });
+      h+='</table>';
+      tbl.innerHTML=h;
+    }
+  }).catch(function(){});
+}
+
+// Load AI rules when panel becomes active
+var _origWaTab=waTab;
+waTab=function(n,b){
+  _origWaTab(n,b);
+  if(n==='ai'){
+    setTimeout(function(){
+      var firstTab=document.querySelector('#wp-ai .ai-adm-tab.active');
+      if(!firstTab) aiAdmTab('config',document.querySelector('#wp-ai .ai-adm-tab'));
+    },50);
+  }
+};
+
 </script>
 {% endblock %}
 </body>

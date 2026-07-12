@@ -630,6 +630,23 @@ def api_daily_craft_latest():
     except Exception as ex:
         return jsonify({"ok": False, "error": str(ex)})
 
+@website_bp.route("/ai-customize")
+def ai_customize():
+    db = get_db()
+    try:
+        fabrics = [dict(f) for f in db.execute("SELECT id,name,image_url,fabric_type FROM web_fabrics WHERE active=1 ORDER BY sort_order").fetchall()]
+    except Exception:
+        fabrics = []
+    try:
+        items = [dict(i) for i in db.execute("SELECT id,name,image_url FROM web_service_items ORDER BY sort_order,id").fetchall()]
+    except Exception:
+        items = []
+    return render_template("website/ai_customize.html",
+        fabrics=fabrics, items=items,
+        page_meta={"title":"AI Style Studio — Uttam Tailors",
+                   "desc":"Design your perfect custom garment with AI. See a photorealistic preview before ordering.",
+                   "robots":"index,follow","og_image":"","canonical":""})
+
 @website_bp.route("/privacy")
 @website_bp.route("/privacy-policy")
 def privacy_policy():
