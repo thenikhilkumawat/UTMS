@@ -686,7 +686,7 @@ function _loadSavedAddresses(){
     html += '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
     addrs.forEach(function(a,i){
       var full = [a.line1, a.line2, a.city, a.state, a.pincode].filter(Boolean).join(', ');
-      html += '<button type="button" onclick="_selectSavedAddr(this,''+full.replace(/'/g,"\'")+'')" '+
+      html += '<button type="button" onclick="_selectSavedAddr(this,this.dataset.addr)" data-addr="'+full.replace(/"/g,'&quot;')+'" '+
         'style="background:'+(i===0?'var(--gold)':'#f5f0e8')+';color:'+(i===0?'#fff':'var(--dark)')+';'+
         'border:1px solid '+(i===0?'var(--gold)':'#ddd4c4')+';border-radius:20px;padding:5px 12px;font-size:12px;cursor:pointer;text-align:left;max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" '+
         'title="'+full+'">'+
