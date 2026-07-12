@@ -622,7 +622,7 @@
           <div id="pdpMeasSaved" class="pdp-meas-panel">
             <div style="margin-top:8px;">
               <div style="display:flex;gap:8px;">
-                <input class="pdp-meas-input" type="tel" id="pdpMeasPhone" placeholder="Your mobile number" style="flex:1;">
+                <input class="pdp-meas-input" type="tel" id="pdpMeasPhone" placeholder="Your mobile number" inputmode="numeric" maxlength="10" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)" style="flex:1;">
                 <button class="pdp-btn-sm" onclick="loadSavedMeasurements()">Load</button>
               </div>
               <div id="pdpSavedMeasResult" style="margin-top:8px;font-size:12px;color:var(--muted);"></div>

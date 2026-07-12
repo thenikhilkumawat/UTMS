@@ -88,7 +88,7 @@
             </div>
             <div class="field-wrap">
               <label>Mobile</label>
-              <input type="text" id="r-mobile">
+              <input type="tel" id="r-mobile" inputmode="numeric" maxlength="10" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)">
             </div>
             <div class="field-wrap">
               <label>Address</label>

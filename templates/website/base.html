@@ -1158,7 +1158,7 @@ function closePopup(){
   <div id="suppIntro">
     <div class="supp-intro">
       <input id="suppName" type="text" placeholder="Your name *">
-      <input id="suppMobile" type="tel" placeholder="WhatsApp number">
+      <input id="suppMobile" type="tel" inputmode="numeric" maxlength="10" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)" placeholder="WhatsApp number">
       <input id="suppEmail" type="email" placeholder="Email address">
       <button onclick="startSuppChat()">Start Chat</button>
     </div>

@@ -158,7 +158,7 @@
           </div>
           <div class="rv-row" style="margin-bottom:7px;">
             <input class="rv-input" id="custName" placeholder="Full name *" type="text">
-            <input class="rv-input" id="custPhone" placeholder="Mobile *" type="tel">
+            <input class="rv-input" id="custPhone" placeholder="Mobile *" type="tel" inputmode="numeric" maxlength="10" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)">
           </div>
           <input class="rv-input" id="custEmail" placeholder="Email (for order updates)" type="email" style="margin-bottom:7px;">
           <div class="rv-addr-wrap">

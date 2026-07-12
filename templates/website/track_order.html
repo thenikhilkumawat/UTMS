@@ -249,7 +249,7 @@
       </div>
       <div id="tab-phone" style="display:none;">
         <div class="track-input-row">
-          <input class="track-input" id="inputPhone" type="tel" placeholder="10-digit mobile number"
+          <input class="track-input" id="inputPhone" type="tel" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)" placeholder="10-digit mobile number"
                  maxlength="10" onkeydown="if(event.key==='Enter')doTrack()">
           <button class="track-btn" onclick="doTrack()">Track &rarr;</button>
         </div>

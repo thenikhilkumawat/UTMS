@@ -283,7 +283,7 @@
           </div>
           <div class="field-wrap" style="margin:0;">
             <label>Phone (optional)</label>
-            <input type="tel" name="emp_phone" placeholder="Mobile number">
+            <input type="tel" name="emp_phone" type="tel" inputmode="numeric" maxlength="10" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)" placeholder="Mobile number">
           </div>
           <button type="submit" class="btn btn-primary" style="height:46px;margin-top:2px;">+ Add</button>
         </div>

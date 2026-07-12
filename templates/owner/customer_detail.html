@@ -53,7 +53,7 @@
           </div>
           <div class="field-wrap" style="margin:0;">
             <label style="font-weight:700;">Mobile</label>
-            <input type="text" name="mobile" value="{{ cust.mobile }}" style="font-size:15px;padding:10px 12px;">
+            <input type="text" name="mobile" value="{{ cust.mobile }}" type="tel" inputmode="numeric" maxlength="10" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)" style="font-size:15px;padding:10px 12px;">
           </div>
           <div class="field-wrap" style="margin:0;">
             <label style="font-weight:700;">Address</label>

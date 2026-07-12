@@ -258,7 +258,7 @@
         '<div><label class="acctpg-lbl">Label</label><input class="acctpg-in" id="afLabel" value="Home"></div>' +
         '<div><label class="acctpg-lbl">Full name</label><input class="acctpg-in" id="afName" value="'+esc(a.name||'')+'"></div>' +
       '</div>' +
-      '<label class="acctpg-lbl">Mobile</label><input class="acctpg-in" id="afMobile" value="'+esc(a.mobile||'')+'">' +
+      '<label class="acctpg-lbl">Mobile</label><input class="acctpg-in" id="afMobile" type="tel" inputmode="numeric" maxlength="10" value="'+esc(a.mobile||'')+'">' +
       '<label class="acctpg-lbl">Address line 1</label><input class="acctpg-in" id="afLine1" value="'+esc(a.address_line1||'')+'">' +
       '<label class="acctpg-lbl">Address line 2</label><input class="acctpg-in" id="afLine2" value="'+esc(a.address_line2||'')+'">' +
       '<div class="acctpg-row">' +
