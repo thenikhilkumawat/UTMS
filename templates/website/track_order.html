@@ -375,6 +375,8 @@
 
 <script>
 var WA = '{{ web_settings.get("web_footer_whatsapp","919999999999") }}';
+var URL_COMMISSION = '{{ url_for("website.commission") }}';
+var URL_SERVICES   = '{{ url_for("website.services") }}';
 
 var STAGES_PICKUP = [
   {n:1,lbl:'Order\nReceived',ic:'✓'},
@@ -512,8 +514,8 @@ function renderResult(o){
   var waMsg=encodeURIComponent('Hi, I want to ask about my order '+o.order_code);
   document.getElementById('resActions').innerHTML=
     '<a class="tp-act ta-wa" href="https://wa.me/'+WA+'?text='+waMsg+'" target="_blank" rel="noopener">💬 WhatsApp us</a>'+
-    '<a class="tp-act ta-dark" href="{{ url_for(\'website.commission\') }}">✂️ Place another order</a>'+
-    '<a class="tp-act ta-out" href="{{ url_for(\'website.services\') }}">Browse services</a>';
+    '<a class="tp-act ta-dark" href="'+URL_COMMISSION+'">✂️ Place another order</a>'+
+    '<a class="tp-act ta-out" href="'+URL_SERVICES+'">Browse services</a>';
 
   document.getElementById('trackResult').classList.add('show');
   setTimeout(function(){document.getElementById('trackResult').scrollIntoView({behavior:'smooth',block:'start'});},100);
