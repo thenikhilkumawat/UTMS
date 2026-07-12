@@ -893,6 +893,7 @@ function openCart(){
   var p=document.getElementById('cartPanel'),o=document.getElementById('navOverlay');
   if(p)p.classList.add('open');if(o)o.classList.add('open');
   document.body.style.overflow='hidden';
+  _checkOverlay();
 }
 function closeCart(){
   var p=document.getElementById('cartPanel');if(p)p.classList.remove('open');
@@ -903,6 +904,7 @@ function openWishlist(){
   var p=document.getElementById('wlPanel'),o=document.getElementById('navOverlay');
   if(p)p.classList.add('open');if(o)o.classList.add('open');
   document.body.style.overflow='hidden';
+  _checkOverlay();
 }
 function closeWishlist(){
   var p=document.getElementById('wlPanel');if(p)p.classList.remove('open');
@@ -1048,6 +1050,7 @@ function openAccount(){
   var p=document.getElementById('acctPanel'),o=document.getElementById('navOverlay');
   if(p)p.classList.add('open'); if(o)o.classList.add('open');
   document.body.style.overflow='hidden';
+  _checkOverlay();
 }
 function closeAccount(){
   var p=document.getElementById('acctPanel'); if(p)p.classList.remove('open');
