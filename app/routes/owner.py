@@ -3910,10 +3910,7 @@ def homepage_hero_upload_image():
         ext = _os.path.splitext(file.filename)[1].lower()
         if ext not in [".jpg", ".jpeg", ".png", ".webp", ".gif"]:
             ext = ".jpg"
-        folder = _os.path.join(
-            _os.path.dirname(_os.path.dirname(_os.path.dirname(__file__))),
-            "static", "website", "img", "hero"
-        )
+        folder = _os.path.join(_os.path.dirname(__file__), "../../static/website/img/hero")
         _os.makedirs(folder, exist_ok=True)
         fname = f"hero_{_uuid.uuid4().hex[:10]}{ext}"
         fpath = _os.path.join(folder, fname)
