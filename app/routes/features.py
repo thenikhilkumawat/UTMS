@@ -492,9 +492,8 @@ def style_request_start():
         return jsonify({"ok": True, "request_id": req_id})
     except Exception as e:
         import traceback as _tb
-        err_detail = _tb.format_exc()
-        print("style_request_start ERROR:", err_detail)
-        return jsonify({"ok": False, "error": str(e), "detail": err_detail[-500:]}), 500
+        print("style_request_start ERROR:", _tb.format_exc())
+        return jsonify({"ok": False, "error": "Submission failed. Please try again."}), 500
 
 @features_bp.route("/api/style-request/<int:req_id>/messages")
 def style_request_messages(req_id):
