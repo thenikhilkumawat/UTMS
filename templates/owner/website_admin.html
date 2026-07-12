@@ -1507,7 +1507,6 @@ function loadStitchOrders(){
     });
     mEl.textContent=mStr.trim();
     mWrap.style.display=mStr.trim()?'block':'none';
-    } else { mWrap.style.display='none'; }
     card.style.display='block';
     toast('Loaded — '+code+' · Stage '+d.stage+' ('+( sl[d.stage]||'Unknown')+')');
   }).catch(function(){toast('Error loading order',true);});
