@@ -338,6 +338,15 @@ function renderSummary(){
 
 // ── Submit ──────────────────────────────────────────────────────────
 function submitInspo(){
+  /* Validate mobile before submit */
+  var mob = document.getElementById('inspoMobile').value.replace(/[^0-9]/g,'');
+  document.getElementById('inspoMobile').value = mob;
+  if(mob.length !== 10){
+    document.getElementById('inspoMobile').focus();
+    document.getElementById('inspoMobile').style.border = '1.5px solid #dc2626';
+    return;
+  }
+  document.getElementById('inspoMobile').style.border = '1.5px solid var(--border)';
   var btn = document.getElementById('submitInspoBtn');
   btn.disabled = true; btn.textContent = 'Submitting…';
   var stitch = document.querySelector('.stitch-card.sel');
