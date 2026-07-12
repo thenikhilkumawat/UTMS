@@ -23,9 +23,16 @@
 /* ── Item card ── */
 .rv-item{display:flex;gap:12px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--border);}
 .rv-item:last-child{border-bottom:none;padding-bottom:0;}
-.rv-item-img{width:96px;height:118px;border-radius:10px;object-fit:cover;object-position:top;background:var(--bg2);flex-shrink:0;cursor:pointer;transition:opacity .15s;}
-.rv-item-name{font-family:var(--fd);font-size:19px;color:var(--dark);line-height:1.2;margin-bottom:4px;}
-.rv-item-price{font-family:var(--fm);font-size:12.5px;letter-spacing:.04em;color:var(--gold);margin-bottom:6px;}
+/* garment card redesign */
+.review-item-row{display:flex;gap:16px;align-items:flex-start;}
+.rv-item-img{width:120px;height:150px;border-radius:12px;object-fit:cover;object-position:top;background:var(--bg2);flex-shrink:0;cursor:pointer;transition:transform .15s,box-shadow .15s;}
+.rv-item-img:hover{transform:scale(1.02);box-shadow:0 6px 20px rgba(26,14,6,.15);}
+.rv-item-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;}
+.rv-item-name{font-family:var(--fd);font-size:22px;color:var(--dark);line-height:1.2;margin-bottom:2px;}
+.rv-item-price{font-family:var(--fm);font-size:13px;letter-spacing:.04em;color:var(--gold);margin-bottom:8px;}
+.rv-item-tag{display:inline-block;padding:3px 10px;border-radius:20px;background:var(--bg2);border:1px solid var(--border);font-size:11px;font-weight:600;color:var(--muted);font-family:var(--fm);letter-spacing:.04em;margin-right:4px;margin-bottom:4px;}
+.rv-tap-btn{display:inline-flex;align-items:center;gap:5px;margin-top:10px;padding:7px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:20px;font-size:11px;font-family:var(--fm);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);cursor:pointer;transition:border-color .15s,color .15s;}
+.rv-tap-btn:hover{border-color:var(--gold);color:var(--gold);}
 
 /* ── Login panel ── */
 .rv-tab-bar{display:flex;border:1px solid var(--border);border-radius:7px;overflow:hidden;margin-bottom:12px;}
@@ -127,14 +134,17 @@
       <div class="rv-card" id="reviewItemCard">
         <div class="rv-card-label">Your Garment</div>
         <div class="review-item-row">
-          <img id="revImg" class="rv-item-img" src="" alt="" onclick="showGarmentDetails()" title="Tap to see all details">
-          <div class="gd-tap-hint" style="text-align:left;margin-top:4px;">Tap image for details</div>
-          <div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+            <img id="revImg" class="rv-item-img" src="" alt="" onclick="showGarmentDetails()">
+            <div style="font-size:10px;color:var(--muted);font-family:var(--fm);letter-spacing:.05em;">Tap for details</div>
+          </div>
+          <div class="rv-item-info">
             <div class="rv-item-name" id="revName">—</div>
-            <div class="rv-item-price" id="revSub">Loading...</div>
+            <div class="rv-item-price" id="revSub"></div>
+            <div id="revSpecs"></div>
+            <button type="button" class="rv-tap-btn" onclick="showGarmentDetails()">🔍 View all selected details</button>
           </div>
         </div>
-        <div id="revSpecs"></div>
       </div>
 
       <!-- Account card: toggles between login/signup and filled details -->
@@ -338,15 +348,21 @@ function init(){
   } else {
     var img=document.getElementById('revImg'); if(img&&_order.item_img)img.src=_order.item_img;
     var name=document.getElementById('revName'); if(name)name.textContent=_order.item_name;
-    var sub=document.getElementById('revSub'); if(sub)sub.textContent=(_order.size?'Size: '+_order.size:'')+(_order.urgent?' · ⚡ Urgent':'');
+    var sub=document.getElementById('revSub'); if(sub){
+      var tags='';
+      if(_order.size)tags+='<span class="rv-item-tag">'+esc(_order.size)+'</span>';
+      if(_order.item_price)tags+='<span class="rv-item-tag" style="color:var(--gold);border-color:var(--gold);">Rs. '+_order.item_price+'</span>';
+      if(_order.urgent)tags+='<span class="rv-item-tag" style="color:#b45309;border-color:#fbbf24;">⚡ Urgent</span>';
+      sub.innerHTML=tags;
+    }
     var specs=document.getElementById('revSpecs');
     if(specs){
       var h='';
       if(_order.qty>1)h+='<div class="rv-spec"><span class="rv-spec-k">Qty</span><span class="rv-spec-v">'+_order.qty+'</span></div>';
       if(_order.meas_method)h+='<div class="rv-spec"><span class="rv-spec-k">Measurements</span><span class="rv-spec-v">'+(_order.meas_method.charAt(0).toUpperCase()+_order.meas_method.slice(1).replace(/_/g,' '))+'</span></div>';
       if(_order.fabric&&_order.fabric!=='own')h+='<div class="rv-spec"><span class="rv-spec-k">Fabric</span><span class="rv-spec-v">From catalogue</span></div>';
-      if(_order.styles){Object.keys(_order.styles).forEach(function(k){h+='<div class="rv-spec"><span class="rv-spec-k">'+k+'</span><span class="rv-spec-v">'+_order.styles[k]+'</span></div>';});}
-      if(_order.notes)h+='<div class="rv-spec"><span class="rv-spec-k">Notes</span><span class="rv-spec-v">'+_order.notes+'</span></div>';
+      if(_order.styles){Object.keys(_order.styles).forEach(function(k){h+='<div class="rv-spec"><span class="rv-spec-k">'+esc(k)+'</span><span class="rv-spec-v">'+esc(_order.styles[k])+'</span></div>';});}
+      if(_order.notes)h+='<div class="rv-spec" style="flex-direction:column;gap:2px;"><span class="rv-spec-k">Notes</span><span class="rv-spec-v" style="text-align:left;max-width:100%;color:var(--dark);">'+esc(_order.notes)+'</span></div>';
       specs.innerHTML=h;
     }
   }
