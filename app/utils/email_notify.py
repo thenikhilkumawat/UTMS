@@ -18,10 +18,11 @@ _log = logging.getLogger(__name__)
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
+import os as _os
 SMTP_HOST = "smtpout.secureserver.net"
 SMTP_PORT = 587
-SMTP_USER = "info@uttamtailors.in"
-SMTP_PASS = "L&m5$w8S*R*jB.G"
+SMTP_USER = _os.environ.get("SMTP_USER_GODADDY", "info@uttamtailors.in")
+SMTP_PASS = _os.environ.get("SMTP_PASS_GODADDY", "")  # Set in .env on server — never hardcode
 
 FROM_ORDER  = "Uttam Tailors <info@uttamtailors.in>"
 FROM_UPDATE = "Uttam Tailors <info@uttamtailors.in>"

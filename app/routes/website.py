@@ -2159,11 +2159,13 @@ def api_send_email_otp():
             return jsonify({"ok": False, "error": "Could not send email — please check your email address."})
         return jsonify({"ok": True, "message": f"OTP sent to {email}"})
     except Exception as ex:
-        import traceback
-        return jsonify({"ok": False, "error": f"Server error: {str(ex)}", "trace": traceback.format_exc()[:500]})
+        import logging as _logging
+        _logging.getLogger(__name__).error("send-email-otp error: %s", ex, exc_info=True)
+        return jsonify({"ok": False, "error": "Could not send OTP — please try again."})
 
 
 @website_bp.route("/api/account/verify-email-otp", methods=["POST"])
+@_rl("10 per minute; 30 per hour")   # OTP brute-force guard
 def api_verify_email_otp():
     """Verify OTP → create account with free tokens → log in."""
     data     = request.get_json(force=True, silent=True) or {}
@@ -2227,6 +2229,7 @@ def api_verify_email_otp():
 
 
 @website_bp.route("/api/account/email-login", methods=["POST"])
+@_rl("10 per minute; 30 per hour")   # Password brute-force guard
 def api_email_login():
     """Login with email + password."""
     from werkzeug.security import check_password_hash as _cph
@@ -2240,11 +2243,10 @@ def api_email_login():
     acc = db.execute(
         "SELECT * FROM web_accounts WHERE LOWER(email)=? AND is_active=1", (email,)
     ).fetchone()
-    if not acc:
-        return jsonify({"ok": False, "error": "No account found with that email — please sign up"})
-    pw_hash = acc["password_hash"] if "password_hash" in acc.keys() else ""
-    if not pw_hash or not _cph(pw_hash, password):
-        return jsonify({"ok": False, "error": "Incorrect password"})
+    pw_hash = acc["password_hash"] if acc and "password_hash" in acc.keys() else ""
+    if not acc or not pw_hash or not _cph(pw_hash, password):
+        # Generic message — don't reveal whether email exists (prevents enumeration)
+        return jsonify({"ok": False, "error": "Invalid email or password"})
 
     session["web_account_id"] = acc["id"]
     session.permanent = True

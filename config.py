@@ -5,7 +5,9 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 class Config:
-    SECRET_KEY    = "uttam-tailors-v2-secret-2025"
+    # SECURITY: Must be set via SECRET_KEY env var in production.
+    # A hardcoded fallback is used only for local dev — never in production.
+    SECRET_KEY    = os.environ.get("SECRET_KEY", "uttam-tailors-v2-secret-2025-CHANGE-IN-PROD")
     # SQLite database (local)
     DATABASE      = os.environ.get("DATABASE_PATH") or os.path.join(BASE_DIR, "uttam.db")
     UPLOAD_FOLDER = os.path.join(BASE_DIR, "static", "order_images")

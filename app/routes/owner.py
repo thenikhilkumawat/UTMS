@@ -6,6 +6,21 @@ from database import get_db, get_setting, set_setting
 
 bp = Blueprint("owner", __name__, url_prefix="/owner")
 
+# Rate limiter (same instance as website.py)
+try:
+    from app.extensions import limiter as _owner_limiter, LIMITER_AVAILABLE as _OL_AVAIL
+except Exception:
+    _owner_limiter = None; _OL_AVAIL = False
+
+def _owner_rl(limit_str):
+    if _OL_AVAIL and _owner_limiter:
+        return _owner_limiter.limit(limit_str)
+    return lambda f: f  # no-op if limiter not installed
+
+# Brute-force PIN attempt counter stored in session
+_MAX_PIN_ATTEMPTS = 5
+_PIN_LOCKOUT_MINUTES = 15
+
 
 ORDERS_PAGE = """{% extends 'base.html' %}
 {% block title %}Orders & Progress — Owner{% endblock %}
@@ -451,18 +466,47 @@ def login():
     return render_template("owner/login.html", active_page=None, show_voice=False, urgent_count=0, next_url=next_url)
 
 @bp.route("/verify-pin", methods=["POST"])
+@_owner_rl("10 per minute; 30 per hour")   # Brute-force guard on admin PIN
 def verify_pin():
+    from datetime import datetime as _dt
     data = request.get_json(silent=True) or {}
     entered = str(data.get("pin",""))
+
+    # Session-level lockout after 5 wrong attempts
+    lockout_until = session.get("pin_lockout_until")
+    if lockout_until:
+        try:
+            lu = _dt.fromisoformat(lockout_until)
+            if _dt.now() < lu:
+                remaining = int((lu - _dt.now()).total_seconds() // 60) + 1
+                return jsonify({"ok": False, "error": f"Too many attempts. Try again in {remaining} min."}), 429
+            else:
+                session.pop("pin_lockout_until", None)
+                session.pop("pin_attempts", None)
+        except Exception:
+            pass
+
     real_pin = get_setting("owner_pin","1234")
     if entered == real_pin:
+        session.pop("pin_attempts", None)
+        session.pop("pin_lockout_until", None)
         session["owner_logged_in"] = True
         session.permanent = False
         next_url = str(data.get("next") or "")
         if not next_url.startswith("/owner/"):
             next_url = ""
         return jsonify({"ok": True, "next": next_url})
-    return jsonify({"ok": False})
+
+    # Wrong PIN — increment counter
+    attempts = session.get("pin_attempts", 0) + 1
+    session["pin_attempts"] = attempts
+    if attempts >= _MAX_PIN_ATTEMPTS:
+        from datetime import timedelta as _td
+        session["pin_lockout_until"] = (_dt.now() + _td(minutes=_PIN_LOCKOUT_MINUTES)).isoformat()
+        session.pop("pin_attempts", None)
+        return jsonify({"ok": False, "error": f"Too many wrong attempts. Locked for {_PIN_LOCKOUT_MINUTES} minutes."}), 429
+    remaining = _MAX_PIN_ATTEMPTS - attempts
+    return jsonify({"ok": False, "error": f"Wrong PIN. {remaining} attempt(s) left."})
 
 @bp.route("/logout", methods=["GET","POST"])
 def logout():
