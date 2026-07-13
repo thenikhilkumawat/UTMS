@@ -7,6 +7,11 @@ from database import init_db, get_setting
 
 app = Flask(__name__, template_folder="templates", static_folder="static", static_url_path="/static")
 app.secret_key = Config.SECRET_KEY
+from datetime import timedelta
+app.config["SESSION_COOKIE_HTTPONLY"]=True
+app.config["SESSION_COOKIE_SAMESITE"]="Lax"
+app.config["SESSION_COOKIE_SECURE"]=os.environ.get("FLASK_ENV")!="development"
+app.config["PERMANENT_SESSION_LIFETIME"]=timedelta(days=7)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 
 
@@ -84,7 +89,10 @@ def health_db():
 def add_header(response):
     if request.path.startswith("/static/"):
         response.headers["Cache-Control"] = "public, max-age=86400"
-    response.headers["ngrok-skip-browser-warning"] = "true"
+    response.headers["ngrok-skip-browser-warning"]="true"
+    response.headers["X-Frame-Options"]="SAMEORIGIN"
+    response.headers["X-Content-Type-Options"]="nosniff"
+    response.headers["Referrer-Policy"]="strict-origin-when-cross-origin"
     return response
 
 # ── Custom 404 ───────────────────────────────────────────────────────────────
@@ -104,6 +112,10 @@ app.register_blueprint(employee_bp, url_prefix="/manage")
 app.register_blueprint(owner_bp)
 app.register_blueprint(website_bp)
 app.register_blueprint(features_bp)
+try:
+    from app.extensions import limiter as _lim,LIMITER_AVAILABLE as _LA
+    if _LA and _lim: _lim.init_app(app)
+except Exception: pass
 
 # ── Inject ann_items into every website template ──────────────────────────────
 
