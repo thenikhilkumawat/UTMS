@@ -2052,11 +2052,166 @@ def order_review():
 
 @website_bp.route("/account")
 def account_page():
-    return render_template("website/account.html", page_meta={
-        "title": "My Account — Uttam Tailors",
-        "desc": "Manage your account, orders, wishlist and measurements.",
-        "robots": "noindex,nofollow", "og_image": "", "canonical": ""
-    })
+    google_error = request.args.get("google_error", "")
+    return render_template("website/account.html",
+        google_error=google_error,
+        page_meta={
+            "title": "My Account — Uttam Tailors",
+            "desc": "Manage your account, orders, wishlist and measurements.",
+            "robots": "noindex,nofollow", "og_image": "", "canonical": ""
+        }
+    )
+
+
+# ── Google OAuth ──────────────────────────────────────────────────────────────
+
+@website_bp.route("/auth/google/login")
+def auth_google_login():
+    """Redirect user to Google OAuth consent screen."""
+    import secrets as _sec, urllib.parse as _up
+    from config import Config
+    client_id = Config.GOOGLE_CLIENT_ID
+    if not client_id:
+        next_url = request.args.get("next", "/account")
+        return redirect(f"{next_url}?google_error=Google+sign-in+is+not+configured+yet")
+
+    state = _sec.token_urlsafe(24)
+    session["oauth_state"]    = state
+    session["oauth_next"]     = request.args.get("next", "/account")
+
+    params = {
+        "client_id":     client_id,
+        "redirect_uri":  _google_redirect_uri(),
+        "response_type": "code",
+        "scope":         "openid email profile",
+        "state":         state,
+        "access_type":   "online",
+        "prompt":        "select_account",
+    }
+    url = "https://accounts.google.com/o/oauth2/v2/auth?" + _up.urlencode(params)
+    return redirect(url)
+
+
+@website_bp.route("/auth/google/callback")
+def auth_google_callback():
+    """Handle Google OAuth callback — create or log in account."""
+    import urllib.parse as _up
+    from config import Config
+    import requests as _req
+
+    # CSRF check
+    state      = request.args.get("state", "")
+    sess_state = session.pop("oauth_state", "")
+    next_url   = session.pop("oauth_next", "/account")
+    error      = request.args.get("error", "")
+
+    if error:
+        return redirect(f"{next_url}?google_error=Google+sign-in+was+cancelled")
+    if not state or state != sess_state:
+        return redirect(f"{next_url}?google_error=Invalid+OAuth+state+%E2%80%94+please+try+again")
+
+    code = request.args.get("code", "")
+    if not code:
+        return redirect(f"{next_url}?google_error=No+authorisation+code+from+Google")
+
+    # Exchange code for tokens
+    try:
+        tok_resp = _req.post(
+            "https://oauth2.googleapis.com/token",
+            data={
+                "code":          code,
+                "client_id":     Config.GOOGLE_CLIENT_ID,
+                "client_secret": Config.GOOGLE_CLIENT_SECRET,
+                "redirect_uri":  _google_redirect_uri(),
+                "grant_type":    "authorization_code",
+            },
+            timeout=10,
+        )
+        tok_data = tok_resp.json()
+    except Exception:
+        return redirect(f"{next_url}?google_error=Could+not+reach+Google+%E2%80%94+try+again")
+
+    if "error" in tok_data:
+        return redirect(f"{next_url}?google_error=Google+token+error+%E2%80%94+please+try+again")
+
+    access_token = tok_data.get("access_token", "")
+    if not access_token:
+        return redirect(f"{next_url}?google_error=Missing+access+token+from+Google")
+
+    # Fetch user info
+    try:
+        ui_resp = _req.get(
+            "https://www.googleapis.com/oauth2/v3/userinfo",
+            headers={"Authorization": f"Bearer {access_token}"},
+            timeout=10,
+        )
+        ui = ui_resp.json()
+    except Exception:
+        return redirect(f"{next_url}?google_error=Could+not+fetch+Google+profile")
+
+    google_id = ui.get("sub", "")
+    email     = (ui.get("email") or "").strip().lower()
+    name      = (ui.get("name")  or ui.get("given_name") or "").strip()
+
+    if not google_id or not email:
+        return redirect(f"{next_url}?google_error=Google+did+not+share+your+email")
+
+    # Create or log in account
+    db  = get_db()
+    acc = db.execute(
+        "SELECT * FROM web_accounts WHERE google_id=? AND is_active=1 LIMIT 1",
+        (google_id,)
+    ).fetchone()
+
+    if not acc:
+        # Try matching by email (user may have signed up via email before)
+        acc = db.execute(
+            "SELECT * FROM web_accounts WHERE LOWER(email)=? AND is_active=1 LIMIT 1",
+            (email,)
+        ).fetchone()
+
+    if acc:
+        # Update google_id if not set
+        if not acc["google_id"]:
+            db.execute("UPDATE web_accounts SET google_id=? WHERE id=?", (google_id, acc["id"]))
+            db.commit()
+        session["web_account_id"] = acc["id"]
+        session.permanent = True
+        return redirect(next_url)
+    else:
+        # New user — create account with free tokens
+        from config import Config as _Cfg
+        free_tokens = getattr(_Cfg, "NEW_ACCOUNT_FREE_TOKENS", 3)
+        try:
+            free_tokens = NEW_ACCOUNT_FREE_TOKENS
+        except NameError:
+            free_tokens = 3
+        db.execute(
+            "INSERT INTO web_accounts(name, email, mobile, google_id, token_balance, is_active, created_at) "
+            "VALUES(?,?,?,?,?,1,datetime('now','localtime'))",
+            (name, email, "", google_id, free_tokens)
+        )
+        db.commit()
+        new_acc = db.execute(
+            "SELECT * FROM web_accounts WHERE google_id=? LIMIT 1", (google_id,)
+        ).fetchone()
+        if new_acc:
+            try:
+                db.execute(
+                    "INSERT INTO token_transactions(account_id, tokens, type) VALUES(?,?,'signup_bonus')",
+                    (new_acc["id"], free_tokens)
+                )
+                db.commit()
+            except Exception:
+                pass
+            session["web_account_id"] = new_acc["id"]
+            session.permanent = True
+        return redirect(next_url)
+
+
+def _google_redirect_uri():
+    """Canonical redirect URI — always use the production domain."""
+    return "https://uttamtailors.in/auth/google/callback"
 
 
 # ── OTP endpoints ─────────────────────────────────────────────────────────────
