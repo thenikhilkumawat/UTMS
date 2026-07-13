@@ -178,6 +178,10 @@
 .as-gate-sub{font-size:13px;color:var(--as-sub);margin-bottom:18px;line-height:1.5;}
 .as-gate-btn{width:100%;padding:13px;border-radius:var(--as-radius);border:none;background:var(--as-gold);color:#fff;font-weight:800;font-size:14px;cursor:pointer;margin-bottom:8px;}
 .as-gate-skip{width:100%;padding:10px;border-radius:var(--as-radius);border:1.5px solid var(--as-border);background:transparent;color:var(--as-sub);font-size:13px;font-weight:600;cursor:pointer;}
+/* Auth input inside gate */
+.as-auth-inp{width:100%;box-sizing:border-box;padding:11px 14px;border:1.5px solid var(--as-border);border-radius:8px;font-size:14px;background:var(--as-bg,#fff);color:var(--as-text,#1a1a1a);outline:none;transition:border-color .2s;}
+.as-auth-inp:focus{border-color:var(--as-gold,#c8903a);}
+
 
 @media(max-width:700px){
   .as-style-layout{grid-template-columns:1fr;}
@@ -370,13 +374,54 @@
   </div>
 </div>
 
-<!-- Gate -->
+<!-- Auth Gate -->
 <div class="as-gate" id="asGate">
-  <div class="as-gate-card">
-    <div class="as-gate-title">✦ Keep Designing</div>
-    <div class="as-gate-sub" id="asGateMsg">You've used your 3 free AI previews. Create a free account to get more.</div>
-    <button class="as-gate-btn" onclick="window.location.href='/account'">Create Free Account</button>
-    <button class="as-gate-skip" onclick="document.getElementById('asGate').classList.remove('show')">Maybe later</button>
+  <div class="as-gate-card" style="max-width:400px;width:92vw;padding:28px 24px;">
+
+    <!-- Header -->
+    <div class="as-gate-title" style="font-size:20px;margin-bottom:4px;">✦ Keep Designing</div>
+    <div id="asGateMsg" style="font-size:13px;color:var(--muted,#888);margin-bottom:20px;text-align:center;">Create a free account and get <strong>3 free AI generations</strong>.</div>
+
+    <!-- Tab switcher -->
+    <div style="display:flex;gap:0;border:1px solid var(--border,#e5e5e5);border-radius:8px;margin-bottom:20px;overflow:hidden;">
+      <button id="asTabSignup" onclick="asAuthTab('signup')" style="flex:1;padding:9px;font-size:13px;font-weight:600;background:var(--dark,#1a1a1a);color:#fff;border:none;cursor:pointer;transition:.2s;">Sign Up</button>
+      <button id="asTabLogin"  onclick="asAuthTab('login')"  style="flex:1;padding:9px;font-size:13px;font-weight:600;background:transparent;color:var(--dark,#1a1a1a);border:none;cursor:pointer;transition:.2s;">Log In</button>
+    </div>
+
+    <!-- SIGNUP PANEL -->
+    <div id="asPanelSignup">
+      <!-- Step 1: details -->
+      <div id="asSignupStep1">
+        <input id="asSignupName"  type="text"  autocomplete="name"     placeholder="Your name"     class="as-auth-inp" style="margin-bottom:10px;">
+        <input id="asSignupEmail" type="email" autocomplete="email"    placeholder="Email address" class="as-auth-inp" style="margin-bottom:10px;">
+        <input id="asSignupPass"  type="password" autocomplete="new-password" placeholder="Password (min 6 chars)" class="as-auth-inp" style="margin-bottom:14px;">
+        <button class="as-gate-btn" onclick="asSendOtp()" style="width:100%">Send Verification Code →</button>
+      </div>
+      <!-- Step 2: OTP -->
+      <div id="asSignupStep2" style="display:none;">
+        <div style="text-align:center;margin-bottom:14px;">
+          <div style="font-size:13px;color:var(--muted,#888);">Enter the 6-digit code sent to</div>
+          <div id="asOtpEmailLabel" style="font-weight:600;font-size:14px;margin-top:4px;color:var(--dark,#1a1a1a);"></div>
+        </div>
+        <input id="asSignupOtp" type="text" inputmode="numeric" autocomplete="one-time-code"
+               maxlength="6" placeholder="_ _ _ _ _ _"
+               class="as-auth-inp" style="text-align:center;font-size:26px;letter-spacing:10px;font-weight:700;margin-bottom:14px;"
+               oninput="if(this.value.replace(/\D/g,'').length===6){this.value=this.value.replace(/\D/g,'');asVerifyOtp();}else{this.value=this.value.replace(/\D/g,'');}">
+        <button class="as-gate-btn" onclick="asVerifyOtp()" style="width:100%;margin-bottom:10px">Verify &amp; Create Account</button>
+        <div style="text-align:center;"><button onclick="asSendOtp(true)" style="background:none;border:none;color:var(--gold,#c8903a);font-size:12px;cursor:pointer;text-decoration:underline;">Resend code</button>
+        &nbsp;·&nbsp;<button onclick="asSignupBackToStep1()" style="background:none;border:none;color:var(--muted,#888);font-size:12px;cursor:pointer;">Change email</button></div>
+      </div>
+    </div>
+
+    <!-- LOGIN PANEL -->
+    <div id="asPanelLogin" style="display:none;">
+      <input id="asLoginEmail" type="email" autocomplete="email"    placeholder="Email address" class="as-auth-inp" style="margin-bottom:10px;">
+      <input id="asLoginPass"  type="password" autocomplete="current-password" placeholder="Password"       class="as-auth-inp" style="margin-bottom:14px;">
+      <button class="as-gate-btn" onclick="asDoLogin()" style="width:100%">Log In →</button>
+    </div>
+
+    <div id="asAuthErr" style="color:#e53e3e;font-size:12px;text-align:center;margin-top:12px;min-height:18px;"></div>
+    <button class="as-gate-skip" onclick="document.getElementById('asGate').classList.remove('show')" style="margin-top:14px;">Maybe later</button>
   </div>
 </div>
 
@@ -787,6 +832,100 @@ function asGoToOrder(){
 function escH(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function escAtt(s){ return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
 
+
+// ── Auth gate functions ──────────────────────────────────────────────────────
+function asAuthTab(tab){
+  var isSU = tab==='signup';
+  document.getElementById('asPanelSignup').style.display = isSU?'':'none';
+  document.getElementById('asPanelLogin').style.display  = isSU?'none':'';
+  document.getElementById('asTabSignup').style.background = isSU?'var(--dark,#1a1a1a)':'transparent';
+  document.getElementById('asTabSignup').style.color      = isSU?'#fff':'var(--dark,#1a1a1a)';
+  document.getElementById('asTabLogin').style.background  = isSU?'transparent':'var(--dark,#1a1a1a)';
+  document.getElementById('asTabLogin').style.color       = isSU?'var(--dark,#1a1a1a)':'#fff';
+  document.getElementById('asAuthErr').textContent='';
+}
+
+function asAuthErr(msg){ document.getElementById('asAuthErr').textContent = msg||''; }
+
+function asSendOtp(resend){
+  var email = (document.getElementById('asSignupEmail').value||'').trim();
+  var name  = (document.getElementById('asSignupName').value||'').trim();
+  var pass  = (document.getElementById('asSignupPass').value||'').trim();
+  if(!email||!email.includes('@')){ asAuthErr('Enter a valid email address'); return; }
+  if(!pass||pass.length<6){ asAuthErr('Password must be at least 6 characters'); return; }
+  asAuthErr(resend?'Resending…':'Sending verification code…');
+  fetch('/api/account/send-email-otp',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({email:email,name:name})})
+  .then(function(r){return r.json();}).then(function(d){
+    if(d.already_exists){
+      asAuthErr('');
+      asAuthTab('login');
+      document.getElementById('asLoginEmail').value = email;
+      document.getElementById('asAuthErr').textContent = 'Account exists — please log in.';
+      return;
+    }
+    if(!d.ok){ asAuthErr(d.error||'Could not send OTP'); return; }
+    asAuthErr('');
+    document.getElementById('asOtpEmailLabel').textContent = email;
+    document.getElementById('asSignupStep1').style.display='none';
+    document.getElementById('asSignupStep2').style.display='';
+    setTimeout(function(){ document.getElementById('asSignupOtp').focus(); }, 100);
+  }).catch(function(){ asAuthErr('Network error — try again'); });
+}
+
+function asSignupBackToStep1(){
+  document.getElementById('asSignupStep1').style.display='';
+  document.getElementById('asSignupStep2').style.display='none';
+  document.getElementById('asSignupOtp').value='';
+  asAuthErr('');
+}
+
+function asVerifyOtp(){
+  var email = (document.getElementById('asSignupEmail').value||'').trim();
+  var otp   = (document.getElementById('asSignupOtp').value||'').replace(/\D/g,'').trim();
+  var name  = (document.getElementById('asSignupName').value||'').trim();
+  var pass  = (document.getElementById('asSignupPass').value||'').trim();
+  if(otp.length!==6){ asAuthErr('Enter the 6-digit code'); return; }
+  asAuthErr('Verifying…');
+  fetch('/api/account/verify-email-otp',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({email:email,otp:otp,name:name,password:pass})})
+  .then(function(r){return r.json();}).then(function(d){
+    if(!d.ok){ asAuthErr(d.error||'Invalid OTP'); return; }
+    asOnAuthSuccess(d);
+  }).catch(function(){ asAuthErr('Network error — try again'); });
+}
+
+function asDoLogin(){
+  var email = (document.getElementById('asLoginEmail').value||'').trim();
+  var pass  = (document.getElementById('asLoginPass').value||'').trim();
+  if(!email||!pass){ asAuthErr('Email and password are required'); return; }
+  asAuthErr('Logging in…');
+  fetch('/api/account/email-login',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({email:email,password:pass})})
+  .then(function(r){return r.json();}).then(function(d){
+    if(!d.ok){ asAuthErr(d.error||'Login failed'); return; }
+    asOnAuthSuccess(d);
+  }).catch(function(){ asAuthErr('Network error — try again'); });
+}
+
+function asOnAuthSuccess(d){
+  // Hide gate, update token bar, then auto-trigger generation
+  document.getElementById('asGate').classList.remove('show');
+  asAuthErr('');
+  // Reset OTP form for next time
+  document.getElementById('asSignupStep1').style.display='';
+  document.getElementById('asSignupStep2').style.display='none';
+  document.getElementById('asSignupOtp').value='';
+  // Update credits display
+  asUpdateCreditsBar(null, d.token_balance);
+  // Auto-continue generation
+  asGenerate();
+}
+
+function asOpenTokenModal(){
+  var m = document.getElementById('asTokenModal');
+  if(m) m.style.display='flex';
+}
 // ── Init ──
 document.getElementById('asFabSkip').classList.add('sel');
 </script>

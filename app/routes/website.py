@@ -5,7 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 website_bp = Blueprint("website", __name__)
 
-FREE_PREVIEW_LIMIT = 3   # Anonymous visitors get this many free AI previews
+FREE_PREVIEW_LIMIT = 1   # Anonymous visitors get 1 free preview, then must sign up
 
 # ── Rate-limiter import ───────────────────────────────────────────────────────
 # Imported from the shared singleton so no circular dependency with run.py.
@@ -2096,6 +2096,135 @@ TOKEN_PACKS = {
     15:  9900,   # 15 credits → ₹99
     40: 19900,   # 40 credits → ₹199
 }
+
+
+# ── Email OTP signup / login for AI Studio gate ───────────────────────────────
+import random as _random, hashlib as _hashlib
+
+NEW_ACCOUNT_FREE_TOKENS = 3   # tokens gifted on first signup
+
+@website_bp.route("/api/account/send-email-otp", methods=["POST"])
+def api_send_email_otp():
+    """Send a 6-digit OTP to an email for signup verification."""
+    from app.utils.email_notify import send_otp_email
+    data  = request.get_json(force=True, silent=True) or {}
+    email = (data.get("email") or "").strip().lower()
+    name  = (data.get("name")  or "").strip()
+    if not email or "@" not in email:
+        return jsonify({"ok": False, "error": "Enter a valid email address"})
+
+    db  = get_db()
+    # Block if email already registered — tell them to log in instead
+    existing = db.execute("SELECT id FROM web_accounts WHERE LOWER(email)=?", (email,)).fetchone()
+    if existing:
+        return jsonify({"ok": False, "error": "This email is already registered — please log in", "already_exists": True})
+
+    otp = str(_random.randint(100000, 999999))
+    # Store in web_otp_store using email as the 'mobile' key
+    db.execute("UPDATE web_otp_store SET used=1 WHERE mobile=? AND used=0", (email,))
+    db.execute(
+        "INSERT INTO web_otp_store(mobile, otp, expires_at) VALUES(?, ?, datetime('now','localtime','+10 minutes'))",
+        (email, otp)
+    )
+    db.commit()
+
+    sent = send_otp_email(email, otp, name)
+    if not sent:
+        return jsonify({"ok": False, "error": "Could not send email. Check your email address and try again."})
+    return jsonify({"ok": True, "message": f"OTP sent to {email}"})
+
+
+@website_bp.route("/api/account/verify-email-otp", methods=["POST"])
+def api_verify_email_otp():
+    """Verify OTP → create account with free tokens → log in."""
+    data     = request.get_json(force=True, silent=True) or {}
+    email    = (data.get("email")    or "").strip().lower()
+    otp      = (data.get("otp")      or "").strip()
+    name     = (data.get("name")     or "").strip()
+    password = (data.get("password") or "").strip()
+
+    if not email or not otp or not password:
+        return jsonify({"ok": False, "error": "Email, OTP and password are required"})
+    if len(password) < 6:
+        return jsonify({"ok": False, "error": "Password must be at least 6 characters"})
+
+    db = get_db()
+    row = db.execute(
+        """SELECT * FROM web_otp_store
+           WHERE mobile=? AND otp=? AND used=0
+             AND expires_at >= datetime('now','localtime')
+           ORDER BY id DESC LIMIT 1""",
+        (email, otp)
+    ).fetchone()
+    if not row:
+        return jsonify({"ok": False, "error": "Invalid or expired OTP — request a new one"})
+
+    db.execute("UPDATE web_otp_store SET used=1 WHERE id=?", (row["id"],))
+
+    # Create account
+    from werkzeug.security import generate_password_hash as _gph
+    pw_hash = _gph(password)
+    try:
+        db.execute(
+            "INSERT INTO web_accounts(name, email, password_hash, token_balance, is_active, created_at) "
+            "VALUES(?,?,?,?,1,datetime('now','localtime'))",
+            (name or email.split("@")[0], email, pw_hash, NEW_ACCOUNT_FREE_TOKENS)
+        )
+        db.commit()
+    except Exception as e:
+        return jsonify({"ok": False, "error": "Account creation failed: " + str(e)})
+
+    acc = db.execute("SELECT * FROM web_accounts WHERE LOWER(email)=?", (email,)).fetchone()
+    if not acc:
+        return jsonify({"ok": False, "error": "Account creation failed"})
+
+    # Log the 3 free tokens as a transaction
+    try:
+        db.execute(
+            "INSERT INTO token_transactions(account_id, tokens, type) VALUES(?,?,'signup_bonus')",
+            (acc["id"], NEW_ACCOUNT_FREE_TOKENS)
+        )
+        db.commit()
+    except Exception:
+        pass
+
+    session["web_account_id"] = acc["id"]
+    session.permanent = True
+    return jsonify({
+        "ok": True,
+        "token_balance": NEW_ACCOUNT_FREE_TOKENS,
+        "account": {"id": acc["id"], "name": acc["name"] or "", "email": email}
+    })
+
+
+@website_bp.route("/api/account/email-login", methods=["POST"])
+def api_email_login():
+    """Login with email + password."""
+    from werkzeug.security import check_password_hash as _cph
+    data     = request.get_json(force=True, silent=True) or {}
+    email    = (data.get("email")    or "").strip().lower()
+    password = (data.get("password") or "").strip()
+    if not email or not password:
+        return jsonify({"ok": False, "error": "Email and password are required"})
+
+    db  = get_db()
+    acc = db.execute(
+        "SELECT * FROM web_accounts WHERE LOWER(email)=? AND is_active=1", (email,)
+    ).fetchone()
+    if not acc:
+        return jsonify({"ok": False, "error": "No account found with that email — please sign up"})
+    pw_hash = acc["password_hash"] if "password_hash" in acc.keys() else ""
+    if not pw_hash or not _cph(pw_hash, password):
+        return jsonify({"ok": False, "error": "Incorrect password"})
+
+    session["web_account_id"] = acc["id"]
+    session.permanent = True
+    tok = acc["token_balance"] if "token_balance" in acc.keys() else 0
+    return jsonify({
+        "ok": True,
+        "token_balance": tok or 0,
+        "account": {"id": acc["id"], "name": acc["name"] or "", "email": email}
+    })
 
 @website_bp.route("/api/tokens/create-order", methods=["POST"])
 def api_tokens_create_order():
