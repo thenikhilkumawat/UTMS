@@ -1121,8 +1121,9 @@ def account_profile_update():
     if not acc:
         return jsonify({"ok": False, "error": "Not logged in"}), 401
     d     = request.get_json(force=True, silent=True) or {}
-    name  = (d.get("name")  or "").strip()
-    email = (d.get("email") or "").strip()
+    name   = (d.get("name")   or "").strip()
+    email  = (d.get("email")  or "").strip()
+    mobile = (d.get("mobile") or "").strip()
     if not name:
         return jsonify({"ok": False, "error": "Name required"})
     line1   = (d.get("address_line1")   or "").strip()
@@ -1131,8 +1132,22 @@ def account_profile_update():
     state   = (d.get("address_state")   or "").strip()
     pincode = (d.get("address_pincode") or "").strip()
     db = get_db()
-    db.execute("UPDATE web_accounts SET name=?, email=? WHERE id=?", (name, email, acc["id"]))
+    # Save mobile — update only if value changed and not already taken by another account
+    cur_mobile = acc["mobile"] if "mobile" in acc.keys() else ""
+    if mobile and mobile != cur_mobile and not (cur_mobile or "").startswith("g:") == False:
+        pass  # will handle below
+    try:
+        if mobile and mobile != cur_mobile:
+            # Remove g: placeholder or update blank mobile
+            db.execute("UPDATE web_accounts SET name=?, email=?, mobile=? WHERE id=?", (name, email, mobile, acc["id"]))
+        else:
+            db.execute("UPDATE web_accounts SET name=?, email=? WHERE id=?", (name, email, acc["id"]))
+    except Exception:
+        # UNIQUE conflict — another account has this mobile
+        db.execute("UPDATE web_accounts SET name=?, email=? WHERE id=?", (name, email, acc["id"]))
     # Save/update default address in web_addresses
+    addr_mobile = mobile or (acc["mobile"] if "mobile" in acc.keys() else "")
+    if addr_mobile.startswith("g:"): addr_mobile = ""
     if line1 and city:
         try:
             _ensure_addresses_table()
@@ -1142,16 +1157,15 @@ def account_profile_update():
             ).fetchone()
             if existing:
                 db.execute(
-                    "UPDATE web_addresses SET full_name=?,line1=?,line2=?,city=?,state=?,pincode=? WHERE id=?",
-                    (name, line1, line2, city, state, pincode, existing["id"])
+                    "UPDATE web_addresses SET full_name=?,mobile=?,line1=?,line2=?,city=?,state=?,pincode=? WHERE id=?",
+                    (name, addr_mobile, line1, line2, city, state, pincode, existing["id"])
                 )
             else:
-                mobile = acc["mobile"] if "mobile" in acc.keys() else ""
                 db.execute(
                     """INSERT INTO web_addresses
                        (account_id,label,full_name,mobile,line1,line2,city,state,pincode,is_default)
                        VALUES(?,?,?,?,?,?,?,?,?,1)""",
-                    (acc["id"], "Home", name, mobile, line1, line2, city, state, pincode)
+                    (acc["id"], "Home", name, addr_mobile, line1, line2, city, state, pincode)
                 )
         except Exception:
             pass
