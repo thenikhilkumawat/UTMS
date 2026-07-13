@@ -1,0 +1,41 @@
+name: Deploy Website Branch
+
+on:
+  push:
+    branches: [ website ]
+
+jobs:
+  deploy-website:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy website branch
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} '
+            set -e
+            exec > >(tee /home/ubuntu/last_website_deploy.log) 2>&1
+            echo "=== Website deploy started: $(date) ==="
+            cd /home/ubuntu/website
+            echo "BEFORE: $(git rev-parse HEAD)"
+            git fetch origin website
+            git checkout -- uttam.db-shm uttam.db-wal 2>/dev/null || true
+            git reset --hard origin/website
+            echo "AFTER:  $(git rev-parse HEAD)"
+            sudo systemctl restart website
+            for i in $(seq 1 15); do
+              if sudo systemctl is-active --quiet website; then
+                echo "website OK after ${i}x2s"
+                exit 0
+              fi
+              sleep 2
+            done
+            echo "website did not become active within 30s"
+            sudo systemctl status website --no-pager -l | tail -20
+            exit 1
+          '
