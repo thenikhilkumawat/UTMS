@@ -1001,7 +1001,7 @@ function _acctSendOtp(){
       window._acctOtpData={email:email,name:name,pass:pass};
       setTimeout(function(){ var i=document.getElementById('acctOtpInput'); if(i) i.focus(); },100);
     })
-    .catch(function(){ if(btn) btn.disabled=false; msg.style.color='#dc2626'; msg.textContent='Network error — try again'; });
+    .catch(function(e){ if(btn) btn.disabled=false; msg.style.color='#dc2626'; msg.textContent='Error: '+(e&&e.message?e.message:'Network error — try again'); });
 }
 
 function _acctVerifyOtp(){

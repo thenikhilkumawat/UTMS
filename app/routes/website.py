@@ -2106,32 +2106,52 @@ NEW_ACCOUNT_FREE_TOKENS = 3   # tokens gifted on first signup
 @website_bp.route("/api/account/send-email-otp", methods=["POST"])
 def api_send_email_otp():
     """Send a 6-digit OTP to an email for signup verification."""
-    from app.utils.email_notify import send_otp_email
-    data  = request.get_json(force=True, silent=True) or {}
-    email = (data.get("email") or "").strip().lower()
-    name  = (data.get("name")  or "").strip()
-    if not email or "@" not in email:
-        return jsonify({"ok": False, "error": "Enter a valid email address"})
+    try:
+        from app.utils.email_notify import send_otp_email
+        import random as _rnd
+        data  = request.get_json(force=True, silent=True) or {}
+        email = (data.get("email") or "").strip().lower()
+        name  = (data.get("name")  or "").strip()
+        if not email or "@" not in email:
+            return jsonify({"ok": False, "error": "Enter a valid email address"})
 
-    db  = get_db()
-    # Block if email already registered — tell them to log in instead
-    existing = db.execute("SELECT id FROM web_accounts WHERE LOWER(email)=?", (email,)).fetchone()
-    if existing:
-        return jsonify({"ok": False, "error": "This email is already registered — please log in", "already_exists": True})
+        db = get_db()
+        # Ensure otp store table exists
+        db.execute("""CREATE TABLE IF NOT EXISTS web_otp_store (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            mobile TEXT NOT NULL DEFAULT '',
+            otp TEXT NOT NULL DEFAULT '',
+            expires_at TEXT NOT NULL DEFAULT '',
+            used INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT (datetime('now','localtime')))""")
+        db.commit()
 
-    otp = str(_random.randint(100000, 999999))
-    # Store in web_otp_store using email as the 'mobile' key
-    db.execute("UPDATE web_otp_store SET used=1 WHERE mobile=? AND used=0", (email,))
-    db.execute(
-        "INSERT INTO web_otp_store(mobile, otp, expires_at) VALUES(?, ?, datetime('now','localtime','+10 minutes'))",
-        (email, otp)
-    )
-    db.commit()
+        # Block if email already registered
+        try:
+            existing = db.execute("SELECT id FROM web_accounts WHERE email=?", (email,)).fetchone()
+        except Exception:
+            existing = None
+        if existing:
+            return jsonify({"ok": False, "error": "This email is already registered — please log in", "already_exists": True})
 
-    sent = send_otp_email(email, otp, name)
-    if not sent:
-        return jsonify({"ok": False, "error": "Could not send email. Check your email address and try again."})
-    return jsonify({"ok": True, "message": f"OTP sent to {email}"})
+        otp = str(_rnd.randint(100000, 999999))
+        try:
+            db.execute("UPDATE web_otp_store SET used=1 WHERE mobile=? AND used=0", (email,))
+        except Exception:
+            pass
+        db.execute(
+            "INSERT INTO web_otp_store(mobile, otp, expires_at) VALUES(?, ?, datetime('now','localtime','+10 minutes'))",
+            (email, otp)
+        )
+        db.commit()
+
+        sent = send_otp_email(email, otp, name)
+        if not sent:
+            return jsonify({"ok": False, "error": "Could not send email — please check your email address."})
+        return jsonify({"ok": True, "message": f"OTP sent to {email}"})
+    except Exception as ex:
+        import traceback
+        return jsonify({"ok": False, "error": f"Server error: {str(ex)}", "trace": traceback.format_exc()[:500]})
 
 
 @website_bp.route("/api/account/verify-email-otp", methods=["POST"])
