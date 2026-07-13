@@ -61,8 +61,9 @@
 <link rel="dns-prefetch" href="https://images.unsplash.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- Load Google Fonts without blocking the page's "loading" state (helps when internet is slow/unstable) -->
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Great+Vibes&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400&display=swap" media="print" onload="this.media='all'">
-<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Great+Vibes&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400&display=swap"></noscript>
+<!-- Fonts: preload critical + sync load to prevent FOUT -->
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400&display=swap">
 <link rel="stylesheet" href="{{ url_for('static', filename='website/css/site.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='website/css/fixes.css') }}">
 <style>
