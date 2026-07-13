@@ -8,3 +8,4 @@ python-dotenv
 razorpay
 flask-limiter==3.5.0
 bleach==6.1.0
+flask-compress==1.15

@@ -58,12 +58,12 @@
 {% endif %}
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="dns-prefetch" href="https://images.unsplash.com">
+<link rel="dns-prefetch" href="https://checkout.razorpay.com">
+<link rel="dns-prefetch" href="https://api.razorpay.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- Load Google Fonts without blocking the page's "loading" state (helps when internet is slow/unstable) -->
-<!-- Fonts: preload critical + sync load to prevent FOUT -->
-<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400&display=swap">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400&display=swap">
+<!-- Single non-blocking font load: display=swap prevents FOUT without double request -->
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=DM+Sans:wght@400;500&family=DM+Mono:wght@400&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=DM+Sans:wght@400;500&family=DM+Mono:wght@400&display=swap"></noscript>
 <link rel="stylesheet" href="{{ url_for('static', filename='website/css/site.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='website/css/fixes.css') }}">
 <style>
@@ -223,7 +223,7 @@ body.drawer-open .wa-fab,body.drawer-open .supp-fab{display:none!important;visib
 {% set _gtm2 = web_settings.get('tracking_gtm_id','') %}
 {% if _gtm2 %}<noscript><iframe src="https://www.googletagmanager.com/ns.html?id={{ _gtm2 }}" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>{% endif %}
 {% if _mpx %}<script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','{{ _mpx }}');fbq('track','PageView');window._fbpx='{{ _mpx }}';</script>
-<noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id={{ _mpx }}&ev=PageView&noscript=1" alt=""/></noscript>{% endif %}
+<noscript><img loading="lazy" height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id={{ _mpx }}&ev=PageView&noscript=1" alt=""/></noscript>{% endif %}
 
 <!-- ═══ PAGE LOADER ═══ -->
 <div id="site-loader" aria-hidden="true">
@@ -548,7 +548,7 @@ body.drawer-open .wa-fab,body.drawer-open .supp-fab{display:none!important;visib
   </div>
 </footer>
 
-<script src="{{ url_for('static', filename='website/js/site.js') }}"></script>
+<script src="{{ url_for('static', filename='website/js/site.js') }}" defer></script>
 <script>
 /* ── Announcement bar — requestAnimationFrame ticker (no CSS animation = no jerk) ── */
 (function(){
@@ -666,7 +666,7 @@ function _renderWL(){
   list.forEach(function(it){
     h+='<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);" data-wl-row="'+it.id+'">';
     h+='<a href="/garment/'+it.id+'" onclick="mmClose();closeWishlist();" style="text-decoration:none;flex-shrink:0;">';
-    h+=it.img?'<img class="wl-item-img" src="'+it.img+'" alt="">':'<div class="wl-item-img"></div>';
+    h+=it.img?'<img loading="lazy" class="wl-item-img" src="'+it.img+'" alt="">':'<div class="wl-item-img"></div>';
     h+='</a>';
     h+='<div style="flex:1;min-width:0;">';
     h+='<a href="/garment/'+it.id+'" onclick="mmClose();closeWishlist();" style="text-decoration:none;">';
@@ -879,7 +879,7 @@ function _renderCart(){
   var h='';
   cart.forEach(function(it){
     h+='<a href="/garment/'+it.id+'" onclick="mmClose();closeCart();" style="text-decoration:none;display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);">';
-    h+=it.img?'<img class="wl-item-img" src="'+it.img+'" alt="">':'<div class="wl-item-img"></div>';
+    h+=it.img?'<img loading="lazy" class="wl-item-img" src="'+it.img+'" alt="">':'<div class="wl-item-img"></div>';
     h+='<div style="flex:1;min-width:0;"><div class="wl-item-name">'+it.name+'</div>';
     h+='<div class="wl-item-price">Rs. '+it.price+' &times; '+(it.qty||1)+'</div></div>';
     h+='<button class="wl-remove" onclick="event.preventDefault();event.stopPropagation();removeFromCart('+it.id+');" title="Remove">&times;</button></a>';
@@ -1067,7 +1067,7 @@ function _acctRenderProfile(){
   var h='';
   h += '<div style="text-align:center;padding:8px 0 20px;">';
   var _avatarInner = s.profile_image
-    ? '<img src="'+s.profile_image+'" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display=\'none\'">'
+    ? '<img loading="lazy" src="'+s.profile_image+'" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display=\'none\'">'
     : (s.name||'U').charAt(0).toUpperCase();
   h += '<div style="width:56px;height:56px;border-radius:50%;background:var(--gold,#C8903A);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;margin:0 auto 12px;overflow:hidden;">'+_avatarInner+'</div>';
   h += '<div style="font-size:17px;font-weight:700;color:var(--dark,#1a0e06);">'+(s.name||'')+'</div>';
@@ -1172,7 +1172,7 @@ _updateCartBtns();
 <div id="discountPopup" style="display:none;position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,.5);align-items:center;justify-content:center;">
   <div style="background:#fff;border-radius:16px;max-width:420px;width:90%;overflow:hidden;position:relative;">
     {% if web_settings.get('web_popup_image') %}
-    <img src="{{ web_settings.get('web_popup_image') }}" style="width:100%;max-height:200px;object-fit:cover;">
+    <img loading="lazy" src="{{ web_settings.get('web_popup_image') }}" style="width:100%;max-height:200px;object-fit:cover;">
     {% endif %}
     <div style="padding:28px 24px;">
       <button onclick="closePopup()" style="position:absolute;top:12px;right:16px;background:none;border:none;font-size:22px;cursor:pointer;color:#888;">&times;</button>

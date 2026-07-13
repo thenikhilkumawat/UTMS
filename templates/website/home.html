@@ -1008,25 +1008,110 @@ fetch('/api/occasions/upcoming').then(function(r){return r.json();}).then(functi
     </div>
 
     <!-- Right: Visual showcase -->
-    <div style="position:relative;">
-      <!-- Main card -->
-      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(200,144,58,.2);border-radius:16px;padding:28px;backdrop-filter:blur(10px);">
+    <div style="position:relative;" class="aip-right">
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(200,144,58,.2);border-radius:16px;padding:24px;backdrop-filter:blur(10px);">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
-          <div style="border-radius:10px;overflow:hidden;aspect-ratio:3/4;background:#1a1008;">
-            <img src="https://images.unsplash.com/photo-1594938298603-c8148c4b4471?w=400&q=80" alt="Your style pick" style="width:100%;height:100%;object-fit:cover;opacity:.85;">
+
+          <!-- Left card: fabric swatch -->
+          <div style="border-radius:10px;overflow:hidden;aspect-ratio:3/4;position:relative;background:#120a02;">
+            <!-- CSS fabric texture -->
+            <div style="position:absolute;inset:0;background:
+              repeating-linear-gradient(90deg,rgba(200,144,58,.07) 0px,rgba(200,144,58,.07) 1px,transparent 1px,transparent 14px),
+              repeating-linear-gradient(0deg,rgba(200,144,58,.07) 0px,rgba(200,144,58,.07) 1px,transparent 1px,transparent 14px),
+              repeating-linear-gradient(45deg,rgba(200,144,58,.04) 0px,rgba(200,144,58,.04) 1px,transparent 1px,transparent 10px),
+              linear-gradient(160deg,#1e1005,#2a1608,#160d03);"></div>
+            <!-- Fabric label -->
+            <div style="position:absolute;top:12px;left:12px;background:rgba(200,144,58,.15);border:1px solid rgba(200,144,58,.3);border-radius:6px;padding:5px 10px;">
+              <div style="font-size:9px;font-weight:700;letter-spacing:.1em;color:#C8903A;text-transform:uppercase;">Fabric</div>
+              <div style="font-size:11px;color:rgba(250,240,228,.85);margin-top:2px;">Premium Cotton</div>
+            </div>
+            <!-- Swatch chips -->
+            <div style="position:absolute;bottom:14px;left:0;right:0;display:flex;justify-content:center;gap:6px;">
+              <div style="width:18px;height:18px;border-radius:50%;background:#2B5C8A;border:2px solid rgba(255,255,255,.4);"></div>
+              <div style="width:18px;height:18px;border-radius:50%;background:#8B2525;border:2px solid rgba(255,255,255,.4);"></div>
+              <div style="width:18px;height:18px;border-radius:50%;background:#1a1008;border:2px solid rgba(200,144,58,.6);box-shadow:0 0 0 1px #C8903A;"></div>
+              <div style="width:18px;height:18px;border-radius:50%;background:#4A6741;border:2px solid rgba(255,255,255,.4);"></div>
+            </div>
           </div>
-          <div style="border-radius:10px;overflow:hidden;aspect-ratio:3/4;background:#1a1008;position:relative;">
-            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80" alt="AI generated preview" style="width:100%;height:100%;object-fit:cover;opacity:.85;">
+
+          <!-- Right card: mannequin with stitched garment -->
+          <div style="border-radius:10px;overflow:hidden;aspect-ratio:3/4;background:linear-gradient(160deg,#e8ddd0,#d4c8b8);position:relative;">
+            <!-- Mannequin SVG silhouette wearing a blazer -->
+            <svg viewBox="0 0 160 240" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block;">
+              <!-- Background warm beige -->
+              <rect width="160" height="240" fill="url(#bgGrad)"/>
+              <defs>
+                <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#e8ddd0"/>
+                  <stop offset="100%" stop-color="#c8b89a"/>
+                </linearGradient>
+                <linearGradient id="fabricGrad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#1e2a1a"/>
+                  <stop offset="100%" stop-color="#0f1a0c"/>
+                </linearGradient>
+                <linearGradient id="lapelGrad" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stop-color="#2a3826"/>
+                  <stop offset="100%" stop-color="#1e2a1a"/>
+                </linearGradient>
+                <!-- Subtle fabric texture lines -->
+                <pattern id="weave" width="4" height="4" patternUnits="userSpaceOnUse">
+                  <line x1="0" y1="0" x2="4" y2="4" stroke="rgba(255,255,255,.04)" stroke-width=".5"/>
+                  <line x1="4" y1="0" x2="0" y2="4" stroke="rgba(255,255,255,.03)" stroke-width=".5"/>
+                </pattern>
+              </defs>
+              <!-- Neck + head silhouette -->
+              <ellipse cx="80" cy="24" rx="16" ry="18" fill="#c8a882"/>
+              <!-- Neck -->
+              <rect x="74" y="38" width="12" height="14" rx="4" fill="#c8a882"/>
+              <!-- Shoulders broad -->
+              <path d="M20 62 Q80 52 140 62 L138 75 Q80 65 22 75Z" fill="url(#fabricGrad)"/>
+              <!-- Jacket body -->
+              <path d="M22 75 L18 170 L142 170 L138 75 Q80 65 22 75Z" fill="url(#fabricGrad)"/>
+              <!-- Fabric texture overlay -->
+              <path d="M22 75 L18 170 L142 170 L138 75 Q80 65 22 75Z" fill="url(#weave)"/>
+              <!-- Left lapel -->
+              <path d="M80 68 L60 80 L65 140 L80 135Z" fill="url(#lapelGrad)" opacity=".9"/>
+              <!-- Right lapel -->
+              <path d="M80 68 L100 80 L95 140 L80 135Z" fill="url(#lapelGrad)" opacity=".9"/>
+              <!-- Shirt/tie peak inside lapels -->
+              <path d="M80 72 L76 90 L80 88 L84 90Z" fill="#e8ddd0" opacity=".8"/>
+              <!-- Center button line -->
+              <line x1="80" y1="95" x2="80" y2="165" stroke="rgba(200,144,58,.5)" stroke-width=".8"/>
+              <!-- Buttons -->
+              <circle cx="80" cy="108" r="2.5" fill="#C8903A" opacity=".9"/>
+              <circle cx="80" cy="122" r="2.5" fill="#C8903A" opacity=".9"/>
+              <circle cx="80" cy="136" r="2.5" fill="#C8903A" opacity=".9"/>
+              <!-- Left sleeve -->
+              <path d="M22 75 L8 140 L20 145 L30 85Z" fill="url(#fabricGrad)"/>
+              <path d="M22 75 L8 140 L20 145 L30 85Z" fill="url(#weave)"/>
+              <!-- Right sleeve -->
+              <path d="M138 75 L152 140 L140 145 L130 85Z" fill="url(#fabricGrad)"/>
+              <path d="M138 75 L152 140 L140 145 L130 85Z" fill="url(#weave)"/>
+              <!-- Pocket square (left breast) -->
+              <rect x="42" y="90" width="16" height="10" rx="1" fill="#C8903A" opacity=".7" transform="rotate(-3 50 95)"/>
+              <!-- Gold pocket details -->
+              <line x1="42" y1="90" x2="58" y2="90" stroke="#e0a84a" stroke-width=".8" opacity=".6"/>
+              <!-- Trouser top -->
+              <rect x="40" y="168" width="35" height="75" rx="4" fill="url(#fabricGrad)" opacity=".95"/>
+              <rect x="85" y="168" width="35" height="75" rx="4" fill="url(#fabricGrad)" opacity=".95"/>
+              <!-- Trouser crease -->
+              <line x1="57" y1="168" x2="57" y2="243" stroke="rgba(255,255,255,.08)" stroke-width="1"/>
+              <line x1="103" y1="168" x2="103" y2="243" stroke="rgba(255,255,255,.08)" stroke-width="1"/>
+              <!-- Belt -->
+              <rect x="38" y="164" width="84" height="8" rx="2" fill="#3d2b10" opacity=".9"/>
+              <rect x="76" y="165" width="8" height="6" rx="1" fill="#C8903A" opacity=".9"/>
+            </svg>
+            <!-- AI Preview badge -->
             <div style="position:absolute;top:10px;right:10px;background:linear-gradient(135deg,#C8903A,#e0a84a);color:#1a0e00;font-size:9px;font-weight:800;letter-spacing:.08em;padding:4px 10px;border-radius:20px;">AI PREVIEW</div>
           </div>
         </div>
+        <!-- Status bar -->
         <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:rgba(200,144,58,.08);border-radius:8px;">
           <div style="width:8px;height:8px;border-radius:50%;background:#4ade80;flex-shrink:0;animation:pulse 2s infinite;"></div>
           <span style="font-size:12px;color:rgba(250,240,228,.7);">AI is rendering your preview...</span>
           <div style="margin-left:auto;font-size:11px;color:#C8903A;font-weight:700;">~30s</div>
         </div>
       </div>
-      <!-- Floating label -->
       <div style="position:absolute;top:-16px;left:50%;transform:translateX(-50%);background:#C8903A;color:#1a0e00;font-size:11px;font-weight:800;letter-spacing:.08em;padding:5px 16px;border-radius:20px;white-space:nowrap;">LIVE DEMO</div>
     </div>
 
@@ -1109,7 +1194,7 @@ fetch('/api/occasions/upcoming').then(function(r){return r.json();}).then(functi
     <div class="brands-track" style="--brands-speed:{{ hbr.get('speed','60') }}s;animation-duration:{{ hbr.get('speed','60') }}s;">
       {% for b in brand_half + brand_half %}
       <div class="brand-item">
-        {% if b.logo_url %}<img src="{{ b.logo_url }}" alt="{{ b.name }}" class="brand-logo-img">
+        {% if b.logo_url %}<img loading="lazy" src="{{ b.logo_url }}" alt="{{ b.name }}" class="brand-logo-img">
         {% else %}<span class="brand-logo-text">{{ b.name }}</span>{% endif %}
       </div>
       {% endfor %}
@@ -1667,7 +1752,7 @@ function switchPrcTab(tab, paneId){
     return 'photo-1507679799987-c73779587ccf';
   }
   var tip=document.createElement('div'); tip.id='prc-tip';
-  tip.innerHTML='<img id="prc-tip-img" src="" alt=""><div id="prc-tip-body"><div id="prc-tip-name"></div><div id="prc-tip-price"></div></div>';
+  tip.innerHTML='<img loading="lazy" id="prc-tip-img" src="" alt=""><div id="prc-tip-body"><div id="prc-tip-name"></div><div id="prc-tip-price"></div></div>';
   document.body.appendChild(tip);
   function pos(e){
     var x=e.clientX+20,y=e.clientY-90,w=200,h=200;
@@ -1785,7 +1870,7 @@ function pickOcc(occ,el){
     }).then(function(r){return r.json();}).then(function(data){
       btn.disabled=false; btn.innerHTML='&#10024; Generate My AI Preview &rarr;';
       if(data.ok){
-        afterWrap.innerHTML='<img src="'+data.image_url+'" alt="AI preview">';
+        afterWrap.innerHTML='<img loading="lazy" src="'+data.image_url+'" alt="AI preview">';
         var note=document.getElementById('aipNote');
         if(note && typeof data.previews_remaining==='number'){
           note.textContent=data.previews_remaining+' free preview'+(data.previews_remaining===1?'':'s')+' left.';
@@ -1823,7 +1908,7 @@ function pickOcc(occ,el){
     items.forEach(function(it){
       html+='<div style="min-width:160px;max-width:200px;flex:0 0 auto;">'+
         '<a href="'+(it.item_url||'/our-craft')+'" style="text-decoration:none;color:inherit;">'+
-          '<img src="'+(it.image_url||'')+'" style="width:100%;height:190px;object-fit:cover;border-radius:10px;background:#f3ece1;" onerror="this.remove()">'+
+          '<img loading="lazy" src="'+(it.image_url||'')+'" style="width:100%;height:190px;object-fit:cover;border-radius:10px;background:#f3ece1;" onerror="this.remove()">'+
           '<div style="font-size:13px;font-weight:700;margin-top:8px;">'+(it.name||'')+'</div>'+
           '<div style="font-size:12px;color:var(--gold);">&#8377;'+(it.price||'')+'</div>'+
         '</a>'+

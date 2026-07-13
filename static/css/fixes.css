@@ -27,3 +27,171 @@
   .nav{top:30px!important;}
   .hero,.page-hero,.contact-page,.services-hero,.com-header{margin-top:100px!important;}
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   MOBILE RESPONSIVE — COMPREHENSIVE FIX
+   Target: all sections across home, account, services, contact
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Hero section mobile ── */
+@media(max-width:768px){
+  .hero{min-height:85vh;align-items:flex-end;padding-bottom:3rem;}
+  .hero-content{padding:2rem 1.25rem 4rem;text-align:center;}
+  .hero-title{font-size:clamp(40px,12vw,64px)!important;line-height:1;}
+  .hero-title em{font-size:clamp(34px,10vw,56px)!important;}
+  .hero-sub{font-size:15px!important;margin-bottom:2rem;}
+  .hero-ai-badge{font-size:10px!important;padding:5px 12px!important;margin-bottom:1.5rem;}
+  .hero-eyebrow{font-size:9px!important;gap:10px;margin-bottom:1.5rem;}
+  .eyebrow-line{flex:0 0 24px!important;}
+  .hero-actions{gap:10px;flex-direction:column;align-items:stretch!important;padding:0 0.5rem;}
+  .hero-btn-ghost,.hero-btn-primary{width:100%;justify-content:center;padding:14px 20px!important;font-size:12px!important;}
+  .hero-promise{display:none;}
+  .hero-scroll{display:none;}
+}
+@media(max-width:480px){
+  .hero-title{font-size:clamp(36px,13vw,52px)!important;}
+  .hero-title em{font-size:clamp(30px,11vw,46px)!important;}
+}
+
+/* ── Heritage strip ── */
+@media(max-width:600px){
+  .heritage-inner{flex-wrap:wrap;}
+  .heritage-item{flex:1 1 50%;border-bottom:1px solid rgba(250,240,228,.08);}
+  .heritage-item:nth-child(even){border-right:none;}
+  .h-num{font-size:36px!important;}
+  .h-label{font-size:9px!important;}
+}
+
+/* ── Catalogue grid ── */
+@media(max-width:768px){
+  .catalogue{padding:0 0 5rem;}
+  .cat-grid{grid-template-columns:1fr 1fr!important;}
+  .cat-card:nth-child(n){border-right:1px solid var(--border);}
+  .cat-card:nth-child(2n){border-right:none;}
+}
+@media(max-width:420px){
+  .cat-grid{grid-template-columns:1fr!important;}
+  .cat-card:nth-child(n){border-right:none!important;}
+}
+
+/* ── AI Preview section (home) ── */
+@media(max-width:768px){
+  #aiPreview{padding:60px 16px!important;}
+  #aiPreview > div[style]{display:flex!important;flex-direction:column!important;gap:40px!important;}
+  #aiPreview .aip-right{display:none!important;}
+}
+
+/* ── "Two ways" / alt-craft (ac-) section ── */
+@media(max-width:768px){
+  .ac-grid,.ac-two-col{grid-template-columns:1fr!important;gap:0!important;}
+  .ac-card{border-right:none!important;border-bottom:1px solid var(--border)!important;}
+}
+
+/* ── Papa / Story section ── */
+@media(max-width:768px){
+  .papa-content{grid-template-columns:1fr!important;gap:2rem!important;padding:4rem 1.25rem!important;}
+  .papa-img{max-height:300px;overflow:hidden;border-radius:6px;}
+  .papa-img img{width:100%;height:100%;object-fit:cover;}
+}
+
+/* ── Fabric journey (fj) section ── */
+@media(max-width:768px){
+  .fj-thumbs{gap:6px!important;flex-wrap:wrap;}
+  .fj-thumb{min-width:70px;padding:8px 10px!important;font-size:10px!important;}
+  .fj-slide-inner{grid-template-columns:1fr!important;gap:0!important;}
+  .fj-slide-img{height:250px!important;}
+  .fj-slide-body{padding:1.5rem 1.25rem!important;}
+  .fj-slides{padding:0!important;}
+}
+
+/* ── How it works steps ── */
+@media(max-width:768px){
+  .hiw-steps{grid-template-columns:1fr!important;}
+  .hiw-step{border-right:none!important;border-bottom:1px solid rgba(250,240,228,.07)!important;padding:2rem 1.25rem!important;}
+}
+
+/* ── Reviews marquee ── */
+@media(max-width:768px){
+  .reviews{padding:4rem 0!important;}
+  .review-card{min-width:260px!important;max-width:280px!important;padding:1.5rem!important;}
+}
+
+/* ── Big CTA ── */
+@media(max-width:768px){
+  .big-cta{padding:5rem 1.25rem!important;text-align:center;}
+  .big-cta h2{font-size:clamp(28px,8vw,42px)!important;}
+  .cta-actions{flex-direction:column;align-items:center;gap:12px;}
+}
+
+/* ── Promise grid ── */
+@media(max-width:768px){
+  .promise-grid{grid-template-columns:1fr!important;}
+  .promise-card{border-right:none!important;border-bottom:1px solid var(--border)!important;}
+  .promise-card:last-child{border-bottom:none!important;}
+}
+
+/* ── Services list ── */
+@media(max-width:768px){
+  .svc-list{padding:0 1.25rem 5rem!important;}
+  .svc-card{grid-template-columns:1fr!important;}
+  .svc-img-wrap{height:200px;}
+  .svc-img-wrap img{height:100%;width:100%;object-fit:cover;}
+  .svc-body{border-left:none!important;border-top:1px solid var(--border)!important;padding:1.5rem 1.25rem!important;}
+}
+
+/* ── Price table ── */
+@media(max-width:768px){
+  .price-table th,.price-table td{padding:10px 12px!important;font-size:12px!important;}
+  .price-table{font-size:12px!important;}
+}
+
+/* ── Contact layout ── */
+@media(max-width:768px){
+  .contact-layout{grid-template-columns:1fr!important;gap:2rem!important;padding-top:2.5rem!important;}
+}
+
+/* ── Footer ── */
+@media(max-width:768px){
+  .footer-inner{grid-template-columns:1fr!important;gap:2rem!important;padding:3rem 1.25rem 2rem!important;}
+  .footer-cols{gap:1.5rem!important;}
+  .footer-col{min-width:120px;}
+  .footer-bottom{padding:1rem 1.25rem!important;font-size:10px!important;}
+  .footer-bulk{padding:0.75rem 1.25rem!important;}
+}
+
+/* ── Section headers ── */
+@media(max-width:768px){
+  .section-header{padding:3.5rem 1.25rem 2rem!important;}
+  .section-title{font-size:clamp(26px,7vw,36px)!important;}
+  .section-sub{font-size:14px!important;}
+}
+
+/* ── Daily craft grid ── */
+@media(max-width:768px){
+  #dailyCraftGrid{gap:8px!important;padding:0 1rem!important;}
+}
+
+/* ── Occasion banner ── */
+@media(max-width:480px){
+  #occasionBanner{font-size:12px!important;padding:8px 1rem!important;}
+}
+
+/* ── Navbar improvements ── */
+@media(max-width:768px){
+  .nav-icons{gap:4px!important;}
+  .nav-icon-btn{padding:6px!important;}
+}
+
+/* ── Global page padding for mobile ── */
+@media(max-width:768px){
+  .page-hero{padding:5rem 1.25rem 3rem!important;}
+  .page-hero-title{font-size:clamp(28px,8vw,48px)!important;}
+  .timeline{padding:3rem 1.25rem!important;}
+  .consult-section{margin:0 1rem 3rem!important;padding:3rem 1.25rem!important;}
+  .services-hero{padding:6rem 1.25rem 3.5rem!important;}
+  .big-cta .section-title{font-size:clamp(26px,7vw,40px)!important;}
+}
+
+/* ── Prevent horizontal scroll globally ── */
+html,body{overflow-x:hidden;max-width:100vw;}
+img,video,iframe{max-width:100%;height:auto;}

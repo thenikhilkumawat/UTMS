@@ -14,6 +14,13 @@ app.config["SESSION_COOKIE_SECURE"]=os.environ.get("FLASK_ENV")!="development"
 app.config["PERMANENT_SESSION_LIFETIME"]=timedelta(days=7)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 
+# ── Gzip compression (reduces page size ~70%) ────────────────────────────────
+try:
+    from flask_compress import Compress as _Compress
+    _Compress(app)
+except ImportError:
+    pass  # flask-compress not installed yet — run pip install flask-compress
+
 
 # ── Logging ───────────────────────────────────────────────────────────────────
 logging.basicConfig(level=logging.INFO)
@@ -88,7 +95,13 @@ def health_db():
 @app.after_request
 def add_header(response):
     if request.path.startswith("/static/"):
-        response.headers["Cache-Control"] = "public, max-age=86400"
+        ext = request.path.rsplit(".", 1)[-1].lower() if "." in request.path else ""
+        if ext in ("css", "js", "woff", "woff2", "ttf", "otf"):
+            response.headers["Cache-Control"] = "public, max-age=604800, immutable"  # 7 days
+        elif ext in ("jpg", "jpeg", "png", "webp", "gif", "svg", "ico"):
+            response.headers["Cache-Control"] = "public, max-age=2592000"  # 30 days
+        else:
+            response.headers["Cache-Control"] = "public, max-age=86400"
     response.headers["ngrok-skip-browser-warning"]="true"
     response.headers["X-Frame-Options"]="SAMEORIGIN"
     response.headers["X-Content-Type-Options"]="nosniff"
@@ -101,7 +114,7 @@ def add_header(response):
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
         "font-src 'self' https://fonts.gstatic.com data:; "
         "img-src 'self' data: blob: https:; "
-        "connect-src 'self' https://api.razorpay.com https://api.replicate.com; "
+        "connect-src 'self' https://api.razorpay.com https://api.replicate.com https://www.google-analytics.com; "
         "frame-src https://checkout.razorpay.com; "
         "object-src 'none'; base-uri 'self';"
     )
