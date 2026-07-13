@@ -1,164 +1,463 @@
-/* ── Announcement bar ── */
+
+/* Announcement bar: fixed at very top, works on mobile too */
 .ann-bar{position:fixed!important;top:0!important;left:0!important;right:0!important;z-index:300!important;background:#2E1A0C;color:#F7F0E6;height:36px;overflow:hidden;}
-.ann-track{
-  display:flex!important;
-  white-space:nowrap;
-  will-change:transform;
-  backface-visibility:hidden;
-  -webkit-backface-visibility:hidden;
-}
+.ann-track{display:flex!important;white-space:nowrap;animation:annScroll 32s linear infinite;}
 .ann-item{padding:0 2rem;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.09em;height:36px;display:inline-flex;align-items:center;gap:10px;flex-shrink:0;}
 .ann-item span{color:#D49848;}
-
-/* ── Nav positioning ── */
+@keyframes annScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
 .nav{position:fixed!important;top:36px!important;left:0!important;right:0!important;z-index:200!important;}
-.nav.scrolled{background:rgba(247,240,230,.97)!important;backdrop-filter:blur(16px)!important;}
-
-/* ── Page top offsets (ann=36 + nav=70 = 106) ── */
+.nav.scrolled{background:rgba(247,240,230,.97)!important;border-bottom-color:rgba(92,52,32,.14)!important;backdrop-filter:blur(16px)!important;}
 .hero,.page-hero,.contact-page,.services-hero,.com-header{margin-top:106px!important;}
-.pdp-wrap{padding-top:106px!important;}
-.services-page-top{margin-top:106px!important;}
-.com-summary{position:sticky!important;top:114px!important;align-self:start!important;}
+.com-summary{position:sticky!important;top:110px!important;align-self:start!important;}
 .trust-pills li{padding:4px 0 4px 18px;position:relative;}
 .trust-pills li::before{content:"+";position:absolute;left:0;color:var(--gold);font-weight:700;}
 .hiw-num{color:rgba(250,240,228,.15)!important;}
-
-/* ── Tablet ── */
-@media(max-width:1024px){
-  .nav-cta{padding:8px 14px;font-size:10px;}
-}
-
-/* ── Mobile ── */
+/* MOBILE - announcement bar stays visible */
 @media(max-width:768px){
-  .ann-bar{height:32px;}
-  .ann-item{font-size:9.5px;padding:0 1.25rem;}
+  .ann-bar{display:block!important;height:32px;}
+  .ann-item{font-size:10px;padding:0 1.5rem;}
   .nav{top:32px!important;}
-  .hero,.page-hero,.contact-page,.services-hero,.com-header{margin-top:92px!important;}
-  .pdp-wrap{padding-top:92px!important;}
+  .hero,.page-hero,.contact-page,.services-hero,.com-header{margin-top:102px!important;}
   .com-summary{position:static!important;order:-1!important;top:0!important;}
+  .nav-inner{height:70px;}
 }
 @media(max-width:480px){
-  .ann-bar{height:28px;}
+  .ann-bar{height:30px;}
   .ann-item{font-size:9px;padding:0 1rem;}
-  .nav{top:28px!important;}
-  .hero,.page-hero,.contact-page,.services-hero,.com-header{margin-top:88px!important;}
-  .pdp-wrap{padding-top:88px!important;}
+  .nav{top:30px!important;}
+  .hero,.page-hero,.contact-page,.services-hero,.com-header{margin-top:100px!important;}
 }
 
-/* ══════════════════════════════════════════════
-   DEEP MOBILE RESPONSIVE FIXES (Task 166)
-   ══════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════
+   MOBILE RESPONSIVE — COMPREHENSIVE FIX
+   Target: all sections across home, account, services, contact
+   ═══════════════════════════════════════════════════════════════ */
 
-/* Global safe zone */
-body{overflow-x:hidden;}
-img,video,svg{max-width:100%;}
-
-/* ── Support chat: full-width on very small screens ── */
-@media(max-width:400px){
-  .supp-panel{right:8px;left:8px;width:auto;max-width:none;bottom:120px;}
-  .supp-fab{right:16px;bottom:72px;}
-}
-
-/* ── Nav icons: better touch targets on mobile ── */
-@media(max-width:480px){
-  .nav-icon-btn{width:38px!important;height:38px!important;}
-  .nav-icons{gap:4px!important;}
-  .nav-inner{padding:0 .75rem!important;}
-}
-
-/* ── Commission page: mobile ── */
-@media(max-width:480px){
-  .cat-tabs{padding:3px;gap:2px;}
-  .cat-tab{padding:.45rem .7rem;font-size:12px;}
-  .coupon-wrap{padding:.75rem .9rem;}
-  .coupon-row{flex-wrap:wrap;}
-  .coupon-row .field-input{min-width:0;}
-}
-
-/* ── Cart / account page layout ── */
-@media(max-width:600px){
-  /* Cart two-column → single */
-  #cartPgBody>div:first-child{grid-template-columns:1fr!important;gap:1rem!important;}
-  /* Cart item image smaller */
-  .cartpg-item-img{width:68px!important;height:68px!important;}
-  /* Account tabs: scroll horizontal neatly */
-  #acctPgTabs{-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px;}
-  #acctPgTabs::-webkit-scrollbar{display:none;}
-  .acctpg-tab{padding:9px 12px;font-size:12px;}
-}
-
-/* ── Order review grid ── */
-@media(max-width:480px){
-  .review-wrap{padding:1rem .75rem 3rem!important;}
-  .review-grid{grid-template-columns:1fr!important;gap:1rem;}
-  .place-order-btn{font-size:14px;padding:14px;}
-}
-
-/* ── Product detail (PDP) extras ── */
-@media(max-width:480px){
-  .pdp-wrap{padding:1rem .75rem 3rem!important;}
-  .pdp-price{font-size:24px!important;}
-  .pdp-float-bar{padding:10px 12px;}
-  .pdp-trust-grid{grid-template-columns:1fr 1fr!important;}
-  .pdp-cta-row{flex-direction:column;gap:8px;}
-  .pdp-cta-row .btn-primary,.pdp-cta-row .btn-ghost{width:100%;text-align:center;justify-content:center;}
-}
-
-/* ── Services (PLP): toolbar on mobile ── */
-@media(max-width:480px){
-  .plp-toolbar{gap:8px;flex-wrap:wrap;}
-  .plp-search-wrap{width:100%;}
-  .plp-right{flex-wrap:wrap;gap:6px;}
-  .svc-list.grid-view .svc-card{border-radius:10px;}
-}
-
-/* ── Homepage hero buttons ── */
-@media(max-width:480px){
-  .hero-actions{flex-direction:column;gap:10px;align-items:stretch;}
-  .hero-actions .btn-primary,.hero-actions .btn-ghost{width:100%;text-align:center;padding:14px;}
-  .hero-title{font-size:clamp(38px,10vw,64px)!important;}
-  .hero-sub{font-size:clamp(22px,6vw,36px)!important;}
-}
-
-/* ── Track order page: input row ── */
-@media(max-width:480px){
-  .track-input-row{flex-direction:column;gap:8px;}
-  .track-input-row input,.track-input-row button{width:100%;}
-  .track-timeline{padding:0 .75rem;}
-}
-
-/* ── Our work gallery ── */
-@media(max-width:400px){
-  .ow-grid{grid-template-columns:1fr 1fr!important;gap:8px!important;}
-  .ow-tile-img{height:160px!important;}
-  .ow-wrap{padding:2rem .75rem 3rem!important;}
-}
-
-/* ── Footer compact on mobile ── */
-@media(max-width:480px){
-  .footer-inner{padding:3rem 1rem 2rem!important;}
-  .footer-cols{gap:1.5rem;}
-  .footer-bottom{font-size:11px;}
-}
-
-/* ── Section headers compact ── */
-@media(max-width:480px){
-  .section-header{padding:3rem 1rem 1.75rem!important;}
-  .section-header h2{font-size:clamp(26px,8vw,42px)!important;}
-  .craft-section{padding:3rem 1rem!important;}
-}
-
-/* ── Panels (wl, cart, acct): ensure safe area on iPhone ── */
-.wl-panel,.mm-p1{padding-bottom:env(safe-area-inset-bottom,0);}
-
-/* ── Page hero title: clamp on phones ── */
-@media(max-width:480px){
-  .page-hero-title{font-size:clamp(26px,8vw,44px)!important;}
-  .page-hero{padding:5rem 1rem 2.5rem!important;}
-}
-
-/* ── Prevent modals overflowing on tablets ── */
+/* ── Hero section mobile ── */
 @media(max-width:768px){
-  #styleModal{max-height:96vh;width:calc(100vw - 24px);}
-  #styleModalOverlay{padding:6px;}
+  .hero{min-height:85vh;align-items:flex-end;padding-bottom:3rem;}
+  .hero-content{padding:2rem 1.25rem 4rem;text-align:center;}
+  .hero-title{font-size:clamp(40px,12vw,64px)!important;line-height:1;}
+  .hero-title em{font-size:clamp(34px,10vw,56px)!important;}
+  .hero-sub{font-size:15px!important;margin-bottom:2rem;}
+  .hero-ai-badge{font-size:10px!important;padding:5px 12px!important;margin-bottom:1.5rem;}
+  .hero-eyebrow{font-size:9px!important;gap:10px;margin-bottom:1.5rem;}
+  .eyebrow-line{flex:0 0 24px!important;}
+  .hero-actions{gap:10px;flex-direction:column;align-items:stretch!important;padding:0 0.5rem;}
+  .hero-btn-ghost,.hero-btn-primary{width:100%;justify-content:center;padding:14px 20px!important;font-size:12px!important;}
+  .hero-promise{display:none;}
+  .hero-scroll{display:none;}
+}
+@media(max-width:480px){
+  .hero-title{font-size:clamp(36px,13vw,52px)!important;}
+  .hero-title em{font-size:clamp(30px,11vw,46px)!important;}
+}
+
+/* ── Heritage strip ── */
+@media(max-width:600px){
+  .heritage-inner{flex-wrap:wrap;}
+  .heritage-item{flex:1 1 50%;border-bottom:1px solid rgba(250,240,228,.08);}
+  .heritage-item:nth-child(even){border-right:none;}
+  .h-num{font-size:36px!important;}
+  .h-label{font-size:9px!important;}
+}
+
+/* ── Catalogue grid ── */
+@media(max-width:768px){
+  .catalogue{padding:0 0 5rem;}
+  .cat-grid{grid-template-columns:1fr 1fr!important;}
+  .cat-card:nth-child(n){border-right:1px solid var(--border);}
+  .cat-card:nth-child(2n){border-right:none;}
+}
+@media(max-width:420px){
+  .cat-grid{grid-template-columns:1fr!important;}
+  .cat-card:nth-child(n){border-right:none!important;}
+}
+
+/* ── AI Preview section (home) ── */
+@media(max-width:768px){
+  #aiPreview{padding:60px 16px!important;}
+  #aiPreview > div[style]{display:flex!important;flex-direction:column!important;gap:40px!important;}
+  #aiPreview .aip-right{display:none!important;}
+}
+
+/* ── "Two ways" / alt-craft (ac-) section ── */
+@media(max-width:768px){
+  .ac-grid,.ac-two-col{grid-template-columns:1fr!important;gap:0!important;}
+  .ac-card{border-right:none!important;border-bottom:1px solid var(--border)!important;}
+}
+
+/* ── Papa / Story section ── */
+@media(max-width:768px){
+  .papa-content{grid-template-columns:1fr!important;gap:2rem!important;padding:4rem 1.25rem!important;}
+  .papa-img{max-height:300px;overflow:hidden;border-radius:6px;}
+  .papa-img img{width:100%;height:100%;object-fit:cover;}
+}
+
+/* ── Fabric journey (fj) section ── */
+@media(max-width:768px){
+  .fj-thumbs{gap:6px!important;flex-wrap:wrap;}
+  .fj-thumb{min-width:70px;padding:8px 10px!important;font-size:10px!important;}
+  .fj-slide-inner{grid-template-columns:1fr!important;gap:0!important;}
+  .fj-slide-img{height:250px!important;}
+  .fj-slide-body{padding:1.5rem 1.25rem!important;}
+  .fj-slides{padding:0!important;}
+}
+
+/* ── How it works steps ── */
+@media(max-width:768px){
+  .hiw-steps{grid-template-columns:1fr!important;}
+  .hiw-step{border-right:none!important;border-bottom:1px solid rgba(250,240,228,.07)!important;padding:2rem 1.25rem!important;}
+}
+
+/* ── Reviews marquee ── */
+@media(max-width:768px){
+  .reviews{padding:4rem 0!important;}
+  .review-card{min-width:260px!important;max-width:280px!important;padding:1.5rem!important;}
+}
+
+/* ── Big CTA ── */
+@media(max-width:768px){
+  .big-cta{padding:5rem 1.25rem!important;text-align:center;}
+  .big-cta h2{font-size:clamp(28px,8vw,42px)!important;}
+  .cta-actions{flex-direction:column;align-items:center;gap:12px;}
+}
+
+/* ── Promise grid ── */
+@media(max-width:768px){
+  .promise-grid{grid-template-columns:1fr!important;}
+  .promise-card{border-right:none!important;border-bottom:1px solid var(--border)!important;}
+  .promise-card:last-child{border-bottom:none!important;}
+}
+
+/* ── Services list ── */
+@media(max-width:768px){
+  .svc-list{padding:0 1.25rem 5rem!important;}
+  .svc-card{grid-template-columns:1fr!important;}
+  .svc-img-wrap{height:200px;}
+  .svc-img-wrap img{height:100%;width:100%;object-fit:cover;}
+  .svc-body{border-left:none!important;border-top:1px solid var(--border)!important;padding:1.5rem 1.25rem!important;}
+}
+
+/* ── Price table ── */
+@media(max-width:768px){
+  .price-table th,.price-table td{padding:10px 12px!important;font-size:12px!important;}
+  .price-table{font-size:12px!important;}
+}
+
+/* ── Contact layout ── */
+@media(max-width:768px){
+  .contact-layout{grid-template-columns:1fr!important;gap:2rem!important;padding-top:2.5rem!important;}
+}
+
+/* ── Footer ── */
+@media(max-width:768px){
+  .footer-inner{grid-template-columns:1fr!important;gap:2rem!important;padding:3rem 1.25rem 2rem!important;}
+  .footer-cols{gap:1.5rem!important;}
+  .footer-col{min-width:120px;}
+  .footer-bottom{padding:1rem 1.25rem!important;font-size:10px!important;}
+  .footer-bulk{padding:0.75rem 1.25rem!important;}
+}
+
+/* ── Section headers ── */
+@media(max-width:768px){
+  .section-header{padding:3.5rem 1.25rem 2rem!important;}
+  .section-title{font-size:clamp(26px,7vw,36px)!important;}
+  .section-sub{font-size:14px!important;}
+}
+
+/* ── Daily craft grid ── */
+@media(max-width:768px){
+  #dailyCraftGrid{gap:8px!important;padding:0 1rem!important;}
+}
+
+/* ── Occasion banner ── */
+@media(max-width:480px){
+  #occasionBanner{font-size:12px!important;padding:8px 1rem!important;}
+}
+
+/* ── Navbar improvements ── */
+@media(max-width:768px){
+  .nav-icons{gap:4px!important;}
+  .nav-icon-btn{padding:6px!important;}
+}
+
+/* ── Global page padding for mobile ── */
+@media(max-width:768px){
+  .page-hero{padding:5rem 1.25rem 3rem!important;}
+  .page-hero-title{font-size:clamp(28px,8vw,48px)!important;}
+  .timeline{padding:3rem 1.25rem!important;}
+  .consult-section{margin:0 1rem 3rem!important;padding:3rem 1.25rem!important;}
+  .services-hero{padding:6rem 1.25rem 3.5rem!important;}
+  .big-cta .section-title{font-size:clamp(26px,7vw,40px)!important;}
+}
+
+/* ── Prevent horizontal scroll globally ── */
+html,body{overflow-x:hidden;max-width:100vw;}
+img,video,iframe{max-width:100%;height:auto;}
+
+/* ═══════════════════════════════════════════════════════════════
+   MOBILE OVERHAUL v2 — ALL 10 ISSUES
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── 1. HEADER / NAVBAR — bigger, logo not cut ── */
+@media(max-width:768px){
+  .nav-inner{height:80px!important;padding:0 1.25rem!important;}
+  .logo-name{font-size:26px!important;}
+  .logo-est{font-size:9px!important;margin-top:-2px!important;}
+  .nav-icon-btn svg{width:22px!important;height:22px!important;}
+  .nav-cta{display:none!important;}
+  /* Announcement bar */
+  .ann-bar{height:30px!important;}
+  .nav{top:30px!important;}
+  .hero,.page-hero,.contact-page,.services-hero,.com-header{margin-top:110px!important;}
+}
+@media(max-width:480px){
+  .ann-bar{height:28px!important;}
+  .nav{top:28px!important;}
+  .hero,.page-hero,.contact-page,.services-hero,.com-header{margin-top:108px!important;}
+  .nav-inner{height:80px!important;}
+}
+
+/* ── 2 & 3. HERO — centered text, 3 buttons stacked properly ── */
+@media(max-width:768px){
+  .hero{min-height:100svh!important;align-items:center!important;}
+  .hero-content{padding:2rem 1.5rem 3rem!important;text-align:center!important;width:100%!important;}
+  .hero-ai-badge{font-size:10px!important;padding:5px 14px!important;margin-bottom:1.5rem!important;display:inline-flex!important;}
+  .hero-eyebrow{font-size:9px!important;gap:8px!important;justify-content:center!important;margin-bottom:1.25rem!important;}
+  .eyebrow-line{flex:0 0 20px!important;}
+  .hero-title{font-size:clamp(38px,11vw,60px)!important;line-height:.95!important;margin-bottom:1.25rem!important;text-align:center!important;}
+  .hero-title em{font-size:clamp(32px,10vw,52px)!important;display:block!important;}
+  .hero-sub{font-size:14px!important;max-width:320px!important;text-align:center!important;margin:0 auto 2rem!important;}
+  .hero-actions{flex-direction:column!important;align-items:stretch!important;gap:10px!important;padding:0 1rem!important;margin-bottom:2rem!important;}
+  .hero-btn-ghost,.hero-btn-primary{
+    width:100%!important;justify-content:center!important;
+    padding:13px 16px!important;font-size:11px!important;
+    letter-spacing:.06em!important;
+  }
+  .hero-promise{display:none!important;}
+  .hero-scroll{display:none!important;}
+}
+
+/* ── 4. COLOR SWAP — Section 01 (action cards) dark, Section 02 (heritage) beige ── */
+/* Action cards 01: make dark */
+.action-cards{background:var(--dark)!important;}
+.ac-card{background:rgba(255,255,255,.04)!important;border-color:rgba(250,240,228,.1)!important;}
+.ac-card .ac-num{color:rgba(250,240,228,.07)!important;}
+.ac-card .ac-title{color:#FAF0E4!important;}
+.ac-card .ac-desc,.ac-card .ac-who{color:rgba(250,240,228,.5)!important;}
+.ac-card .ac-for{color:var(--gold-l)!important;}
+.ac-card .ac-features li{color:rgba(250,240,228,.75)!important;}
+.ac-card .ac-price{color:rgba(250,240,228,.28)!important;}
+.ac-card .ac-cta{background:var(--gold)!important;color:var(--dark)!important;}
+.ac-card .ac-cta:hover{background:var(--gold-l)!important;}
+.ac-card:hover{border-color:rgba(200,144,58,.25)!important;box-shadow:0 12px 40px rgba(0,0,0,.4)!important;}
+/* Dark card (02) stays same but flip to make it lighter */
+.ac-card--dark{background:var(--bg)!important;border-color:var(--border)!important;}
+.ac-card--dark .ac-title{color:var(--dark)!important;}
+.ac-card--dark .ac-desc,.ac-card--dark .ac-who{color:var(--muted)!important;}
+.ac-card--dark .ac-for{color:var(--gold)!important;}
+.ac-card--dark .ac-features li{color:var(--dark)!important;}
+.ac-card--dark .ac-cta{background:var(--dark)!important;color:var(--bg)!important;}
+.ac-card--dark .ac-cta:hover{background:var(--brown)!important;}
+.ac-card--dark .ac-num{color:var(--border)!important;}
+/* Heritage strip: beige background */
+.heritage{background:var(--bg)!important;border-color:var(--border)!important;}
+.h-num{color:var(--dark)!important;}
+.h-label{color:var(--muted)!important;}
+.heritage-item{border-right-color:var(--border)!important;}
+
+/* ── 5. AI PREVIEW SECTION — mobile reflow ── */
+@media(max-width:768px){
+  #aiPreview{padding:56px 20px!important;}
+  #aiPreview > div{display:flex!important;flex-direction:column!important;gap:32px!important;}
+  /* Show right card on mobile too but after text */
+  #aiPreview .aip-right{display:block!important;order:2!important;}
+  #aiPreview > div > div:first-child{order:1!important;}
+  #aiPreview > div > div:first-child h2{font-size:clamp(1.8rem,7vw,2.4rem)!important;text-align:center!important;}
+  #aiPreview > div > div:first-child p{text-align:center!important;max-width:100%!important;}
+  #aiPreview > div > div:first-child > div:first-child{text-align:center!important;justify-content:center!important;display:flex!important;}
+  #aiPreview .aip-right > div > div:first-child{grid-template-columns:1fr 1fr!important;}
+  /* Center the button */
+  #aiPreview a[href="/ai-customize"]{display:flex!important;justify-content:center!important;width:100%!important;}
+  #aiPreview > div > div:first-child > div[style*="margin-top:14px"]{text-align:center!important;}
+}
+
+/* ── 6. HERITAGE — moved to 2nd (CSS order trick for mobile) ── */
+@media(max-width:768px){
+  /* We reorder via flex on the page wrapper if it's flex; otherwise use targeted order */
+  .heritage{order:-1!important;}
+  /* Heritage 2×2 on mobile */
+  .heritage-inner{display:grid!important;grid-template-columns:1fr 1fr!important;}
+  .heritage-item{flex:none!important;border-right:none!important;border-bottom:1px solid var(--border)!important;padding:2rem 1rem!important;}
+  .heritage-item:nth-child(odd){border-right:1px solid var(--border)!important;}
+  .heritage-item:last-child,.heritage-item:nth-last-child(2):nth-child(odd){border-bottom:none!important;}
+  .h-num{font-size:40px!important;}
+}
+
+/* ── 7. CATALOGUE — price bigger + below name; button bigger ── */
+.cat-name-row{flex-direction:column!important;gap:4px!important;align-items:flex-start!important;}
+.cat-name{font-size:20px!important;}
+.cat-price{font-size:13px!important;font-weight:700!important;color:var(--gold)!important;letter-spacing:.02em!important;}
+.section-cta .btn-primary{
+  padding:16px 40px!important;font-size:12px!important;letter-spacing:.1em!important;
+  min-width:240px!important;justify-content:center!important;
+}
+@media(max-width:768px){
+  .cat-info{padding:1rem 1.25rem 1.5rem!important;}
+  .cat-name{font-size:18px!important;}
+  .cat-price{font-size:13px!important;}
+  .section-cta .btn-primary{width:100%!important;max-width:340px!important;}
+}
+
+/* ── 8. BRING YOUR INSPO — mobile column reflow ── */
+@media(max-width:768px){
+  .inspo-inner{display:flex!important;flex-direction:column!important;gap:2.5rem!important;padding:0!important;}
+  .inspo-text{order:1!important;}
+  .inspo-visual{order:2!important;height:420px!important;width:100%!important;}
+  .inspo-pstack{width:280px!important;height:360px!important;margin:0 auto!important;}
+  .inspo-title{font-size:clamp(28px,8vw,40px)!important;text-align:center!important;}
+  .inspo-text .kicker{text-align:center!important;display:block!important;}
+  .inspo-sub{text-align:center!important;font-size:14px!important;max-width:100%!important;}
+  .inspo-steps{margin-bottom:1.5rem!important;}
+  .inspo-cta{width:100%!important;justify-content:center!important;}
+  .inspo-section{padding:4rem 1.5rem!important;}
+}
+
+/* ── 9a. WORKSHOP — portrait images fix (both desktop+mobile) ── */
+.craft-tile img{object-position:top center!important;}
+.craft-tile:nth-child(1) img{object-position:center!important;}
+/* Desktop grid: make rows taller for portrait */
+.craft-grid{
+  grid-template-rows:280px 200px!important;
+}
+/* ── 9b. WORKSHOP mobile: horizontal slider ── */
+@media(max-width:768px){
+  .craft-inner{padding:0!important;}
+  .craft-head{
+    display:flex!important;flex-direction:column!important;gap:12px!important;
+    padding:3rem 1.25rem 1.5rem!important;text-align:center!important;
+  }
+  .craft-head-left,.craft-head-right{text-align:center!important;}
+  .craft-head-right{display:flex!important;flex-direction:column!important;align-items:center!important;gap:8px!important;}
+  .craft-head-title{font-size:clamp(28px,8vw,40px)!important;text-align:center!important;}
+  .craft-head-sub{text-align:center!important;max-width:280px!important;margin:0 auto!important;}
+  /* Horizontal scroll slider */
+  .craft-grid{
+    display:flex!important;
+    overflow-x:auto!important;
+    scroll-snap-type:x mandatory!important;
+    -webkit-overflow-scrolling:touch!important;
+    gap:10px!important;
+    padding:0 1.25rem 1rem!important;
+    scrollbar-width:none!important;
+    grid-template-columns:unset!important;
+    grid-template-rows:unset!important;
+  }
+  .craft-grid::-webkit-scrollbar{display:none!important;}
+  .craft-tile{
+    flex:0 0 70vw!important;
+    height:300px!important;
+    scroll-snap-align:start!important;
+    border-radius:8px!important;
+  }
+  .craft-tile:nth-child(1){grid-row:unset!important;flex:0 0 80vw!important;height:320px!important;}
+  /* Arrows */
+  .craft-slider-nav{display:flex!important;}
+  .craft-footer{
+    padding:1.5rem 1.25rem!important;
+    flex-direction:column!important;gap:1rem!important;align-items:center!important;
+  }
+  .craft-view-all{width:100%!important;justify-content:center!important;}
+}
+/* Slider nav arrows (hidden on desktop) */
+.craft-slider-nav{
+  display:none;
+  justify-content:center;gap:12px;
+  padding:0 1.25rem .75rem;
+}
+.craft-slider-btn{
+  width:36px;height:36px;border-radius:50%;
+  border:1px solid rgba(200,144,58,.4);
+  background:transparent;color:var(--gold);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:14px;
+  transition:background .2s,border-color .2s;
+}
+.craft-slider-btn:hover{background:rgba(200,144,58,.15);}
+
+/* ── 10. GENERAL MOBILE POLISH ── */
+@media(max-width:768px){
+  /* Section headers center on mobile */
+  .section-header{text-align:center!important;}
+  .section-header .kicker,.section-title,.section-sub{text-align:center!important;}
+  /* AI section pills center */
+  #aiPreview div[style*="flex-wrap:wrap"]{justify-content:center!important;}
+  /* Inspo polaroid smaller on very small screens */
+}
+@media(max-width:380px){
+  .inspo-pstack{width:240px!important;height:310px!important;}
+  .inspo-pol--front{width:200px!important;}
+  .inspo-pol--front img{width:180px!important;height:240px!important;}
+  .inspo-pol--bl{width:155px!important;}
+  .inspo-pol--bl img{width:135px!important;height:175px!important;}
+  .inspo-pol--br{width:145px!important;}
+  .inspo-pol--br img{width:125px!important;height:165px!important;}
+}
+
+/* Mobile heritage strip — show after hero on mobile, hide on desktop */
+.mobile-heritage-strip{display:none;}
+@media(max-width:768px){
+  .mobile-heritage-strip{display:block!important;}
+  /* Hide the original heritage section on mobile */
+  section.heritage:not(.mobile-heritage-strip section.heritage){display:none!important;}
+}
+
+/* Workshop section — portrait grid override (applied globally) */
+.craft-grid{
+  grid-template-rows:320px 280px!important;
+  grid-template-columns:1fr 1fr 1fr 1fr!important;
+}
+/* Desktop: big first tile always spans both rows */
+@media(min-width:769px){
+  .craft-tile:nth-child(1){grid-column:1!important;grid-row:1/3!important;}
+  .craft-tile:nth-child(2){grid-column:2!important;grid-row:1!important;}
+  .craft-tile:nth-child(3){grid-column:3!important;grid-row:1!important;}
+  .craft-tile:nth-child(4){grid-column:2!important;grid-row:2!important;}
+  .craft-tile:nth-child(5){grid-column:3!important;grid-row:2!important;}
+  .craft-tile:nth-child(6){grid-column:4!important;grid-row:1/3!important;}
+  /* Big tiles: larger overlay text */
+  .craft-tile:nth-child(1) .craft-tile-cap,
+  .craft-tile:nth-child(6) .craft-tile-cap{font-size:15px!important;}
+  .craft-tile:nth-child(1) .craft-tile-overlay,
+  .craft-tile:nth-child(6) .craft-tile-overlay{padding:1.5rem!important;}
+}
+/* Mobile: horizontal scroll, portrait tiles */
+@media(max-width:768px){
+  .craft-grid{
+    display:flex!important;
+    grid-template-columns:unset!important;
+    grid-template-rows:unset!important;
+    overflow-x:auto!important;
+    scroll-snap-type:x mandatory!important;
+    -webkit-overflow-scrolling:touch!important;
+    gap:10px!important;
+    padding:0 1.25rem 1rem!important;
+    scrollbar-width:none!important;
+  }
+  .craft-grid::-webkit-scrollbar{display:none!important;}
+  .craft-tile{
+    flex:0 0 65vw!important;
+    height:360px!important;
+    scroll-snap-align:start!important;
+    border-radius:8px!important;
+    grid-column:unset!important;
+    grid-row:unset!important;
+  }
+  .craft-tile:nth-child(1){
+    flex:0 0 72vw!important;
+    height:400px!important;
+    grid-column:unset!important;
+    grid-row:unset!important;
+  }
 }
