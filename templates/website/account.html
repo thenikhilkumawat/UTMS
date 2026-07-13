@@ -281,7 +281,7 @@
       '<div class="acctpg-card">' +
         '<div class="acctpg-row">' +
           '<div><label class="acctpg-lbl">Full name</label><input class="acctpg-in" id="pfName" value="'+esc(a.name)+'"></div>' +
-          '<div><label class="acctpg-lbl">Mobile number</label><input class="acctpg-in" id="pfMobile" value="'+esc(a.mobile)+'" maxlength="10"></div>' +
+          '<div><label class="acctpg-lbl">Mobile number</label><input class="acctpg-in" id="pfMobile" value="'+esc((a.mobile||'').startsWith('g:')?'':a.mobile)+'" maxlength="10"></div>' +
         '</div>' +
         '<label class="acctpg-lbl">Email</label><input class="acctpg-in" id="pfEmail" value="'+esc(a.email)+'" placeholder="you@example.com">' +
         '<label class="acctpg-lbl">Address line 1</label><input class="acctpg-in" id="pfAddr1" value="'+esc(a.address_line1)+'">' +
@@ -337,7 +337,7 @@
           '<div style="display:flex;justify-content:space-between;align-items:flex-start;">' +
             '<div>' +
               '<strong style="font-size:13.5px;">'+esc(a.label)+'</strong>' + (a.is_default ? ' <span class="acctpg-status" style="background:#dcfce7;color:#15803d;">Default</span>' : '') +
-              '<div style="font-size:13px;color:var(--dark);margin-top:6px;line-height:1.6;">' + esc(a.full_name) + (a.mobile ? ' · '+esc(a.mobile) : '') + '<br>' + esc(a.line1) + (a.line2 ? ', '+esc(a.line2) : '') + '<br>' + esc(a.city) + (a.state ? ', '+esc(a.state) : '') + ' - ' + esc(a.pincode) + '</div>' +
+              '<div style="font-size:13px;color:var(--dark);margin-top:6px;line-height:1.6;">' + esc(a.full_name) + ((a.mobile&&!a.mobile.startsWith('g:')) ? ' · '+esc(a.mobile) : '') + '<br>' + esc(a.line1) + (a.line2 ? ', '+esc(a.line2) : '') + '<br>' + esc(a.city) + (a.state ? ', '+esc(a.state) : '') + ' - ' + esc(a.pincode) + '</div>' +
             '</div>' +
             '<div style="display:flex;gap:6px;flex-shrink:0;">' +
               (!a.is_default ? '<button class="acctpg-btn-ghost" onclick="acctPgSetDefaultAddr('+a.id+')">Set default</button>' : '') +
@@ -358,7 +358,7 @@
         '<div><label class="acctpg-lbl">Label</label><input class="acctpg-in" id="afLabel" value="Home"></div>' +
         '<div><label class="acctpg-lbl">Full name</label><input class="acctpg-in" id="afName" value="'+esc(a.name||'')+'"></div>' +
       '</div>' +
-      '<label class="acctpg-lbl">Mobile</label><input class="acctpg-in" id="afMobile" type="tel" inputmode="numeric" maxlength="10" value="'+esc(a.mobile||'')+'">' +
+      '<label class="acctpg-lbl">Mobile</label><input class="acctpg-in" id="afMobile" type="tel" inputmode="numeric" maxlength="10" value="'+esc((a.mobile||'').startsWith('g:')?'':a.mobile)+'">' +
       '<label class="acctpg-lbl">Address line 1</label><input class="acctpg-in" id="afLine1" value="'+esc(a.address_line1||'')+'">' +
       '<label class="acctpg-lbl">Address line 2</label><input class="acctpg-in" id="afLine2" value="'+esc(a.address_line2||'')+'">' +
       '<div class="acctpg-row">' +
@@ -808,7 +808,7 @@
         var subEl    = document.getElementById('acctPgSub');
         var avatarEl = document.getElementById('acctPgAvatar');
         if(nameEl)   nameEl.textContent   = d.name   || '';
-        if(subEl)    subEl.textContent    = d.mobile || d.email || '';
+        if(subEl)    subEl.textContent    = (d.mobile&&!d.mobile.startsWith('g:')) ? d.mobile : (d.email||'');
         if(d.profile_image && avatarEl){
           avatarEl.innerHTML = '<img src="'+d.profile_image+'" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.textContent=\''+(d.name||'U').charAt(0).toUpperCase()+'\'">';
         } else if(avatarEl) {

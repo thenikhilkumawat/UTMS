@@ -1043,7 +1043,7 @@ function _acctRenderProfile(){
     : (s.name||'U').charAt(0).toUpperCase();
   h += '<div style="width:56px;height:56px;border-radius:50%;background:var(--gold,#C8903A);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;margin:0 auto 12px;overflow:hidden;">'+_avatarInner+'</div>';
   h += '<div style="font-size:17px;font-weight:700;color:var(--dark,#1a0e06);">'+(s.name||'')+'</div>';
-  h += '<div style="font-size:12.5px;color:var(--muted);margin-top:2px;">'+(s.mobile||'')+'</div>';
+  h += '<div style="font-size:12.5px;color:var(--muted);margin-top:2px;">'+((s.mobile&&!s.mobile.startsWith('g:'))?s.mobile:(s.email||''))+'</div>';
   h += '</div>';
 
   h += '<a href="/account" style="display:block;text-align:center;padding:12px;margin-bottom:10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-weight:700;color:var(--dark,#1a0e06);text-decoration:none;">Manage account, orders &amp; wishlist &rarr;</a>';
