@@ -91,7 +91,7 @@ button{cursor:pointer;font-family:var(--fb);border:none;background:none;}
 .hero-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:3.5rem;}
 .hero-btn-primary{display:inline-flex;align-items:center;padding:15px 34px;background:var(--gold);color:var(--dark);font-family:var(--fb);font-size:13px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;border-radius:var(--r);transition:var(--t);}
 .hero-btn-primary:hover{background:var(--gold-l);}
-.hero-btn-ghost{display:inline-flex;align-items:center;padding:14px 34px;background:transparent;color:rgba(250,240,228,.8);font-size:13px;letter-spacing:.06em;border:1.5px solid rgba(250,240,228,.25);border-radius:var(--r);transition:var(--t);}
+.hero-btn-ghost{display:inline-flex;align-items:center;padding:15px 34px;background:transparent;color:rgba(250,240,228,.9);font-family:var(--fb);font-size:13px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;border:1.5px solid rgba(250,240,228,.35);border-radius:var(--r);transition:var(--t);}
 .hero-btn-ghost:hover{color:#FAF0E4;border-color:rgba(250,240,228,.5);}
 .hero-promise{display:flex;justify-content:center;flex-wrap:wrap;font-family:var(--fm);font-size:10px;color:rgba(250,240,228,.45);letter-spacing:.09em;border-top:1px solid rgba(250,240,228,.1);padding-top:1.75rem;gap:0;}
 .hero-promise span{padding:0 1.5rem;border-right:1px solid rgba(250,240,228,.1);}
