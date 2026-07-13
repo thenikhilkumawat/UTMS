@@ -1487,6 +1487,92 @@ document.addEventListener('DOMContentLoaded', function() {
       if (typeof applyCoupon === 'function') applyCoupon();
     }
   }
+
+  // ── AI Studio prefill: garment already handled by ?garment= URL param above ──
+  // Handle fabric, style choices and AI preview image from sessionStorage
+  (function(){
+    var raw = '';
+    try{ raw = sessionStorage.getItem('ai_studio_prefill') || ''; } catch(e){}
+    if (!raw) {
+      // Also check URL params for fabric and ai_preview
+      var fId   = params.get('fabric_id');
+      var fName = params.get('fabric_name');
+      var aiImg = params.get('ai_preview');
+      if (fId && fName) {
+        setTimeout(function(){
+          var choiceEl = document.getElementById('fab_choice');
+          var selEl    = document.getElementById('fab_selected');
+          var nameEl   = document.getElementById('fab_selected_name');
+          if (choiceEl) choiceEl.value = 'catalog';
+          if (selEl)    selEl.value    = fId;
+          if (nameEl)   nameEl.value   = fName;
+          if (typeof rebuildStylingPanel === 'function') rebuildStylingPanel();
+        }, 300);
+      }
+      if (aiImg && wanted.length) {
+        setTimeout(function(){
+          var garmentName = wanted[0];
+          if (typeof STYLE_IMAGES !== 'undefined') {
+            STYLE_IMAGES[garmentName] = aiImg;
+            if (typeof updateGeneratedImagesInput === 'function') updateGeneratedImagesInput();
+            if (typeof rebuildStylingPanel === 'function') rebuildStylingPanel();
+          }
+        }, 350);
+      }
+      return;
+    }
+    var pf = {};
+    try{ pf = JSON.parse(raw); } catch(e){ return; }
+    try{ sessionStorage.removeItem('ai_studio_prefill'); } catch(e){}
+
+    setTimeout(function(){
+      // 1. Fabric
+      if (pf.fabricId) {
+        var choiceEl = document.getElementById('fab_choice');
+        var selEl    = document.getElementById('fab_selected');
+        var nameEl   = document.getElementById('fab_selected_name');
+        var priceEl  = document.getElementById('fab_selected_price');
+        if (choiceEl) choiceEl.value = 'catalog';
+        if (selEl)    selEl.value    = pf.fabricId;
+        if (nameEl)   nameEl.value   = pf.fabricName || '';
+        if (priceEl)  priceEl.value  = pf.fabricPrice || '0';
+        // Highlight card in catalog if visible
+        document.querySelectorAll('#cbFabGrid .fab-card').forEach(function(c){
+          c.classList.toggle('sel', String(c.dataset && c.dataset.id) === String(pf.fabricId));
+        });
+        if (typeof rebuildStylingPanel === 'function') rebuildStylingPanel();
+        if (typeof refreshSummary === 'function') refreshSummary();
+        if (typeof refreshPrice === 'function') refreshPrice();
+      }
+
+      // 2. Style selections
+      var garmentName = pf.garment || '';
+      if (garmentName && pf.styles && typeof STYLE_SEL !== 'undefined') {
+        STYLE_SEL[garmentName] = pf.styles;
+        if (typeof updateStyleInput === 'function') updateStyleInput();
+      }
+
+      // 3. AI preview image
+      if (garmentName && pf.aiPreviewUrl && typeof STYLE_IMAGES !== 'undefined') {
+        STYLE_IMAGES[garmentName] = pf.aiPreviewUrl;
+        if (typeof updateGeneratedImagesInput === 'function') updateGeneratedImagesInput();
+      }
+
+      // 4. Refresh the styling panel to show fabric + AI image + style chips
+      if (typeof rebuildStylingPanel === 'function') rebuildStylingPanel();
+      if (typeof refreshSummary === 'function') refreshSummary();
+      if (typeof refreshPrice === 'function') refreshPrice();
+
+      // 5. Show a banner so the customer knows their AI design was carried over
+      if (pf.aiPreviewUrl) {
+        var banner = document.createElement('div');
+        banner.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#2e1a0e;color:#c9a55a;padding:12px 22px;border-radius:10px;font-size:13px;font-weight:700;z-index:900;box-shadow:0 4px 20px rgba(0,0,0,.3);display:flex;align-items:center;gap:10px;max-width:90vw;';
+        banner.innerHTML = '<span>✦</span><span>Your AI Style Studio design has been pre-filled!</span><button onclick="this.parentNode.remove()" style="background:none;border:none;color:#c9a55a;font-size:16px;cursor:pointer;margin-left:8px;">×</button>';
+        document.body.appendChild(banner);
+        setTimeout(function(){ if(banner.parentNode) banner.remove(); }, 5000);
+      }
+    }, 400);
+  })();
 });
 </script>
 <!-- Fabric zoom lightbox -->

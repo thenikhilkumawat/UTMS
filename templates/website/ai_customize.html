@@ -3,783 +3,662 @@
 {% block head %}
 <style>
 /* ═══════════════════════════════════════════════════
-   AI STYLE STUDIO — LUXURY DESIGN
+   AI STYLE STUDIO — BRIGHT LUXURY
 ═══════════════════════════════════════════════════ */
 :root{
-  --ai-dark:#0d0d0d;
-  --ai-card:#161616;
-  --ai-border:#2a2a2a;
-  --ai-gold:#c9a55a;
-  --ai-gold-dim:#8a6f3a;
-  --ai-muted:#6b6b6b;
-  --ai-text:#e8e8e8;
-  --ai-sub:#a0a0a0;
-  --ai-green:#22c55e;
+  --as-bg:#faf6f0;
+  --as-card:#ffffff;
+  --as-border:#e8dfd4;
+  --as-gold:#b8892a;
+  --as-gold-lt:#c9a55a;
+  --as-gold-pale:#fdf6e8;
+  --as-muted:#888;
+  --as-sub:#555;
+  --as-text:#1a1a1a;
+  --as-hero:#2e1a0e;
 }
-
-/* ── Page Base ── */
-.ai-page{background:var(--ai-dark);min-height:100vh;color:var(--ai-text);font-family:'Inter',system-ui,sans-serif;}
-.ai-page *{box-sizing:border-box;}
+.as-page{background:var(--as-bg);min-height:100vh;color:var(--as-text);}
+.as-page *{box-sizing:border-box;}
 
 /* ── Hero ── */
-.ai-hero{
+.as-hero{
+  background:var(--as-hero);
+  padding:100px 1rem 56px;text-align:center;
+  background-image:radial-gradient(ellipse 80% 60% at 50% 0%,#4a2e10,#2e1a0e 70%);
   position:relative;overflow:hidden;
-  padding:100px 1rem 60px;
-  text-align:center;
-  background:radial-gradient(ellipse 80% 60% at 50% -10%,#1f1200 0%,var(--ai-dark) 70%);
 }
-.ai-hero::before{
+.as-hero::after{
   content:'';position:absolute;inset:0;
-  background:url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='1' cy='1' r='1' fill='%23c9a55a' fill-opacity='.08'/%3E%3C/svg%3E");
+  background:url("data:image/svg+xml,%3Csvg width='40' height='40' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='1' cy='1' r='1' fill='%23c9a55a' fill-opacity='.07'/%3E%3C/svg%3E");
 }
-.ai-hero-badge{
-  display:inline-flex;align-items:center;gap:6px;
-  background:rgba(201,165,90,.12);border:1px solid rgba(201,165,90,.3);
-  color:var(--ai-gold);font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
-  padding:5px 14px;border-radius:20px;margin-bottom:22px;
-}
-.ai-hero h1{
-  font-size:clamp(2rem,6vw,3.8rem);font-weight:200;letter-spacing:-.02em;
-  color:#fff;line-height:1.1;margin:0 auto 14px;max-width:700px;
-}
-.ai-hero h1 strong{font-weight:700;color:var(--ai-gold);}
-.ai-hero p{font-size:15px;color:var(--ai-sub);max-width:480px;margin:0 auto 32px;line-height:1.6;}
-.ai-hero-stats{display:flex;justify-content:center;gap:32px;flex-wrap:wrap;}
-.ai-stat{text-align:center;}
-.ai-stat strong{display:block;font-size:20px;font-weight:700;color:var(--ai-gold);}
-.ai-stat span{font-size:11px;color:var(--ai-muted);text-transform:uppercase;letter-spacing:.08em;}
+.as-hero-inner{position:relative;z-index:1;}
+.as-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(201,165,90,.18);border:1px solid rgba(201,165,90,.35);color:#c9a55a;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:5px 14px;border-radius:20px;margin-bottom:20px;}
+.as-hero h1{font-size:clamp(2rem,6vw,3.4rem);font-weight:200;letter-spacing:-.02em;color:#fff;line-height:1.1;margin:0 auto 12px;max-width:640px;}
+.as-hero h1 strong{font-weight:700;color:#c9a55a;}
+.as-hero p{font-size:15px;color:rgba(255,255,255,.65);max-width:440px;margin:0 auto 28px;line-height:1.6;}
+.as-hero-stats{display:flex;justify-content:center;gap:36px;flex-wrap:wrap;}
+.as-stat{text-align:center;}
+.as-stat strong{display:block;font-size:22px;font-weight:800;color:#c9a55a;}
+.as-stat span{font-size:10px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.08em;}
 
 /* ── Wizard Shell ── */
-.ai-wizard{max-width:860px;margin:0 auto;padding:0 1rem 5rem;}
+.as-wizard{max-width:880px;margin:0 auto;padding:0 1rem 5rem;}
 
-/* ── Step Progress ── */
-.ai-progress{display:flex;align-items:center;margin:0 0 40px;padding-top:40px;}
-.ai-step-item{flex:1;display:flex;flex-direction:column;align-items:center;position:relative;}
-.ai-step-item:not(:last-child)::after{
-  content:'';position:absolute;top:18px;left:50%;width:100%;height:1px;
-  background:var(--ai-border);z-index:0;
+/* ── Progress ── */
+.as-progress{display:flex;align-items:center;margin:0 0 36px;padding-top:36px;}
+.as-step-item{flex:1;display:flex;flex-direction:column;align-items:center;position:relative;}
+.as-step-item:not(:last-child)::after{
+  content:'';position:absolute;top:17px;left:calc(50% + 18px);right:calc(-50% + 18px);height:2px;
+  background:var(--as-border);z-index:0;
 }
-.ai-step-item.done:not(:last-child)::after{background:var(--ai-gold);}
-.ai-step-dot{
-  width:36px;height:36px;border-radius:50%;
-  border:1.5px solid var(--ai-border);background:var(--ai-card);
-  display:flex;align-items:center;justify-content:center;
-  font-size:13px;font-weight:700;color:var(--ai-muted);
+.as-step-item.done:not(:last-child)::after{background:var(--as-gold);}
+.as-step-dot{
+  width:34px;height:34px;border-radius:50%;border:2px solid var(--as-border);background:var(--as-card);
+  display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#bbb;
   position:relative;z-index:1;transition:all .3s;
 }
-.ai-step-item.done .ai-step-dot{background:var(--ai-gold);border-color:var(--ai-gold);color:#000;}
-.ai-step-item.active .ai-step-dot{border-color:var(--ai-gold);color:var(--ai-gold);box-shadow:0 0 0 4px rgba(201,165,90,.15);}
-.ai-step-lbl{font-size:10px;color:var(--ai-muted);margin-top:7px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;}
-.ai-step-item.active .ai-step-lbl{color:var(--ai-gold);}
-.ai-step-item.done .ai-step-lbl{color:var(--ai-sub);}
+.as-step-item.done .as-step-dot{background:var(--as-gold);border-color:var(--as-gold);color:#fff;}
+.as-step-item.active .as-step-dot{border-color:var(--as-gold);color:var(--as-gold);background:#fff;box-shadow:0 0 0 4px rgba(184,137,42,.12);}
+.as-step-lbl{font-size:10px;color:#bbb;margin-top:6px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;}
+.as-step-item.active .as-step-lbl{color:var(--as-gold);}
+.as-step-item.done .as-step-lbl{color:var(--as-sub);}
 
-/* ── Step Panels ── */
-.ai-panel{display:none;animation:aiFadeIn .3s ease;}
-.ai-panel.active{display:block;}
-@keyframes aiFadeIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:none;}}
+/* ── Panels ── */
+.as-panel{display:none;animation:asFade .3s ease;}
+.as-panel.active{display:block;}
+@keyframes asFade{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
 
-.ai-section-title{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ai-gold);margin-bottom:18px;}
-.ai-section-sub{font-size:13px;color:var(--ai-sub);margin-bottom:24px;margin-top:-12px;}
+.as-section-label{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--as-gold);margin-bottom:6px;}
+.as-section-title{font-size:22px;font-weight:700;color:var(--as-text);margin-bottom:4px;}
+.as-section-sub{font-size:13px;color:var(--as-sub);margin-bottom:24px;line-height:1.5;}
 
 /* ── Garment Cards ── */
-.garment-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:32px;}
-.g-card{
-  border:1.5px solid var(--ai-border);border-radius:14px;
-  background:var(--ai-card);padding:20px 12px 16px;
-  text-align:center;cursor:pointer;
-  transition:all .2s;user-select:none;
+.as-garment-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:12px;margin-bottom:28px;}
+.as-g-card{
+  border:2px solid var(--as-border);border-radius:14px;
+  background:var(--as-card);overflow:hidden;cursor:pointer;
+  transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,.06);
 }
-.g-card:hover{border-color:var(--ai-gold-dim);background:#1a1400;}
-.g-card.sel{border-color:var(--ai-gold);background:#1c1500;box-shadow:0 0 0 1px var(--ai-gold),0 8px 24px rgba(201,165,90,.15);}
-.g-card-icon{font-size:36px;margin-bottom:10px;display:block;line-height:1;}
-.g-card-name{font-size:12px;font-weight:700;color:var(--ai-text);}
-.g-card-sub{font-size:10px;color:var(--ai-muted);margin-top:3px;}
-
-/* ── Style Options ── */
-.style-group{margin-bottom:24px;}
-.style-group-title{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ai-sub);margin-bottom:10px;}
-.style-chips{display:flex;flex-wrap:wrap;gap:8px;}
-.s-chip{
-  padding:8px 16px;border-radius:8px;border:1px solid var(--ai-border);
-  background:var(--ai-card);font-size:12.5px;color:var(--ai-sub);
-  cursor:pointer;transition:all .18s;user-select:none;
-}
-.s-chip:hover{border-color:var(--ai-gold-dim);color:var(--ai-text);}
-.s-chip.sel{background:rgba(201,165,90,.15);border-color:var(--ai-gold);color:var(--ai-gold);font-weight:700;}
+.as-g-card:hover{border-color:#c9a55a88;transform:translateY(-2px);box-shadow:0 4px 14px rgba(0,0,0,.1);}
+.as-g-card.sel{border-color:var(--as-gold);box-shadow:0 0 0 2px var(--as-gold),0 6px 20px rgba(184,137,42,.2);}
+.as-g-img{width:100%;height:100px;object-fit:cover;display:block;background:#f0ede8;}
+.as-g-emoji{width:100%;height:100px;display:flex;align-items:center;justify-content:center;font-size:40px;background:linear-gradient(135deg,#f5f0ea,#ede6dc);}
+.as-g-info{padding:10px 12px 12px;}
+.as-g-name{font-size:12.5px;font-weight:700;color:var(--as-text);}
+.as-g-sub{font-size:10px;color:var(--as-muted);margin-top:2px;}
+.as-g-card.sel .as-g-name{color:var(--as-gold);}
 
 /* ── Fabric Grid ── */
-.fabric-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-bottom:24px;}
-.fab-card{
-  border:1.5px solid var(--ai-border);border-radius:10px;
-  overflow:hidden;cursor:pointer;transition:all .2s;
-  background:var(--ai-card);
+.as-fabric-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(115px,1fr));gap:10px;margin-bottom:24px;}
+.as-fab-card{
+  border:2px solid var(--as-border);border-radius:10px;overflow:hidden;cursor:pointer;
+  transition:all .2s;background:var(--as-card);box-shadow:0 1px 3px rgba(0,0,0,.05);
 }
-.fab-card:hover{border-color:var(--ai-gold-dim);}
-.fab-card.sel{border-color:var(--ai-gold);box-shadow:0 0 0 1px var(--ai-gold);}
-.fab-img{width:100%;height:80px;object-fit:cover;display:block;background:#1a1a1a;}
-.fab-name{font-size:10px;font-weight:600;color:var(--ai-sub);padding:6px 8px;text-align:center;line-height:1.3;}
-.fab-card.sel .fab-name{color:var(--ai-gold);}
-.fab-skip{
-  border:1.5px dashed var(--ai-border);border-radius:10px;
+.as-fab-card:hover{border-color:#c9a55a88;transform:translateY(-1px);}
+.as-fab-card.sel{border-color:var(--as-gold);box-shadow:0 0 0 2px var(--as-gold);}
+.as-fab-img{width:100%;height:80px;object-fit:cover;display:block;background:#f0ede8;}
+.as-fab-emoji{width:100%;height:80px;display:flex;align-items:center;justify-content:center;font-size:26px;background:linear-gradient(135deg,#f5f0ea,#ede6dc);}
+.as-fab-name{font-size:10px;font-weight:600;color:var(--as-sub);padding:7px 8px;text-align:center;line-height:1.3;}
+.as-fab-price{font-size:9px;color:var(--as-muted);padding:0 8px 7px;text-align:center;}
+.as-fab-card.sel .as-fab-name{color:var(--as-gold);font-weight:800;}
+.as-fab-skip{
+  border:2px dashed var(--as-border);border-radius:10px;
   display:flex;align-items:center;justify-content:center;
-  flex-direction:column;gap:4px;height:110px;
-  cursor:pointer;transition:all .2s;color:var(--ai-muted);font-size:11px;
-  font-weight:600;
+  flex-direction:column;gap:5px;height:120px;
+  cursor:pointer;transition:all .2s;color:var(--as-muted);font-size:11px;font-weight:700;
+  background:var(--as-card);
 }
-.fab-skip:hover,.fab-skip.sel{border-color:var(--ai-gold-dim);color:var(--ai-sub);}
-.fab-skip.sel{background:rgba(201,165,90,.05);}
-.fab-placeholder{width:100%;height:80px;background:linear-gradient(135deg,#1e1e1e,#252525);display:flex;align-items:center;justify-content:center;font-size:24px;}
+.as-fab-skip:hover,.as-fab-skip.sel{border-color:var(--as-gold);color:var(--as-gold);}
+.as-fab-skip.sel{background:var(--as-gold-pale);}
 
-/* ── Try-On Upload ── */
-.tryon-wrap{border:1.5px dashed var(--ai-border);border-radius:14px;padding:32px;text-align:center;cursor:pointer;transition:all .25s;}
-.tryon-wrap:hover,.tryon-wrap.drag{border-color:var(--ai-gold);background:rgba(201,165,90,.04);}
-.tryon-wrap svg{color:var(--ai-muted);margin-bottom:12px;}
-.tryon-wrap p{font-size:13px;color:var(--ai-muted);margin:0;}
-.tryon-wrap small{font-size:11px;color:var(--ai-border);margin-top:4px;display:block;}
-.tryon-preview{width:100%;max-height:300px;object-fit:contain;border-radius:10px;margin-top:12px;}
-.tryon-opt{display:flex;align-items:center;gap:10px;background:rgba(201,165,90,.06);border:1px solid rgba(201,165,90,.2);border-radius:10px;padding:12px 16px;margin-bottom:16px;cursor:pointer;}
-.tryon-opt input[type=checkbox]{accent-color:var(--ai-gold);width:16px;height:16px;}
-.tryon-opt-lbl{font-size:13px;color:var(--ai-text);font-weight:600;}
-.tryon-opt-sub{font-size:11px;color:var(--ai-muted);}
+/* ── Style Chips ── */
+.as-style-group{margin-bottom:22px;}
+.as-style-group-label{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--as-sub);margin-bottom:10px;display:block;}
+.as-chips{display:flex;flex-wrap:wrap;gap:8px;}
+.as-chip{
+  padding:8px 16px;border-radius:8px;border:1.5px solid var(--as-border);
+  background:var(--as-card);font-size:12.5px;color:var(--as-sub);
+  cursor:pointer;transition:all .18s;user-select:none;font-weight:500;
+}
+.as-chip:hover{border-color:var(--as-gold-lt);color:var(--as-text);}
+.as-chip.sel{background:var(--as-gold-pale);border-color:var(--as-gold);color:var(--as-gold);font-weight:700;}
 
 /* ── Nav Buttons ── */
-.ai-nav{display:flex;gap:10px;margin-top:28px;}
-.ai-btn-back{
-  flex:0 0 auto;padding:13px 24px;border-radius:10px;
-  border:1px solid var(--ai-border);background:transparent;
-  color:var(--ai-sub);font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;
+.as-nav{display:flex;gap:10px;margin-top:28px;}
+.as-btn-back{
+  flex:0 0 auto;padding:13px 22px;border-radius:10px;
+  border:2px solid var(--as-border);background:var(--as-card);
+  color:var(--as-sub);font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;
 }
-.ai-btn-back:hover{border-color:var(--ai-sub);color:var(--ai-text);}
-.ai-btn-next{
-  flex:1;padding:13px 24px;border-radius:10px;
-  border:none;background:var(--ai-gold);
-  color:#000;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;
+.as-btn-back:hover{border-color:var(--as-sub);color:var(--as-text);}
+.as-btn-next{
+  flex:1;padding:13px 24px;border-radius:10px;border:none;
+  background:var(--as-gold);color:#fff;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;
 }
-.ai-btn-next:hover{background:#d4ae6a;transform:translateY(-1px);}
-.ai-btn-next:disabled{background:#333;color:#666;cursor:not-allowed;transform:none;}
+.as-btn-next:hover{background:#a37825;transform:translateY(-1px);box-shadow:0 4px 14px rgba(184,137,42,.3);}
+.as-btn-next:disabled{background:#ddd;color:#aaa;cursor:not-allowed;transform:none;box-shadow:none;}
 
-/* ── Generate Button ── */
-.ai-gen-btn{
-  width:100%;padding:18px;border-radius:12px;
-  border:none;background:linear-gradient(135deg,#c9a55a,#8a6f3a);
-  color:#000;font-size:16px;font-weight:800;cursor:pointer;
+/* ── Generate / Order CTAs ── */
+.as-gen-btn{
+  width:100%;padding:17px;border-radius:12px;border:none;
+  background:linear-gradient(135deg,var(--as-gold),#8a6520);
+  color:#fff;font-size:15px;font-weight:800;cursor:pointer;
   transition:all .25s;letter-spacing:.04em;text-transform:uppercase;
-  position:relative;overflow:hidden;
+  box-shadow:0 4px 18px rgba(184,137,42,.25);
 }
-.ai-gen-btn:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(201,165,90,.3);}
-.ai-gen-btn:disabled{background:#333;color:#555;cursor:not-allowed;transform:none;box-shadow:none;}
-.ai-gen-btn::before{
-  content:'';position:absolute;top:-50%;left:-60%;
-  width:40%;height:200%;background:rgba(255,255,255,.15);
-  transform:skewX(-20deg);transition:left .4s;
+.as-gen-btn:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(184,137,42,.35);}
+.as-gen-btn:disabled{background:#ddd;color:#aaa;cursor:not-allowed;transform:none;box-shadow:none;}
+.as-order-btn{
+  flex:1;padding:14px;border-radius:10px;background:var(--as-gold);color:#fff;
+  font-weight:800;font-size:14px;border:none;cursor:pointer;transition:all .2s;
+  box-shadow:0 3px 12px rgba(184,137,42,.2);
 }
-.ai-gen-btn:not(:disabled):hover::before{left:120%;}
+.as-order-btn:hover{background:#a37825;box-shadow:0 6px 20px rgba(184,137,42,.3);}
+.as-regen-btn{
+  flex:0 0 auto;padding:14px 20px;border-radius:10px;
+  background:var(--as-card);border:2px solid var(--as-border);
+  color:var(--as-sub);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;
+}
+.as-regen-btn:hover{border-color:var(--as-sub);color:var(--as-text);}
 
 /* ── Summary Card ── */
-.ai-summary{background:var(--ai-card);border:1px solid var(--ai-border);border-radius:12px;padding:18px 20px;margin-bottom:20px;}
-.ai-summary-title{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ai-muted);margin-bottom:12px;}
-.ai-sum-row{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;padding:4px 0;border-bottom:1px solid #1f1f1f;}
-.ai-sum-row:last-child{border:none;}
-.ai-sum-lbl{color:var(--ai-muted);}
-.ai-sum-val{color:var(--ai-text);font-weight:600;text-align:right;max-width:60%;}
+.as-summary{background:var(--as-card);border:1.5px solid var(--as-border);border-radius:14px;padding:18px 20px;margin-bottom:20px;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+.as-summary-title{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--as-muted);margin-bottom:12px;}
+.as-sum-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:6px 0;border-bottom:1px solid #f0ede8;}
+.as-sum-row:last-child{border:none;}
+.as-sum-lbl{color:var(--as-muted);}
+.as-sum-val{color:var(--as-text);font-weight:600;text-align:right;max-width:60%;}
 
-/* ── Preview Result ── */
-.ai-result{display:none;}
-.ai-result.show{display:block;animation:aiFadeIn .5s ease;}
-.ai-result-img{
-  width:100%;border-radius:16px;border:1px solid var(--ai-border);
-  display:block;object-fit:contain;background:var(--ai-card);
-  max-height:520px;
-}
-.ai-result-actions{display:flex;gap:10px;margin-top:14px;}
-.ai-cta-order{
-  flex:1;padding:14px;border-radius:10px;
-  background:var(--ai-gold);color:#000;font-weight:800;font-size:14px;
-  border:none;cursor:pointer;transition:all .2s;
-}
-.ai-cta-order:hover{background:#d4ae6a;}
-.ai-cta-regen{
-  flex:0 0 auto;padding:14px 20px;border-radius:10px;
-  background:transparent;border:1px solid var(--ai-border);
-  color:var(--ai-sub);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;
-}
-.ai-cta-regen:hover{border-color:var(--ai-sub);color:var(--ai-text);}
-.ai-disclaimer{font-size:10px;color:var(--ai-muted);text-align:center;margin-top:10px;line-height:1.5;}
+/* ── Result Area ── */
+.as-result{display:none;}
+.as-result.show{display:block;animation:asFade .5s ease;}
+.as-result-img{width:100%;border-radius:14px;border:1.5px solid var(--as-border);display:block;object-fit:contain;background:#f5f0ea;max-height:500px;box-shadow:0 4px 20px rgba(0,0,0,.1);}
+.as-result-actions{display:flex;gap:10px;margin-top:14px;}
+.as-disclaimer{font-size:10px;color:var(--as-muted);text-align:center;margin-top:10px;line-height:1.5;}
 
-/* ── Loading shimmer ── */
-.ai-shimmer{
-  width:100%;border-radius:16px;overflow:hidden;
-  background:var(--ai-card);position:relative;
-}
-.ai-shimmer::after{
-  content:'';position:absolute;inset:0;
-  background:linear-gradient(90deg,transparent 0%,rgba(201,165,90,.06) 50%,transparent 100%);
-  animation:shimmer 1.6s infinite;
-}
-@keyframes shimmer{0%{transform:translateX(-100%);}100%{transform:translateX(100%);}}
-.ai-shimmer-img{width:100%;height:420px;display:block;background:linear-gradient(135deg,#151515,#1c1c1c);}
-.ai-loading-text{text-align:center;font-size:13px;color:var(--ai-muted);padding:16px;animation:pulse 1.5s infinite alternate;}
-@keyframes pulse{from{opacity:.5;}to{opacity:1;}}
+/* ── Loading ── */
+.as-shimmer{width:100%;border-radius:14px;overflow:hidden;background:#f0ede8;position:relative;}
+.as-shimmer::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(201,165,90,.1),transparent);animation:asShimmer 1.6s infinite;}
+@keyframes asShimmer{0%{transform:translateX(-100%);}100%{transform:translateX(100%);}}
+.as-shimmer-img{width:100%;height:420px;display:block;}
+.as-loading-txt{text-align:center;font-size:13px;color:var(--as-sub);padding:14px;animation:asPulse 1.5s infinite alternate;}
+@keyframes asPulse{from{opacity:.5;}to{opacity:1;}}
 
 /* ── Usage Badge ── */
-.ai-usage-badge{
-  display:inline-flex;align-items:center;gap:6px;
-  background:rgba(201,165,90,.08);border:1px solid rgba(201,165,90,.2);
-  border-radius:20px;padding:5px 12px;font-size:11px;color:var(--ai-sub);
-  margin-bottom:20px;
-}
-.aub-dot{width:6px;height:6px;border-radius:50%;background:var(--ai-gold);animation:pulse 1.5s infinite alternate;}
+.as-usage-badge{display:inline-flex;align-items:center;gap:6px;background:var(--as-gold-pale);border:1px solid rgba(184,137,42,.25);border-radius:20px;padding:5px 14px;font-size:11px;color:var(--as-sub);margin-bottom:20px;}
+.as-usage-dot{width:6px;height:6px;border-radius:50%;background:var(--as-gold);animation:asPulse 1.5s infinite alternate;}
 
-/* ── Login Gate Modal ── */
-.ai-gate{display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.85);backdrop-filter:blur(4px);}
-.ai-gate.show{display:flex;align-items:flex-end;justify-content:center;}
-@media(min-width:640px){.ai-gate.show{align-items:center;}}
-.ai-gate-card{
-  background:var(--ai-card);border:1px solid var(--ai-border);
-  border-radius:20px 20px 0 0;padding:28px 24px;width:100%;max-width:440px;
-  animation:aiFadeIn .3s ease;
-}
-@media(min-width:640px){.ai-gate-card{border-radius:20px;}}
-.ai-gate-title{font-size:20px;font-weight:700;color:#fff;margin-bottom:6px;}
-.ai-gate-sub{font-size:13px;color:var(--ai-sub);margin-bottom:20px;line-height:1.5;}
-.ai-gate-btn{
-  width:100%;padding:14px;border-radius:10px;border:none;
-  background:var(--ai-gold);color:#000;font-weight:800;font-size:14px;
-  cursor:pointer;margin-bottom:10px;
-}
-.ai-gate-skip{width:100%;padding:10px;border-radius:10px;border:1px solid var(--ai-border);background:transparent;color:var(--ai-sub);font-size:13px;font-weight:600;cursor:pointer;}
+/* ── Try-On ── */
+.as-tryon-toggle{display:flex;align-items:center;gap:10px;background:var(--as-gold-pale);border:1.5px solid rgba(184,137,42,.25);border-radius:10px;padding:12px 16px;margin-bottom:14px;cursor:pointer;}
+.as-tryon-toggle input[type=checkbox]{accent-color:var(--as-gold);width:16px;height:16px;}
+.as-tryon-lbl{font-size:13px;color:var(--as-text);font-weight:600;}
+.as-tryon-sub{font-size:11px;color:var(--as-muted);}
+.as-tryon-drop{border:2px dashed var(--as-border);border-radius:12px;padding:28px;text-align:center;cursor:pointer;transition:all .25s;background:var(--as-card);}
+.as-tryon-drop:hover{border-color:var(--as-gold);background:var(--as-gold-pale);}
+.as-tryon-preview{width:100%;max-height:280px;object-fit:contain;border-radius:10px;margin-top:12px;border:1.5px solid var(--as-border);}
 
-/* ── Responsive ── */
+/* ── Login Gate ── */
+.as-gate{display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);}
+.as-gate.show{display:flex;align-items:flex-end;justify-content:center;}
+@media(min-width:640px){.as-gate.show{align-items:center;}}
+.as-gate-card{background:var(--as-card);border:1.5px solid var(--as-border);border-radius:20px 20px 0 0;padding:28px 24px;width:100%;max-width:420px;animation:asFade .3s ease;}
+@media(min-width:640px){.as-gate-card{border-radius:20px;}}
+.as-gate-title{font-size:22px;font-weight:800;color:var(--as-text);margin-bottom:6px;}
+.as-gate-sub{font-size:13px;color:var(--as-sub);margin-bottom:20px;line-height:1.5;}
+.as-gate-btn{width:100%;padding:14px;border-radius:10px;border:none;background:var(--as-gold);color:#fff;font-weight:800;font-size:14px;cursor:pointer;margin-bottom:10px;}
+.as-gate-skip{width:100%;padding:10px;border-radius:10px;border:2px solid var(--as-border);background:transparent;color:var(--as-sub);font-size:13px;font-weight:600;cursor:pointer;}
+
 @media(max-width:480px){
-  .garment-grid{grid-template-columns:repeat(3,1fr);}
-  .fabric-grid{grid-template-columns:repeat(3,1fr);}
-  .ai-hero h1{font-size:1.9rem;}
-  .ai-hero-stats{gap:20px;}
+  .as-garment-grid{grid-template-columns:repeat(3,1fr);}
+  .as-fabric-grid{grid-template-columns:repeat(3,1fr);}
 }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="ai-page">
+<div class="as-page">
 
 <!-- ── Hero ── -->
-<div class="ai-hero">
-  <div class="ai-hero-badge">
-    <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>
-    Powered by AI
-  </div>
-  <h1>Design Your<br><strong>Perfect Garment</strong></h1>
-  <p>Choose your garment, pick your style details and fabric — see a photorealistic preview in seconds before you order.</p>
-  <div class="ai-hero-stats">
-    <div class="ai-stat"><strong>3</strong><span>Free Previews</span></div>
-    <div class="ai-stat"><strong>~30s</strong><span>Generation Time</span></div>
-    <div class="ai-stat"><strong>8+</strong><span>Garment Types</span></div>
+<div class="as-hero">
+  <div class="as-hero-inner">
+    <div class="as-badge">
+      <svg width="11" height="11" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>
+      Powered by AI
+    </div>
+    <h1>Design Your<br><strong>Perfect Garment</strong></h1>
+    <p>Pick your garment, fabric and style details — see a photorealistic AI preview, then place your order instantly.</p>
+    <div class="as-hero-stats">
+      <div class="as-stat"><strong>3</strong><span>Free Previews</span></div>
+      <div class="as-stat"><strong>~30s</strong><span>Generation Time</span></div>
+      <div class="as-stat"><strong>8+</strong><span>Garment Types</span></div>
+    </div>
   </div>
 </div>
 
 <!-- ── Wizard ── -->
-<div class="ai-wizard">
+<div class="as-wizard">
 
-  <!-- Usage badge -->
-  <div style="text-align:center;">
-    <div class="ai-usage-badge" id="aiUsageBadge">
-      <div class="aub-dot"></div>
-      <span id="aiUsageText">3 free previews remaining</span>
+  <div style="text-align:center;margin-top:32px;">
+    <div class="as-usage-badge" id="asUsageBadge">
+      <div class="as-usage-dot"></div>
+      <span id="asUsageText">3 free previews remaining</span>
     </div>
   </div>
 
-  <!-- Step progress -->
-  <div class="ai-progress" id="aiProgress">
-    <div class="ai-step-item active" id="sp1">
-      <div class="ai-step-dot">1</div>
-      <div class="ai-step-lbl">Garment</div>
-    </div>
-    <div class="ai-step-item" id="sp2">
-      <div class="ai-step-dot">2</div>
-      <div class="ai-step-lbl">Style</div>
-    </div>
-    <div class="ai-step-item" id="sp3">
-      <div class="ai-step-dot">3</div>
-      <div class="ai-step-lbl">Fabric</div>
-    </div>
-    <div class="ai-step-item" id="sp4">
-      <div class="ai-step-dot">4</div>
-      <div class="ai-step-lbl">Generate</div>
-    </div>
+  <!-- Step Progress -->
+  <div class="as-progress" id="asProgress">
+    <div class="as-step-item active" id="sp1"><div class="as-step-dot">1</div><div class="as-step-lbl">Garment</div></div>
+    <div class="as-step-item" id="sp2"><div class="as-step-dot">2</div><div class="as-step-lbl">Fabric</div></div>
+    <div class="as-step-item" id="sp3"><div class="as-step-dot">3</div><div class="as-step-lbl">Style</div></div>
+    <div class="as-step-item" id="sp4"><div class="as-step-dot">4</div><div class="as-step-lbl">Generate</div></div>
   </div>
 
   <!-- ── STEP 1: Garment ── -->
-  <div class="ai-panel active" id="aiStep1">
-    <div class="ai-section-title">Choose Your Garment</div>
-    <div class="ai-section-sub">What would you like to have custom stitched?</div>
-    <div class="garment-grid" id="garmentGrid">
-      <div class="g-card" data-garment="Formal Shirt" data-group="shirt" onclick="selectGarment(this)">
-        <span class="g-card-icon">👔</span>
-        <div class="g-card-name">Formal Shirt</div>
-        <div class="g-card-sub">Office &amp; occasions</div>
+  <div class="as-panel active" id="asStep1">
+    <div class="as-section-label">Step 1</div>
+    <div class="as-section-title">Choose Your Garment</div>
+    <div class="as-section-sub">What would you like custom stitched?</div>
+    <div class="as-garment-grid" id="asGarmentGrid">
+      {% set garment_icons = {
+        'Formal Shirt':'👔','Suit Shirt':'👔','Denim Shirt':'👕',
+        'Kurta (only)':'🥻','Kurta + Pajama set':'🎎','Pathani Suit':'🧥','Sherwani':'✨',
+        'Safari Suit':'🌿','Blazer':'🎩','Suit 2-Piece':'💼','Suit 3-Piece':'🏆',
+        'Waistcoat':'🎭','Jeans':'🔵','Baggy Fit':'👖','Boot Cut':'👖','Straight cut':'👖','Slim Fit':'👖','Skinny Fit':'👖','Tapered Fit':'👖',
+        'Pajama (only)':'👘','Alteration (any garment)':'✂️'
+      } %}
+      {% set garment_groups = {
+        'Formal Shirt':'shirt','Suit Shirt':'shirt','Denim Shirt':'shirt',
+        'Kurta (only)':'kurta','Kurta + Pajama set':'kurta','Pathani Suit':'kurta','Sherwani':'kurta',
+        'Safari Suit':'shirt','Blazer':'suit','Suit 2-Piece':'suit','Suit 3-Piece':'suit','Waistcoat':'suit',
+        'Jeans':'pant','Baggy Fit':'pant','Boot Cut':'pant','Straight cut':'pant','Slim Fit':'pant','Skinny Fit':'pant','Tapered Fit':'pant',
+        'Pajama (only)':'kurta'
+      } %}
+      {% set garment_subs = {
+        'Formal Shirt':'Office & occasions','Suit Shirt':'For suits & blazers','Denim Shirt':'Casual denim look',
+        'Kurta (only)':'Traditional & festive','Kurta + Pajama set':'Complete ethnic set','Pathani Suit':'Classic & elegant','Sherwani':'Wedding & ceremony',
+        'Safari Suit':'Casual & formal','Blazer':'Smart & versatile','Suit 2-Piece':'Jacket + Trouser','Suit 3-Piece':'Jacket + Vest + Trouser',
+        'Waistcoat':'Vest / Sleeveless','Jeans':'Denim custom fit','Baggy Fit':'Relaxed baggy jeans','Boot Cut':'Classic boot-cut',
+        'Straight cut':'Clean straight cut','Slim Fit':'Slim fitted trousers','Skinny Fit':'Skinny fit trousers','Tapered Fit':'Tapered trousers',
+        'Pajama (only)':'Ethnic bottom wear'
+      } %}
+      {% set shown = [] %}
+      {% for item in items %}
+        {% set grp = garment_groups.get(item.name, '') %}
+        {% if grp and item.name not in ['Alteration (any garment)'] %}
+          {% if shown.append(item.name) %}{% endif %}
+          <div class="as-g-card" data-garment="{{ item.name }}" data-group="{{ grp }}" data-iid="{{ item.id }}" onclick="asSelectGarment(this)">
+            {% if item.image_url %}
+              <img class="as-g-img" src="{{ item.image_url }}" alt="{{ item.name }}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+              <div class="as-g-emoji" style="display:none">{{ garment_icons.get(item.name,'🧵') }}</div>
+            {% else %}
+              <div class="as-g-emoji">{{ garment_icons.get(item.name,'🧵') }}</div>
+            {% endif %}
+            <div class="as-g-info">
+              <div class="as-g-name">{{ item.name }}</div>
+              <div class="as-g-sub">{{ garment_subs.get(item.name,'Custom stitched') }}</div>
+            </div>
+          </div>
+        {% endif %}
+      {% endfor %}
+      {# Fallback hardcoded cards if no items in DB #}
+      {% if not shown %}
+      {% for g,grp,icon,sub in [
+        ('Formal Shirt','shirt','👔','Office & occasions'),
+        ('Kurta','kurta','🥻','Traditional & festive'),
+        ('Kurta + Pajama','kurta','🎎','Complete ethnic set'),
+        ('Pathani Suit','kurta','🧥','Classic & elegant'),
+        ('Safari Suit','shirt','🌿','Casual & formal'),
+        ('Blazer','suit','🎩','Smart & versatile'),
+        ('Suit 2-Piece','suit','💼','Jacket + Trouser'),
+        ('Trouser','pant','👖','Tailored pants'),
+        ('Jeans','pant','🔵','Denim custom fit')
+      ] %}
+      <div class="as-g-card" data-garment="{{ g }}" data-group="{{ grp }}" data-iid="" onclick="asSelectGarment(this)">
+        <div class="as-g-emoji">{{ icon }}</div>
+        <div class="as-g-info"><div class="as-g-name">{{ g }}</div><div class="as-g-sub">{{ sub }}</div></div>
       </div>
-      <div class="g-card" data-garment="Kurta" data-group="kurta" onclick="selectGarment(this)">
-        <span class="g-card-icon">🥻</span>
-        <div class="g-card-name">Kurta</div>
-        <div class="g-card-sub">Traditional &amp; festive</div>
-      </div>
-      <div class="g-card" data-garment="Kurta + Pajama" data-group="kurta" onclick="selectGarment(this)">
-        <span class="g-card-icon">🎎</span>
-        <div class="g-card-name">Kurta + Pajama</div>
-        <div class="g-card-sub">Complete ethnic set</div>
-      </div>
-      <div class="g-card" data-garment="Pathani" data-group="kurta" onclick="selectGarment(this)">
-        <span class="g-card-icon">🧥</span>
-        <div class="g-card-name">Pathani</div>
-        <div class="g-card-sub">Classic &amp; elegant</div>
-      </div>
-      <div class="g-card" data-garment="Sherwani" data-group="kurta" onclick="selectGarment(this)">
-        <span class="g-card-icon">✨</span>
-        <div class="g-card-name">Sherwani</div>
-        <div class="g-card-sub">Wedding &amp; ceremony</div>
-      </div>
-      <div class="g-card" data-garment="Safari Suit" data-group="shirt" onclick="selectGarment(this)">
-        <span class="g-card-icon">🌿</span>
-        <div class="g-card-name">Safari Suit</div>
-        <div class="g-card-sub">Casual &amp; formal</div>
-      </div>
-      <div class="g-card" data-garment="Blazer" data-group="suit" onclick="selectGarment(this)">
-        <span class="g-card-icon">🎩</span>
-        <div class="g-card-name">Blazer</div>
-        <div class="g-card-sub">Smart &amp; versatile</div>
-      </div>
-      <div class="g-card" data-garment="Suit 2-Piece" data-group="suit" onclick="selectGarment(this)">
-        <span class="g-card-icon">💼</span>
-        <div class="g-card-name">Suit 2-Piece</div>
-        <div class="g-card-sub">Jacket + Trouser</div>
-      </div>
-      <div class="g-card" data-garment="Suit 3-Piece" data-group="suit" onclick="selectGarment(this)">
-        <span class="g-card-icon">🏆</span>
-        <div class="g-card-name">Suit 3-Piece</div>
-        <div class="g-card-sub">Jacket + Vest + Trouser</div>
-      </div>
-      <div class="g-card" data-garment="Waistcoat" data-group="suit" onclick="selectGarment(this)">
-        <span class="g-card-icon">🎭</span>
-        <div class="g-card-name">Waistcoat</div>
-        <div class="g-card-sub">Vest / Sleeveless</div>
-      </div>
-      <div class="g-card" data-garment="Trouser" data-group="pant" onclick="selectGarment(this)">
-        <span class="g-card-icon">👖</span>
-        <div class="g-card-name">Trouser</div>
-        <div class="g-card-sub">Tailored pants</div>
-      </div>
-      <div class="g-card" data-garment="Jeans" data-group="pant" onclick="selectGarment(this)">
-        <span class="g-card-icon">🔵</span>
-        <div class="g-card-name">Jeans</div>
-        <div class="g-card-sub">Denim custom fit</div>
-      </div>
+      {% endfor %}
+      {% endif %}
     </div>
-    <div class="ai-nav">
-      <button class="ai-btn-next" id="btnStep1Next" disabled onclick="goStep(2)">Choose Style Options →</button>
-    </div>
-  </div>
-
-  <!-- ── STEP 2: Style Options ── -->
-  <div class="ai-panel" id="aiStep2">
-    <div class="ai-section-title">Customise Your Style</div>
-    <div class="ai-section-sub">Select your preferred details. Skip any you're unsure about.</div>
-    <div id="styleOptionsWrap"></div>
-    <div class="ai-nav">
-      <button class="ai-btn-back" onclick="goStep(1)">← Back</button>
-      <button class="ai-btn-next" onclick="goStep(3)">Choose Fabric →</button>
+    <div class="as-nav">
+      <button class="as-btn-next" id="asBtnStep1Next" disabled onclick="asGoStep(2)">Choose Fabric →</button>
     </div>
   </div>
 
-  <!-- ── STEP 3: Fabric ── -->
-  <div class="ai-panel" id="aiStep3">
-    <div class="ai-section-title">Choose Your Fabric</div>
-    <div class="ai-section-sub">Pick a fabric swatch to see your garment in that exact material. Or skip to use a classic preview.</div>
-    <div class="fabric-grid" id="fabricGrid">
-      <div class="fab-skip sel" id="fabSkip" onclick="selectFabric(null,this)">
-        <span style="font-size:22px;">⟳</span>
-        <span>Classic Preview<br>(No Fabric)</span>
+  <!-- ── STEP 2: Fabric ── -->
+  <div class="as-panel" id="asStep2">
+    <div class="as-section-label">Step 2</div>
+    <div class="as-section-title">Pick Your Fabric</div>
+    <div class="as-section-sub">Choose a fabric swatch — the AI preview will show your garment in that exact material.</div>
+    <div class="as-fabric-grid" id="asFabricGrid">
+      <div class="as-fab-skip sel" id="asFabSkip" onclick="asSelectFabric(null,this)">
+        <span style="font-size:24px">🧵</span>
+        <span style="font-size:11px;font-weight:700;text-align:center;padding:0 8px">Classic Preview<br><span style="font-weight:400;color:var(--as-muted)">(No Fabric)</span></span>
       </div>
       {% for f in fabrics %}
-      <div class="fab-card" data-fid="{{ f.id }}" data-fname="{{ f.name }}" data-ftype="{{ f.fabric_type or 'all' }}" onclick="selectFabric(this.dataset, this)">
+      <div class="as-fab-card" data-fid="{{ f.id }}" data-fname="{{ f.name }}" data-ftype="{{ f.fabric_type or 'all' }}" data-fprice="{{ f.price_per_metre or 0 }}" onclick="asSelectFabric(this.dataset,this)">
         {% if f.image_url %}
-        <img class="fab-img" src="{{ f.image_url }}" alt="{{ f.name }}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-        <div class="fab-placeholder" style="display:none">🧵</div>
+          <img class="as-fab-img" src="{{ f.image_url }}" alt="{{ f.name }}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+          <div class="as-fab-emoji" style="display:none">🧵</div>
         {% else %}
-        <div class="fab-placeholder">🧵</div>
+          <div class="as-fab-emoji">🧵</div>
         {% endif %}
-        <div class="fab-name">{{ f.name }}</div>
+        <div class="as-fab-name">{{ f.name }}</div>
+        {% if f.price_per_metre %}<div class="as-fab-price">₹{{ f.price_per_metre|int }}/m</div>{% endif %}
       </div>
       {% endfor %}
       {% if not fabrics %}
-      <div style="grid-column:1/-1;text-align:center;padding:24px;color:var(--ai-muted);font-size:13px;">No fabrics in catalog yet. Using classic preview.</div>
+      <div style="grid-column:1/-1;padding:20px;text-align:center;color:var(--as-muted);font-size:13px;background:var(--as-card);border-radius:10px;border:1.5px solid var(--as-border);">No fabrics in catalog yet — using classic preview.</div>
       {% endif %}
     </div>
 
-    <!-- Virtual Try-On -->
-    <div style="margin-top:28px;margin-bottom:6px;">
-      <label class="tryon-opt" id="tryOnToggle" onclick="toggleTryOn()">
-        <input type="checkbox" id="tryOnCheck">
+    <!-- Optional Try-On -->
+    <div style="margin-top:8px;">
+      <label class="as-tryon-toggle" onclick="asToggleTryOn()">
+        <input type="checkbox" id="asTryOnCheck">
         <div>
-          <div class="tryon-opt-lbl">📸 Add Virtual Try-On (Optional)</div>
-          <div class="tryon-opt-sub">Upload your photo to see how this garment looks ON you. Uses 1 free try-on credit.</div>
+          <div class="as-tryon-lbl">📸 Virtual Try-On — Upload Your Photo (Optional)</div>
+          <div class="as-tryon-sub">See how this garment looks on you. Uses 1 free try-on credit.</div>
         </div>
       </label>
-      <div id="tryOnSection" style="display:none;">
-        <div class="tryon-wrap" id="tryOnDrop" onclick="document.getElementById('tryOnInput').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleTryOnDrop(event)">
-          <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M16 16l-4-4-4 4M12 12V4"/><rect x="3" y="17" width="18" height="4" rx="1"/></svg>
-          <p>Tap to upload your photo</p>
-          <small>JPG, PNG or WEBP · Max 8MB</small>
-          <img id="tryOnPreview" class="tryon-preview" style="display:none;" alt="Your photo">
+      <div id="asTryOnSection" style="display:none">
+        <div class="as-tryon-drop" id="asTryOnDrop" onclick="document.getElementById('asTryOnInput').click()" ondragover="event.preventDefault();this.classList.add('as-tryon-drag')" ondragleave="this.classList.remove('as-tryon-drag')" ondrop="asHandleTryOnDrop(event)">
+          <svg width="32" height="32" fill="none" stroke="var(--as-muted)" stroke-width="1.5" viewBox="0 0 24 24"><path d="M16 16l-4-4-4 4M12 12V4"/><rect x="3" y="17" width="18" height="4" rx="1"/></svg>
+          <p style="font-size:13px;color:var(--as-sub);margin:8px 0 2px">Tap to upload your photo</p>
+          <small style="font-size:11px;color:var(--as-muted)">JPG, PNG or WEBP · Max 8MB</small>
+          <img id="asTryOnPreview" class="as-tryon-preview" style="display:none" alt="Your photo">
         </div>
-        <input type="file" id="tryOnInput" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="handleTryOnFile(this.files[0])">
-        <p id="tryOnStatus" style="font-size:11px;color:var(--ai-muted);margin-top:6px;text-align:center;"></p>
+        <input type="file" id="asTryOnInput" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="asHandleTryOnFile(this.files[0])">
+        <p id="asTryOnStatus" style="font-size:11px;color:var(--as-muted);margin-top:6px;text-align:center"></p>
       </div>
     </div>
 
-    <div class="ai-nav">
-      <button class="ai-btn-back" onclick="goStep(2)">← Back</button>
-      <button class="ai-btn-next" onclick="goStep(4)">Review &amp; Generate →</button>
+    <div class="as-nav">
+      <button class="as-btn-back" onclick="asGoStep(1)">← Back</button>
+      <button class="as-btn-next" onclick="asGoStep(3)">Style Options →</button>
+    </div>
+  </div>
+
+  <!-- ── STEP 3: Style ── -->
+  <div class="as-panel" id="asStep3">
+    <div class="as-section-label">Step 3</div>
+    <div class="as-section-title">Customise Your Style</div>
+    <div class="as-section-sub">Fine-tune the details of your garment. Skip anything you're unsure about.</div>
+    <div id="asStyleWrap"></div>
+    <div class="as-nav">
+      <button class="as-btn-back" onclick="asGoStep(2)">← Back</button>
+      <button class="as-btn-next" onclick="asGoStep(4)">Review & Generate →</button>
     </div>
   </div>
 
   <!-- ── STEP 4: Generate ── -->
-  <div class="ai-panel" id="aiStep4">
-    <div class="ai-section-title">Your Design Summary</div>
-    <div class="ai-summary" id="aiSummary"></div>
+  <div class="as-panel" id="asStep4">
+    <div class="as-section-label">Step 4</div>
+    <div class="as-section-title">Your Design Summary</div>
+    <div class="as-summary" id="asSummary"></div>
 
-    <!-- Result area -->
-    <div id="aiResultWrap">
-      <button class="ai-gen-btn" id="aiGenBtn" onclick="generatePreview()">
-        ✦ Generate AI Preview
-      </button>
-      <div id="aiLoadingWrap" style="display:none;">
-        <div class="ai-shimmer"><div class="ai-shimmer-img"></div></div>
-        <div class="ai-loading-text" id="aiLoadingText">Crafting your garment preview…</div>
+    <div id="asResultWrap">
+      <button class="as-gen-btn" id="asGenBtn" onclick="asGenerate()">✦ Generate AI Preview</button>
+      <div id="asLoadingWrap" style="display:none">
+        <div class="as-shimmer"><div class="as-shimmer-img"></div></div>
+        <div class="as-loading-txt" id="asLoadingTxt">Crafting your garment preview…</div>
       </div>
-      <div class="ai-result" id="aiResult">
-        <img class="ai-result-img" id="aiResultImg" alt="AI Generated Preview" onclick="openImgFull()">
-        <div class="ai-result-actions">
-          <button class="ai-cta-order" id="aiOrderBtn" onclick="goToOrder()">Place Order with This Design →</button>
-          <button class="ai-cta-regen" onclick="generatePreview()">↻ Regenerate</button>
+      <div class="as-result" id="asResult">
+        <img class="as-result-img" id="asResultImg" alt="AI Preview" onclick="asOpenImgFull()">
+        <div class="as-result-actions">
+          <button class="as-order-btn" onclick="asGoToOrder()">📋 Place Order with This Design →</button>
+          <button class="as-regen-btn" onclick="asGenerate()">↻ Regenerate</button>
         </div>
-        <p class="ai-disclaimer">Preview is AI-generated and may vary slightly from the final garment. Our tailors will confirm all details before stitching.</p>
+        <p class="as-disclaimer">Preview is AI-generated and may vary slightly from the final garment. Our tailors will confirm all details before stitching.</p>
       </div>
     </div>
 
-    <div class="ai-nav" style="margin-top:18px;">
-      <button class="ai-btn-back" onclick="goStep(3)">← Change Fabric</button>
+    <div class="as-nav" style="margin-top:18px">
+      <button class="as-btn-back" onclick="asGoStep(3)">← Change Style</button>
     </div>
   </div>
 
-</div><!-- /ai-wizard -->
+</div><!-- /as-wizard -->
 
-<!-- ── Login Gate Modal ── -->
-<div class="ai-gate" id="aiGate">
-  <div class="ai-gate-card">
-    <div class="ai-gate-title">✦ Keep Designing</div>
-    <div class="ai-gate-sub" id="aiGateMsg">You've used your 3 free AI previews. Create a free account to generate more — it only takes a moment.</div>
-    <button class="ai-gate-btn" onclick="window.location.href='/account'">Create Free Account</button>
-    <button class="ai-gate-skip" onclick="closeGate()">Maybe later</button>
+<!-- Login Gate -->
+<div class="as-gate" id="asGate">
+  <div class="as-gate-card">
+    <div class="as-gate-title">✦ Keep Designing</div>
+    <div class="as-gate-sub" id="asGateMsg">You've used your 3 free AI previews. Create a free account to get more.</div>
+    <button class="as-gate-btn" onclick="window.location.href='/account'">Create Free Account</button>
+    <button class="as-gate-skip" onclick="document.getElementById('asGate').classList.remove('show')">Maybe later</button>
   </div>
 </div>
 
-<!-- Full image viewer -->
-<div id="aiImgOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.95);cursor:zoom-out;" onclick="this.style.display='none'">
-  <img id="aiImgFull" style="max-width:95vw;max-height:95vh;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);border-radius:12px;" alt="">
+<!-- Image fullscreen -->
+<div id="asImgOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.95);cursor:zoom-out" onclick="this.style.display='none'">
+  <img id="asImgFull" style="max-width:95vw;max-height:95vh;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);border-radius:12px" alt="">
 </div>
 
-</div><!-- /ai-page -->
+</div><!-- /as-page -->
 
 <script>
 // ── State ──
-var AI = {
-  garment: '', garmentGroup: '',
-  styles: {}, // {group: value}
-  fabricChoice: 'none', fabricId: '', fabricName: '',
-  tryOnEnabled: false, tryOnUrl: '',
-  resultUrl: '',
-  itemId: null
+var AS = {
+  garment:'', garmentGroup:'', itemId:null,
+  fabric:{id:'',name:'',price:0,type:''},
+  styles:{},
+  tryOnEnabled:false, tryOnUrl:'',
+  resultUrl:''
 };
 
-// ── Fabric options from server ──
 var SERVER_FABRICS = {{ fabrics | tojson }};
-// ── Service items from server ──
-var SERVER_ITEMS = {{ items | tojson }};
+var SERVER_ITEMS   = {{ items   | tojson }};
 
-// ── Style options per garment group ──
-var STYLE_MAP = {
-  shirt: [
-    {group:'Collar', label:'Collar Style', opts:['Spread Collar','Band Collar','Mandarin Collar','Button-Down Collar']},
-    {group:'Sleeves', label:'Sleeve Length', opts:['Full Sleeve','Half Sleeve','3/4 Sleeve']},
-    {group:'Pocket', label:'Chest Pocket', opts:['No Pocket','1 Pocket (Left)','2 Pockets']},
-    {group:'Placket', label:'Placket / Front', opts:['Standard Placket','Concealed Buttons','French Placket']},
-    {group:'Hem', label:'Hem Style', opts:['Straight Hem','Round Hem','Side Slit']},
-    {group:'Fit', label:'Fit', opts:['Slim Fit','Regular Fit','Relaxed Fit']},
-    {group:'Buttons', label:'Button Style', opts:['White Pearl Buttons','Gold Metal Buttons','Dark Buttons']},
+// ── Style map per group ──
+var AS_STYLE_MAP = {
+  shirt:[
+    {group:'Collar',  label:'Collar Style',  opts:['Spread Collar','Band Collar','Mandarin Collar','Button-Down Collar']},
+    {group:'Sleeves', label:'Sleeve Length',  opts:['Full Sleeve','Half Sleeve','3/4 Sleeve']},
+    {group:'Pocket',  label:'Chest Pocket',   opts:['No Pocket','1 Pocket (Left)','2 Pockets']},
+    {group:'Placket', label:'Placket / Front',opts:['Standard Placket','Concealed Buttons','French Placket']},
+    {group:'Hem',     label:'Hem Style',      opts:['Straight Hem','Round Hem','Side Slit']},
+    {group:'Fit',     label:'Fit',            opts:['Slim Fit','Regular Fit','Relaxed Fit']},
+    {group:'Buttons', label:'Button Style',   opts:['White Pearl','Gold Metal','Dark Matte']},
   ],
-  kurta: [
-    {group:'Collar', label:'Collar Style', opts:['Mandarin Collar','V-Neck','Round Neck','Band Collar']},
-    {group:'Sleeves', label:'Sleeve Length', opts:['Full Sleeve','Half Sleeve','3/4 Sleeve','Sleeveless']},
-    {group:'Pocket', label:'Pockets', opts:['No Pocket','1 Pocket (Left)','2 Pockets']},
-    {group:'Hem', label:'Hem Style', opts:['Straight Hem','Round Hem','Side Slit']},
-    {group:'Fit', label:'Fit', opts:['Slim Fit','Regular Fit','Relaxed Fit']},
+  kurta:[
+    {group:'Collar',  label:'Collar / Neck',  opts:['Mandarin Collar','V-Neck','Round Neck','Band Collar']},
+    {group:'Sleeves', label:'Sleeve Length',  opts:['Full Sleeve','Half Sleeve','3/4 Sleeve','Sleeveless']},
+    {group:'Pocket',  label:'Pockets',        opts:['No Pocket','1 Pocket (Left)','2 Pockets']},
+    {group:'Hem',     label:'Hem Style',      opts:['Straight Hem','Round Hem','Side Slit']},
+    {group:'Fit',     label:'Fit',            opts:['Slim Fit','Regular Fit','Relaxed Fit']},
+    {group:'Length',  label:'Kurta Length',   opts:['Short (above knee)','Medium (knee length)','Long (below knee)']},
   ],
-  suit: [
-    {group:'Fit', label:'Jacket Fit', opts:['Slim Fit','Regular Fit','Relaxed Fit']},
-    {group:'Lapel', label:'Lapel Style', opts:['Notch Lapel','Peak Lapel','Shawl Lapel']},
-    {group:'Pocket', label:'Breast Pocket', opts:['No Pocket','1 Pocket (Left)','Flap Pockets']},
-    {group:'Buttons', label:'Button Style', opts:['Gold Metal Buttons','Dark Buttons','White Pearl Buttons']},
+  suit:[
+    {group:'Fit',     label:'Jacket Fit',     opts:['Slim Fit','Regular Fit','Relaxed Fit']},
+    {group:'Lapel',   label:'Lapel Style',    opts:['Notch Lapel','Peak Lapel','Shawl Lapel']},
+    {group:'Pocket',  label:'Breast Pocket',  opts:['No Pocket','1 Pocket (Left)','Flap Pockets']},
+    {group:'Buttons', label:'Button Style',   opts:['Gold Metal','Dark Matte','Silver Chrome']},
+    {group:'Vent',    label:'Back Vent',      opts:['Single Vent','Double Vent','No Vent']},
   ],
-  pant: [
-    {group:'Fit', label:'Fit', opts:['Slim Fit','Regular Fit','Relaxed Fit']},
-    {group:'Waist', label:'Waist Style', opts:['Flat Front','Pleated Front','Elasticated Waist']},
-    {group:'Cuff', label:'Hem / Cuff', opts:['Plain Hem','Cuffed Hem','Tapered Hem']},
-  ],
+  pant:[
+    {group:'Fit',     label:'Fit',            opts:['Slim Fit','Regular Fit','Relaxed Fit','Baggy Fit']},
+    {group:'Waist',   label:'Waist Style',    opts:['Flat Front','Pleated Front','Elasticated Waist']},
+    {group:'Cuff',    label:'Hem / Cuff',     opts:['Plain Hem','Cuffed Hem','Tapered Hem']},
+    {group:'Length',  label:'Length',         opts:['Full Length','Cropped (ankle)','Capri Length']},
+  ]
 };
 
 // ── Step navigation ──
-var currentStep = 1;
-function goStep(n){
-  if(n===2 && !AI.garment){alert('Please select a garment first.');return;}
-  document.getElementById('aiStep'+currentStep).classList.remove('active');
-  document.getElementById('aiStep'+n).classList.add('active');
-  // Update progress
+var asCurStep = 1;
+function asGoStep(n){
+  if(n===2 && !AS.garment){alert('Please select a garment first.');return;}
+  document.getElementById('asStep'+asCurStep).classList.remove('active');
+  document.getElementById('asStep'+n).classList.add('active');
   for(var i=1;i<=4;i++){
     var sp=document.getElementById('sp'+i);
     sp.classList.remove('active','done');
     if(i<n) sp.classList.add('done');
     else if(i===n) sp.classList.add('active');
   }
-  currentStep=n;
-  if(n===2) renderStyleOptions();
-  if(n===3) filterFabrics();
-  if(n===4) renderSummary();
+  asCurStep=n;
+  if(n===2) asFilterFabrics();
+  if(n===3) asRenderStyles();
+  if(n===4) asRenderSummary();
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
 // ── Garment select ──
-function selectGarment(el){
-  document.querySelectorAll('.g-card').forEach(function(c){c.classList.remove('sel');});
+function asSelectGarment(el){
+  document.querySelectorAll('.as-g-card').forEach(function(c){c.classList.remove('sel');});
   el.classList.add('sel');
-  AI.garment = el.dataset.garment;
-  AI.garmentGroup = el.dataset.group;
-  AI.styles = {}; // reset styles when garment changes
-  document.getElementById('btnStep1Next').disabled = false;
-  // Try to find matching item_id
-  AI.itemId = null;
-  var g = AI.garment.toLowerCase();
-  for(var i=0;i<SERVER_ITEMS.length;i++){
-    var nm=(SERVER_ITEMS[i].name||'').toLowerCase();
-    if(nm.indexOf(g)!==-1||g.indexOf(nm)!==-1){AI.itemId=SERVER_ITEMS[i].id;break;}
-  }
-}
-
-// ── Style options ──
-function renderStyleOptions(){
-  var opts = STYLE_MAP[AI.garmentGroup] || STYLE_MAP['shirt'];
-  var html = '';
-  opts.forEach(function(grp){
-    html += '<div class="style-group">';
-    html += '<div class="style-group-title">'+grp.label+'</div>';
-    html += '<div class="style-chips">';
-    grp.opts.forEach(function(opt){
-      var sel = AI.styles[grp.group]===opt ? ' sel' : '';
-      html += '<div class="s-chip'+sel+'" onclick="selectStyle(\''+grp.group+'\',\''+opt+'\',this)">'+opt+'</div>';
-    });
-    html += '</div></div>';
-  });
-  document.getElementById('styleOptionsWrap').innerHTML = html;
-}
-function selectStyle(group, value, el){
-  if(AI.styles[group]===value){
-    delete AI.styles[group];
-    el.classList.remove('sel');
-  } else {
-    AI.styles[group]=value;
-    // Deselect siblings
-    el.closest('.style-chips').querySelectorAll('.s-chip').forEach(function(c){c.classList.remove('sel');});
-    el.classList.add('sel');
-  }
+  AS.garment=el.dataset.garment;
+  AS.garmentGroup=el.dataset.group||'shirt';
+  AS.itemId=el.dataset.iid||null;
+  AS.styles={};
+  document.getElementById('asBtnStep1Next').disabled=false;
 }
 
 // ── Fabric ──
-var selectedFabricEl = null;
-function selectFabric(data, el){
-  // Deselect all
-  document.querySelectorAll('.fab-card,.fab-skip').forEach(function(c){c.classList.remove('sel');});
+function asSelectFabric(data, el){
+  document.querySelectorAll('.as-fab-card,.as-fab-skip').forEach(function(c){c.classList.remove('sel');});
   el.classList.add('sel');
-  selectedFabricEl = el;
-  if(!data){
-    AI.fabricChoice='none'; AI.fabricId=''; AI.fabricName='';
-  } else {
-    AI.fabricChoice='catalog'; AI.fabricId=data.fid; AI.fabricName=data.fname;
-  }
+  if(!data){AS.fabric={id:'',name:'',price:0,type:''};}
+  else{AS.fabric={id:data.fid,name:data.fname,price:parseFloat(data.fprice)||0,type:data.ftype||'all'};}
 }
-function filterFabrics(){
-  var g = AI.garmentGroup;
-  document.querySelectorAll('.fab-card').forEach(function(c){
-    var ft=c.dataset.ftype||'all';
-    var show = ft==='all'||ft===g||(g==='shirt'&&ft==='shirt')||(g==='pant'&&ft==='pant')||(g==='suit'&&ft==='suit')||(g==='kurta'&&(ft==='shirt'||ft==='kurta'));
+function asFilterFabrics(){
+  var g=AS.garmentGroup;
+  document.querySelectorAll('.as-fab-card').forEach(function(c){
+    var ft=(c.dataset.ftype||'all').toLowerCase();
+    var show=ft==='all'||ft===g||(g==='shirt'&&ft==='shirt')||(g==='pant'&&ft==='pant')||(g==='suit'&&(ft==='suit'||ft==='shirt'))||(g==='kurta'&&(ft==='shirt'||ft==='kurta'));
     c.style.display=show?'':'none';
   });
 }
 
+// ── Style options ──
+function asRenderStyles(){
+  var opts=AS_STYLE_MAP[AS.garmentGroup]||AS_STYLE_MAP.shirt;
+  var html='';
+  opts.forEach(function(grp){
+    html+='<div class="as-style-group"><span class="as-style-group-label">'+grp.label+'</span><div class="as-chips">';
+    grp.opts.forEach(function(opt){
+      var sel=AS.styles[grp.group]===opt?' sel':'';
+      html+='<div class="as-chip'+sel+'" onclick="asPickStyle(\''+grp.group+'\',\''+opt.replace(/'/g,"\\'")+ '\',this)">'+opt+'</div>';
+    });
+    html+='</div></div>';
+  });
+  document.getElementById('asStyleWrap').innerHTML=html;
+}
+function asPickStyle(group,val,el){
+  if(AS.styles[group]===val){delete AS.styles[group];el.classList.remove('sel');}
+  else{AS.styles[group]=val;el.closest('.as-chips').querySelectorAll('.as-chip').forEach(function(c){c.classList.remove('sel');});el.classList.add('sel');}
+}
+
 // ── Try-On ──
-var tryOnUploading = false;
-function toggleTryOn(){
-  var check=document.getElementById('tryOnCheck');
-  var sec=document.getElementById('tryOnSection');
-  // Toggle is already triggered by onclick before checkbox changes
+function asToggleTryOn(){
   setTimeout(function(){
-    if(check.checked){sec.style.display='block';AI.tryOnEnabled=true;}
-    else{sec.style.display='none';AI.tryOnEnabled=false;AI.tryOnUrl='';}
+    var on=document.getElementById('asTryOnCheck').checked;
+    document.getElementById('asTryOnSection').style.display=on?'block':'none';
+    AS.tryOnEnabled=on;if(!on){AS.tryOnUrl='';}
   },10);
 }
-function handleTryOnDrop(e){
-  e.preventDefault();
-  e.currentTarget.classList.remove('drag');
-  var file=e.dataTransfer.files[0];
-  if(file) handleTryOnFile(file);
-}
-function handleTryOnFile(file){
+function asHandleTryOnDrop(e){e.preventDefault();e.currentTarget.classList.remove('as-tryon-drag');var f=e.dataTransfer.files[0];if(f)asHandleTryOnFile(f);}
+function asHandleTryOnFile(file){
   if(!file)return;
-  var status=document.getElementById('tryOnStatus');
-  status.textContent='Uploading…';
-  tryOnUploading=true;
-  var fd=new FormData();
-  fd.append('photo',file);
+  var st=document.getElementById('asTryOnStatus');st.textContent='Uploading…';
+  var fd=new FormData();fd.append('photo',file);
   fetch('/api/upload-tryon-photo',{method:'POST',body:fd})
     .then(function(r){return r.json();})
     .then(function(d){
-      tryOnUploading=false;
-      if(d.ok){
-        AI.tryOnUrl=d.url;
-        var prev=document.getElementById('tryOnPreview');
-        prev.src=d.url;prev.style.display='block';
-        status.textContent='✓ Photo ready';
-        document.getElementById('tryOnDrop').querySelector('p').textContent='Photo uploaded! Tap to change.';
-      } else {
-        status.textContent='⚠ '+d.error;
-      }
-    }).catch(function(){tryOnUploading=false;status.textContent='Upload failed. Try again.';});
+      if(d.ok){AS.tryOnUrl=d.url;var p=document.getElementById('asTryOnPreview');p.src=d.url;p.style.display='block';st.textContent='✓ Photo ready';}
+      else{st.textContent='⚠ '+d.error;}
+    }).catch(function(){st.textContent='Upload failed. Try again.';});
 }
 
 // ── Summary ──
-function renderSummary(){
-  var rows='';
-  rows+='<div class="ai-sum-row"><span class="ai-sum-lbl">Garment</span><span class="ai-sum-val">'+AI.garment+'</span></div>';
-  var styleKeys=Object.keys(AI.styles);
-  if(styleKeys.length){
-    styleKeys.forEach(function(k){
-      rows+='<div class="ai-sum-row"><span class="ai-sum-lbl">'+k+'</span><span class="ai-sum-val">'+AI.styles[k]+'</span></div>';
-    });
-  } else {
-    rows+='<div class="ai-sum-row"><span class="ai-sum-lbl">Style</span><span class="ai-sum-val" style="color:var(--ai-muted)">Classic (no options)</span></div>';
-  }
-  if(AI.fabricName){
-    rows+='<div class="ai-sum-row"><span class="ai-sum-lbl">Fabric</span><span class="ai-sum-val">'+AI.fabricName+'</span></div>';
-  } else {
-    rows+='<div class="ai-sum-row"><span class="ai-sum-lbl">Fabric</span><span class="ai-sum-val" style="color:var(--ai-muted)">Classic preview</span></div>';
-  }
-  if(AI.tryOnEnabled&&AI.tryOnUrl){
-    rows+='<div class="ai-sum-row"><span class="ai-sum-lbl">Try-On</span><span class="ai-sum-val" style="color:var(--ai-green)">✓ Your photo added</span></div>';
-  }
-  var html='<div class="ai-summary-title">Your Design</div>'+rows;
-  document.getElementById('aiSummary').innerHTML=html;
-  // Reset result
-  document.getElementById('aiResult').classList.remove('show');
-  document.getElementById('aiGenBtn').style.display='';
-  document.getElementById('aiLoadingWrap').style.display='none';
+function asRenderSummary(){
+  var rows='<div class="as-sum-row"><span class="as-sum-lbl">Garment</span><span class="as-sum-val">'+AS.garment+'</span></div>';
+  var sk=Object.keys(AS.styles);
+  if(sk.length){sk.forEach(function(k){rows+='<div class="as-sum-row"><span class="as-sum-lbl">'+k+'</span><span class="as-sum-val">'+AS.styles[k]+'</span></div>';});}
+  else{rows+='<div class="as-sum-row"><span class="as-sum-lbl">Style</span><span class="as-sum-val" style="color:var(--as-muted)">Classic (no options)</span></div>';}
+  if(AS.fabric.name){rows+='<div class="as-sum-row"><span class="as-sum-lbl">Fabric</span><span class="as-sum-val">'+AS.fabric.name+(AS.fabric.price?' · ₹'+AS.fabric.price+'/m':'')+'</span></div>';}
+  else{rows+='<div class="as-sum-row"><span class="as-sum-lbl">Fabric</span><span class="as-sum-val" style="color:var(--as-muted)">Classic preview</span></div>';}
+  if(AS.tryOnEnabled&&AS.tryOnUrl){rows+='<div class="as-sum-row"><span class="as-sum-lbl">Try-On</span><span class="as-sum-val" style="color:#22c55e">✓ Your photo added</span></div>';}
+  document.getElementById('asSummary').innerHTML='<div class="as-summary-title">Your Design</div>'+rows;
+  // Reset result on re-visit
+  document.getElementById('asResult').classList.remove('show');
+  document.getElementById('asGenBtn').style.display='';
+  document.getElementById('asLoadingWrap').style.display='none';
+  AS.resultUrl='';
 }
 
 // ── Generate ──
-var LOADING_MSGS=['Crafting your garment preview…','Stitching pixels together…','Talking to the AI tailor…','Adding fine details…','Almost done — final touches…'];
-var loadingTimer=null;
-function generatePreview(){
-  document.getElementById('aiGenBtn').style.display='none';
-  document.getElementById('aiLoadingWrap').style.display='block';
-  document.getElementById('aiResult').classList.remove('show');
-  // Rotate loading messages
-  var mi=0;
-  var ltxt=document.getElementById('aiLoadingText');
-  ltxt.textContent=LOADING_MSGS[0];
-  loadingTimer=setInterval(function(){mi=(mi+1)%LOADING_MSGS.length;ltxt.textContent=LOADING_MSGS[mi];},3500);
+var AS_LOADING_MSGS=['Crafting your garment preview…','Stitching pixels together…','Consulting our AI tailor…','Adding fine details…','Final touches…'];
+var asLoadTimer=null;
+function asGenerate(){
+  document.getElementById('asGenBtn').style.display='none';
+  document.getElementById('asLoadingWrap').style.display='block';
+  document.getElementById('asResult').classList.remove('show');
+  var mi=0,lt=document.getElementById('asLoadingTxt');
+  lt.textContent=AS_LOADING_MSGS[0];
+  asLoadTimer=setInterval(function(){mi=(mi+1)%AS_LOADING_MSGS.length;lt.textContent=AS_LOADING_MSGS[mi];},3500);
 
-  var payload={
-    garment: AI.garment,
-    styles: AI.styles,
-    fabric_choice: AI.fabricChoice==='catalog'?'catalog':'',
-    fabric_id: AI.fabricId||'',
-    fabric_name: AI.fabricName||''
-  };
-  if(AI.itemId) payload.item_id=AI.itemId;
-  if(AI.tryOnEnabled&&AI.tryOnUrl) payload.customer_photo_url=AI.tryOnUrl;
+  var payload={garment:AS.garment,styles:AS.styles,
+    fabric_choice:AS.fabric.id?'catalog':'',fabric_id:AS.fabric.id||'',fabric_name:AS.fabric.name||''};
+  if(AS.itemId)payload.item_id=AS.itemId;
+  if(AS.tryOnEnabled&&AS.tryOnUrl)payload.customer_photo_url=AS.tryOnUrl;
 
-  fetch('/api/generate-style-preview',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify(payload)
-  })
+  fetch('/api/generate-style-preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
   .then(function(r){return r.json();})
   .then(function(d){
-    clearInterval(loadingTimer);
-    document.getElementById('aiLoadingWrap').style.display='none';
+    clearInterval(asLoadTimer);
+    document.getElementById('asLoadingWrap').style.display='none';
     if(d.need_login){
-      showGate(d.error);
-      document.getElementById('aiGenBtn').style.display='';
-      return;
+      document.getElementById('asGateMsg').textContent=d.error||'You\'ve used your free previews.';
+      document.getElementById('asGate').classList.add('show');
+      document.getElementById('asGenBtn').style.display='';return;
     }
-    if(!d.ok){
-      document.getElementById('aiGenBtn').style.display='';
-      alert(d.error||'Generation failed. Please try again.');
-      return;
-    }
-    AI.resultUrl=d.image_url||d.url||'';
-    var img=document.getElementById('aiResultImg');
-    img.src=AI.resultUrl;
-    document.getElementById('aiResult').classList.add('show');
-    // Update usage badge
-    if(d.previews_remaining!==null&&d.previews_remaining!==undefined){
-      document.getElementById('aiUsageText').textContent=d.previews_remaining+' free preview'+(d.previews_remaining===1?'':'s')+' remaining';
+    if(!d.ok){document.getElementById('asGenBtn').style.display='';alert(d.error||'Generation failed. Try again.');return;}
+    AS.resultUrl=d.image_url||d.url||'';
+    document.getElementById('asResultImg').src=AS.resultUrl;
+    document.getElementById('asResult').classList.add('show');
+    if(d.previews_remaining!=null){
+      document.getElementById('asUsageText').textContent=d.previews_remaining+' free preview'+(d.previews_remaining===1?'':'s')+' remaining';
     } else {
-      document.getElementById('aiUsageText').textContent='Unlimited previews (logged in)';
+      document.getElementById('asUsageText').textContent='Unlimited previews (logged in)';
     }
   })
-  .catch(function(err){
-    clearInterval(loadingTimer);
-    document.getElementById('aiLoadingWrap').style.display='none';
-    document.getElementById('aiGenBtn').style.display='';
+  .catch(function(){
+    clearInterval(asLoadTimer);
+    document.getElementById('asLoadingWrap').style.display='none';
+    document.getElementById('asGenBtn').style.display='';
     alert('Something went wrong. Please try again.');
   });
 }
 
-// ── Gate / login ──
-function showGate(msg){
-  if(msg) document.getElementById('aiGateMsg').textContent=msg;
-  document.getElementById('aiGate').classList.add('show');
-}
-function closeGate(){
-  document.getElementById('aiGate').classList.remove('show');
+function asOpenImgFull(){
+  if(!AS.resultUrl)return;
+  document.getElementById('asImgFull').src=AS.resultUrl;
+  document.getElementById('asImgOverlay').style.display='block';
 }
 
-// ── Order CTA ──
-function goToOrder(){
-  // Build pre-filled URL to services page with garment preselected
-  window.location.href='/services';
-}
-
-// ── Image lightbox ──
-function openImgFull(){
-  if(!AI.resultUrl)return;
-  document.getElementById('aiImgFull').src=AI.resultUrl;
-  document.getElementById('aiImgOverlay').style.display='block';
+// ── Place Order — pre-fill commission page via sessionStorage ──
+function asGoToOrder(){
+  var prefill={
+    garment: AS.garment,
+    garmentGroup: AS.garmentGroup,
+    itemId: AS.itemId,
+    fabricId: AS.fabric.id,
+    fabricName: AS.fabric.name,
+    fabricPrice: AS.fabric.price,
+    styles: AS.styles,
+    aiPreviewUrl: AS.resultUrl,
+    tryOnUrl: AS.tryOnUrl
+  };
+  try{ sessionStorage.setItem('ai_studio_prefill', JSON.stringify(prefill)); }catch(e){}
+  // Build URL with garment param as fallback
+  var url='/commission?garment='+encodeURIComponent(AS.garment);
+  if(AS.fabric.id) url+='&fabric_id='+encodeURIComponent(AS.fabric.id)+'&fabric_name='+encodeURIComponent(AS.fabric.name);
+  if(AS.resultUrl) url+='&ai_preview='+encodeURIComponent(AS.resultUrl);
+  window.location.href=url;
 }
 
 // ── Init ──
-(function(){
-  // Pre-select "no fabric" option
-  document.getElementById('fabSkip').classList.add('sel');
-  AI.fabricChoice='none';
-})();
+document.getElementById('asFabSkip').classList.add('sel');
 </script>
 {% endblock %}
