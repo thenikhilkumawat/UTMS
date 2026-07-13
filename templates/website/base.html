@@ -919,7 +919,7 @@ function closeWishlist(){
 }
 /* ── Account ── */
 var _acctState = null; // {logged_in, name, mobile, preview_count, limit}
-var _acctTab = 'login';
+var _acctTab = 'login'; var _acctLoginMethod = 'email';
 
 function _acctRefresh(){
   fetch('/api/account/me').then(function(r){return r.json();}).then(function(d){
