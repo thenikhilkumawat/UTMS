@@ -922,6 +922,27 @@ fetch('/api/occasions/upcoming').then(function(r){return r.json();}).then(functi
   <span class="wa-fab-label">Book via WhatsApp</span>
 </a>
 
+
+{# Mobile-only heritage strip shown right after hero #}
+<div class="mobile-heritage-strip">
+  {% if hs_active.get('heritage', True) %}
+  {% set hh = hs.get('heritage',{}) %}
+  <div class="heritage" style="margin:0;">
+    <div class="heritage-inner">
+      {% set stats=[
+        (hh.get('stat1_num','35+'),hh.get('stat1_lbl','Years of mastery')),
+        (hh.get('stat2_num','1,00,000+'),hh.get('stat2_lbl','Garments stitched')),
+        (hh.get('stat3_num','1987'),hh.get('stat3_lbl','Est. in Sikar')),
+        (hh.get('stat4_num','7'),hh.get('stat4_lbl','Days delivery'))
+      ] %}
+      {% for num,lbl in stats %}
+      <div class="heritage-item"><span class="h-num">{{ num }}</span><span class="h-label">{{ lbl }}</span></div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
 {# ═══════ 01b ACTION CARDS ═══════ #}
 {% if hs_active.get('action_cards', True) %}
 {% set ac = hs.get('action_cards',{}) %}
@@ -1640,6 +1661,11 @@ fetch('/api/occasions/upcoming').then(function(r){return r.json();}).then(functi
       </div>
     </div>
 
+    <!-- Mobile slider arrows -->
+    <div class="craft-slider-nav" id="craftSliderNav">
+      <button class="craft-slider-btn" onclick="craftSlide(-1)" aria-label="Previous">&#8592;</button>
+      <button class="craft-slider-btn" onclick="craftSlide(1)" aria-label="Next">&#8594;</button>
+    </div>
     <!-- Footer row -->
     <div class="craft-footer reveal">
       <span class="craft-footer-note">Est. 1987 &middot; Uttam Tailors, Sikar</span>
@@ -1914,6 +1940,16 @@ function pickOcc(occ,el){
     }
   }catch(e){}
 })();
+
+// Workshop mobile slider
+window.craftSlide = function(dir){
+  var g = document.getElementById('craftHomeGrid');
+  if(!g) return;
+  var card = g.querySelector('.craft-tile');
+  if(!card) return;
+  var w = card.offsetWidth + 10;
+  g.scrollBy({left: dir * w, behavior: 'smooth'});
+};
 
 // Personalised Recommendations — lazy-load widget
 (function(){
