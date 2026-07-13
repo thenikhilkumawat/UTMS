@@ -167,14 +167,6 @@
 .as-usage-badge{display:inline-flex;align-items:center;gap:6px;background:var(--as-gold-pale);border:1px solid rgba(184,137,42,.22);border-radius:20px;padding:5px 13px;font-size:11px;color:var(--as-sub);margin-bottom:18px;}
 .as-usage-dot{width:6px;height:6px;border-radius:50%;background:var(--as-gold);animation:asPulse 1.5s infinite alternate;}
 
-/* Try-on */
-.as-tryon-toggle{display:flex;align-items:center;gap:10px;background:var(--as-gold-pale);border:1.5px solid rgba(184,137,42,.22);border-radius:var(--as-radius);padding:11px 14px;margin-bottom:12px;cursor:pointer;}
-.as-tryon-toggle input[type=checkbox]{accent-color:var(--as-gold);width:15px;height:15px;}
-.as-tryon-lbl{font-size:13px;color:var(--as-text);font-weight:600;}
-.as-tryon-sub{font-size:11px;color:var(--as-muted);}
-.as-tryon-drop{border:2px dashed var(--as-border);border-radius:var(--as-radius);padding:24px;text-align:center;cursor:pointer;transition:all .2s;background:var(--as-card);}
-.as-tryon-drop:hover{border-color:var(--as-gold);background:var(--as-gold-pale);}
-.as-tryon-preview{width:100%;max-height:260px;object-fit:contain;border-radius:var(--as-radius);margin-top:10px;border:1.5px solid var(--as-border);}
 
 /* Gate */
 .as-gate{display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);}
@@ -330,64 +322,6 @@
       {% endfor %}
       {% if not fabrics %}<div style="grid-column:1/-1;padding:18px;text-align:center;color:var(--as-muted);font-size:13px;background:var(--as-card);border-radius:8px;border:1.5px solid var(--as-border);">No fabrics in catalog yet — classic preview will be used.</div>{% endif %}
     </div>
-
-    <!-- Optional try-on -->
-    <div style="margin-top:4px;">
-      <label class="as-tryon-toggle" onclick="asToggleTryOn()">
-        <input type="checkbox" id="asTryOnCheck">
-        <div><div class="as-tryon-lbl">📸 Virtual Try-On — Upload Your Photo (Optional)</div><div class="as-tryon-sub">See the garment on your own body. Uses 1 free try-on credit.</div></div>
-      </label>
-      <div id="asTryOnSection" style="display:none">
-        <div class="as-tryon-drop" id="asTryOnDrop" onclick="document.getElementById('asTryOnInput').click()" ondragover="event.preventDefault();this.classList.add('as-drag')" ondragleave="this.classList.remove('as-drag')" ondrop="asHandleTryOnDrop(event)">
-          <svg width="28" height="28" fill="none" stroke="var(--as-muted)" stroke-width="1.5" viewBox="0 0 24 24"><path d="M16 16l-4-4-4 4M12 12V4"/><rect x="3" y="17" width="18" height="4" rx="1"/></svg>
-          <p style="font-size:13px;color:var(--as-sub);margin:7px 0 2px">Tap to upload your photo</p>
-          <small style="font-size:11px;color:var(--as-muted)">JPG, PNG or WEBP · Max 8MB</small>
-          <img id="asTryOnPreview" class="as-tryon-preview" style="display:none" alt="Your photo">
-        </div>
-        <input type="file" id="asTryOnInput" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="asHandleTryOnFile(this.files[0])">
-        <p id="asTryOnStatus" style="font-size:11px;color:var(--as-muted);margin-top:5px;text-align:center"></p>
-      </div>
-    </div>
-
-    <div class="as-nav">
-      <button class="as-btn-back" onclick="asGoStep(1)">← Back</button>
-      <button class="as-btn-next" onclick="asGoStep(3)">Style Options →</button>
-    </div>
-  </div>
-
-  <!-- ── STEP 3: Style with images + preview pane ── -->
-  <div class="as-panel" id="asStep3">
-    <div class="as-section-label">Step 3</div>
-    <div class="as-section-title">Choose Your Style</div>
-    <div class="as-section-sub">Tap any option to see exactly how it looks. Skip anything you're unsure about.</div>
-    <div class="as-style-layout">
-      <!-- Left: options -->
-      <div class="as-style-options-col" id="asStyleWrap">
-        <div style="color:var(--as-muted);font-size:13px;padding:20px 0">Loading style options…</div>
-      </div>
-      <!-- Right: preview pane -->
-      <div class="as-preview-pane" id="asPreviewPane">
-        <div class="as-pv-header"><div class="as-pv-title">Preview</div></div>
-        <div class="as-pv-img-wrap">
-          <div class="as-pv-placeholder" id="asPvPlaceholder">✂️</div>
-          <img class="as-pv-img" id="asPvImg" alt="Style preview">
-        </div>
-        <div class="as-pv-label">
-          <div id="asPvLabel" style="color:var(--as-muted);font-size:12px">Tap a style option to preview</div>
-          <div id="asPvSub" class="as-pv-sub"></div>
-        </div>
-      </div>
-    </div>
-    <div class="as-nav" style="margin-top:20px">
-      <button class="as-btn-back" onclick="asGoStep(2)">← Back</button>
-      <button class="as-btn-next" onclick="asGoStep(4)">Review & Generate →</button>
-    </div>
-  </div>
-
-  <!-- ── STEP 4: Generate ── -->
-  <div class="as-panel" id="asStep4">
-    <div class="as-section-label">Step 4</div>
-    <div class="as-section-title">Your Design Summary</div>
     <div class="as-summary" id="asSummary"></div>
     <div id="asCreditsInfo" style="text-align:center;margin:10px 0 4px;font-size:13px;color:var(--as-muted)"></div>
     <button class="as-gen-btn" id="asGenBtn" onclick="asGenerate()">✦ Generate AI Preview</button>
@@ -459,7 +393,6 @@ var AS = {
   fabric:{id:'',name:'',price:0,type:''},
   styles:{},       // {group: {label,value,imageUrl}}
   styleOptions:[], // loaded from DB
-  tryOnEnabled:false, tryOnUrl:'',
   resultUrl:''
 };
 
@@ -669,29 +602,6 @@ function asPvReset(){
   _pvCurrentImg = '';
 }
 
-// ── Try-on ──
-function asToggleTryOn(){
-  setTimeout(function(){
-    var on = document.getElementById('asTryOnCheck').checked;
-    document.getElementById('asTryOnSection').style.display = on ? 'block' : 'none';
-    AS.tryOnEnabled = on;
-    if(!on) AS.tryOnUrl = '';
-  }, 10);
-}
-function asHandleTryOnDrop(e){e.preventDefault();e.currentTarget.classList.remove('as-drag');asHandleTryOnFile(e.dataTransfer.files[0]);}
-function asHandleTryOnFile(file){
-  if(!file) return;
-  var st = document.getElementById('asTryOnStatus');
-  st.textContent = 'Uploading…';
-  var fd = new FormData(); fd.append('photo', file);
-  fetch('/api/upload-tryon-photo',{method:'POST',body:fd})
-    .then(function(r){return r.json();})
-    .then(function(d){
-      if(d.ok){AS.tryOnUrl=d.url;var p=document.getElementById('asTryOnPreview');p.src=d.url;p.style.display='block';st.textContent='✓ Photo ready';}
-      else st.textContent='⚠ '+d.error;
-    }).catch(function(){st.textContent='Upload failed. Try again.';});
-}
-
 // ── Summary ──
 function asRenderSummary(){
   var rows = '<div class="as-sum-row"><span class="as-sum-lbl">Garment</span><span class="as-sum-val">'+escH(AS.garment)+'</span></div>';
@@ -707,9 +617,6 @@ function asRenderSummary(){
     rows += '<div class="as-sum-row"><span class="as-sum-lbl">Fabric</span><span class="as-sum-val">'+escH(AS.fabric.name)+(AS.fabric.price?' · ₹'+AS.fabric.price+'/m':'')+'</span></div>';
   } else {
     rows += '<div class="as-sum-row"><span class="as-sum-lbl">Fabric</span><span class="as-sum-val" style="color:var(--as-muted)">Classic preview</span></div>';
-  }
-  if(AS.tryOnEnabled && AS.tryOnUrl){
-    rows += '<div class="as-sum-row"><span class="as-sum-lbl">Try-On</span><span class="as-sum-val" style="color:#16a34a">✓ Your photo added</span></div>';
   }
   document.getElementById('asSummary').innerHTML = '<div class="as-summary-title">Your Design</div>' + rows;
   document.getElementById('asResult').classList.remove('show');
@@ -734,7 +641,6 @@ function asGenerate(){
     fabric_choice: AS.fabric.id ? 'catalog' : '',
     fabric_id: AS.fabric.id||'', fabric_name: AS.fabric.name||''};
   if(AS.itemId) payload.item_id = AS.itemId;
-  if(AS.tryOnEnabled && AS.tryOnUrl) payload.customer_photo_url = AS.tryOnUrl;
 
   fetch('/api/generate-style-preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
   .then(function(r){return r.json();})
@@ -788,9 +694,9 @@ function asUpdateCreditsBar(remaining, tokens){
 }
 
 var AS_TOKEN_PACKS = [
-  {tokens:10, price:49,  label:'Starter'},
-  {tokens:25, price:99,  label:'Popular ⭐'},
-  {tokens:60, price:199, label:'Best Value'},
+  {tokens:5,  price:49,  label:'Starter'},
+  {tokens:15, price:99,  label:'Popular ⭐'},
+  {tokens:40, price:199, label:'Best Value'},
 ];
 
 function asShowTokenModal(){
@@ -861,7 +767,7 @@ function asGoToOrder(){
   var prefill = {
     garment: AS.garment, garmentCat: AS.garmentCat, itemId: AS.itemId,
     fabricId: AS.fabric.id, fabricName: AS.fabric.name, fabricPrice: AS.fabric.price,
-    styles: stylesFlat, aiPreviewUrl: AS.resultUrl, tryOnUrl: AS.tryOnUrl
+    styles: stylesFlat, aiPreviewUrl: AS.resultUrl
   };
   try{ sessionStorage.setItem('ai_studio_prefill', JSON.stringify(prefill)); } catch(e){}
   var url = '/commission?garment='+encodeURIComponent(AS.garment);

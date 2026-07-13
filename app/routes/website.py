@@ -1753,194 +1753,6 @@ def build_multi_image_fabric_garment_prompt(garment, styles, fabric_name="", ai_
     )
 
 
-def build_virtual_tryon_prompt(garment, styles, fabric_name="", ref_is_fabric=False, ai_map=None):
-    """Virtual try-on edit prompt for the multi-image Kontext model. Image 1 =
-    the CUSTOMER'S OWN uploaded photo — their face, body, pose, skin tone and
-    background must be preserved EXACTLY; only their clothing changes. Image 2
-    is either the product's real reference photo (garment structure already
-    correct) or — when the customer also picked a catalog fabric — a close-up
-    of that fabric swatch (color/pattern reference only, no structure; the
-    multi-image model only accepts two images, so a person photo + a separate
-    fabric swatch + a separate garment photo all at once isn't possible —
-    the fabric swatch is preferred over the generic product photo here since
-    getting the customer's chosen color/pattern right matters more for a
-    try-on preview than exact pocket/collar counts).
-
-    Mirrors the same keyword/ai_map-driven style-edit logic as
-    build_multi_image_fabric_garment_prompt so admin-authored ai_prompt values
-    are honoured identically; only the image-numbering/identity-preservation
-    framing differs because Image 1 here is a PERSON, not a flat garment."""
-    ai_map = ai_map or {}
-    style_terms = []
-    for group, value in (styles or {}).items():
-        if group.startswith("__") or not value:
-            continue
-        v = str(value).lower()
-        g_grp = (group or "").lower()
-        ai = ai_map.get((g_grp.strip(), v.strip()))
-        if ai:
-            style_terms.append(f"the garment must clearly show: {ai}")
-        elif "mandarin" in v or "chinese" in v:
-            style_terms.append("the collar must be a short mandarin/Chinese stand-up band collar — a narrow band that stands straight up around the neck with NO fold-down points and NO spread")
-        elif "band" in v and "collar" in v:
-            style_terms.append("the collar must be a plain short band collar with no points")
-        elif "button-down" in v or "button down" in v:
-            style_terms.append("the collar must be a button-down collar, with small buttons fastening each collar point to the shirt body")
-        elif "spread" in v:
-            style_terms.append("the collar must be a wide spread collar with the points spread far apart")
-        elif "full" in v and "sleeve" in v:
-            style_terms.append("the sleeves must be full-length long sleeves reaching the wrists, with buttoned cuffs")
-        elif "half" in v and "sleeve" in v:
-            style_terms.append("the sleeves must be half sleeves ending above the elbow")
-        elif "3/4" in v or ("three" in v and "quarter" in v):
-            style_terms.append("the sleeves must be three-quarter length, ending below the elbow")
-        elif "sleeveless" in v:
-            style_terms.append("the garment must be sleeveless with open armholes")
-        elif "pocket" in v or "pocket" in g_grp:
-            if "no pocket" in v or v.strip() in ("no pocket", "no pockets"):
-                style_terms.append("the front must be completely plain with no pockets")
-            elif "2" in v or "two" in v:
-                style_terms.append("the garment must have exactly TWO patch pockets on the chest, one on the left side and one on the right side, placed symmetrically")
-            elif "1" in v or "one" in v:
-                style_terms.append("the garment must have exactly ONE single patch pocket on the left chest only")
-            else:
-                style_terms.append("apply this pocket style: " + v)
-        elif "concealed" in v or "hidden" in v:
-            style_terms.append("the front placket must be a concealed hidden-button placket so no buttons are visible")
-        elif "french" in v and "placket" in v:
-            style_terms.append("the front placket must be a French placket (a folded fabric band with visible top-stitching)")
-        elif "gold" in v or "metal" in v:
-            style_terms.append("use gold-toned metal buttons")
-        elif "white" in v or "pearl" in v:
-            style_terms.append("use white pearl buttons")
-        elif "dark" in v or "black" in v:
-            style_terms.append("use dark black buttons")
-        elif "denim" in v and "button" in v:
-            style_terms.append("use denim-covered fabric buttons matching the garment fabric")
-        elif "round" in v and "hem" in v:
-            style_terms.append("the hem must be a rounded curved hem")
-        elif "straight" in v and "hem" in v:
-            style_terms.append("the hem must be a straight horizontal hem")
-        elif "side" in v and ("cut" in v or "slit" in v):
-            style_terms.append("add side slit openings to the hem")
-        elif "slim" in v:
-            style_terms.append("the fit must be a slim tailored fit")
-        elif "regular" in v:
-            style_terms.append("the fit must be a regular comfortable fit")
-        elif "loose" in v or "relaxed" in v:
-            style_terms.append("the fit must be a relaxed loose fit")
-        else:
-            clean = value.strip()
-            if len(clean) < 40:
-                style_terms.append("apply this style detail: " + clean.lower())
-
-    checklist = "\n".join(f"  {i+1}. {t}" for i, t in enumerate(style_terms)) if style_terms else "  1. a classic standard style"
-    fab_phrase = (f"the \"{fabric_name}\" fabric" if fabric_name else "this fabric")
-
-    identity_lock = (
-        "TASK: Image 1 is a photo of a real person who wants to virtually try on a new garment. "
-        "Edit ONLY their clothing — everything else in Image 1 must stay 100% IDENTICAL: their exact face, "
-        "facial features, skin tone, age, hair, body shape, pose, hands, and the photo's background. Do not "
-        "change their identity, do not slim or reshape their body, do not alter their face in any way."
-    )
-
-    replace_rule = (
-        "REPLACE, DON'T BLEND: completely remove whatever the person is currently wearing in Image 1 and "
-        "replace it with the new garment described below. Do not keep, blend, average or carry over any part "
-        "of their current outfit's collar shape, sleeve length, pattern, fit or color — the new garment's look "
-        "comes ONLY from the checklist and reference image below, never from what they happen to be wearing in "
-        "Image 1 right now."
-    )
-
-    if ref_is_fabric:
-        garment_block = (
-            f"NEW GARMENT: a {garment}. Every single item in this checklist is mandatory, with no exceptions "
-            f"and no defaulting to a generic/standard version:\n{checklist}\n"
-            f"Image 2 is a MACRO close-up photo of a fabric swatch — {fab_phrase}. Zoom in mentally on Image 2 "
-            "and identify every visual detail in it — its base color, and any print/pattern/texture (dots, "
-            "stripes, checks, florals, weave lines, texture grain, flecks, or any other surface detail). "
-            "Whatever pattern is visible, however small or subtle, MUST be reproduced on the new garment at the "
-            "same small scale, spacing and color as the swatch — do NOT smooth it into a plain solid color, "
-            "and do NOT invent a different pattern."
-        )
-    else:
-        garment_block = (
-            f"NEW GARMENT: a {garment}, based on the reference photo in Image 2 for its base color, fabric, "
-            f"pattern and texture. Every single item in this checklist is mandatory, with no exceptions and no "
-            f"defaulting to a generic/standard version:\n{checklist}"
-        )
-
-    result_block = (
-        "Render the final image as one natural, photo-realistic shot of this same person wearing the finished "
-        "garment described above, in the same pose, framing and setting as Image 1, well-fitted to their body, "
-        "with natural fabric drape, folds and shadows consistent with real clothing, and natural lighting "
-        "matching Image 1. Final reminder: the person's face and identity from Image 1 must be perfectly "
-        "unchanged — only the clothing is new, and it must match every checklist item exactly."
-    )
-
-    return f"{identity_lock}\n{replace_rule}\n{garment_block}\n{result_block}"
-
-
-def _replicate_predict(model_url, payload, api_key, poll_iters=60):
-    """POST a prediction to a Replicate model endpoint and return
-    (image_url, error_str) — exactly one of the two will be set. Handles
-    both the immediate result (when `Prefer: wait` returns synchronously)
-    and the polling fallback. Shared by every Replicate call in this file,
-    including each stage of the two-stage virtual try-on pipeline, so the
-    request/poll logic only lives in one place."""
-    import requests, time
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type":  "application/json",
-        "Prefer":        "wait"
-    }
-    resp = requests.post(model_url, headers=headers, json=payload, timeout=90)
-    result = resp.json()
-    if result.get("status") == "succeeded":
-        output = result.get("output")
-        return ((output[0] if isinstance(output, list) else output) or ""), None
-    pred_id = result.get("id")
-    if not pred_id:
-        return None, "Prediction start failed: " + str(result.get("detail", ""))
-    for _ in range(poll_iters):
-        time.sleep(2)
-        poll = requests.get(
-            f"https://api.replicate.com/v1/predictions/{pred_id}",
-            headers={"Authorization": f"Bearer {api_key}"},
-            timeout=15
-        ).json()
-        status = poll.get("status")
-        if status == "succeeded":
-            output = poll.get("output")
-            return ((output[0] if isinstance(output, list) else output) or ""), None
-        if status in ("failed", "canceled"):
-            return None, "Generation failed: " + str(poll.get("error", ""))
-    return None, "Timed out — please try again"
-
-
-# cuuupid/idm-vton (community model) — pinned to its current "latest" version id.
-# Community models on Replicate must be called via POST /v1/predictions with an
-# explicit version, unlike "official" models (e.g. black-forest-labs/flux-kontext-pro)
-# which support the short /v1/models/<owner>/<name>/predictions shorthand. If this
-# model is ever upgraded and this version is retired, check
-# https://replicate.com/cuuupid/idm-vton/versions for the new "Latest" id.
-IDM_VTON_VERSION = "0513734a452173b8173e907e3a59d19a36266e55b48528559432bd21c7d7e985"
-
-
-def _idmvton_category(garment):
-    """Map our garment name to the category bucket IDM-VTON expects
-    (upper_body / lower_body / dresses) — it uses this to know which part
-    of the person's photo to segment and fit the garment onto."""
-    g = (garment or "").lower()
-    if any(k in g for k in ("saree", "sari", "gown", "lehenga")) or (("dress" in g) and "address" not in g):
-        return "dresses"
-    if any(k in g for k in ("pant", "trouser", "jean")) and not any(k in g for k in ("suit", "kurta", "shirt", "blazer")):
-        return "lower_body"
-    return "upper_body"
-
-
-_REPLICATE_VERSION_CACHE = {}  # owner/model -> resolved version id, cached per-process
-
 
 def _replicate_resolve_latest_version(owner_model, api_key):
     """Resolve the current 'latest' pinned version id for a community
@@ -1969,34 +1781,6 @@ def _replicate_resolve_latest_version(owner_model, api_key):
         pass
     return None
 
-
-def _restore_face_quality(image_url, api_key):
-    """Best-effort face-restoration pass on a generated virtual try-on image.
-
-    IDM-VTON (Stage 2 of the try-on pipeline) frequently warps/garbles the
-    face on full-body photos — its internal pipeline works at a fixed,
-    fairly low resolution, so a face that's only a small fraction of a
-    full-body frame gets very few effective pixels and the diffusion model
-    regenerates it badly (a known, documented limitation of this model, not
-    something a prompt tweak fixes). GFPGAN specifically detects and
-    restores faces in an image, so running it on the Stage-2 output cleans
-    up exactly that artifact.
-
-    This is purely cosmetic — on ANY failure (model unavailable, network
-    error, no face detected, etc.) we silently fall back to the original
-    image rather than failing the whole generation over an enhancement step."""
-    try:
-        version_id = _replicate_resolve_latest_version("tencentarc/gfpgan", api_key)
-        if not version_id:
-            return image_url
-        payload = {
-            "version": version_id,
-            "input": {"img": image_url, "version": "v1.4", "scale": 1}
-        }
-        restored_url, err = _replicate_predict("https://api.replicate.com/v1/predictions", payload, api_key, poll_iters=20)
-        return restored_url or image_url
-    except Exception:
-        return image_url
 
 
 @website_bp.route("/api/upload-tryon-photo", methods=["POST"])
@@ -2055,69 +1839,32 @@ def upload_tryon_photo():
 def generate_style_preview():
     import requests, time
     data = request.get_json() or {}
-    garment = data.get("garment", "shirt")
-    styles  = data.get("styles", {})
-    item_id = data.get("item_id")
+    garment      = data.get("garment", "shirt")
+    styles       = data.get("styles", {})
+    item_id      = data.get("item_id")
     fabric_choice = (data.get("fabric_choice") or "").strip().lower()
     fabric_id_raw = (data.get("fabric_id") or "").strip()
     fabric_name   = (data.get("fabric_name") or "").strip()
-    customer_photo_url = (data.get("customer_photo_url") or "").strip()
 
     # ── Free-preview limit gate ──────────────────────────────────────────────
-    # Anyone gets FREE_PREVIEW_LIMIT (3) AI style previews. Beyond that they
-    # must sign up / log in with mobile + password — that account then shows
-    # up in the admin panel and its own preview count keeps getting tracked.
     acc = _current_account()
     if not acc:
         used = session.get("preview_count", 0)
         if used >= FREE_PREVIEW_LIMIT:
             return jsonify({
-                "ok": False,
-                "need_login": True,
-                "error": f"You've used your {FREE_PREVIEW_LIMIT} free style previews. Please log in or create a free account to keep generating previews — it only takes a moment."
+                "ok": False, "need_login": True,
+                "error": f"You've used your {FREE_PREVIEW_LIMIT} free previews. Log in or create a free account to keep going."
             })
 
-    # ── Virtual try-on trial gate ────────────────────────────────────────────
-    # Try-on (customer's own photo) is a separate, more expensive-feeling
-    # capability, gated independently of the regular style-preview limit:
-    # TRYON_FREE_LIMIT_ANON free tries before login, then +TRYON_BONUS_LIMIT_ACCOUNT
-    # more once they sign up / log in. This check happens BEFORE any Replicate
-    # call so an exhausted visitor never triggers a paid generation.
-    if customer_photo_url:
-        if not acc:
-            tused = session.get("tryon_count", 0)
-            if tused >= TRYON_FREE_LIMIT_ANON:
-                return jsonify({
-                    "ok": False,
-                    "need_login": True,
-                    "error": f"You've used your {TRYON_FREE_LIMIT_ANON} free try-on previews. Please log in or create a free account for {TRYON_BONUS_LIMIT_ACCOUNT} more free try-on."
-                })
-        else:
-            try:
-                tused = acc["tryon_count"] or 0
-            except Exception:
-                tused = 0
-            if tused >= TRYON_BONUS_LIMIT_ACCOUNT:
-                return jsonify({
-                    "ok": False,
-                    "error": "You've used all your free try-on previews. You can still generate regular AI style previews without your photo."
-                })
-
-    # Get API key from website settings
     db = get_db()
     try:
         row = db.execute("SELECT value FROM settings WHERE key='replicate_api_key'").fetchone()
         api_key = row["value"].strip() if row and row["value"] else None
     except Exception:
         api_key = None
-
     if not api_key:
-        return jsonify({"ok": False, "error": "Replicate API key not configured. Please add it under Admin Panel → Settings."})
+        return jsonify({"ok": False, "error": "Replicate API key not configured."})
 
-    # NOTE: Replicate's servers run in the cloud and cannot reach a local
-    # 127.0.0.1 / localhost URL — so for locally-stored images we read the file
-    # straight off disk and send it as a base64 data URI instead of a URL.
-    # Externally-hosted images (https://...) are passed through as-is.
     def _to_data_uri_or_url(raw_url):
         raw_url = (raw_url or "").strip()
         if not raw_url:
@@ -2135,12 +1882,9 @@ def generate_style_preview():
                 return f"data:{mime};base64,{b64}"
         return None
 
+    # Fabric image (from catalog selection)
     ref_image_url = None
     ref_is_fabric = False
-
-    # If the customer picked a fabric from our catalog, prefer THAT fabric's
-    # photo as the reference image — the preview should show their chosen
-    # fabric's actual color/pattern/texture, not the generic product photo.
     if fabric_choice == "catalog" and fabric_id_raw and fabric_id_raw != "own":
         try:
             fid = int(fabric_id_raw)
@@ -2163,12 +1907,7 @@ def generate_style_preview():
         except Exception:
             pass
 
-    # Always also try to fetch the product's own reference photo — a REAL
-    # garment photo with correct collar/pocket/sleeve/hem shapes already in
-    # it. Used either as the sole reference (no fabric chosen), or — when a
-    # fabric swatch was ALSO chosen — as the structural anchor in a two-image
-    # generation, since inventing exact pocket counts/collar/hem shapes from
-    # a fabric swatch + text alone is unreliable.
+    # Product reference photo (structure anchor)
     product_image_url = None
     if item_id:
         try:
@@ -2178,303 +1917,79 @@ def generate_style_preview():
             product_image_url = None
 
     use_multi_image = bool(ref_image_url and ref_is_fabric and product_image_url)
-    use_img2img = bool(ref_image_url or product_image_url)
+    use_img2img    = bool(ref_image_url or product_image_url)
 
-    # Admin-authored, item-specific AI instructions (garment_style_values.ai_prompt)
-    # take priority over the hardcoded keyword-matching below — see
-    # _resolve_style_ai_prompts. This is what lets new style options added in
-    # Admin reach the paid AI backend automatically and accurately, without
-    # needing a code change every time.
     ai_map = _resolve_style_ai_prompts(item_id)
 
-    # ── Virtual try-on: customer uploaded their own photo ───────────────────
-    # The multi-image Kontext model only accepts TWO images, so when a person
-    # photo is involved it always takes Image-1's slot — we pick whichever
-    # single garment/fabric reference would otherwise have been used (fabric
-    # swatch if one was chosen, else the product's own photo) for Image 2.
-    person_image_url = None
-    use_tryon = False
-    tryon_ref_is_fabric = False
-    if customer_photo_url:
-        person_image_url = _to_data_uri_or_url(customer_photo_url)
-        tryon_garment_ref = ref_image_url if ref_image_url else product_image_url
-        tryon_ref_is_fabric = bool(ref_image_url and ref_is_fabric)
-        if person_image_url and tryon_garment_ref:
-            use_tryon = True
-
-    if use_tryon:
-        # Two-stage pipeline: Stage 1 (this prompt) customizes the GARMENT
-        # ONLY — no person involved — using the exact same structure-
-        # anchoring logic as the regular (non-try-on) preview paths below.
-        # Stage 2 (a dedicated fit/warp model) puts that finished garment on
-        # the customer's own photo; see the `use_tryon` branch further down.
-        if use_multi_image:
-            prompt = build_multi_image_fabric_garment_prompt(garment, styles, fabric_name, ai_map)
-        elif ref_image_url and ref_is_fabric:
-            prompt = build_fabric_to_garment_prompt(garment, styles, fabric_name, ai_map)
-        else:
-            prompt = build_img2img_style_prompt(garment, styles, ai_map)
-    elif use_multi_image:
-        prompt = build_multi_image_fabric_garment_prompt(garment, styles, fabric_name, ai_map)
+    # Choose prompt + model
+    if use_multi_image:
+        prompt    = build_multi_image_fabric_garment_prompt(garment, styles, fabric_name, ai_map)
+        model_url = "https://api.replicate.com/v1/models/flux-kontext-apps/multi-image-kontext-pro/predictions"
+        payload   = {"input": {"prompt": prompt, "input_image_1": product_image_url,
+                               "input_image_2": ref_image_url,
+                               "aspect_ratio": "match_input_image", "output_format": "png",
+                               "safety_tolerance": 2}}
     elif ref_image_url and ref_is_fabric:
-        # Fabric chosen but no product reference photo on file — fall back
-        # to the old single-image fabric path.
-        prompt = build_fabric_to_garment_prompt(garment, styles, fabric_name, ai_map)
+        prompt    = build_fabric_to_garment_prompt(garment, styles, fabric_name, ai_map)
+        model_url = "https://api.replicate.com/v1/models/black-forest-labs/flux-kontext-pro/predictions"
+        payload   = {"input": {"prompt": prompt, "input_image": ref_image_url,
+                               "aspect_ratio": "2:3", "output_format": "png",
+                               "safety_tolerance": 2}}
     elif use_img2img:
         if not ref_image_url:
             ref_image_url = product_image_url
-        prompt = build_img2img_style_prompt(garment, styles, ai_map)
+        prompt    = build_img2img_style_prompt(garment, styles, ai_map)
+        model_url = "https://api.replicate.com/v1/models/black-forest-labs/flux-kontext-pro/predictions"
+        payload   = {"input": {"prompt": prompt, "input_image": ref_image_url,
+                               "aspect_ratio": "match_input_image", "output_format": "png",
+                               "safety_tolerance": 2}}
     else:
-        if customer_photo_url:
-            # Customer wanted a try-on but this item has no reference photo at
-            # all to dress them in — fail clearly instead of silently falling
-            # back to a generic catalog shot of just the garment.
-            return jsonify({"ok": False, "error": "Try-on isn't available for this item yet — it doesn't have a reference photo on file. You can still generate a regular style preview without your photo."})
-        prompt = build_garment_prompt(garment, styles, ai_map)
+        prompt    = build_garment_prompt(garment, styles, ai_map)
+        model_url = "https://api.replicate.com/v1/models/black-forest-labs/flux-1.1-pro/predictions"
+        payload   = {"input": {"prompt": prompt, "aspect_ratio": "2:3",
+                               "output_format": "webp", "output_quality": 85,
+                               "safety_tolerance": 2}}
 
     try:
-        headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type":  "application/json",
-            "Prefer":        "wait"          # wait up to 60s for result
-        }
-
-        # Track this generation against the visitor's free-limit / account count.
-        # Try-on uses its own (tighter) counter; regular previews use the
-        # existing one. Always called exactly once per successful generation,
-        # from whichever branch (immediate, polled, or two-stage) actually
-        # returns success.
-        def _record_usage_and_extra():
-            new_acc_tryon_count = None
-            try:
-                if use_tryon:
-                    if acc:
-                        db.execute("UPDATE web_accounts SET tryon_count = COALESCE(tryon_count,0)+1 WHERE id=?", (acc["id"],))
-                        db.commit()
-                        new_acc_tryon_count = (acc["tryon_count"] or 0) + 1
-                    else:
-                        session["tryon_count"] = session.get("tryon_count", 0) + 1
-                else:
-                    if acc:
-                        db.execute("UPDATE web_accounts SET preview_count = COALESCE(preview_count,0)+1 WHERE id=?", (acc["id"],))
-                        db.commit()
-                    else:
-                        session["preview_count"] = session.get("preview_count", 0) + 1
-            except Exception:
-                pass
-            if use_tryon:
-                if acc:
-                    remaining = max(0, TRYON_BONUS_LIMIT_ACCOUNT - (new_acc_tryon_count if new_acc_tryon_count is not None else (acc["tryon_count"] or 0)))
-                else:
-                    remaining = max(0, TRYON_FREE_LIMIT_ANON - session.get("tryon_count", 0))
-                return {"tryon_remaining": remaining}
-            else:
-                return {"previews_remaining": (None if acc else max(0, FREE_PREVIEW_LIMIT - session.get("preview_count", 0)))}
-
-        if use_tryon:
-            # ── Two-stage Virtual Try-On pipeline ──────────────────────────
-            # Stage 1: Flux Kontext customizes the garment (collar/sleeve/
-            # pocket/placket/buttons/hem/fabric/etc.) on its own — no person
-            # in the loop, so there's no competing "preserve identity"
-            # instruction to dilute the style edits. Uses BOTH reference
-            # images (product photo + fabric swatch) when both are
-            # available, same as the regular non-try-on previews.
-            if use_multi_image:
-                stage1_payload = {
-                    "input": {
-                        "prompt":           prompt,
-                        "input_image_1":    product_image_url,
-                        "input_image_2":    ref_image_url,
-                        "aspect_ratio":     "match_input_image",
-                        "output_format":    "png",
-                        "safety_tolerance": 2
-                    }
-                }
-                stage1_model_url = "https://api.replicate.com/v1/models/flux-kontext-apps/multi-image-kontext-pro/predictions"
-            elif ref_image_url and ref_is_fabric:
-                stage1_payload = {
-                    "input": {
-                        "prompt":           prompt,
-                        "input_image":      ref_image_url,
-                        "aspect_ratio":     "2:3",
-                        "output_format":    "png",
-                        "safety_tolerance": 2
-                    }
-                }
-                stage1_model_url = "https://api.replicate.com/v1/models/black-forest-labs/flux-kontext-pro/predictions"
-            else:
-                stage1_payload = {
-                    "input": {
-                        "prompt":           prompt,
-                        "input_image":      tryon_garment_ref,
-                        "aspect_ratio":     "match_input_image",
-                        "output_format":    "png",
-                        "safety_tolerance": 2
-                    }
-                }
-                stage1_model_url = "https://api.replicate.com/v1/models/black-forest-labs/flux-kontext-pro/predictions"
-
-            stage1_img_url, stage1_err = _replicate_predict(stage1_model_url, stage1_payload, api_key)
-            if not stage1_img_url:
-                return jsonify({"ok": False, "error": "Garment customization step failed: " + (stage1_err or "unknown error")})
-
-            # Stage 2: a dedicated try-on/fit model (IDM-VTON) — it segments
-            # the person's clothing region and WARPS the Stage-1 garment image
-            # onto it, rather than regenerating the scene from a text prompt.
-            # That makes it preserve the person's face/identity by
-            # construction (it never touches anything outside the clothing
-            # mask) and preserve the garment's exact shape/pattern (it fits
-            # pixels instead of reimagining them).
-            style_terms_for_des = _style_detail_phrases(styles, ai_map)
-            des_bits = [garment]
-            if fabric_name:
-                des_bits.append(fabric_name + " fabric")
-            des_bits.extend(style_terms_for_des[:4])
-            garment_des = ", ".join(des_bits)[:300]
-
-            # cuuupid/idm-vton is a community model (not an "official" Replicate
-            # model like flux-kontext-pro), and the short /v1/models/<owner>/<name>/
-            # predictions endpoint 404s ("requested resource could not be found")
-            # for it — community models must be called via the classic
-            # /v1/predictions endpoint with an explicit, pinned version id instead.
-            # "crop": True asks IDM-VTON to auto-crop/resize the person photo to
-            # the ~3:4 aspect ratio its pipeline is built around — full-body
-            # photos that don't match that ratio otherwise get squeezed into a
-            # smaller effective resolution, which is a major cause of the
-            # face/hand warping artifacts seen on full-body try-on shots.
-            stage2_payload = {
-                "version": IDM_VTON_VERSION,
-                "input": {
-                    "human_img":   person_image_url,
-                    "garm_img":    stage1_img_url,
-                    "garment_des": garment_des,
-                    "category":    _idmvton_category(garment),
-                    "crop":        True
-                }
-            }
-            stage2_model_url = "https://api.replicate.com/v1/predictions"
-
-            final_img_url, stage2_err = _replicate_predict(stage2_model_url, stage2_payload, api_key)
-            if not final_img_url:
-                return jsonify({"ok": False, "error": "Try-on fitting step failed: " + (stage2_err or "unknown error")})
-
-            # Stage 3 (best-effort, never blocks the result): IDM-VTON's fixed,
-            # fairly low internal resolution means small regions of the frame —
-            # the face above all — often come out warped/garbled even when the
-            # rest of the image looks fine. Run a dedicated face-restoration
-            # pass on the output to clean that up before returning it.
-            final_img_url = _restore_face_quality(final_img_url, api_key)
-
-            extra = _record_usage_and_extra()
-            return jsonify({"ok": True, "image_url": final_img_url, "prompt": prompt, **extra})
-        elif use_multi_image:
-            # Two-image edit: Image 1 (product's real photo) anchors structure
-            # (collar/pocket/sleeve/hem shape), Image 2 (fabric swatch) drives
-            # color/pattern/texture — far more reliable than inventing the
-            # garment's structure from a swatch + text description alone.
-            payload = {
-                "input": {
-                    "prompt":           prompt,
-                    "input_image_1":    product_image_url,
-                    "input_image_2":    ref_image_url,
-                    "aspect_ratio":     "match_input_image",
-                    "output_format":    "png",
-                    "safety_tolerance": 2
-                }
-            }
-            model_url = "https://api.replicate.com/v1/models/flux-kontext-apps/multi-image-kontext-pro/predictions"
-        elif use_img2img:
-            # img2img: reference photo drives color/pattern/texture accuracy.
-            # When the reference is a fabric swatch (not a garment photo), its aspect
-            # ratio doesn't represent the desired output — use a portrait product-photo ratio instead.
-            payload = {
-                "input": {
-                    "prompt":           prompt,
-                    "input_image":      ref_image_url,
-                    "aspect_ratio":     ("2:3" if ref_is_fabric else "match_input_image"),
-                    "output_format":    "png",
-                    "safety_tolerance": 2
-                }
-            }
-            model_url = "https://api.replicate.com/v1/models/black-forest-labs/flux-kontext-pro/predictions"
-        else:
-            # Fallback: plain text-to-image (used only if the product has no photo on file)
-            payload = {
-                "input": {
-                    "prompt":         prompt,
-                    "aspect_ratio":   "2:3",
-                    "output_format":  "webp",
-                    "output_quality": 85,
-                    "safety_tolerance": 2
-                }
-            }
-            model_url = "https://api.replicate.com/v1/models/black-forest-labs/flux-1.1-pro/predictions"
-
-        resp = requests.post(
-            model_url,
-            headers=headers,
-            json=payload,
-            timeout=90
-        )
+        headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json", "Prefer": "wait"}
+        resp   = requests.post(model_url, headers=headers, json=payload, timeout=90)
         result = resp.json()
 
-        # Track this generation against the visitor's free-limit / account count.
-        # Try-on uses its own (tighter) counter; regular previews use the
-        # existing one. Always called exactly once per successful generation,
-        # from whichever branch (immediate or polled) actually returns success.
-        def _record_usage_and_extra():
-            new_acc_tryon_count = None
+        def _record_and_respond(img_url):
+            """Credit usage + return response."""
             try:
-                if use_tryon:
-                    if acc:
-                        db.execute("UPDATE web_accounts SET tryon_count = COALESCE(tryon_count,0)+1 WHERE id=?", (acc["id"],))
-                        db.commit()
-                        new_acc_tryon_count = (acc["tryon_count"] or 0) + 1
-                    else:
-                        session["tryon_count"] = session.get("tryon_count", 0) + 1
-                else:
-                    if acc:
-                        db.execute("UPDATE web_accounts SET preview_count = COALESCE(preview_count,0)+1 WHERE id=?", (acc["id"],))
-                        db.commit()
-                    else:
-                        session["preview_count"] = session.get("preview_count", 0) + 1
-            except Exception:
-                pass
-            if use_tryon:
                 if acc:
-                    remaining = max(0, TRYON_BONUS_LIMIT_ACCOUNT - (new_acc_tryon_count if new_acc_tryon_count is not None else (acc["tryon_count"] or 0)))
+                    db.execute("UPDATE web_accounts SET preview_count = COALESCE(preview_count,0)+1 WHERE id=?", (acc["id"],))
+                    db.commit()
+                    remaining = None
+                    tok = db.execute("SELECT token_balance FROM web_accounts WHERE id=?", (acc["id"],)).fetchone()
+                    token_balance = (tok["token_balance"] or 0) if tok else 0
                 else:
-                    remaining = max(0, TRYON_FREE_LIMIT_ANON - session.get("tryon_count", 0))
-                return {"tryon_remaining": remaining}
-            else:
-                return {"previews_remaining": (None if acc else max(0, FREE_PREVIEW_LIMIT - session.get("preview_count", 0)))}
+                    session["preview_count"] = session.get("preview_count", 0) + 1
+                    remaining = max(0, FREE_PREVIEW_LIMIT - session.get("preview_count", 0))
+                    token_balance = None
+            except Exception:
+                remaining = None
+                token_balance = None
+            return jsonify({"ok": True, "image_url": img_url, "prompt": prompt,
+                            "previews_remaining": remaining, "token_balance": token_balance})
 
-        # With Prefer:wait the result may be immediate
         if result.get("status") == "succeeded":
             output = result.get("output")
-            img_url = (output[0] if isinstance(output, list) else output) or ""
-            extra = _record_usage_and_extra()
-            return jsonify({"ok": True, "image_url": img_url, "prompt": prompt, **extra})
+            return _record_and_respond((output[0] if isinstance(output, list) else output) or "")
 
-        # Otherwise poll until succeeded / failed / timed-out
         pred_id = result.get("id")
         if not pred_id:
             return jsonify({"ok": False, "error": "Prediction start failed: " + str(result.get("detail", ""))})
 
         for _ in range(60):
             time.sleep(2)
-            poll = requests.get(
-                f"https://api.replicate.com/v1/predictions/{pred_id}",
-                headers={"Authorization": f"Bearer {api_key}"},
-                timeout=15
-            ).json()
-            status = poll.get("status")
-            if status == "succeeded":
+            poll = requests.get(f"https://api.replicate.com/v1/predictions/{pred_id}",
+                                headers={"Authorization": f"Bearer {api_key}"}, timeout=15).json()
+            if poll.get("status") == "succeeded":
                 output = poll.get("output")
-                img_url = (output[0] if isinstance(output, list) else output) or ""
-                extra = _record_usage_and_extra()
-                return jsonify({"ok": True, "image_url": img_url, "prompt": prompt, **extra})
-            if status in ("failed", "canceled"):
+                return _record_and_respond((output[0] if isinstance(output, list) else output) or "")
+            if poll.get("status") in ("failed", "canceled"):
                 return jsonify({"ok": False, "error": "Generation failed: " + str(poll.get("error", ""))})
         return jsonify({"ok": False, "error": "Timed out — please try again"})
 
@@ -2482,36 +1997,6 @@ def generate_style_preview():
         return jsonify({"ok": False, "error": str(exc)})
 
 
-# ── AI preview free-limit constants (used by generate_style_preview) ──────────
-FREE_PREVIEW_LIMIT        = 3   # free AI style previews per anonymous visitor
-TRYON_FREE_LIMIT_ANON     = 1   # free virtual try-ons per anonymous visitor
-TRYON_BONUS_LIMIT_ACCOUNT = 5   # extra try-ons once the visitor signs in
-
-
-def _current_account():
-    """Return the logged-in web_accounts row from session, or None."""
-    acc_id = session.get("web_account_id")
-    if not acc_id:
-        return None
-    try:
-        return get_db().execute(
-            "SELECT * FROM web_accounts WHERE id=? AND is_active=1", (acc_id,)
-        ).fetchone()
-    except Exception:
-        return None
-
-
-# ── Missing page routes ───────────────────────────────────────────────────────
-
-@website_bp.route("/account")
-def account():
-    google_error = request.args.get("google_error", "")
-    return render_template("website/account.html", active="account",
-                           google_error=google_error, page_meta={
-        "title": "My Account — Uttam Tailors",
-        "desc": "Manage your account, orders, wishlist and measurements.",
-        "robots": "noindex,nofollow", "og_image": "", "canonical": ""
-    })
 
 
 @website_bp.route("/cart")
@@ -2574,9 +2059,9 @@ def api_send_otp():
 # Razorpay collects payment → webhook/verify credits the account automatically.
 
 TOKEN_PACKS = {
-    10:  4900,   # 10 tokens  → ₹49  (in paise for Razorpay)
-    25:  9900,   # 25 tokens  → ₹99
-    60: 19900,   # 60 tokens  → ₹199
+     5:  4900,   #  5 credits → ₹49
+    15:  9900,   # 15 credits → ₹99
+    40: 19900,   # 40 credits → ₹199
 }
 
 @website_bp.route("/api/tokens/create-order", methods=["POST"])
