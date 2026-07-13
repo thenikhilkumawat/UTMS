@@ -1387,20 +1387,27 @@ fetch('/api/occasions/upcoming').then(function(r){return r.json();}).then(functi
   <div class="hiw-inner">
     <div class="hiw-header">
       {% set hw = hs.get('hiw',{}) %}
-      <p class="kicker">{{ hw.get('kicker','The process') }}</p>
-      <h2 class="section-title" style="color:#FAF0E4;">{{ hw.get('title','Order to your door in four steps.') }}</h2>
+      <p class="kicker">{{ hw.get('kicker') or 'The process' }}</p>
+      <h2 class="section-title" style="color:#FAF0E4;">{{ hw.get('title') or 'Order to your door in four steps.' }}</h2>
     </div>
     <div class="hiw-steps">
+      {% set _step_defaults = [
+        ('01','Choose Your Style','Browse our catalogue or bring your own design reference.'),
+        ('02','Share Measurements','Visit us or use our guided measurement form.'),
+        ('03','We Stitch It','Our master tailors craft your garment with precision.'),
+        ('04','Delivered to You','Ready in 5–7 days with WhatsApp updates at every step.')
+      ] %}
       {% for i in [1,2,3,4] %}
+      {% set _sd = _step_defaults[i-1] %}
       <div class="hiw-step">
-        <div class="hiw-num">{{ hw.get('step'+i|string+'_num','0'+i|string) }}</div>
-        <h3 class="hiw-title">{{ hw.get('step'+i|string+'_title','Step '+i|string) }}</h3>
-        <p class="hiw-body">{{ hw.get('step'+i|string+'_body','') }}</p>
+        <div class="hiw-num">{{ hw.get('step'+i|string+'_num') or _sd[0] }}</div>
+        <h3 class="hiw-title">{{ hw.get('step'+i|string+'_title') or _sd[1] }}</h3>
+        <p class="hiw-body">{{ hw.get('step'+i|string+'_body') or _sd[2] }}</p>
       </div>
       {% endfor %}
     </div>
     <div class="hiw-cta">
-      <a href="{{ hw.get('btn_url','/commission') }}" class="btn-gold">{{ hw.get('btn_text','Customise Your Garment →') }}</a>
+      <a href="{{ hw.get('btn_url') or '/commission' }}" class="btn-gold">{{ hw.get('btn_text') or 'Customise Your Garment →' }}</a>
     </div>
   </div>
 </section>
