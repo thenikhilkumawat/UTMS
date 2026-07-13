@@ -3983,19 +3983,21 @@ def homepage_hero_upload_image():
 def homepage_ai_preview_upload():
     if not session.get("owner_logged_in"):
         return jsonify({"ok": False, "error": "Unauthorized"}), 403
-    import os as _os, uuid as _uuid
+    import os as _os, uuid as _uuid, json as _json, logging as _log
     try:
-        slot = request.form.get("slot", "left")  # 'left' or 'right'
+        slot = (request.form.get("slot") or "left").strip()
         file = request.files.get("file")
         if not file or not file.filename:
-            return jsonify({"ok": False, "error": "No file received"})
+            return jsonify({"ok": False, "error": "No file uploaded — please choose a file first"})
         ext = _os.path.splitext(file.filename)[1].lower()
         allowed_img = [".jpg", ".jpeg", ".png", ".webp", ".gif"]
         allowed_vid = [".mp4", ".webm", ".mov"]
         if ext not in allowed_img + allowed_vid:
-            return jsonify({"ok": False, "error": "Unsupported file type"})
+            return jsonify({"ok": False, "error": f"File type '{ext}' not allowed. Use JPG, PNG, WebP, MP4 or WebM"})
         is_video = ext in allowed_vid
-        folder = _os.path.join(_os.path.dirname(__file__), "../../static/website/img/ai_preview")
+        # Resolve path relative to app root, not __file__
+        app_root = _os.path.abspath(_os.path.join(_os.path.dirname(__file__), "../../"))
+        folder = _os.path.join(app_root, "static", "website", "img", "ai_preview")
         _os.makedirs(folder, exist_ok=True)
         fname = f"aip_{slot}_{_uuid.uuid4().hex[:10]}{ext}"
         fpath = _os.path.join(folder, fname)
@@ -4006,14 +4008,13 @@ def homepage_ai_preview_upload():
                 fpath = _oi(fpath)
                 fname = _os.path.basename(fpath)
             except Exception:
-                pass
+                pass  # keep original if optimize fails
         url = "/static/website/img/ai_preview/" + fname
-        # Save URL into ai_preview section content
+        # Persist into ai_preview section content
         from database import get_db
         db = get_db()
-        import json as _json
         row = db.execute("SELECT content FROM home_sections WHERE section_key='ai_preview'").fetchone()
-        c = _json.loads(row["content"]) if row and row["content"] else {}
+        c = _json.loads(row["content"]) if (row and row["content"] and row["content"].strip()) else {}
         key = "left_media" if slot == "left" else "right_media"
         c[key] = url
         c[key + "_type"] = "video" if is_video else "image"
@@ -4021,7 +4022,8 @@ def homepage_ai_preview_upload():
         db.commit()
         return jsonify({"ok": True, "url": url, "type": "video" if is_video else "image"})
     except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 500
+        _log.getLogger(__name__).exception("AI preview upload failed")
+        return jsonify({"ok": False, "error": str(e)})
 
 @bp.route("/website/homepage/ai-preview/remove", methods=["POST"])
 def homepage_ai_preview_remove():
@@ -4044,16 +4046,17 @@ def homepage_ai_preview_remove():
 def homepage_inspo_upload():
     if not session.get("owner_logged_in"):
         return jsonify({"ok": False, "error": "Unauthorized"}), 403
-    import os as _os, uuid as _uuid
+    import os as _os, uuid as _uuid, json as _json, logging as _log
     try:
-        slot = request.form.get("slot", "front")  # 'front', 'bl', 'br'
+        slot = (request.form.get("slot") or "front").strip()
         file = request.files.get("file")
         if not file or not file.filename:
-            return jsonify({"ok": False, "error": "No file received"})
+            return jsonify({"ok": False, "error": "No file uploaded"})
         ext = _os.path.splitext(file.filename)[1].lower()
         if ext not in [".jpg", ".jpeg", ".png", ".webp"]:
             ext = ".jpg"
-        folder = _os.path.join(_os.path.dirname(__file__), "../../static/website/img/inspo")
+        app_root = _os.path.abspath(_os.path.join(_os.path.dirname(__file__), "../../"))
+        folder = _os.path.join(app_root, "static", "website", "img", "inspo")
         _os.makedirs(folder, exist_ok=True)
         fname = f"inspo_{slot}_{_uuid.uuid4().hex[:10]}{ext}"
         fpath = _os.path.join(folder, fname)
@@ -4067,20 +4070,17 @@ def homepage_inspo_upload():
         url = "/static/website/img/inspo/" + fname
         from database import get_db
         db = get_db()
-        import json as _json
-        # inspo images stored in 'bring_inspo' section or fall back to settings
+        db.execute("INSERT OR IGNORE INTO home_sections(section_key,section_title,content,sort_order,active) VALUES('bring_inspo','Bring Your Inspo','{}',16,1)")
+        db.commit()
         row = db.execute("SELECT content FROM home_sections WHERE section_key='bring_inspo'").fetchone()
-        if not row:
-            db.execute("INSERT OR IGNORE INTO home_sections(section_key,section_title,content,sort_order,active) VALUES('bring_inspo','Bring Your Inspo','{}',16,1)")
-            db.commit()
-            row = db.execute("SELECT content FROM home_sections WHERE section_key='bring_inspo'").fetchone()
-        c = _json.loads(row["content"]) if row and row["content"] else {}
+        c = _json.loads(row["content"]) if (row and row["content"] and row["content"].strip()) else {}
         c[f"img_{slot}"] = url
         db.execute("UPDATE home_sections SET content=? WHERE section_key='bring_inspo'", (_json.dumps(c),))
         db.commit()
         return jsonify({"ok": True, "url": url})
     except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 500
+        _log.getLogger(__name__).exception("Inspo upload failed")
+        return jsonify({"ok": False, "error": str(e)})
 
 # ── Item Tiles ────────────────────────────────────────────────────
 @bp.route("/website/item/tiles/<int:iid>")

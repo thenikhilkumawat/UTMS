@@ -721,41 +721,68 @@ function toggleCatProd(el){
 function aipUpload(input, slot){
   var file = input.files[0]; if(!file) return;
   var statusEl = document.getElementById('aip'+(slot==='left'?'Left':'Right')+'Status');
-  statusEl.textContent='Uploading…';
+  statusEl.style.color='#7a6a58'; statusEl.textContent='Uploading…';
   var fd=new FormData(); fd.append('file',file); fd.append('slot',slot);
+  var httpStatus=0;
   fetch('/owner/website/homepage/ai-preview/upload',{method:'POST',body:fd,credentials:'same-origin'})
-    .then(function(r){return r.json();})
-    .then(function(d){
-      if(d.ok){statusEl.style.color='#2D6A3F';statusEl.textContent='✓ Saved! Reloading…';setTimeout(function(){location.reload();},1000);}
-      else{statusEl.style.color='#dc2626';statusEl.textContent='Error: '+d.error;}
-    }).catch(function(){statusEl.style.color='#dc2626';statusEl.textContent='Upload failed.';});
+    .then(function(r){ httpStatus=r.status; return r.text(); })
+    .then(function(txt){
+      try{
+        var d=JSON.parse(txt);
+        if(d.ok){
+          statusEl.style.color='#1f7a3a';
+          statusEl.textContent='✓ Uploaded! Reloading…';
+          setTimeout(function(){location.reload();},1200);
+        } else {
+          statusEl.style.color='#b3261e';
+          statusEl.textContent='Error '+httpStatus+': '+(d.error||'upload failed');
+        }
+      } catch(e){
+        statusEl.style.color='#b3261e';
+        statusEl.textContent='HTTP '+httpStatus+' — '+(txt.slice(0,120)||'unexpected response');
+      }
+    })
+    .catch(function(err){
+      statusEl.style.color='#b3261e';
+      statusEl.textContent='Network error: '+(err.message||'check console');
+    });
   input.value='';
 }
 function aipRemoveMedia(slot){
   if(!confirm('Remove this media?')) return;
   fetch('/owner/website/homepage/ai-preview/remove',{method:'POST',credentials:'same-origin',
     headers:{'Content-Type':'application/json'},body:JSON.stringify({slot:slot})})
-    .then(function(r){return r.json();}).then(function(d){if(d.ok)location.reload();});
+    .then(function(r){return r.text();})
+    .then(function(txt){try{var d=JSON.parse(txt);if(d.ok)location.reload();}catch(e){location.reload();}})
+    .catch(function(){location.reload();});
 }
 // ── Inspo polaroid upload ─────────────────────────────────────────
 function inspoUpload(input, slot){
   var file=input.files[0]; if(!file) return;
   var statusEl=document.getElementById('inspoStatus_'+slot);
-  statusEl.textContent='Uploading…';
+  statusEl.style.color='#7a6a58'; statusEl.textContent='Uploading…';
   var fd=new FormData(); fd.append('file',file); fd.append('slot',slot);
+  var httpStatus=0;
   fetch('/owner/website/homepage/inspo/upload',{method:'POST',body:fd,credentials:'same-origin'})
-    .then(function(r){return r.json();})
-    .then(function(d){
-      if(d.ok){statusEl.style.color='#2D6A3F';statusEl.textContent='✓ Saved!';setTimeout(function(){location.reload();},1000);}
-      else{statusEl.style.color='#dc2626';statusEl.textContent='Error: '+d.error;}
-    }).catch(function(){statusEl.style.color='#dc2626';statusEl.textContent='Upload failed.';});
+    .then(function(r){ httpStatus=r.status; return r.text(); })
+    .then(function(txt){
+      try{
+        var d=JSON.parse(txt);
+        if(d.ok){ statusEl.style.color='#1f7a3a'; statusEl.textContent='✓ Saved!'; setTimeout(function(){location.reload();},1200); }
+        else{ statusEl.style.color='#b3261e'; statusEl.textContent='Error '+httpStatus+': '+(d.error||'upload failed'); }
+      } catch(e){
+        statusEl.style.color='#b3261e';
+        statusEl.textContent='HTTP '+httpStatus+' — '+(txt.slice(0,120)||'unexpected response');
+      }
+    })
+    .catch(function(err){ statusEl.style.color='#b3261e'; statusEl.textContent='Network error: '+(err.message||''); });
   input.value='';
 }
 function inspoRemove(slot){
   if(!confirm('Remove this image?')) return;
-  fetch('/owner/website/homepage/ai-preview/remove',{method:'POST',credentials:'same-origin',
-    headers:{'Content-Type':'application/json'},body:JSON.stringify({slot:'inspo_'+slot})} )
-    .then(function(){location.reload();});
+  fetch('/owner/website/homepage/inspo/upload',{method:'POST',credentials:'same-origin',
+    headers:{'Content-Type':'application/json'},body:JSON.stringify({remove:slot})})
+    .then(function(){location.reload();}).catch(function(){location.reload();});
 }
 </script>
 {% endblock %}
