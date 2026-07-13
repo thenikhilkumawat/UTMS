@@ -2180,24 +2180,29 @@ def auth_google_callback():
         return redirect(next_url)
     else:
         # New user — create account with free tokens
-        from config import Config as _Cfg
-        free_tokens = getattr(_Cfg, "NEW_ACCOUNT_FREE_TOKENS", 3)
         try:
             free_tokens = NEW_ACCOUNT_FREE_TOKENS
         except NameError:
             free_tokens = 3
         # mobile must be unique+NOT NULL — Google users get a unique placeholder
         _g_mobile = f"g:{google_id}"
-        db.execute(
-            "INSERT INTO web_accounts(name, email, mobile, google_id, password_hash, token_balance, is_active, created_at) "
-            "VALUES(?,?,?,?,?,?,1,datetime('now','localtime'))",
-            (name, email, _g_mobile, google_id, "", free_tokens)
-        )
-        db.commit()
+        try:
+            db.execute(
+                "INSERT INTO web_accounts(name, email, mobile, google_id, password_hash, token_balance, is_active, created_at) "
+                "VALUES(?,?,?,?,?,?,1,datetime('now','localtime'))",
+                (name, email, _g_mobile, google_id, "", free_tokens)
+            )
+            db.commit()
+        except Exception as _ie:
+            import logging as _lg
+            _lg.getLogger(__name__).error("Google signup INSERT failed for %s: %s", email, _ie)
+            return redirect(f"{next_url}?google_error=Account+creation+failed+%E2%80%94+please+try+again")
         new_acc = db.execute(
             "SELECT * FROM web_accounts WHERE google_id=? LIMIT 1", (google_id,)
         ).fetchone()
         if new_acc:
+            session["web_account_id"] = new_acc["id"]
+            session.permanent = True
             try:
                 db.execute(
                     "INSERT INTO token_transactions(account_id, tokens, type) VALUES(?,?,'signup_bonus')",
@@ -2205,9 +2210,7 @@ def auth_google_callback():
                 )
                 db.commit()
             except Exception:
-                pass
-            session["web_account_id"] = new_acc["id"]
-            session.permanent = True
+                pass  # non-critical
         return redirect(next_url)
 
 
@@ -2401,8 +2404,11 @@ def api_email_login():
         "SELECT * FROM web_accounts WHERE LOWER(email)=? AND is_active=1", (email,)
     ).fetchone()
     pw_hash = acc["password_hash"] if acc and "password_hash" in acc.keys() else ""
+    # Detect Google-only account (no password set)
+    if acc and not pw_hash and acc["google_id"]:
+        return jsonify({"ok": False, "error": "google_account",
+                        "message": "This email is linked to Google sign-in. Please use \"Continue with Google\" to log in."})
     if not acc or not pw_hash or not _cph(pw_hash, password):
-        # Generic message — don't reveal whether email exists (prevents enumeration)
         return jsonify({"ok": False, "error": "Invalid email or password"})
 
     session["web_account_id"] = acc["id"]
