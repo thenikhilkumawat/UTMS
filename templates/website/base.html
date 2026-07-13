@@ -961,6 +961,8 @@ function _acctRenderForm(){
   body.innerHTML = h;
 }
 
+function _acctSetTab(tab){ _acctTab=tab; _acctRenderForm(); }
+
 function _acctSendOtp(){
   var name=((document.getElementById('acctFName')||{}).value||'').trim();
   var email=((document.getElementById('acctFEmail')||{}).value||'').trim();
