@@ -651,6 +651,22 @@
     </div>
 
     <div class="ai-cfg-card">
+      <div class="ai-cfg-label">Razorpay Keys <span style="font-size:10px;background:#fff3cd;color:#856404;padding:2px 7px;border-radius:20px;margin-left:6px;">For AI Credit Payments</span></div>
+      <p style="font-size:12px;color:#7a6a58;margin-bottom:10px;">Customers can buy AI preview credits. Payments go directly to your Razorpay account. Get keys from <a href="https://dashboard.razorpay.com/app/keys" target="_blank" style="color:#b8892a;">Razorpay Dashboard → Settings → API Keys</a>.</p>
+      <label class="wa-lbl" style="font-size:11px;margin-bottom:3px;">Key ID (starts with rzp_)</label>
+      <input class="wa-in" id="ai_rzp_key_id" type="text" value="{{ web_settings.get('razorpay_key_id','') }}" placeholder="rzp_live_xxxxxxxxxxxxxxxx" style="font-family:monospace;margin-bottom:8px;">
+      <label class="wa-lbl" style="font-size:11px;margin-bottom:3px;">Key Secret</label>
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <input class="wa-in" id="ai_rzp_key_secret" type="password" value="{{ web_settings.get('razorpay_key_secret','') }}" placeholder="secret key" style="flex:1;font-family:monospace;">
+        <button class="wa-btn" style="background:#2e1a0e;color:#f7f0e6;white-space:nowrap;" onclick="this.previousElementSibling.type=this.previousElementSibling.type==='password'?'text':'password'">👁</button>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="wa-btn gold" onclick="aiSaveRzpKeys()">Save Keys</button>
+        <span id="aiRzpStatus" style="font-size:12px;"></span>
+      </div>
+    </div>
+
+    <div class="ai-cfg-card">
       <div class="ai-cfg-label">AI Preview Page</div>
       <p style="font-size:12px;color:#7a6a58;margin-bottom:12px;">The AI Style Studio is live at <code style="background:#fdf6ee;padding:2px 6px;border-radius:4px;font-size:12px;">/ai-customize</code>. Share this link with customers to let them design their garment before ordering.</p>
       <div style="display:flex;gap:8px;">
@@ -2182,6 +2198,17 @@ function aiAdmTab(name, btn){
 
 // ── Key config ──
 function aiToggleKeyVis(){
+function aiSaveRzpKeys(){
+  var id  = (document.getElementById('ai_rzp_key_id')||{}).value||'';
+  var sec = (document.getElementById('ai_rzp_key_secret')||{}).value||'';
+  var st  = document.getElementById('aiRzpStatus');
+  st.textContent='Saving…';
+  Promise.all([
+    apiFetch('/owner/website/settings/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'razorpay_key_id',value:id.trim()})}),
+    apiFetch('/owner/website/settings/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'razorpay_key_secret',value:sec.trim()})})
+  ]).then(function(){ st.style.color='green'; st.textContent='✓ Saved'; })
+    .catch(function(){ st.style.color='red'; st.textContent='Error saving'; });
+}
   var inp=document.getElementById('ai_replicate_key');
   if(!inp)return;
   inp.type=inp.type==='password'?'text':'password';

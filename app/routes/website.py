@@ -1449,6 +1449,12 @@ _BRAND_LABEL_PHRASE = (
 )
 
 
+
+def _is_bottom_wear(garment):
+    """Return True for pants/jeans/trousers — these need a full-leg shot with feet."""
+    g = (garment or "").lower()
+    return any(k in g for k in ("pant", "jean", "trouser", "pajama", "dhoti", "churidar"))
+
 def build_garment_prompt(garment, styles, ai_map=None):
     """Build a detailed Replicate/Flux prompt from garment + style selections."""
     g = garment.lower()
@@ -1477,15 +1483,21 @@ def build_garment_prompt(garment, styles, ai_map=None):
     style_terms = _style_detail_phrases(styles, ai_map)
     style_str = "; ".join(style_terms) if style_terms else "classic style"
 
+    _shot = (
+        "Full-length fashion catalog photo of this garment on a premium headless male mannequin, "
+        "standing upright, full body visible from head to toe so all design details are clear. "
+        if not _is_bottom_wear(garment) else
+        "Fashion catalog photo of this garment worn on a premium headless male mannequin, "
+        "showing full leg length from waist down, both feet clearly visible at the bottom. "
+    )
     prompt = (
         f"Professional fashion catalog photograph, {base}, with these EXACT design details — {style_str}. "
         "Follow every one of these design details precisely and do not substitute a generic/standard "
         "version of any of them. "
-        "Flat lay product photography on pure white background, "
-        "studio lighting, sharp focus, high resolution, "
-        "fashion editorial quality, neutral clean aesthetic, "
-        "no people, no mannequin, garment only. "
-        f"{_BRAND_LABEL_PHRASE}"
+        + _shot
+        + "Pure white studio background, even studio lighting, sharp focus, high resolution, "
+        "no face, no head, mannequin body only, fashion editorial quality. "
+        + _BRAND_LABEL_PHRASE
     )
     return prompt
 
@@ -1577,8 +1589,9 @@ def build_img2img_style_prompt(garment, styles, ai_map=None):
         f"and must be clearly visible in the output: {numbered}. "
         "CRITICAL: keep the EXACT same fabric color, print and texture as the input photo — "
         "do NOT change the color, do NOT alter the fabric pattern or material in any way. "
-        "Clean professional fashion catalog product photo, pure white background, "
-        "studio lighting, no people, no mannequin, garment only."
+        "Clean professional fashion catalog photo on a premium headless male mannequin, "
+        "pure white background, even studio lighting, no face, no head. "
+        "Full body visible — show complete garment on mannequin body."
     )
 
 
@@ -1732,9 +1745,10 @@ def build_multi_image_fabric_garment_prompt(garment, styles, fabric_name="", ai_
         "Each change must be clearly visible in the output — do not skip or soften any of them.\n\n"
         "OUTPUT: One finished professional fashion catalog photograph. "
         "The garment uses Image 1's structure (with Step 2 changes applied) dressed entirely in Image 2's EXACT fabric. "
+        "Show the garment on a premium headless male mannequin, standing upright, full body visible. "
         "Pure white studio background, even studio lighting, sharp focus, high resolution — "
-        "the fabric pattern must be crisp and clearly legible, not blurred or smoothed. "
-        "No people, no mannequin, garment only. "
+        "the fabric pattern must be crisp and clearly legible across the entire garment on the mannequin. "
+        "No face, no head, mannequin body only. "
         f"{_BRAND_LABEL_PHRASE}"
     )
 
@@ -2551,6 +2565,107 @@ def api_send_otp():
         return jsonify({"success": True, "message": "OTP sent"})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
+
+
+
+# ── Token credit system ───────────────────────────────────────────────────────
+# Each AI generation costs 1 token. Anonymous visitors get FREE_PREVIEW_LIMIT
+# free generations; after that they must log in and buy token packs.
+# Razorpay collects payment → webhook/verify credits the account automatically.
+
+TOKEN_PACKS = {
+    10:  4900,   # 10 tokens  → ₹49  (in paise for Razorpay)
+    25:  9900,   # 25 tokens  → ₹99
+    60: 19900,   # 60 tokens  → ₹199
+}
+
+@website_bp.route("/api/tokens/create-order", methods=["POST"])
+def api_tokens_create_order():
+    """Create a Razorpay order for a token pack purchase."""
+    acc = _current_account()
+    if not acc:
+        return jsonify({"ok": False, "error": "Please log in before purchasing credits."})
+    data   = request.get_json() or {}
+    tokens = int(data.get("tokens", 0))
+    price  = data.get("price")
+    if tokens not in TOKEN_PACKS:
+        return jsonify({"ok": False, "error": "Invalid token pack."})
+    amount_paise = TOKEN_PACKS[tokens]
+    db = get_db()
+    try:
+        rz_key_id  = (db.execute("SELECT value FROM settings WHERE key='razorpay_key_id'").fetchone() or {}).get("value","").strip()
+        rz_key_sec = (db.execute("SELECT value FROM settings WHERE key='razorpay_key_secret'").fetchone() or {}).get("value","").strip()
+    except Exception:
+        rz_key_id = rz_key_sec = ""
+    if not rz_key_id or not rz_key_sec:
+        return jsonify({"ok": False, "error": "Payment gateway not configured yet. Please contact us directly."})
+    try:
+        import requests as _req, uuid
+        resp = _req.post(
+            "https://api.razorpay.com/v1/orders",
+            auth=(rz_key_id, rz_key_sec),
+            json={"amount": amount_paise, "currency": "INR",
+                  "receipt": f"tok_{acc['id']}_{tokens}_{uuid.uuid4().hex[:8]}",
+                  "notes": {"account_id": str(acc["id"]), "tokens": str(tokens)}},
+            timeout=10
+        ).json()
+        if "id" not in resp:
+            return jsonify({"ok": False, "error": "Could not create payment order. Try again."})
+        return jsonify({"ok": True, "order_id": resp["id"],
+                        "amount": amount_paise, "razorpay_key": rz_key_id})
+    except Exception as ex:
+        return jsonify({"ok": False, "error": str(ex)})
+
+
+@website_bp.route("/api/tokens/verify-payment", methods=["POST"])
+def api_tokens_verify_payment():
+    """Verify Razorpay signature and credit tokens to account."""
+    acc = _current_account()
+    if not acc:
+        return jsonify({"ok": False, "error": "Not logged in."})
+    data = request.get_json() or {}
+    payment_id = (data.get("razorpay_payment_id") or "").strip()
+    order_id   = (data.get("razorpay_order_id")   or "").strip()
+    signature  = (data.get("razorpay_signature")   or "").strip()
+    tokens     = int(data.get("tokens", 0))
+    if tokens not in TOKEN_PACKS or not payment_id or not order_id or not signature:
+        return jsonify({"ok": False, "error": "Invalid payment data."})
+    db = get_db()
+    try:
+        rz_key_sec = (db.execute("SELECT value FROM settings WHERE key='razorpay_key_secret'").fetchone() or {}).get("value","").strip()
+    except Exception:
+        rz_key_sec = ""
+    if not rz_key_sec:
+        return jsonify({"ok": False, "error": "Payment gateway not configured."})
+    # Verify HMAC signature
+    import hmac as _hmac, hashlib as _hashlib
+    expected = _hmac.new(
+        rz_key_sec.encode(), f"{order_id}|{payment_id}".encode(), _hashlib.sha256
+    ).hexdigest()
+    if not _hmac.compare_digest(expected, signature):
+        return jsonify({"ok": False, "error": "Payment verification failed. Please contact support."})
+    # Guard: reject duplicate payment_id
+    try:
+        dup = db.execute("SELECT id FROM token_transactions WHERE razorpay_payment_id=?", (payment_id,)).fetchone()
+        if dup:
+            return jsonify({"ok": False, "error": "This payment was already credited."})
+    except Exception:
+        pass
+    try:
+        db.execute(
+            "UPDATE web_accounts SET token_balance = COALESCE(token_balance,0)+? WHERE id=?",
+            (tokens, acc["id"])
+        )
+        db.execute(
+            """INSERT INTO token_transactions (account_id, tokens, type, razorpay_payment_id, razorpay_order_id)
+               VALUES (?,?,'purchase',?,?)""",
+            (acc["id"], tokens, payment_id, order_id)
+        )
+        db.commit()
+        new_bal = db.execute("SELECT token_balance FROM web_accounts WHERE id=?", (acc["id"],)).fetchone()["token_balance"]
+        return jsonify({"ok": True, "token_balance": new_bal})
+    except Exception as ex:
+        return jsonify({"ok": False, "error": str(ex)})
 
 
 @website_bp.route("/api/verify-otp", methods=["POST"])

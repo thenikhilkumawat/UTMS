@@ -232,6 +232,7 @@
     <div class="as-step-item" id="sp2"><div class="as-step-dot">2</div><div class="as-step-lbl">Fabric</div></div>
     <div class="as-step-item" id="sp3"><div class="as-step-dot">3</div><div class="as-step-lbl">Style</div></div>
     <div class="as-step-item" id="sp4"><div class="as-step-dot">4</div><div class="as-step-lbl">Generate</div></div>
+    <div class="as-step-item" id="sp5"><div class="as-step-dot">5</div><div class="as-step-lbl">Preview</div></div>
   </div>
 
   <!-- ── STEP 1: Garment with tabs ── -->
@@ -388,27 +389,52 @@
     <div class="as-section-label">Step 4</div>
     <div class="as-section-title">Your Design Summary</div>
     <div class="as-summary" id="asSummary"></div>
-    <div id="asResultWrap">
-      <button class="as-gen-btn" id="asGenBtn" onclick="asGenerate()">✦ Generate AI Preview</button>
-      <div id="asLoadingWrap" style="display:none">
-        <div class="as-shimmer"><div class="as-shimmer-img"></div></div>
-        <div class="as-loading-txt" id="asLoadingTxt">Crafting your garment preview…</div>
-      </div>
-      <div class="as-result" id="asResult">
-        <img class="as-result-img" id="asResultImg" alt="AI Preview" onclick="asOpenImgFull()">
-        <div class="as-result-actions">
-          <button class="as-order-btn" onclick="asGoToOrder()">📋 Place Order with This Design →</button>
-          <button class="as-regen-btn" onclick="asGenerate()">↻ Regenerate</button>
-        </div>
-        <p class="as-disclaimer">Preview is AI-generated and may vary slightly from the final garment. Our tailors confirm all details before stitching.</p>
-      </div>
+    <div id="asCreditsInfo" style="text-align:center;margin:10px 0 4px;font-size:13px;color:var(--as-muted)"></div>
+    <button class="as-gen-btn" id="asGenBtn" onclick="asGenerate()">✦ Generate AI Preview</button>
+    <div id="asLoadingWrap" style="display:none">
+      <div class="as-shimmer"><div class="as-shimmer-img"></div></div>
+      <div class="as-loading-txt" id="asLoadingTxt">Crafting your garment preview…</div>
     </div>
     <div class="as-nav" style="margin-top:18px">
       <button class="as-btn-back" onclick="asGoStep(3)">← Change Style</button>
     </div>
   </div>
 
+  <!-- ── STEP 5: Preview Result ── -->
+  <div class="as-panel" id="asStep5">
+    <div class="as-section-label">Step 5</div>
+    <div class="as-section-title">Your AI Preview</div>
+    <div style="text-align:center">
+      <img class="as-result-img" id="asResultImg" alt="AI Preview" onclick="asOpenImgFull()"
+           style="width:100%;max-width:460px;border-radius:10px;cursor:zoom-in;box-shadow:0 4px 24px rgba(0,0,0,.13)">
+    </div>
+    <div id="asCreditsBar" style="text-align:center;margin:14px 0 6px;font-size:13px;color:var(--as-muted)"></div>
+    <div class="as-result-actions" style="display:flex;flex-direction:column;gap:10px;margin-top:12px">
+      <button class="as-order-btn" onclick="asGoToOrder()">📋 Place Order with This Design →</button>
+      <div style="display:flex;gap:10px">
+        <button class="as-regen-btn" style="flex:1" onclick="asGoStep(4);setTimeout(asGenerate,100)">↻ Regenerate</button>
+        <button class="as-regen-btn" style="flex:1;background:var(--as-gold);color:#fff" onclick="asGoStep(3)">✏ Edit Style</button>
+      </div>
+      <button id="asBuyTokensBtn" onclick="asShowTokenModal()" style="display:none;width:100%;padding:13px;border-radius:var(--as-radius);border:2px solid var(--as-gold);background:transparent;color:var(--as-gold);font-weight:700;cursor:pointer;font-size:14px">🪙 Buy More Credits</button>
+    </div>
+    <p class="as-disclaimer" style="margin-top:14px;text-align:center">Preview is AI-generated and may vary slightly from the final garment. Our tailors confirm all details before stitching.</p>
+    <div class="as-nav" style="margin-top:18px">
+      <button class="as-btn-back" onclick="asGoStep(4)">← Back</button>
+    </div>
+  </div>
+
 </div><!-- /as-wizard -->
+
+<!-- Token purchase modal -->
+<div id="asTokenModal" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.6);align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:16px;padding:28px 24px;max-width:380px;width:90%;position:relative">
+    <button onclick="document.getElementById('asTokenModal').style.display='none'" style="position:absolute;top:14px;right:16px;background:none;border:none;font-size:20px;cursor:pointer;color:#888">✕</button>
+    <div style="font-size:20px;font-weight:800;color:#2c1a00;margin-bottom:4px">🪙 Buy Credits</div>
+    <div style="font-size:13px;color:#888;margin-bottom:20px">Each credit = 1 AI preview. Credits never expire.</div>
+    <div id="asTokenPacks" style="display:flex;flex-direction:column;gap:10px"></div>
+    <div id="asTokenMsg" style="margin-top:12px;font-size:13px;text-align:center;color:#888"></div>
+  </div>
+</div>
 
 <!-- Gate -->
 <div class="as-gate" id="asGate">
@@ -495,8 +521,9 @@ function asGoStep(n){
   if(n===2 && !AS.garment){ alert('Please select a garment first.'); return; }
   document.getElementById('asStep'+asCurStep).classList.remove('active');
   document.getElementById('asStep'+n).classList.add('active');
-  for(var i=1;i<=4;i++){
+  for(var i=1;i<=5;i++){
     var sp=document.getElementById('sp'+i);
+    if(!sp) continue;
     sp.classList.remove('active','done');
     if(i<n) sp.classList.add('done');
     else if(i===n) sp.classList.add('active');
@@ -697,15 +724,12 @@ var asTimer = null;
 function asGenerate(){
   document.getElementById('asGenBtn').style.display = 'none';
   document.getElementById('asLoadingWrap').style.display = 'block';
-  document.getElementById('asResult').classList.remove('show');
   var mi=0, lt=document.getElementById('asLoadingTxt');
   lt.textContent = AS_MSGS[0];
   asTimer = setInterval(function(){mi=(mi+1)%AS_MSGS.length;lt.textContent=AS_MSGS[mi];},3500);
 
-  // Build flat styles dict for API
   var stylesFlat = {};
   Object.keys(AS.styles).forEach(function(k){ stylesFlat[k] = AS.styles[k].value; });
-
   var payload = {garment:AS.garment, styles:stylesFlat,
     fabric_choice: AS.fabric.id ? 'catalog' : '',
     fabric_id: AS.fabric.id||'', fabric_name: AS.fabric.name||''};
@@ -717,20 +741,17 @@ function asGenerate(){
   .then(function(d){
     clearInterval(asTimer);
     document.getElementById('asLoadingWrap').style.display = 'none';
+    document.getElementById('asGenBtn').style.display = '';
     if(d.need_login){
       document.getElementById('asGateMsg').textContent = d.error || "You've used your free previews.";
       document.getElementById('asGate').classList.add('show');
-      document.getElementById('asGenBtn').style.display = ''; return;
+      return;
     }
-    if(!d.ok){ document.getElementById('asGenBtn').style.display=''; alert(d.error||'Generation failed.'); return; }
+    if(!d.ok){ alert(d.error||'Generation failed.'); return; }
     AS.resultUrl = d.image_url||d.url||'';
     document.getElementById('asResultImg').src = AS.resultUrl;
-    document.getElementById('asResult').classList.add('show');
-    if(d.previews_remaining!=null){
-      document.getElementById('asUsageText').textContent = d.previews_remaining+' free preview'+(d.previews_remaining===1?'':'s')+' remaining';
-    } else {
-      document.getElementById('asUsageText').textContent = 'Unlimited previews (logged in)';
-    }
+    asUpdateCreditsBar(d.previews_remaining, d.token_balance);
+    asGoStep(5);
   })
   .catch(function(){
     clearInterval(asTimer);
@@ -738,6 +759,93 @@ function asGenerate(){
     document.getElementById('asGenBtn').style.display = '';
     alert('Something went wrong. Please try again.');
   });
+}
+
+function asUpdateCreditsBar(remaining, tokens){
+  var bar    = document.getElementById('asCreditsBar');
+  var info   = document.getElementById('asCreditsInfo');
+  var buyBtn = document.getElementById('asBuyTokensBtn');
+  var txt = '';
+  if(remaining == null){
+    if(tokens != null){
+      txt = '🪙 '+tokens+' credit'+(tokens===1?'':'s')+' remaining';
+      if(buyBtn) buyBtn.style.display = (tokens <= 2) ? '' : 'none';
+    } else {
+      txt = '✓ Unlimited previews';
+      if(buyBtn) buyBtn.style.display = 'none';
+    }
+  } else {
+    if(remaining > 0){
+      txt = '🎁 '+remaining+' free preview'+(remaining===1?'':'s')+' left';
+      if(buyBtn) buyBtn.style.display = remaining <= 1 ? '' : 'none';
+    } else {
+      txt = 'Free previews used — buy credits to keep going';
+      if(buyBtn) buyBtn.style.display = '';
+    }
+  }
+  if(bar)  bar.textContent = txt;
+  if(info) info.textContent = txt;
+}
+
+var AS_TOKEN_PACKS = [
+  {tokens:10, price:49,  label:'Starter'},
+  {tokens:25, price:99,  label:'Popular ⭐'},
+  {tokens:60, price:199, label:'Best Value'},
+];
+
+function asShowTokenModal(){
+  var packs = document.getElementById('asTokenPacks');
+  var msg   = document.getElementById('asTokenMsg');
+  if(msg) msg.textContent = '';
+  packs.innerHTML = AS_TOKEN_PACKS.map(function(p){
+    return '<button onclick="asBuyPack('+p.tokens+','+p.price+')" style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-radius:10px;border:1.5px solid #e5d9c0;background:#faf7f2;cursor:pointer;font-size:14px;width:100%;margin-bottom:2px">'
+      +'<span><strong>'+p.tokens+' Credits</strong>&nbsp;<span style="color:#999;font-size:12px">'+p.label+'</span></span>'
+      +'<span style="font-weight:800;color:#2c1a00">₹'+p.price+'</span>'
+      +'</button>';
+  }).join('');
+  document.getElementById('asTokenModal').style.display = 'flex';
+}
+
+function asBuyPack(tokens, price){
+  var msg = document.getElementById('asTokenMsg');
+  msg.textContent = 'Starting payment…';
+  fetch('/api/tokens/create-order',{method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({tokens:tokens, price:price})})
+  .then(function(r){return r.json();})
+  .then(function(d){
+    if(!d.ok){ msg.textContent = d.error||'Payment unavailable right now.'; return; }
+    var options = {
+      key: d.razorpay_key,
+      amount: d.amount,
+      currency: 'INR',
+      name: 'Uttam Tailors',
+      description: tokens+' AI Credits',
+      order_id: d.order_id,
+      handler: function(resp){
+        msg.textContent = 'Verifying payment…';
+        fetch('/api/tokens/verify-payment',{method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({
+            razorpay_payment_id: resp.razorpay_payment_id,
+            razorpay_order_id:   resp.razorpay_order_id,
+            razorpay_signature:  resp.razorpay_signature,
+            tokens: tokens
+          })
+        }).then(function(r){return r.json();}).then(function(v){
+          if(v.ok){
+            document.getElementById('asTokenModal').style.display='none';
+            asUpdateCreditsBar(null, v.token_balance);
+            alert('✓ '+tokens+' credits added!');
+          } else { msg.textContent = v.error||'Verification failed.'; }
+        });
+      },
+      prefill:{name:'',email:'',contact:''},
+      theme:{color:'#b8892a'}
+    };
+    new Razorpay(options).open();
+  })
+  .catch(function(){ msg.textContent = 'Network error. Please try again.'; });
 }
 
 function asOpenImgFull(){

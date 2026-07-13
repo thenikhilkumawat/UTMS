@@ -823,6 +823,35 @@ def run_account_migrations():
             pass
         db.commit()
 
+
+        # ── token_balance on web_accounts + token_transactions table ─────────
+        try:
+            if USE_PG:
+                db.execute("ALTER TABLE web_accounts ADD COLUMN IF NOT EXISTS token_balance INTEGER DEFAULT 0")
+                db.execute("""CREATE TABLE IF NOT EXISTS token_transactions (
+                    id SERIAL PRIMARY KEY,
+                    account_id INTEGER NOT NULL,
+                    tokens INTEGER NOT NULL,
+                    type TEXT NOT NULL,
+                    razorpay_payment_id TEXT DEFAULT '',
+                    razorpay_order_id TEXT DEFAULT '',
+                    created_at TEXT DEFAULT TO_CHAR(NOW(),'YYYY-MM-DD HH24:MI:SS'))""")
+            else:
+                try:
+                    db.execute("ALTER TABLE web_accounts ADD COLUMN token_balance INTEGER DEFAULT 0")
+                except Exception:
+                    pass
+                db.execute("""CREATE TABLE IF NOT EXISTS token_transactions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    account_id INTEGER NOT NULL,
+                    tokens INTEGER NOT NULL,
+                    type TEXT NOT NULL,
+                    razorpay_payment_id TEXT DEFAULT '',
+                    razorpay_order_id TEXT DEFAULT '',
+                    created_at TEXT DEFAULT (datetime('now','localtime')))""")
+            db.commit()
+        except Exception:
+            pass
         # ── support_chats: add customer_email if missing ─────────────────────
         try:
             db.execute("ALTER TABLE support_chats ADD COLUMN customer_email TEXT DEFAULT ''")
