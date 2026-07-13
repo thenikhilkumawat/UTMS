@@ -2186,9 +2186,9 @@ def api_verify_email_otp():
     pw_hash = _gph(password)
     try:
         db.execute(
-            "INSERT INTO web_accounts(name, email, password_hash, token_balance, is_active, created_at) "
-            "VALUES(?,?,?,?,1,datetime('now','localtime'))",
-            (name or email.split("@")[0], email, pw_hash, NEW_ACCOUNT_FREE_TOKENS)
+            "INSERT INTO web_accounts(name, email, mobile, password_hash, token_balance, is_active, created_at) "
+            "VALUES(?,?,?,?,?,1,datetime('now','localtime'))",
+            (name or email.split("@")[0], email, '', pw_hash, NEW_ACCOUNT_FREE_TOKENS)
         )
         db.commit()
     except Exception as e:
