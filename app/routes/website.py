@@ -2187,9 +2187,9 @@ def auth_google_callback():
         except NameError:
             free_tokens = 3
         db.execute(
-            "INSERT INTO web_accounts(name, email, mobile, google_id, token_balance, is_active, created_at) "
-            "VALUES(?,?,?,?,?,1,datetime('now','localtime'))",
-            (name, email, "", google_id, free_tokens)
+            "INSERT INTO web_accounts(name, email, mobile, google_id, password_hash, token_balance, is_active, created_at) "
+            "VALUES(?,?,?,?,?,?,1,datetime('now','localtime'))",
+            (name, email, "", google_id, "", free_tokens)
         )
         db.commit()
         new_acc = db.execute(
