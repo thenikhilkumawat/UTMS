@@ -243,10 +243,9 @@ img,video,iframe{max-width:100%;height:auto;}
 
 /* ── 4. COLOR SWAP — Section 01 (action cards) dark, Section 02 (heritage) beige ── */
 /* Action cards 01: make dark */
-.action-cards{background:var(--dark)!important;}
-.action-cards .section-title{color:#FAF0E4!important;}
-.action-cards .kicker{color:var(--gold-l)!important;}
-.action-cards .section-sub{color:rgba(250,240,228,.55)!important;}
+.action-cards{background:var(--bg)!important;}
+.action-cards .section-title{color:var(--dark)!important;}
+.action-cards .kicker{color:var(--gold)!important;}
 .ac-card{background:rgba(255,255,255,.04)!important;border-color:rgba(250,240,228,.1)!important;}
 .ac-card .ac-num{color:rgba(250,240,228,.07)!important;}
 .ac-card .ac-title{color:#FAF0E4!important;}
