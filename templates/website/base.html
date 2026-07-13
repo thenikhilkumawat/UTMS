@@ -352,9 +352,10 @@ body.drawer-open .wa-fab,body.drawer-open .supp-fab{display:none!important;visib
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
         <span class="nav-icon-badge" id="cartCount" style="display:none;">0</span>
       </button>
-      <button class="nav-icon-btn" id="acctBtn" onclick="openAccount()" aria-label="Account" title="My Account">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        <span class="nav-icon-badge" id="acctDot" style="display:none;background:#2D6A3F;">&#10003;</span>
+      <button class="nav-icon-btn" id="acctBtn" onclick="openAccount()" aria-label="Account" title="My Account" style="position:relative;">
+        <span id="acctAvatar" style="display:none;width:28px;height:28px;border-radius:50%;background:var(--gold,#C8903A);color:#fff;font-size:11px;font-weight:700;align-items:center;justify-content:center;overflow:hidden;border:2px solid var(--gold,#C8903A);"></span>
+        <svg id="acctDefaultIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span class="nav-icon-badge" id="acctDot" style="display:none;background:#2D6A3F;position:absolute;bottom:0;right:0;">&#10003;</span>
       </button>
     </div>
   </div>
@@ -927,7 +928,25 @@ function _acctRefresh(){
     if(d && d.ok){
       _acctState = d;
       var dot=document.getElementById('acctDot');
-      if(dot) dot.style.display = d.logged_in ? 'flex' : 'none';
+      var avatar=document.getElementById('acctAvatar');
+      var icon=document.getElementById('acctDefaultIcon');
+      if(d.logged_in){
+        if(dot) dot.style.display='flex';
+        if(avatar && icon){
+          // Show avatar circle with photo or initial
+          if(d.profile_image){
+            avatar.innerHTML='<img src="'+d.profile_image+'" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentNode.textContent=''+(d.name||'U')[0].toUpperCase()+'';">';
+          } else {
+            avatar.textContent=(d.name||'U')[0].toUpperCase();
+          }
+          avatar.style.display='flex';
+          icon.style.display='none';
+        }
+      } else {
+        if(dot) dot.style.display='none';
+        if(avatar) avatar.style.display='none';
+        if(icon) icon.style.display='';
+      }
     }
   }).catch(function(){});
 }
@@ -1089,6 +1108,8 @@ function _acctLogout(){
   fetch('/api/account/logout',{method:'POST'}).then(function(){
     _acctState=null;
     var dot=document.getElementById('acctDot'); if(dot) dot.style.display='none';
+    var avatar=document.getElementById('acctAvatar'); if(avatar) avatar.style.display='none';
+    var icon=document.getElementById('acctDefaultIcon'); if(icon) icon.style.display='';
     _acctTab='login';
     _acctRenderForm();
   });
