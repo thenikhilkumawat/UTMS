@@ -20,6 +20,9 @@
   /* 2. Icons tight on right so logo stays centered */
   .nav-right{gap:2px!important;}
   .nav-icon-btn{padding:5px!important;}
+  /* 3. Profile avatar — proper circle on mobile */
+  #acctAvatar{width:30px!important;height:30px!important;border-radius:50%!important;overflow:hidden!important;flex-shrink:0!important;}
+  #acctAvatar img{width:100%!important;height:100%!important;object-fit:cover!important;border-radius:50%!important;display:block!important;}
   /* Adjust margins for taller ann-bar */
   .hero,.page-hero,.contact-page,.services-hero,.com-header{margin-top:116px!important;}
   .com-summary{position:static!important;order:-1!important;top:0!important;}
