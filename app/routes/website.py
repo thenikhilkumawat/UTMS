@@ -2050,6 +2050,15 @@ def order_review():
     })
 
 
+@website_bp.route("/account")
+def account_page():
+    return render_template("website/account.html", page_meta={
+        "title": "My Account — Uttam Tailors",
+        "desc": "Manage your account, orders, wishlist and measurements.",
+        "robots": "noindex,nofollow", "og_image": "", "canonical": ""
+    })
+
+
 # ── OTP endpoints ─────────────────────────────────────────────────────────────
 
 @website_bp.route("/api/send-otp", methods=["POST"])
