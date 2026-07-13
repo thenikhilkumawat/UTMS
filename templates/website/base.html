@@ -934,10 +934,16 @@ function _acctRefresh(){
         if(dot) dot.style.display='flex';
         if(avatar && icon){
           // Show avatar circle with photo or initial
+          var _init=(d.name||'U')[0].toUpperCase();
+          avatar.innerHTML='';
           if(d.profile_image){
-            avatar.innerHTML='<img src="'+d.profile_image+'" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentNode.textContent=''+(d.name||'U')[0].toUpperCase()+'';">';
+            var _img=document.createElement('img');
+            _img.src=d.profile_image;
+            _img.style.cssText='width:100%;height:100%;object-fit:cover;';
+            _img.onerror=function(){avatar.innerHTML='';avatar.textContent=_init;};
+            avatar.appendChild(_img);
           } else {
-            avatar.textContent=(d.name||'U')[0].toUpperCase();
+            avatar.textContent=_init;
           }
           avatar.style.display='flex';
           icon.style.display='none';
