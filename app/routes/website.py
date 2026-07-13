@@ -2538,4 +2538,42 @@ def api_verify_otp():
     data = request.get_json(silent=True) or {}
     mobile = (data.get("mobile") or "").strip()
     otp    = (data.get("otp") or "").strip()
-    if not mobile o
+    if not mobile or not otp:
+        return jsonify({"success": False, "error": "Mobile and OTP required"})
+    # Input length guard — real OTPs are 6 digits
+    if not otp.isdigit() or len(otp) not in (4, 6):
+        return jsonify({"success": False, "error": "Invalid OTP format"})
+    try:
+        db = get_db()
+        # Brute-force lockout: if 5+ failed attempts on this mobile in last 15 min, block
+        fails = db.execute(
+            """SELECT COUNT(*) as cnt FROM otp_log
+               WHERE mobile=? AND used=2
+               AND created_at > datetime('now','localtime','-15 minutes')""",
+            (mobile,)
+        ).fetchone()
+        if fails and fails["cnt"] >= 5:
+            return jsonify({"success": False, "error": "Too many failed attempts. Please request a new OTP."})
+
+        row = db.execute(
+            """SELECT id FROM otp_log
+               WHERE mobile=? AND otp=? AND used=0
+               AND expires_at > datetime('now','localtime')
+               ORDER BY id DESC LIMIT 1""",
+            (mobile, otp)
+        ).fetchone()
+        if not row:
+            # Mark failed attempt (used=2) so we can count brute-force retries
+            db.execute(
+                """UPDATE otp_log SET used=2
+                   WHERE mobile=? AND used=0
+                   AND expires_at > datetime('now','localtime')""",
+                (mobile,)
+            )
+            db.commit()
+            return jsonify({"success": False, "error": "Invalid or expired OTP"})
+        db.execute("UPDATE otp_log SET used=1 WHERE id=?", (row["id"],))
+        db.commit()
+        return jsonify({"success": True, "message": "OTP verified"})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
