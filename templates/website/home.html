@@ -983,53 +983,50 @@ fetch('/api/occasions/upcoming').then(function(r){return r.json();}).then(functi
 
 {# ═══════ 01c AI STYLE PREVIEW ═══════ #}
 {% if hs_active.get('ai_preview', True) %}
-<section id="aiPreview" style="background:linear-gradient(135deg,#0e0700 0%,#1a0e00 40%,#0a0500 100%);padding:100px 20px;position:relative;overflow:hidden;">
+<section id="aiPreview" style="background:linear-gradient(135deg,#0e0700 0%,#1a0e00 40%,#0a0500 100%);padding:80px 20px;position:relative;overflow:hidden;">
   <!-- Ambient glow blobs -->
   <div style="position:absolute;top:-80px;left:-80px;width:400px;height:400px;background:radial-gradient(circle,rgba(200,144,58,.18) 0%,transparent 70%);pointer-events:none;"></div>
   <div style="position:absolute;bottom:-60px;right:-60px;width:350px;height:350px;background:radial-gradient(circle,rgba(200,144,58,.12) 0%,transparent 70%);pointer-events:none;"></div>
 
-  <div style="max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:start;">
+  <div style="max-width:900px;margin:0 auto;text-align:center;">
 
-    <!-- Left: Text + CTA -->
-    <div>
-      <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(200,144,58,.12);border:1px solid rgba(200,144,58,.3);border-radius:50px;padding:6px 16px;margin-bottom:28px;">
-        <span style="font-size:15px;">✨</span>
-        <span style="font-size:11.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#C8903A;">AI-Powered</span>
-      </div>
-      <h2 style="font-family:'Cormorant Garamond',Georgia,serif;font-size:clamp(2.2rem,4.5vw,3.4rem);font-weight:600;color:#FAF0E4;line-height:1.15;margin:0 0 20px;">
-        See your garment<br><em style="color:#C8903A;font-style:italic;">before we stitch it.</em>
-      </h2>
-      <p style="font-size:15px;color:rgba(250,240,228,.65);line-height:1.75;margin:0 0 36px;max-width:440px;">
-        Choose your fabric, collar, fit and style — our AI renders a real photo of your finished garment in seconds. No more guesswork. What you see is what we stitch.
-      </p>
-
-      <!-- Feature pills -->
-      <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:40px;">
-        <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 16px;font-size:12.5px;color:rgba(250,240,228,.8);">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C8903A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          Result in ~30 seconds
-        </div>
-        <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 16px;font-size:12.5px;color:rgba(250,240,228,.8);">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C8903A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V22H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
-          3 free previews
-        </div>
-        <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 16px;font-size:12.5px;color:rgba(250,240,228,.8);">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C8903A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.57a2 2 0 0 0-1.34-2.23z"/></svg>
-          Shirts, suits, kurtas &amp; more
-        </div>
-      </div>
-
-      <a href="/ai-customize" style="display:inline-flex;align-items:center;gap:10px;background:linear-gradient(135deg,#C8903A,#e0a84a);color:#1a0e00;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:16px 36px;border-radius:6px;text-decoration:none;transition:transform .2s,box-shadow .2s;box-shadow:0 4px 24px rgba(200,144,58,.35);" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 32px rgba(200,144,58,.5)'" onmouseout="this.style.transform='';this.style.boxShadow='0 4px 24px rgba(200,144,58,.35)'">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-        Open AI Style Studio
-      </a>
-      <div style="margin-top:14px;font-size:12px;color:rgba(250,240,228,.35);">No account needed for your first free preview</div>
+    <!-- Badge (compact) -->
+    <div style="display:inline-flex;align-items:center;gap:7px;background:rgba(200,144,58,.12);border:1px solid rgba(200,144,58,.3);border-radius:50px;padding:5px 13px;margin-bottom:22px;">
+      <span style="font-size:13px;">✨</span>
+      <span style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#C8903A;">AI-Powered</span>
     </div>
 
-    <!-- Right: Visual showcase -->
-    <div style="position:relative;" class="aip-right">
-      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(200,144,58,.2);border-radius:16px;padding:24px;backdrop-filter:blur(10px);">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+    <!-- Heading (bigger) -->
+    <h2 style="font-family:'Cormorant Garamond',Georgia,serif;font-size:clamp(2.8rem,5.5vw,4.2rem);font-weight:600;color:#FAF0E4;line-height:1.15;margin:0 0 28px;">
+      See your garment<br><em style="color:#C8903A;font-style:italic;">before we stitch it.</em>
+    </h2>
+
+    <!-- Decorative design strip below heading -->
+    <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:44px;">
+      <div style="height:1px;width:80px;background:linear-gradient(90deg,transparent,rgba(200,144,58,.55));"></div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <!-- Shirt icon -->
+        <div style="width:34px;height:34px;border-radius:8px;background:rgba(200,144,58,.1);border:1px solid rgba(200,144,58,.28);display:flex;align-items:center;justify-content:center;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C8903A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.57a2 2 0 0 0-1.34-2.23z"/></svg>
+        </div>
+        <div style="width:5px;height:5px;border-radius:50%;background:#C8903A;opacity:.45;"></div>
+        <!-- Scissors / stitch icon (center, slightly bigger) -->
+        <div style="width:40px;height:40px;border-radius:10px;background:rgba(200,144,58,.18);border:1px solid rgba(200,144,58,.4);display:flex;align-items:center;justify-content:center;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C8903A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
+        </div>
+        <div style="width:5px;height:5px;border-radius:50%;background:#C8903A;opacity:.45;"></div>
+        <!-- Suit / blazer icon -->
+        <div style="width:34px;height:34px;border-radius:8px;background:rgba(200,144,58,.1);border:1px solid rgba(200,144,58,.28);display:flex;align-items:center;justify-content:center;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C8903A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        </div>
+      </div>
+      <div style="height:1px;width:80px;background:linear-gradient(90deg,rgba(200,144,58,.55),transparent);"></div>
+    </div>
+
+    <!-- Live demo: two images side by side -->
+    <div style="position:relative;max-width:600px;margin:0 auto 48px;">
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(200,144,58,.2);border-radius:16px;padding:20px;backdrop-filter:blur(10px);">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
 
           <!-- Left card: fabric swatch / custom media -->
           {% set _aip_c = hs.get('ai_preview',{}) %}
@@ -1040,31 +1037,29 @@ fetch('/api/occasions/upcoming').then(function(r){return r.json();}).then(functi
               {% else %}
               <img src="{{ _aip_c['left_media'] }}" alt="Fabric" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.9;" loading="lazy">
               {% endif %}
-              <!-- Overlay label -->
-              <div style="position:absolute;top:12px;left:12px;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);border:1px solid rgba(200,144,58,.3);border-radius:6px;padding:5px 10px;">
-                <div style="font-size:9px;font-weight:700;letter-spacing:.1em;color:#C8903A;text-transform:uppercase;">Fabric</div>
+              <div style="position:absolute;top:10px;left:10px;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);border:1px solid rgba(200,144,58,.3);border-radius:6px;padding:4px 9px;">
+                <div style="font-size:8px;font-weight:700;letter-spacing:.1em;color:#C8903A;text-transform:uppercase;">Fabric</div>
               </div>
             {% else %}
-            <!-- CSS fabric texture fallback -->
             <div style="position:absolute;inset:0;background:
               repeating-linear-gradient(90deg,rgba(200,144,58,.07) 0px,rgba(200,144,58,.07) 1px,transparent 1px,transparent 14px),
               repeating-linear-gradient(0deg,rgba(200,144,58,.07) 0px,rgba(200,144,58,.07) 1px,transparent 1px,transparent 14px),
               repeating-linear-gradient(45deg,rgba(200,144,58,.04) 0px,rgba(200,144,58,.04) 1px,transparent 1px,transparent 10px),
               linear-gradient(160deg,#1e1005,#2a1608,#160d03);"></div>
-            <div style="position:absolute;top:12px;left:12px;background:rgba(200,144,58,.15);border:1px solid rgba(200,144,58,.3);border-radius:6px;padding:5px 10px;">
-              <div style="font-size:9px;font-weight:700;letter-spacing:.1em;color:#C8903A;text-transform:uppercase;">Fabric</div>
-              <div style="font-size:11px;color:rgba(250,240,228,.85);margin-top:2px;">Premium Cotton</div>
+            <div style="position:absolute;top:10px;left:10px;background:rgba(200,144,58,.15);border:1px solid rgba(200,144,58,.3);border-radius:6px;padding:4px 9px;">
+              <div style="font-size:8px;font-weight:700;letter-spacing:.1em;color:#C8903A;text-transform:uppercase;">Fabric</div>
+              <div style="font-size:10px;color:rgba(250,240,228,.85);margin-top:2px;">Premium Cotton</div>
             </div>
-            <div style="position:absolute;bottom:14px;left:0;right:0;display:flex;justify-content:center;gap:6px;">
-              <div style="width:18px;height:18px;border-radius:50%;background:#2B5C8A;border:2px solid rgba(255,255,255,.4);"></div>
-              <div style="width:18px;height:18px;border-radius:50%;background:#8B2525;border:2px solid rgba(255,255,255,.4);"></div>
-              <div style="width:18px;height:18px;border-radius:50%;background:#1a1008;border:2px solid rgba(200,144,58,.6);box-shadow:0 0 0 1px #C8903A;"></div>
-              <div style="width:18px;height:18px;border-radius:50%;background:#4A6741;border:2px solid rgba(255,255,255,.4);"></div>
+            <div style="position:absolute;bottom:12px;left:0;right:0;display:flex;justify-content:center;gap:6px;">
+              <div style="width:16px;height:16px;border-radius:50%;background:#2B5C8A;border:2px solid rgba(255,255,255,.4);"></div>
+              <div style="width:16px;height:16px;border-radius:50%;background:#8B2525;border:2px solid rgba(255,255,255,.4);"></div>
+              <div style="width:16px;height:16px;border-radius:50%;background:#1a1008;border:2px solid rgba(200,144,58,.6);box-shadow:0 0 0 1px #C8903A;"></div>
+              <div style="width:16px;height:16px;border-radius:50%;background:#4A6741;border:2px solid rgba(255,255,255,.4);"></div>
             </div>
             {% endif %}
           </div>
 
-          <!-- Right card: mannequin / custom AI preview media -->
+          <!-- Right card: AI preview / mannequin -->
           <div style="border-radius:10px;overflow:hidden;aspect-ratio:2/3;background:linear-gradient(160deg,#e8ddd0,#d4c8b8);position:relative;">
             {% if _aip_c.get('right_media') %}
               {% if _aip_c.get('right_media_type') == 'video' %}
@@ -1073,9 +1068,7 @@ fetch('/api/occasions/upcoming').then(function(r){return r.json();}).then(functi
               <img src="{{ _aip_c['right_media'] }}" alt="AI Preview" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" loading="lazy">
               {% endif %}
             {% else %}
-            <!-- Mannequin SVG silhouette wearing a blazer -->
             <svg viewBox="0 0 160 240" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block;">
-              <!-- Background warm beige -->
               <rect width="160" height="240" fill="url(#bgGrad)"/>
               <defs>
                 <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
@@ -1090,78 +1083,84 @@ fetch('/api/occasions/upcoming').then(function(r){return r.json();}).then(functi
                   <stop offset="0%" stop-color="#2a3826"/>
                   <stop offset="100%" stop-color="#1e2a1a"/>
                 </linearGradient>
-                <!-- Subtle fabric texture lines -->
                 <pattern id="weave" width="4" height="4" patternUnits="userSpaceOnUse">
                   <line x1="0" y1="0" x2="4" y2="4" stroke="rgba(255,255,255,.04)" stroke-width=".5"/>
                   <line x1="4" y1="0" x2="0" y2="4" stroke="rgba(255,255,255,.03)" stroke-width=".5"/>
                 </pattern>
               </defs>
-              <!-- Neck + head silhouette -->
               <ellipse cx="80" cy="24" rx="16" ry="18" fill="#c8a882"/>
-              <!-- Neck -->
               <rect x="74" y="38" width="12" height="14" rx="4" fill="#c8a882"/>
-              <!-- Shoulders broad -->
               <path d="M20 62 Q80 52 140 62 L138 75 Q80 65 22 75Z" fill="url(#fabricGrad)"/>
-              <!-- Jacket body -->
               <path d="M22 75 L18 170 L142 170 L138 75 Q80 65 22 75Z" fill="url(#fabricGrad)"/>
-              <!-- Fabric texture overlay -->
               <path d="M22 75 L18 170 L142 170 L138 75 Q80 65 22 75Z" fill="url(#weave)"/>
-              <!-- Left lapel -->
               <path d="M80 68 L60 80 L65 140 L80 135Z" fill="url(#lapelGrad)" opacity=".9"/>
-              <!-- Right lapel -->
               <path d="M80 68 L100 80 L95 140 L80 135Z" fill="url(#lapelGrad)" opacity=".9"/>
-              <!-- Shirt/tie peak inside lapels -->
               <path d="M80 72 L76 90 L80 88 L84 90Z" fill="#e8ddd0" opacity=".8"/>
-              <!-- Center button line -->
               <line x1="80" y1="95" x2="80" y2="165" stroke="rgba(200,144,58,.5)" stroke-width=".8"/>
-              <!-- Buttons -->
               <circle cx="80" cy="108" r="2.5" fill="#C8903A" opacity=".9"/>
               <circle cx="80" cy="122" r="2.5" fill="#C8903A" opacity=".9"/>
               <circle cx="80" cy="136" r="2.5" fill="#C8903A" opacity=".9"/>
-              <!-- Left sleeve -->
               <path d="M22 75 L8 140 L20 145 L30 85Z" fill="url(#fabricGrad)"/>
               <path d="M22 75 L8 140 L20 145 L30 85Z" fill="url(#weave)"/>
-              <!-- Right sleeve -->
               <path d="M138 75 L152 140 L140 145 L130 85Z" fill="url(#fabricGrad)"/>
               <path d="M138 75 L152 140 L140 145 L130 85Z" fill="url(#weave)"/>
-              <!-- Pocket square (left breast) -->
               <rect x="42" y="90" width="16" height="10" rx="1" fill="#C8903A" opacity=".7" transform="rotate(-3 50 95)"/>
-              <!-- Gold pocket details -->
               <line x1="42" y1="90" x2="58" y2="90" stroke="#e0a84a" stroke-width=".8" opacity=".6"/>
-              <!-- Trouser top -->
               <rect x="40" y="168" width="35" height="75" rx="4" fill="url(#fabricGrad)" opacity=".95"/>
               <rect x="85" y="168" width="35" height="75" rx="4" fill="url(#fabricGrad)" opacity=".95"/>
-              <!-- Trouser crease -->
               <line x1="57" y1="168" x2="57" y2="243" stroke="rgba(255,255,255,.08)" stroke-width="1"/>
               <line x1="103" y1="168" x2="103" y2="243" stroke="rgba(255,255,255,.08)" stroke-width="1"/>
-              <!-- Belt -->
               <rect x="38" y="164" width="84" height="8" rx="2" fill="#3d2b10" opacity=".9"/>
               <rect x="76" y="165" width="8" height="6" rx="1" fill="#C8903A" opacity=".9"/>
             </svg>
-            <!-- AI Preview badge -->
             {% endif %}
             <div style="position:absolute;top:10px;right:10px;background:linear-gradient(135deg,#C8903A,#e0a84a);color:#1a0e00;font-size:9px;font-weight:800;letter-spacing:.08em;padding:4px 10px;border-radius:20px;">AI PREVIEW</div>
           </div>
         </div>
         <!-- Status bar -->
-        <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:rgba(200,144,58,.08);border-radius:8px;">
-          <div style="width:8px;height:8px;border-radius:50%;background:#4ade80;flex-shrink:0;animation:pulse 2s infinite;"></div>
+        <div style="display:flex;align-items:center;gap:10px;padding:11px 13px;background:rgba(200,144,58,.08);border-radius:8px;">
+          <div style="width:8px;height:8px;border-radius:50%;background:#4ade80;flex-shrink:0;animation:aip-pulse 2s infinite;"></div>
           <span style="font-size:12px;color:rgba(250,240,228,.7);">AI is rendering your preview...</span>
           <div style="margin-left:auto;font-size:11px;color:#C8903A;font-weight:700;">~30s</div>
         </div>
       </div>
-      <div style="position:absolute;top:-16px;left:50%;transform:translateX(-50%);background:#C8903A;color:#1a0e00;font-size:11px;font-weight:800;letter-spacing:.08em;padding:5px 16px;border-radius:20px;white-space:nowrap;">LIVE DEMO</div>
+      <div style="position:absolute;top:-15px;left:50%;transform:translateX(-50%);background:#C8903A;color:#1a0e00;font-size:11px;font-weight:800;letter-spacing:.08em;padding:5px 16px;border-radius:20px;white-space:nowrap;">LIVE DEMO</div>
     </div>
+
+    <!-- Description + pills + CTA -->
+    <p style="font-size:15px;color:rgba(250,240,228,.65);line-height:1.75;margin:0 auto 28px;max-width:480px;">
+      Choose your fabric, collar, fit and style — our AI renders a real photo of your finished garment in seconds. No more guesswork. What you see is what we stitch.
+    </p>
+
+    <!-- Feature pills -->
+    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:36px;justify-content:center;">
+      <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:9px 15px;font-size:12.5px;color:rgba(250,240,228,.8);">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#C8903A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Result in ~30 seconds
+      </div>
+      <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:9px 15px;font-size:12.5px;color:rgba(250,240,228,.8);">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#C8903A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V22H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+        3 free previews
+      </div>
+      <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:9px 15px;font-size:12.5px;color:rgba(250,240,228,.8);">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#C8903A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.57a2 2 0 0 0-1.34-2.23z"/></svg>
+        Shirts, suits, kurtas &amp; more
+      </div>
+    </div>
+
+    <a href="/ai-customize" style="display:inline-flex;align-items:center;gap:10px;background:linear-gradient(135deg,#C8903A,#e0a84a);color:#1a0e00;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:16px 36px;border-radius:6px;text-decoration:none;transition:transform .2s,box-shadow .2s;box-shadow:0 4px 24px rgba(200,144,58,.35);" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 32px rgba(200,144,58,.5)'" onmouseout="this.style.transform='';this.style.boxShadow='0 4px 24px rgba(200,144,58,.35)'">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      Open AI Style Studio
+    </a>
+    <div style="margin-top:14px;font-size:12px;color:rgba(250,240,228,.35);">No account needed for your first free preview</div>
 
   </div>
 
-  <!-- Mobile: show button centered below -->
   <style>
-    @media(max-width:768px){
-      #aiPreview .aip-grid{grid-template-columns:1fr!important;}
-      #aiPreview .aip-right{display:none!important;}
+    @keyframes aip-pulse{0%,100%{opacity:1}50%{opacity:.4}}
+    @media(max-width:480px){
+      #aiPreview{padding:60px 16px;}
     }
-    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
   </style>
 </section>
 {% endif %}
