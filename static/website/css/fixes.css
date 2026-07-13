@@ -225,72 +225,18 @@ img,video,iframe{max-width:100%;height:auto;}
   .nav-inner{height:80px!important;}
 }
 
-/* ── HERO MOBILE — badge top, eyebrow 1 line, title, tagline, 3 buttons fill screen ── */
+/* ── HERO MOBILE ── */
 @media(max-width:768px){
-  /* Hero fills screen below header */
-  .hero{
-    min-height:calc(100svh - 116px)!important;
-    align-items:flex-start!important;
-  }
-  /* Content as column, spread top-to-bottom */
-  .hero-content{
-    display:flex!important;
-    flex-direction:column!important;
-    justify-content:space-between!important;
-    min-height:calc(100svh - 116px)!important;
-    padding:1.25rem 1.5rem 2rem!important;
-    text-align:center!important;
-    width:100%!important;
-  }
-  /* 1. Badge — near top, small, clear */
-  .hero-ai-badge{
-    font-size:11px!important;
-    padding:5px 14px!important;
-    margin-bottom:0!important;
-    display:inline-flex!important;
-    align-self:center!important;
-  }
-  /* 2. Eyebrow — Subhash Chowk line, single line no wrap */
-  .hero-eyebrow{
-    font-size:9px!important;
-    gap:8px!important;
-    justify-content:center!important;
-    margin:0.75rem 0 0!important;
-    white-space:nowrap!important;
-    overflow:hidden!important;
-  }
-  .eyebrow-line{flex:0 0 16px!important;}
-  /* 3. Main title */
-  .hero-title{
-    font-size:clamp(36px,10vw,56px)!important;
-    line-height:.95!important;
-    margin:0.75rem 0 0!important;
-    text-align:center!important;
-  }
-  .hero-title em{font-size:clamp(30px,9vw,48px)!important;display:block!important;}
-  /* 4. Tagline */
-  .hero-sub{
-    font-size:13px!important;
-    max-width:300px!important;
-    text-align:center!important;
-    margin:0.75rem auto 0!important;
-    line-height:1.55!important;
-  }
-  /* 5. Three buttons — fill bottom, stretch full width */
-  .hero-actions{
-    flex-direction:column!important;
-    align-items:stretch!important;
-    gap:8px!important;
-    padding:0!important;
-    margin-top:auto!important;
-  }
-  .hero-btn-ghost,.hero-btn-primary{
-    width:100%!important;
-    justify-content:center!important;
-    padding:13px 16px!important;
-    font-size:12px!important;
-    letter-spacing:.06em!important;
-  }
+  .hero{min-height:calc(100svh - 116px)!important;align-items:center!important;}
+  .hero-content{padding:2.5rem 1.75rem 3rem!important;text-align:center!important;width:100%!important;}
+  .hero-ai-badge{font-size:11px!important;padding:6px 16px!important;margin-bottom:2rem!important;display:inline-flex!important;}
+  .hero-eyebrow{font-size:9px!important;gap:10px!important;justify-content:center!important;margin-bottom:1.75rem!important;white-space:nowrap!important;overflow:hidden!important;}
+  .eyebrow-line{flex:0 0 18px!important;}
+  .hero-title{font-size:clamp(40px,11vw,60px)!important;line-height:.95!important;margin-bottom:1.25rem!important;text-align:center!important;}
+  .hero-title em{font-size:clamp(34px,10vw,52px)!important;display:block!important;}
+  .hero-sub{font-size:14px!important;max-width:300px!important;text-align:center!important;margin:0 auto 2.5rem!important;line-height:1.65!important;}
+  .hero-actions{flex-direction:column!important;align-items:stretch!important;gap:10px!important;padding:0 0.5rem!important;}
+  .hero-btn-ghost,.hero-btn-primary{width:100%!important;justify-content:center!important;padding:14px 16px!important;font-size:12px!important;letter-spacing:.06em!important;}
   .hero-promise{display:none!important;}
   .hero-scroll{display:none!important;}
 }
