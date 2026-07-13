@@ -257,7 +257,7 @@ img,video,iframe{max-width:100%;height:auto;}
 .ac-card .ac-cta:hover{background:#FAF0E4!important;}
 .ac-card:hover{border-color:rgba(250,240,228,.18)!important;box-shadow:0 12px 40px rgba(0,0,0,.4)!important;}
 /* Dark card (02) stays same but flip to make it lighter */
-.ac-card--dark{background:var(--bg)!important;border-color:var(--border)!important;}
+.ac-card--dark{background:var(--bg)!important;border-color:rgba(92,52,32,.45)!important;}
 .ac-card--dark .ac-title{color:var(--dark)!important;}
 .ac-card--dark .ac-desc,.ac-card--dark .ac-who{color:var(--muted)!important;}
 .ac-card--dark .ac-for{color:var(--gold)!important;}
