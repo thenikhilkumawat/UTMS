@@ -5,6 +5,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 website_bp = Blueprint("website", __name__)
 
+FREE_PREVIEW_LIMIT = 3   # Anonymous visitors get this many free AI previews
+
 # ── Rate-limiter import ───────────────────────────────────────────────────────
 # Imported from the shared singleton so no circular dependency with run.py.
 from app.extensions import limiter as _limiter, LIMITER_AVAILABLE as _LIMITER_AVAILABLE
@@ -1861,15 +1863,24 @@ def generate_style_preview():
 
     # ── Free-preview limit gate ──────────────────────────────────────────────
     acc = _current_account()
+    db  = get_db()
     if not acc:
+        # Anonymous: enforce session-based free limit
         used = session.get("preview_count", 0)
         if used >= FREE_PREVIEW_LIMIT:
             return jsonify({
                 "ok": False, "need_login": True,
                 "error": f"You've used your {FREE_PREVIEW_LIMIT} free previews. Log in or create a free account to keep going."
             })
-
-    db = get_db()
+    else:
+        # Logged-in: enforce token balance
+        tok_row = db.execute("SELECT token_balance FROM web_accounts WHERE id=?", (acc["id"],)).fetchone()
+        tok_bal = (tok_row["token_balance"] or 0) if tok_row else 0
+        if tok_bal <= 0:
+            return jsonify({
+                "ok": False, "need_tokens": True,
+                "error": "You have no credits left. Buy a token pack to continue generating."
+            })
     try:
         row = db.execute("SELECT value FROM settings WHERE key='replicate_api_key'").fetchone()
         api_key = row["value"].strip() if row and row["value"] else None
@@ -1969,10 +1980,19 @@ def generate_style_preview():
         result = resp.json()
 
         def _record_and_respond(img_url):
-            """Credit usage + return response."""
+            """Deduct credit / increment counter, then return response."""
             try:
                 if acc:
-                    db.execute("UPDATE web_accounts SET preview_count = COALESCE(preview_count,0)+1 WHERE id=?", (acc["id"],))
+                    # Deduct 1 token + log the transaction
+                    db.execute(
+                        "UPDATE web_accounts SET token_balance = MAX(0, COALESCE(token_balance,0)-1), "
+                        "preview_count = COALESCE(preview_count,0)+1 WHERE id=?",
+                        (acc["id"],)
+                    )
+                    db.execute(
+                        "INSERT INTO token_transactions (account_id, tokens, type) VALUES (?,?,'debit')",
+                        (acc["id"], -1)
+                    )
                     db.commit()
                     remaining = None
                     tok = db.execute("SELECT token_balance FROM web_accounts WHERE id=?", (acc["id"],)).fetchone()

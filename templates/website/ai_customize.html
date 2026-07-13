@@ -653,6 +653,13 @@ function asGenerate(){
       document.getElementById('asGate').classList.add('show');
       return;
     }
+    if(d.need_tokens){
+      // Logged in but out of credits — open buy-tokens modal
+      asOpenTokenModal();
+      var msg = document.getElementById('asGateMsg');
+      if(msg) msg.textContent = d.error || 'No credits left. Buy tokens to continue.';
+      return;
+    }
     if(!d.ok){ alert(d.error||'Generation failed.'); return; }
     AS.resultUrl = d.image_url||d.url||'';
     document.getElementById('asResultImg').src = AS.resultUrl;
