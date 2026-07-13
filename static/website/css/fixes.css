@@ -229,7 +229,7 @@ img,video,iframe{max-width:100%;height:auto;}
 @media(max-width:768px){
   .hero{min-height:calc(100svh - 116px)!important;align-items:center!important;}
   .hero-content{padding:2.5rem 1.75rem 3rem!important;text-align:center!important;width:100%!important;}
-  .hero-ai-badge{font-size:11px!important;padding:6px 16px!important;margin-bottom:2rem!important;display:inline-flex!important;}
+  .hero-ai-badge{font-size:12.5px!important;padding:6px 16px!important;margin-bottom:2rem!important;display:inline-flex!important;}
   .hero-eyebrow{font-size:9px!important;gap:10px!important;justify-content:center!important;margin-bottom:1.75rem!important;white-space:nowrap!important;overflow:hidden!important;}
   .eyebrow-line{flex:0 0 18px!important;}
   .hero-title{font-size:clamp(40px,11vw,60px)!important;line-height:.95!important;margin-bottom:1.25rem!important;text-align:center!important;}
