@@ -211,6 +211,7 @@
 .wa-fab:hover{width:auto;height:50px;padding:0 20px 0 14px;gap:9px;box-shadow:0 8px 28px rgba(37,211,102,.5);transform:translateY(-2px);}
 .wa-fab svg{flex-shrink:0;}
 .wa-fab-label{font-size:13px;font-weight:700;max-width:0;opacity:0;overflow:hidden;transition:max-width .25s .05s,opacity .2s;}
+body.drawer-open .wa-fab,body.drawer-open .supp-fab{display:none!important;visibility:hidden!important;}
 .wa-fab:hover .wa-fab-label{max-width:160px;opacity:1;}
 </style>
 {% block head %}{% endblock %}
@@ -598,10 +599,11 @@ function _checkOverlay(){
   document.getElementById('navOverlay').classList.toggle('open',anyOpen);
   if(!anyOpen)document.body.style.overflow='';
   /* hide WA FAB and support FAB whenever any drawer is open */
+  document.body.classList.toggle('drawer-open', anyOpen);
   var waFab=document.querySelector('.wa-fab');
   if(waFab)waFab.style.display=anyOpen?'none':'';
   var suppFab=document.getElementById('suppFab');
-  if(suppFab)suppFab.style.visibility=anyOpen?'hidden':'';
+  if(suppFab)suppFab.style.display=anyOpen?'none':'';
 }
 
 /* ── Wishlist ── */
@@ -707,6 +709,7 @@ function openWishlist(){
   document.getElementById('wlPanel').classList.add('open');
   document.getElementById('navOverlay').classList.add('open');
   document.body.style.overflow='hidden';
+  _checkOverlay();
 }
 function closeWishlist(){
   document.getElementById('wlPanel').classList.remove('open');
