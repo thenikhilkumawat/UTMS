@@ -259,6 +259,19 @@ def get_prices():
     except:
         return DEFAULT_PRICES.copy()
 
+def _current_account():
+    """Return the logged-in web_accounts row from session, or None."""
+    acc_id = session.get("web_account_id")
+    if not acc_id:
+        return None
+    try:
+        return get_db().execute(
+            "SELECT * FROM web_accounts WHERE id=? AND is_active=1", (acc_id,)
+        ).fetchone()
+    except Exception:
+        return None
+
+
 @website_bp.route("/")
 def home():
     import json as _json

@@ -2198,20 +2198,28 @@ function aiAdmTab(name, btn){
 
 // ── Key config ──
 function aiToggleKeyVis(){
+  var inp=document.getElementById('ai_replicate_key');
+  if(!inp)return;
+  inp.type=inp.type==='password'?'text':'password';
+}
 function aiSaveRzpKeys(){
   var id  = (document.getElementById('ai_rzp_key_id')||{}).value||'';
   var sec = (document.getElementById('ai_rzp_key_secret')||{}).value||'';
   var st  = document.getElementById('aiRzpStatus');
-  st.textContent='Saving…';
+  if(!st) return;
+  if(!id.trim()||!sec.trim()){st.style.color='red';st.textContent='Enter both Key ID and Secret';return;}
+  st.style.color='#7a6a58'; st.textContent='Saving…';
   Promise.all([
-    apiFetch('/owner/website/settings/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'razorpay_key_id',value:id.trim()})}),
-    apiFetch('/owner/website/settings/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'razorpay_key_secret',value:sec.trim()})})
-  ]).then(function(){ st.style.color='green'; st.textContent='✓ Saved'; })
-    .catch(function(){ st.style.color='red'; st.textContent='Error saving'; });
-}
-  var inp=document.getElementById('ai_replicate_key');
-  if(!inp)return;
-  inp.type=inp.type==='password'?'text':'password';
+    apiFetch('/owner/website/settings/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'razorpay_key_id',value:id.trim()})}).then(function(r){return r.json();}),
+    apiFetch('/owner/website/settings/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'razorpay_key_secret',value:sec.trim()})}).then(function(r){return r.json();})
+  ]).then(function(results){
+    if(results[0].ok && results[1].ok){
+      st.style.color='green'; st.textContent='✓ Keys saved successfully';
+      toast('Razorpay keys saved!');
+    } else {
+      st.style.color='red'; st.textContent='✗ Error saving keys';
+    }
+  }).catch(function(e){ st.style.color='red'; st.textContent='✗ Network error: '+e.message; });
 }
 function aiSaveKey(){
   var val=(document.getElementById('ai_replicate_key')||{}).value||'';
