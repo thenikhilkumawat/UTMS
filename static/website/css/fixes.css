@@ -14,18 +14,26 @@
 .hiw-num{color:rgba(250,240,228,.15)!important;}
 /* MOBILE - announcement bar stays visible */
 @media(max-width:768px){
-  .ann-bar{display:block!important;height:32px;}
-  .ann-item{font-size:10px;padding:0 1.5rem;}
-  .nav{top:32px!important;}
-  .hero,.page-hero,.contact-page,.services-hero,.com-header{margin-top:102px!important;}
+  /* 1. Ann bar: same height as desktop (36px), same speed (32s) */
+  .ann-bar{display:block!important;height:36px!important;}
+  .ann-track{animation-duration:32s!important;}
+  .ann-item{font-size:10px;padding:0 1.5rem;height:36px;}
+  .nav{top:36px!important;}
+  /* 2. Icons tight on right so logo stays centered */
+  .nav-right{gap:2px!important;}
+  .nav-icon-btn{padding:5px!important;}
+  /* Adjust margins for taller ann-bar */
+  .hero,.page-hero,.contact-page,.services-hero,.com-header{margin-top:116px!important;}
   .com-summary{position:static!important;order:-1!important;top:0!important;}
   .nav-inner{height:70px;}
 }
 @media(max-width:480px){
-  .ann-bar{height:30px;}
-  .ann-item{font-size:9px;padding:0 1rem;}
-  .nav{top:30px!important;}
-  .hero,.page-hero,.contact-page,.services-hero,.com-header{margin-top:100px!important;}
+  .ann-bar{height:36px!important;}
+  .ann-track{animation-duration:32s!important;}
+  .ann-item{font-size:9px;padding:0 1rem;height:36px;}
+  .nav{top:36px!important;}
+  .nav-right{gap:1px!important;}
+  .hero,.page-hero,.contact-page,.services-hero,.com-header{margin-top:116px!important;}
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -221,7 +229,7 @@ img,video,iframe{max-width:100%;height:auto;}
 
 /* ── 2 & 3. HERO — centered text, 3 buttons stacked properly ── */
 @media(max-width:768px){
-  .hero{min-height:100svh!important;align-items:center!important;}
+  .hero{min-height:calc(100svh - 116px)!important;align-items:center!important;}
   .hero-content{padding:2rem 1.5rem 3rem!important;text-align:center!important;width:100%!important;}
   .hero-ai-badge{font-size:10px!important;padding:5px 14px!important;margin-bottom:1.5rem!important;display:inline-flex!important;}
   .hero-eyebrow{font-size:9px!important;gap:8px!important;justify-content:center!important;margin-bottom:1.25rem!important;}
