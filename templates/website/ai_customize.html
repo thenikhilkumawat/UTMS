@@ -19,7 +19,7 @@
 .as-page *{box-sizing:border-box;}
 
 /* Hero */
-.as-hero{background:var(--as-hero);padding:100px 1rem 52px;text-align:center;background-image:radial-gradient(ellipse 80% 60% at 50% 0%,#4a2e10,#2e1a0e 70%);position:relative;overflow:hidden;}
+.as-hero{background:var(--as-hero);padding:140px 1rem 60px;text-align:center;background-image:radial-gradient(ellipse 80% 60% at 50% 0%,#4a2e10,#2e1a0e 70%);position:relative;overflow:hidden;}
 .as-hero::after{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='40' height='40' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='1' cy='1' r='1' fill='%23c9a55a' fill-opacity='.07'/%3E%3C/svg%3E");}
 .as-hi{position:relative;z-index:1;}
 .as-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(201,165,90,.18);border:1px solid rgba(201,165,90,.35);color:#c9a55a;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:5px 14px;border-radius:20px;margin-bottom:18px;}
@@ -211,7 +211,7 @@
     <p>Pick your garment, fabric and style details — see a photorealistic preview, then order instantly.</p>
     <div class="as-hero-stats">
       <div class="as-stat"><strong>3</strong><span>Free Previews</span></div>
-      <div class="as-stat"><strong>~30s</strong><span>Generation Time</span></div>
+      <div class="as-stat"><strong>30s</strong><span>Generation Time</span></div>
       <div class="as-stat"><strong>8+</strong><span>Garment Types</span></div>
     </div>
   </div>
@@ -505,8 +505,7 @@ function asGoStep(n){
   if(n===2) asFilterFabrics();
   if(n===3) asLoadStyleOptions();
   if(n===4) asRenderSummary();
-  // Only scroll when changing steps, not within a step
-  window.scrollTo({top:0, behavior:'smooth'});
+  // No scroll — user stays at their current position
 }
 
 // ── Fabric ──
@@ -771,3 +770,4 @@ function escAtt(s){ return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'
 document.getElementById('asFabSkip').classList.add('sel');
 </script>
 {% endblock %}
+                                                

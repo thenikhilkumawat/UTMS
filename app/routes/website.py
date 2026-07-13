@@ -1,9 +1,20 @@
-from flask import Blueprint, render_template, abort, request, jsonify, redirect, url_for, session
+from flask import Blueprint, render_template, abort, request, jsonify, redirect, url_for, session, current_app
 from database import get_db
 from datetime import date, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 
 website_bp = Blueprint("website", __name__)
+
+# ── Rate-limiter import ───────────────────────────────────────────────────────
+# Imported from the shared singleton so no circular dependency with run.py.
+from app.extensions import limiter as _limiter, LIMITER_AVAILABLE as _LIMITER_AVAILABLE
+
+def _rl(limit_str):
+    """Apply a rate-limit decorator only when flask-limiter is installed.
+    Falls back to a no-op decorator so nothing breaks if the package is missing."""
+    if _LIMITER_AVAILABLE and _limiter is not None:
+        return _limiter.limit(limit_str)
+    return lambda fn: fn  # no-op
 
 # ── SEO helpers ──────────────────────────────────────────────────────────────
 import re as _re_seo
@@ -119,7 +130,7 @@ def get_commission_settings():
             "trust_pill_4":    s.get("commission_trust_4", "Rs. 100 off your first order"),
             "urgent_title":    s.get("commission_urgent_title", "Urgent order"),
             "urgent_sub":      s.get("commission_urgent_sub", "+Rs. 99 extra \u2022 Delivered in 1\u20133 days (simple items only)"),
-            "advance_pct":     int(s.get("commission_advance_pct", "50") or 50),
+            "advance_pct":     int(s.get("commission_advance_pct", "30") or 30),
         }
     except Exception:
         return {}
@@ -630,23 +641,6 @@ def api_daily_craft_latest():
     except Exception as ex:
         return jsonify({"ok": False, "error": str(ex)})
 
-@website_bp.route("/ai-customize")
-def ai_customize():
-    db = get_db()
-    try:
-        fabrics = [dict(f) for f in db.execute("SELECT id,name,image_url,fabric_type FROM web_fabrics WHERE active=1 ORDER BY sort_order").fetchall()]
-    except Exception:
-        fabrics = []
-    try:
-        items = [dict(i) for i in db.execute("SELECT id,name,image_url FROM web_service_items ORDER BY sort_order,id").fetchall()]
-    except Exception:
-        items = []
-    return render_template("website/ai_customize.html",
-        fabrics=fabrics, items=items,
-        page_meta={"title":"AI Style Studio — Uttam Tailors",
-                   "desc":"Design your perfect custom garment with AI. See a photorealistic preview before ordering.",
-                   "robots":"index,follow","og_image":"","canonical":""})
-
 @website_bp.route("/privacy")
 @website_bp.route("/privacy-policy")
 def privacy_policy():
@@ -719,6 +713,7 @@ def commission():
         "robots": "index,follow",
         "og_image": cs.get("header_image", ""),
     }
+    # Pass logged-in user info for prefill
     _current_user = None
     _web_acc_id = session.get("web_account_id")
     if _web_acc_id:
@@ -770,7 +765,7 @@ def api_track_order():
         db = get_db()
         if code:
             row = db.execute(
-                "SELECT o.*, c.name as cust_name, c.mobile as cust_mobile, c.email as cust_email "
+                "SELECT o.*, c.name as cust_name, c.mobile as cust_mobile "
                 "FROM orders o LEFT JOIN customers c ON c.id=o.customer_id "
                 "WHERE o.order_code=? LIMIT 1", (code,)
             ).fetchone()
@@ -782,7 +777,7 @@ def api_track_order():
             if not cust:
                 return jsonify({"ok": False, "error": "Not found"})
             row = db.execute(
-                "SELECT o.*, c.name as cust_name, c.mobile as cust_mobile, c.email as cust_email "
+                "SELECT o.*, c.name as cust_name, c.mobile as cust_mobile "
                 "FROM orders o LEFT JOIN customers c ON c.id=o.customer_id "
                 "WHERE o.customer_id=? ORDER BY o.id DESC LIMIT 1", (cust["id"],)
             ).fetchone()
@@ -802,27 +797,6 @@ def api_track_order():
         cust_name    = o.get("cust_name") or (note_parts[0] if note_parts else "")
         cust_mobile  = o.get("cust_mobile") or ""
         cust_address = o.get("address") or ""
-        # Email from web_accounts
-        cust_email = o.get("cust_email") or ""
-        if not cust_email and cust_mobile:
-            try:
-                wa_row = db.execute("SELECT email FROM web_accounts WHERE mobile=? LIMIT 1", (cust_mobile,)).fetchone()
-                if wa_row: cust_email = wa_row["email"] or ""
-            except Exception: pass
-        # Product image from web_service_items
-        garment_img = ""
-        try:
-            gi = db.execute("SELECT image_url FROM web_service_items WHERE LOWER(name)=LOWER(?) LIMIT 1", (garment,)).fetchone()
-            if gi: garment_img = gi["image_url"] or ""
-        except Exception: pass
-        # Size / measurement method from note
-        size_info = ""
-        meas_method = ""
-        for p in note_parts:
-            if p.lower().startswith("meas:"):
-                meas_method = p[5:].strip().replace("_"," ").title()
-            elif p.lower().startswith("size:"):
-                size_info = p[5:].strip()
 
         # Live stitch stage
         stage_row = None
@@ -850,16 +824,12 @@ def api_track_order():
                 "garment":          garment,
                 "cust_name":        cust_name,
                 "cust_mobile":      cust_mobile,
-                "cust_email":       cust_email,
                 "cust_address":     cust_address,
-                "garment_img":      garment_img,
-                "size_info":        size_info,
-                "meas_method":      meas_method,
                 "order_date":       o.get("order_date", ""),
                 "delivery_date":    o.get("delivery_date", ""),
                 "remaining":        o.get("remaining", 0),
                 "total":            o.get("total_amount", 0),
-                "advance":          o.get("advance_paid", 0),
+                "advance":          o.get("advance_amount", 0),
                 "stage":            stage,
                 "stitch_note":      stage_row["note"] if stage_row else "",
                 "is_home_delivery": is_home_delivery,
@@ -887,27 +857,18 @@ def contact():
 @website_bp.route("/order-confirmed")
 def order_confirmed():
     from flask import request as _req
-    order_id   = _req.args.get("id", type=int)
-    order_code = _req.args.get("code", "").strip()
+    order_id = _req.args.get("id", type=int)
     order = None
-    try:
-        db = get_db()
-        if order_code:
+    if order_id:
+        try:
+            db = get_db()
             row = db.execute(
-                "SELECT o.*, COALESCE(c.name,'—') as cname FROM orders o LEFT JOIN customers c ON c.id=o.customer_id WHERE o.order_code=? LIMIT 1",
-                (order_code,)
+                "SELECT * FROM orders WHERE id=?", (order_id,)
             ).fetchone()
-        elif order_id:
-            row = db.execute(
-                "SELECT o.*, COALESCE(c.name,'—') as cname FROM orders o LEFT JOIN customers c ON c.id=o.customer_id WHERE o.id=? LIMIT 1",
-                (order_id,)
-            ).fetchone()
-        else:
-            row = None
-        if row:
-            order = dict(row)
-    except Exception:
-        pass
+            if row:
+                order = dict(row)
+        except Exception:
+            pass
     return render_template("website/order_confirmed.html", order=order)
 
 
@@ -968,8 +929,8 @@ def create_order():
         fabric_cost = float(request.form.get("fabric_cost", 0) or 0)
         total_amount += fabric_cost
 
-        # Urgent surcharge — flat Rs. 99
-        extra_charges = 99.0 if is_urgent else 0.0
+        # Urgent surcharge 10%
+        extra_charges = round(total_amount * 0.10, 2) if is_urgent else 0.0
         payable_amount = round(total_amount + extra_charges, 2)
 
         # ── Coupon discount (server-side re-validation) ──
@@ -1016,14 +977,15 @@ def create_order():
         note = " | ".join(note_parts)
 
         # Insert order
+        _web_acc_id_order = session.get("web_account_id")
         db.execute(
             """INSERT INTO orders(order_code,customer_id,order_date,delivery_date,
                total_amount,extra_charges,payable_amount,advance_paid,remaining,
-               payment_mode,status,is_urgent,note,created_at)
-               VALUES(?,?,?,?,?,?,?,?,?,'pending','pending',?,?,?)""",
+               payment_mode,status,is_urgent,note,web_account_id,created_at)
+               VALUES(?,?,?,?,?,?,?,?,?,'pending','pending',?,?,?,?)""",
             (order_code, customer_id, today, delivery_date,
              total_amount, extra_charges, payable_amount,
-             advance_paid, remaining, is_urgent, note, now)
+             advance_paid, remaining, is_urgent, note, _web_acc_id_order, now)
         )
         order_row = db.execute(
             "SELECT id FROM orders WHERE order_code=?", (order_code,)
@@ -1073,13 +1035,14 @@ def create_order():
         # ── Email + FCM confirmation ──────────────────────────────────────────
         if order_id:
             try:
-                _cust_email = ""
                 _web_acc_id = session.get("web_account_id")
+                # Email: prefer web account email, fallback to form field
+                _cust_email = (request.form.get("cust_email") or "").strip()
                 if _web_acc_id:
                     _acc_row = db.execute(
                         "SELECT email FROM web_accounts WHERE id=? LIMIT 1", (_web_acc_id,)
                     ).fetchone()
-                    if _acc_row:
+                    if _acc_row and (_acc_row["email"] or "").strip():
                         _cust_email = (_acc_row["email"] or "").strip()
                 if _cust_email:
                     from app.utils.email_notify import send_order_email as _oe
@@ -1586,12 +1549,15 @@ def build_img2img_style_prompt(garment, styles, ai_map=None):
                 "same design — just present it as a clean professional catalog product photo "
                 "on a plain white background.")
 
-    changes = "; ".join(style_terms)
+    # Number each change so the model treats each as an individual requirement
+    numbered = " ".join(f"({i+1}) {t}" for i, t in enumerate(style_terms))
     return (
-        f"Edit this garment photo: {changes}. "
-        "IMPORTANT: keep the exact same fabric color, pattern, print and texture as the original photo — "
-        "do not change the color or material. Keep it a clean professional fashion catalog product photo "
-        "on a plain white background, studio lighting, no people, no mannequin, garment only."
+        f"Edit this garment photo. Apply ALL of the following changes — every one is mandatory "
+        f"and must be clearly visible in the output: {numbered}. "
+        "CRITICAL: keep the EXACT same fabric color, print and texture as the input photo — "
+        "do NOT change the color, do NOT alter the fabric pattern or material in any way. "
+        "Clean professional fashion catalog product photo, pure white background, "
+        "studio lighting, no people, no mannequin, garment only."
     )
 
 
@@ -1602,26 +1568,37 @@ def build_fabric_to_garment_prompt(garment, styles, fabric_name="", ai_map=None)
     fabric's exact color, weave, print and texture, shaped per the garment +
     style selections."""
     style_terms = _style_detail_phrases(styles, ai_map)
-    style_str = "; ".join(style_terms) if style_terms else "a classic standard style"
     fab_phrase = (f"the \"{fabric_name}\" fabric" if fabric_name else "this fabric")
 
+    # Number each style requirement so the model treats each as a separate obligation
+    if style_terms:
+        numbered = " ".join(f"({i+1}) {t}" for i, t in enumerate(style_terms))
+        style_block = f"Apply ALL of the following design details — every single one is mandatory and must be clearly visible in the output: {numbered}."
+    else:
+        style_block = "Classic standard style — keep the silhouette clean and well-tailored."
+
     return (
+        f"CRITICAL REQUIREMENT — READ THIS BEFORE GENERATING ANYTHING: "
         f"The attached reference image is a CLOSE-UP PHOTO OF A FABRIC SWATCH — {fab_phrase}. "
-        "Look closely at this swatch and identify EVERY visual detail in it: its base color, and any print "
-        "or pattern on it (for example dots/polka-dots, stripes, checks, florals, weave lines, texture "
-        "grain, flecks, or any other surface detail). Whatever pattern or texture is visible in the swatch — "
-        "no matter how small or subtle — MUST be reproduced at the correct small scale on the finished "
-        "garment below; do NOT output a plain, solid-color or smoothed-out fabric. If the swatch shows a "
-        "dotted/polka-dot print, the generated garment's fabric must clearly show those same small dots "
-        "repeated all over it, at the same size and spacing and color as in the swatch. "
-        f"Now generate a professional fashion catalog photograph of a finished, fully stitched {garment} "
-        f"made from this exact fabric, cut and styled with these EXACT design details — {style_str}. "
-        "Follow every one of these design details precisely — do not default to a generic/standard version "
-        "of any of them. "
-        "Show the garment laid flat or on an invisible mannequin, clean professional product photo on a "
-        "plain white studio background, even studio lighting, sharp focus, high resolution macro-level "
-        "detail so the fabric's print/texture is clearly visible on the garment, no people, no mannequin "
-        "face, garment only. "
+        "Examine every part of this swatch image before you output anything. "
+        "Identify: (a) the exact base color; (b) EVERY print, pattern or motif visible on it — "
+        "polka-dots, stripes, checks, florals, geometric shapes, weave texture, flecks, or any other "
+        "surface detail, no matter how small or subtle. "
+        "The fabric on the finished garment MUST reproduce this swatch's color and pattern at TRUE SCALE — "
+        "if the swatch has dots, the garment must show those same dots at the same size, spacing and color; "
+        "if the swatch has stripes or checks, those exact stripes or checks must appear on every panel. "
+        "ABSOLUTE RULES FOR THE FABRIC — NEVER VIOLATE THESE: "
+        "DO NOT simplify the fabric to a plain solid color. "
+        "DO NOT blur, smooth or blend away any pattern. "
+        "DO NOT substitute a different or generic fabric pattern. "
+        "The pattern must be clearly readable across the entire garment — chest, back, sleeves and all panels. "
+        f"GARMENT TO GENERATE: A professional fashion catalog photograph of a fully stitched {garment} "
+        f"made entirely from the fabric shown in the swatch. {style_block} "
+        "Do not substitute a generic version of any styling detail. "
+        "Show the garment flat-lay or on an invisible mannequin. "
+        "Pure white studio background, even studio lighting, sharp focus, high-resolution — "
+        "the fabric's print and texture must be crisp and clearly legible in the final output. "
+        "No people, no mannequin face, garment only. "
         f"{_BRAND_LABEL_PHRASE}"
     )
 
@@ -1712,19 +1689,31 @@ def build_multi_image_fabric_garment_prompt(garment, styles, fabric_name="", ai_
     fab_phrase = (f"the \"{fabric_name}\" fabric" if fabric_name else "this fabric")
 
     return (
-        f"Image 1 is a photo of a finished {garment} — use it as the STRUCTURAL reference for shape, cut "
-        f"and silhouette, with these specific changes: {structure_str}. Follow every one of these changes "
-        "precisely and do not substitute a generic/standard version of any of them. "
-        f"Image 2 is a close-up photo of a fabric swatch — {fab_phrase}. Look closely at Image 2 and identify "
-        "EVERY visual detail in it: its base color, and any print or pattern on it (for example dots/polka-dots, "
-        "stripes, checks, florals, weave lines, texture grain, flecks, or any other surface detail). "
-        "Generate ONE finished photo of the garment from Image 1 (with the structural changes above applied), "
-        "rendered using the EXACT fabric color, print and texture from Image 2 — reproduce any pattern at the "
-        "correct small scale, at the same size/spacing/color as in the swatch; do NOT output a plain, "
-        "solid-color or smoothed-out fabric. "
-        "Clean professional fashion catalog product photo, plain white studio background, even studio "
-        "lighting, sharp focus, high resolution, macro-level detail so the fabric's print/texture is clearly "
-        "visible, no people, no mannequin, garment only. "
+        f"TWO REFERENCE IMAGES PROVIDED — both are mandatory inputs:\n"
+        f"IMAGE 1 (STRUCTURE SOURCE): A photo of a real finished {garment}. "
+        "Use its shape, cut and silhouette as the structural skeleton for the output.\n"
+        f"IMAGE 2 (FABRIC SOURCE — MOST CRITICAL): A close-up photo of {fab_phrase} swatch. "
+        "This drives the ENTIRE color and surface appearance of the output garment. "
+        "Study it pixel by pixel before generating.\n\n"
+        "STEP 1 — FABRIC (highest priority, non-negotiable): "
+        "Identify every detail in Image 2: (a) exact base color; (b) EVERY pattern, print or motif — "
+        "polka-dots, stripes, checks, florals, geometric shapes, weave lines, texture grain, or any other "
+        "surface detail visible, no matter how subtle. "
+        "The finished garment MUST be rendered in the EXACT color AND pattern of Image 2. "
+        "Concrete rules: if Image 2 shows dots → the garment fabric must have those same dots at the same size and spacing; "
+        "if Image 2 shows stripes → exact same stripes on the garment; "
+        "if Image 2 shows checks → exact same checks. "
+        "FORBIDDEN — DO NOT EVER: simplify to a plain solid color; smooth or blur the pattern; "
+        "substitute a different or invented pattern. "
+        "The Image 2 fabric pattern must be clearly visible and readable on EVERY panel of the finished garment "
+        "(chest, back, sleeves, collar — all of it).\n\n"
+        f"STEP 2 — STRUCTURE CHANGES (apply to Image 1's silhouette, every one is mandatory): {structure_str}. "
+        "Each change must be clearly visible in the output — do not skip or soften any of them.\n\n"
+        "OUTPUT: One finished professional fashion catalog photograph. "
+        "The garment uses Image 1's structure (with Step 2 changes applied) dressed entirely in Image 2's EXACT fabric. "
+        "Pure white studio background, even studio lighting, sharp focus, high resolution — "
+        "the fabric pattern must be crisp and clearly legible, not blurred or smoothed. "
+        "No people, no mannequin, garment only. "
         f"{_BRAND_LABEL_PHRASE}"
     )
 
@@ -1976,19 +1965,31 @@ def _restore_face_quality(image_url, api_key):
 
 
 @website_bp.route("/api/upload-tryon-photo", methods=["POST"])
+@_rl("20 per hour")   # 20 uploads/hour per IP — stops bulk scraping
 def upload_tryon_photo():
     """Accepts a customer's own photo for the virtual try-on feature and
     stores it under static/uploads/tryon/. No AI cost is incurred here — the
     paid Replicate call only happens later in /api/generate-style-preview,
     which is where the free-trial gate is actually enforced. This endpoint
-    just validates type/size and saves the file."""
+    validates extension + MIME magic bytes, enforces size, then saves the file."""
     import os, uuid
+    # ── MIME magic-byte whitelist ─────────────────────────────────────────────
+    MIME_MAGIC = {
+        b"\xff\xd8\xff": "jpg",   # JPEG
+        b"\x89PNG\r\n":  "png",   # PNG
+        b"RIFF":          "webp",  # WEBP (starts with RIFF....WEBP)
+    }
     f = request.files.get("photo")
     if not f or not f.filename:
         return jsonify({"ok": False, "error": "No photo uploaded"})
+
+    # Extension check
     ext = os.path.splitext(f.filename)[1].lower()
     if ext not in (".jpg", ".jpeg", ".png", ".webp"):
         return jsonify({"ok": False, "error": "Please upload a JPG, PNG or WEBP photo"})
+
+    # Size check (read first so we can also inspect magic bytes)
+    header = f.read(12)
     f.seek(0, os.SEEK_END)
     size = f.tell()
     f.seek(0)
@@ -1996,6 +1997,16 @@ def upload_tryon_photo():
         return jsonify({"ok": False, "error": "Photo is too large — please use one under 8MB"})
     if size == 0:
         return jsonify({"ok": False, "error": "That file appears to be empty"})
+
+    # MIME magic check — reject files whose bytes don't match a real image
+    is_valid_mime = (
+        header[:3] == b"\xff\xd8\xff"          # JPEG
+        or header[:6] == b"\x89PNG\r\n"         # PNG
+        or (header[:4] == b"RIFF" and header[8:12] == b"WEBP")  # WEBP
+    )
+    if not is_valid_mime:
+        return jsonify({"ok": False, "error": "File does not appear to be a valid image"})
+
     fname = "tryon_" + uuid.uuid4().hex[:16] + ext
     upload_dir = os.path.join(os.path.dirname(__file__), "..", "..", "static", "uploads", "tryon")
     os.makedirs(upload_dir, exist_ok=True)
@@ -2005,6 +2016,7 @@ def upload_tryon_photo():
 
 
 @website_bp.route("/api/generate-style-preview", methods=["POST"])
+@_rl("10 per minute; 30 per hour")   # Each call hits Replicate — protect the AI budget
 def generate_style_preview():
     import requests, time
     data = request.get_json() or {}
@@ -2478,29 +2490,17 @@ def cart():
 
 @website_bp.route("/order-review")
 def order_review():
-    _current_user = None
-    _web_acc_id = session.get("web_account_id")
-    if _web_acc_id:
-        try:
-            _row = get_db().execute(
-                "SELECT name, mobile, email FROM web_accounts WHERE id=? LIMIT 1", (_web_acc_id,)
-            ).fetchone()
-            if _row:
-                _current_user = {"name": _row["name"] or "", "mobile": _row["mobile"] or "", "email": _row["email"] or ""}
-        except Exception:
-            pass
-    return render_template("website/order_review.html", active="order_review",
-        current_user=_current_user,
-        page_meta={
-            "title": "Order Review — Uttam Tailors",
-            "desc": "Review your order before confirming.",
-            "robots": "noindex,nofollow", "og_image": "", "canonical": ""
-        })
+    return render_template("website/order_review.html", active="order_review", page_meta={
+        "title": "Order Review — Uttam Tailors",
+        "desc": "Review your order before confirming.",
+        "robots": "noindex,nofollow", "og_image": "", "canonical": ""
+    })
 
 
 # ── OTP endpoints ─────────────────────────────────────────────────────────────
 
 @website_bp.route("/api/send-otp", methods=["POST"])
+@_rl("5 per minute; 10 per hour")   # 5 SMS requests/min per IP — stops OTP flooding
 def api_send_otp():
     data = request.get_json(silent=True) or {}
     mobile = (data.get("mobile") or "").strip()
@@ -2533,49 +2533,9 @@ def api_send_otp():
 
 
 @website_bp.route("/api/verify-otp", methods=["POST"])
+@_rl("10 per minute; 20 per hour")   # Brute-force guard: max 10 guesses/min per IP
 def api_verify_otp():
     data = request.get_json(silent=True) or {}
     mobile = (data.get("mobile") or "").strip()
     otp    = (data.get("otp") or "").strip()
-    if not mobile or not otp:
-        return jsonify({"success": False, "error": "Mobile and OTP required"})
-    try:
-        db = get_db()
-        row = db.execute(
-            """SELECT id FROM otp_log
-               WHERE mobile=? AND otp=? AND used=0
-               AND expires_at > datetime('now','localtime')
-               ORDER BY id DESC LIMIT 1""",
-            (mobile, otp)
-        ).fetchone()
-        if not row:
-            return jsonify({"success": False, "error": "Invalid or expired OTP"})
-        db.execute("UPDATE otp_log SET used=1 WHERE id=?", (row["id"],))
-        db.commit()
-        return jsonify({"success": True, "message": "OTP verified"})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
-
-
-# ── GitHub Auto-Deploy Webhook ─────────────────────────────────────────────────
-import hmac as _hmac, hashlib as _hashlib, subprocess as _subprocess
-
-_DEPLOY_SECRET = b"069cca859f8c1f274de1683ed40455798bccb3902add9e2916fec3acaff7dbb5"
-
-@website_bp.route("/webhook/deploy", methods=["POST"])
-def webhook_deploy():
-    sig = request.headers.get("X-Hub-Signature-256", "")
-    body = request.get_data()
-    expected = "sha256=" + _hmac.new(_DEPLOY_SECRET, body, _hashlib.sha256).hexdigest()
-    if not _hmac.compare_digest(sig, expected):
-        return jsonify({"ok": False, "error": "forbidden"}), 403
-    payload = request.get_json(silent=True) or {}
-    if payload.get("ref") != "refs/heads/website":
-        return jsonify({"ok": True, "msg": "ignored branch"})
-    _subprocess.Popen(
-        ["/home/ubuntu/deploy_website.sh"],
-        stdout=_subprocess.DEVNULL,
-        stderr=_subprocess.DEVNULL,
-        close_fds=True
-    )
-    return jsonify({"ok": True, "msg": "deploying"})
+    if not mobile o
