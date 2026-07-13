@@ -870,6 +870,10 @@ fetch('/api/occasions/upcoming').then(function(r){return r.json();}).then(functi
     <p class="hero-sub">{{ h.get('subtext','Tell us what you need — we stitch it perfectly. WhatsApp updates at every step.') }}</p>
     <div class="hero-actions">
       <a href="{{ h.get('card1_url','/our-craft') }}" class="hero-btn-ghost">{{ h.get('card1_btn','Browse designs') }}</a>
+      <a href="/commission" class="hero-btn-ghost" style="display:inline-flex;align-items:center;gap:6px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Book Appointment
+      </a>
       <a href="https://maps.google.com/?q=Uttam+Tailors+Subhash+Chowk+Sikar+Rajasthan" target="_blank" rel="noopener" class="hero-btn-primary" style="display:inline-flex;align-items:center;gap:6px;">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
         Find Our Store
