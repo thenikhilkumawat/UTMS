@@ -13,6 +13,7 @@ app.config["SESSION_COOKIE_SAMESITE"]="Lax"
 app.config["SESSION_COOKIE_SECURE"]=os.environ.get("FLASK_ENV")!="development"
 app.config["PERMANENT_SESSION_LIFETIME"]=timedelta(days=7)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
+app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024  # 20MB max upload
 
 # ── Gzip compression (reduces page size ~70%) ────────────────────────────────
 try:
