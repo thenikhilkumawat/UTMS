@@ -27,24 +27,53 @@
     </button>
     <div style="text-align:center;font-size:11px;color:var(--muted);margin:-6px 0 14px;">Google sign-in needs to be switched on by the shop owner — ask us if it isn't working yet.</div>
 
-    <div id="acctPgNameField" style="margin-bottom:12px;">
-      <label style="display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;">Your name</label>
-      <input type="text" id="acctPgName" placeholder="e.g. Rohit Sharma" style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:7px;padding:11px 13px;font-size:13.5px;">
+    <!-- SIGNUP STEP 1: details -->
+    <div id="acctPgSignupStep1">
+      <div id="acctPgNameField" style="margin-bottom:12px;">
+        <label style="display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;">Your name</label>
+        <input type="text" id="acctPgName" autocomplete="name" placeholder="e.g. Rohit Sharma" style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:7px;padding:11px 13px;font-size:13.5px;">
+      </div>
+      <div id="acctPgEmailField" style="margin-bottom:12px;">
+        <label style="display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;">Email <span style="color:#e53e3e">*</span></label>
+        <input type="email" id="acctPgEmail" autocomplete="email" placeholder="you@example.com" style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:7px;padding:11px 13px;font-size:13.5px;">
+      </div>
+      <div style="margin-bottom:8px;">
+        <label style="display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;">Password</label>
+        <input type="password" id="acctPgPassword" autocomplete="new-password" placeholder="Min 6 characters" style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:7px;padding:11px 13px;font-size:13.5px;">
+      </div>
     </div>
-    <div style="margin-bottom:12px;">
-      <label style="display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;">Mobile number <span id="acctPgMobOptLbl"></span></label>
-      <input type="tel" id="acctPgMobile" placeholder="10-digit mobile number" maxlength="10" style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:7px;padding:11px 13px;font-size:13.5px;">
+
+    <!-- SIGNUP STEP 2: OTP -->
+    <div id="acctPgSignupStep2" style="display:none;text-align:center;">
+      <div style="font-size:28px;margin-bottom:8px;">📧</div>
+      <div style="font-size:14px;font-weight:600;color:var(--dark);margin-bottom:6px;">Check your email</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:16px;">We sent a 6-digit code to<br><strong id="acctPgOtpEmail" style="color:var(--dark)"></strong></div>
+      <input type="text" id="acctPgOtp" inputmode="numeric" autocomplete="one-time-code" maxlength="6"
+             placeholder="_ _ _ _ _ _"
+             style="width:100%;box-sizing:border-box;text-align:center;font-size:28px;letter-spacing:12px;font-weight:700;border:1.5px solid var(--border);border-radius:8px;padding:14px 0;margin-bottom:16px;"
+             oninput="this.value=this.value.replace(/\D/g,'');if(this.value.length===6)acctPgVerifyOtp();">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:16px;">Code is valid for 10 minutes</div>
+      <div style="display:flex;gap:8px;justify-content:center;font-size:12px;">
+        <button onclick="acctPgResendOtp()" style="background:none;border:none;color:var(--gold,#c8903a);cursor:pointer;text-decoration:underline;font-size:12px;">Resend code</button>
+        <span style="color:var(--muted)">·</span>
+        <button onclick="acctPgBackToSignup()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;">Change email</button>
+      </div>
     </div>
-    <div id="acctPgEmailField" style="margin-bottom:12px;">
-      <label style="display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;">Email <span id="acctPgEmailOptLbl">(optional)</span></label>
-      <input type="email" id="acctPgEmail" placeholder="you@example.com" style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:7px;padding:11px 13px;font-size:13.5px;">
+
+    <!-- LOGIN fields -->
+    <div id="acctPgLoginFields" style="display:none;">
+      <div style="margin-bottom:12px;">
+        <label style="display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;">Email</label>
+        <input type="email" id="acctPgLoginEmail" autocomplete="email" placeholder="you@example.com" style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:7px;padding:11px 13px;font-size:13.5px;">
+      </div>
+      <div style="margin-bottom:8px;">
+        <label style="display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;">Password</label>
+        <input type="password" id="acctPgLoginPass" autocomplete="current-password" placeholder="Your password" style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:7px;padding:11px 13px;font-size:13.5px;">
+      </div>
     </div>
-    <div style="margin-bottom:8px;">
-      <label style="display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;">Password</label>
-      <input type="password" id="acctPgPassword" placeholder="Your password" style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:7px;padding:11px 13px;font-size:13.5px;">
-    </div>
+
     <div id="acctPgMsg" style="font-size:12px;min-height:1.2em;margin:6px 0 4px;color:#b91c1c;"></div>
-    <button type="button" id="acctPgSubmitBtn" onclick="acctPgSubmitForm()" style="width:100%;margin-top:8px;background:linear-gradient(135deg,var(--gold),var(--gold-l));color:#fff;border:none;border-radius:8px;padding:13px 0;font-size:14px;font-weight:700;letter-spacing:.03em;cursor:pointer;">Create account</button>
+    <button type="button" id="acctPgSubmitBtn" onclick="acctPgSubmitForm()" style="width:100%;margin-top:8px;background:linear-gradient(135deg,var(--gold),var(--gold-l));color:#fff;border:none;border-radius:8px;padding:13px 0;font-size:14px;font-weight:700;letter-spacing:.03em;cursor:pointer;">Send Verification Code</button>
   </div>
 
   <!-- Logged-in dashboard -->
@@ -109,33 +138,104 @@
     document.getElementById('acctPgTabSignup').style.color = t==='signup' ? '#fff' : 'var(--muted)';
     document.getElementById('acctPgTabLogin').style.background = t==='login' ? 'var(--dark)' : 'transparent';
     document.getElementById('acctPgTabLogin').style.color = t==='login' ? '#fff' : 'var(--muted)';
-    document.getElementById('acctPgNameField').style.display = t==='signup' ? 'block' : 'none';
-    document.getElementById('acctPgSubmitBtn').textContent = t==='signup' ? 'Create account' : 'Log in';
+    // Show correct fields
+    var isSU = t === 'signup';
+    document.getElementById('acctPgSignupStep1').style.display = isSU ? '' : 'none';
+    document.getElementById('acctPgSignupStep2').style.display = 'none';
+    document.getElementById('acctPgLoginFields').style.display = isSU ? 'none' : '';
+    document.getElementById('acctPgSubmitBtn').textContent = isSU ? 'Send Verification Code' : 'Log In';
     document.getElementById('acctPgMsg').textContent = '';
   };
 
   window.acctPgSubmitForm = function(){
-    var name = document.getElementById('acctPgName').value.trim();
-    var mobile = document.getElementById('acctPgMobile').value.trim();
-    var email = document.getElementById('acctPgEmail').value.trim();
-    var password = document.getElementById('acctPgPassword').value.trim();
     var msgEl = document.getElementById('acctPgMsg');
     msgEl.textContent = '';
-    var url, body;
     if (acctPgState.formTab === 'signup') {
-      url = '/api/account/signup';
-      body = {name: name, mobile: mobile, email: email, password: password};
+      // Step 1: send OTP to email
+      var name  = (document.getElementById('acctPgName').value||'').trim();
+      var email = (document.getElementById('acctPgEmail').value||'').trim();
+      var pass  = (document.getElementById('acctPgPassword').value||'').trim();
+      if (!email || !email.includes('@')) { msgEl.textContent = 'Enter a valid email address'; return; }
+      if (!pass || pass.length < 6)       { msgEl.textContent = 'Password must be at least 6 characters'; return; }
+      msgEl.style.color = '#7a6a58'; msgEl.textContent = 'Sending verification code…';
+      fetch('/api/account/send-email-otp', {method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({email:email, name:name})})
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          if (d.already_exists) {
+            acctPgSetFormTab('login');
+            document.getElementById('acctPgLoginEmail').value = email;
+            msgEl.style.color = '#b91c1c';
+            msgEl.textContent = 'Account already exists — please log in.';
+            return;
+          }
+          if (!d.ok) { msgEl.style.color='#b91c1c'; msgEl.textContent = d.error||'Could not send code'; return; }
+          msgEl.textContent = '';
+          document.getElementById('acctPgOtpEmail').textContent = email;
+          document.getElementById('acctPgSignupStep1').style.display = 'none';
+          document.getElementById('acctPgSignupStep2').style.display = '';
+          document.getElementById('acctPgSubmitBtn').textContent = 'Verify & Create Account';
+          document.getElementById('acctPgSubmitBtn').onclick = acctPgVerifyOtp;
+          setTimeout(function(){ document.getElementById('acctPgOtp').focus(); }, 100);
+        })
+        .catch(function(){ msgEl.style.color='#b91c1c'; msgEl.textContent = 'Network error — try again'; });
     } else {
-      url = '/api/account/login';
-      body = {identifier: mobile || email, password: password};
+      // Login
+      var email2 = (document.getElementById('acctPgLoginEmail').value||'').trim();
+      var pass2  = (document.getElementById('acctPgLoginPass').value||'').trim();
+      if (!email2 || !pass2) { msgEl.style.color='#b91c1c'; msgEl.textContent = 'Email and password are required'; return; }
+      msgEl.style.color = '#7a6a58'; msgEl.textContent = 'Logging in…';
+      fetch('/api/account/email-login', {method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({email:email2, password:pass2})})
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          if (d.ok) { acctPgMergeWishlistThenLoad(); }
+          else { msgEl.style.color='#b91c1c'; msgEl.textContent = d.error||'Login failed'; }
+        })
+        .catch(function(){ msgEl.style.color='#b91c1c'; msgEl.textContent = 'Network error — try again'; });
     }
-    fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)})
+  };
+
+  window.acctPgVerifyOtp = function(){
+    var email = (document.getElementById('acctPgEmail').value||'').trim();
+    var otp   = (document.getElementById('acctPgOtp').value||'').replace(/\D/g,'').trim();
+    var name  = (document.getElementById('acctPgName').value||'').trim();
+    var pass  = (document.getElementById('acctPgPassword').value||'').trim();
+    var msgEl = document.getElementById('acctPgMsg');
+    if (otp.length !== 6) { msgEl.style.color='#b91c1c'; msgEl.textContent = 'Enter the 6-digit code'; return; }
+    msgEl.style.color = '#7a6a58'; msgEl.textContent = 'Verifying…';
+    fetch('/api/account/verify-email-otp', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({email:email, otp:otp, name:name, password:pass})})
       .then(function(r){ return r.json(); })
       .then(function(d){
         if (d.ok) { acctPgMergeWishlistThenLoad(); }
-        else { msgEl.textContent = d.error || 'Something went wrong'; }
+        else { msgEl.style.color='#b91c1c'; msgEl.textContent = d.error||'Invalid OTP'; }
       })
-      .catch(function(){ msgEl.textContent = 'Network error — please try again'; });
+      .catch(function(){ msgEl.style.color='#b91c1c'; msgEl.textContent = 'Network error — try again'; });
+  };
+
+  window.acctPgResendOtp = function(){
+    var email = (document.getElementById('acctPgEmail').value||'').trim();
+    var name  = (document.getElementById('acctPgName').value||'').trim();
+    var msgEl = document.getElementById('acctPgMsg');
+    msgEl.style.color = '#7a6a58'; msgEl.textContent = 'Resending code…';
+    fetch('/api/account/send-email-otp', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({email:email, name:name})})
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if (d.ok) { msgEl.textContent = 'Code resent! Check your email.'; }
+        else { msgEl.style.color='#b91c1c'; msgEl.textContent = d.error||'Could not resend'; }
+      })
+      .catch(function(){ msgEl.style.color='#b91c1c'; msgEl.textContent = 'Network error'; });
+  };
+
+  window.acctPgBackToSignup = function(){
+    document.getElementById('acctPgSignupStep1').style.display = '';
+    document.getElementById('acctPgSignupStep2').style.display = 'none';
+    document.getElementById('acctPgOtp').value = '';
+    document.getElementById('acctPgSubmitBtn').textContent = 'Send Verification Code';
+    document.getElementById('acctPgSubmitBtn').onclick = acctPgSubmitForm;
+    document.getElementById('acctPgMsg').textContent = '';
   };
 
   function acctPgMergeWishlistThenLoad(){

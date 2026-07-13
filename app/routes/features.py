@@ -1057,36 +1057,12 @@ def auth_logout():
 
 @features_bp.route("/api/account/signup", methods=["POST"])
 def account_signup():
-    """Create a new customer account with password."""
-    from werkzeug.security import generate_password_hash
-    _ensure_auth_tables()
-    d        = request.get_json(force=True, silent=True) or {}
-    name     = (d.get("name")     or "").strip()
-    mobile   = (d.get("mobile")   or "").strip().lstrip("0")
-    email    = (d.get("email")    or "").strip()
-    password = (d.get("password") or "").strip()
-
-    if not mobile or len(mobile) < 10:
-        return jsonify({"ok": False, "error": "Enter a valid 10-digit mobile number"})
-    if not password or len(password) < 6:
-        return jsonify({"ok": False, "error": "Password must be at least 6 characters"})
-
-    db  = get_db()
-    now = _now()
-    existing = db.execute("SELECT id FROM web_accounts WHERE mobile=?", (mobile,)).fetchone()
-    if existing:
-        return jsonify({"ok": False, "error": "This mobile is already registered — please log in"})
-
-    pw_hash = generate_password_hash(password)
-    db.execute(
-        "INSERT INTO web_accounts(mobile, name, email, password_hash, is_active, created_at) VALUES(?,?,?,?,1,?)",
-        (mobile, name, email, pw_hash, now)
-    )
-    db.commit()
-    acc = db.execute("SELECT * FROM web_accounts WHERE mobile=?", (mobile,)).fetchone()
-    session["web_account_id"] = acc["id"]
-    session.permanent = True
-    return jsonify({"ok": True, "account": {"id": acc["id"], "name": name, "mobile": mobile, "email": email}})
+    """Signup now requires email OTP verification — redirect to the OTP flow."""
+    return jsonify({
+        "ok": False,
+        "error": "Email verification required. Please use the Sign Up form which sends an OTP to your email.",
+        "require_otp": True
+    }), 400
 
 
 @features_bp.route("/api/account/login", methods=["POST"])
