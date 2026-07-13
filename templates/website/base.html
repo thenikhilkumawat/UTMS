@@ -957,8 +957,8 @@ function _acctRenderForm(){
     // Login method sub-toggle: email | mobile
     var isMob=(_acctLoginMethod==='mobile');
     h += '<div style="display:flex;gap:4px;margin-bottom:14px;border:1px solid var(--border);border-radius:8px;padding:3px;">';
-    h += '<button type="button" onclick="_acctSetLoginMethod('email')" style="flex:1;border:none;border-radius:6px;padding:8px 0;font-size:12px;font-weight:700;cursor:pointer;background:'+(isMob?'transparent':'var(--dark,#1a0e06)')+';color:'+(isMob?'var(--muted)':'#fff')+';">Email</button>';
-    h += '<button type="button" onclick="_acctSetLoginMethod('mobile')" style="flex:1;border:none;border-radius:6px;padding:8px 0;font-size:12px;font-weight:700;cursor:pointer;background:'+(isMob?'var(--dark,#1a0e06)':'transparent')+';color:'+(isMob?'#fff':'var(--muted)')+';">Mobile OTP</button>';
+    h += '<button type="button" onclick="_acctSetLoginMethod(\'email\')" style="flex:1;border:none;border-radius:6px;padding:8px 0;font-size:12px;font-weight:700;cursor:pointer;background:'+(isMob?'transparent':'var(--dark,#1a0e06)')+';color:'+(isMob?'var(--muted)':'#fff')+';">Email</button>';
+    h += '<button type="button" onclick="_acctSetLoginMethod(\'mobile\')" style="flex:1;border:none;border-radius:6px;padding:8px 0;font-size:12px;font-weight:700;cursor:pointer;background:'+(isMob?'var(--dark,#1a0e06)':'transparent')+';color:'+(isMob?'#fff':'var(--muted)')+';">Mobile OTP</button>';
     h += '</div>';
     if(!isMob){
       h += '<div style="margin-bottom:12px;"><label style="display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;">Email Address</label><input type="email" id="acctFIdentifier" autocomplete="email" placeholder="you@example.com" style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:7px;padding:11px 13px;font-size:13.5px;"></div>';
