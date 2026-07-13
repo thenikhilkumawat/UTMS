@@ -449,6 +449,78 @@
         <div class="hp-field"><label class="hp-lbl">Note text (below Generate button)</label><input class="hp-in" id="ai_preview_note" value="{{ c.get('note','3 free AI previews — then a quick sign-in to keep generating.') }}"></div>
         <div class="hp-field"><label class="hp-lbl">Slider hint text (below garment carousel)</label><input class="hp-in" id="ai_preview_hint" value="{{ c.get('hint','Click any garment to customise it & generate your AI preview') }}"></div>
 
+        <!-- ── AI Preview Section: Image/Video Upload ── -->
+        <div style="margin-top:18px;padding:16px;background:#faf7f2;border-radius:8px;border:1px solid #e8ddd0;">
+          <div style="font-size:12px;font-weight:700;color:#5C3420;letter-spacing:.05em;text-transform:uppercase;margin-bottom:14px;">📸 Section Images / Videos</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+
+            <!-- Left card (Fabric) -->
+            <div>
+              <div style="font-size:12px;font-weight:600;color:#5C3420;margin-bottom:8px;">Left Card — Fabric Swatch</div>
+              {% if c.get('left_media') %}
+              <div style="position:relative;margin-bottom:8px;">
+                {% if c.get('left_media_type') == 'video' %}
+                <video src="{{ c['left_media'] }}" style="width:100%;height:120px;object-fit:cover;border-radius:6px;" muted playsinline></video>
+                {% else %}
+                <img src="{{ c['left_media'] }}" style="width:100%;height:120px;object-fit:cover;border-radius:6px;border:1px solid #e8ddd0;" loading="lazy">
+                {% endif %}
+                <button type="button" onclick="aipRemoveMedia('left')" style="position:absolute;top:4px;right:4px;background:#dc2626;color:#fff;border:none;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">✕ Remove</button>
+              </div>
+              {% else %}
+              <div style="height:80px;border:2px dashed #d4c5b0;border-radius:6px;display:flex;align-items:center;justify-content:center;margin-bottom:8px;color:#9a8472;font-size:12px;">CSS texture (default)</div>
+              {% endif %}
+              <input type="file" id="aipLeftFile" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm" style="display:none;" onchange="aipUpload(this,'left')">
+              <button type="button" class="hp-edit-btn" onclick="document.getElementById('aipLeftFile').click()" style="width:100%;">Upload Image / Video</button>
+              <div id="aipLeftStatus" style="font-size:11px;margin-top:4px;color:#5C3420;"></div>
+            </div>
+
+            <!-- Right card (AI Preview / Mannequin) -->
+            <div>
+              <div style="font-size:12px;font-weight:600;color:#5C3420;margin-bottom:8px;">Right Card — AI Preview / Mannequin</div>
+              {% if c.get('right_media') %}
+              <div style="position:relative;margin-bottom:8px;">
+                {% if c.get('right_media_type') == 'video' %}
+                <video src="{{ c['right_media'] }}" style="width:100%;height:120px;object-fit:cover;border-radius:6px;" muted playsinline></video>
+                {% else %}
+                <img src="{{ c['right_media'] }}" style="width:100%;height:120px;object-fit:cover;border-radius:6px;border:1px solid #e8ddd0;" loading="lazy">
+                {% endif %}
+                <button type="button" onclick="aipRemoveMedia('right')" style="position:absolute;top:4px;right:4px;background:#dc2626;color:#fff;border:none;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">✕ Remove</button>
+              </div>
+              {% else %}
+              <div style="height:80px;border:2px dashed #d4c5b0;border-radius:6px;display:flex;align-items:center;justify-content:center;margin-bottom:8px;color:#9a8472;font-size:12px;">SVG mannequin (default)</div>
+              {% endif %}
+              <input type="file" id="aipRightFile" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm" style="display:none;" onchange="aipUpload(this,'right')">
+              <button type="button" class="hp-edit-btn" onclick="document.getElementById('aipRightFile').click()" style="width:100%;">Upload Image / Video</button>
+              <div id="aipRightStatus" style="font-size:11px;margin-top:4px;color:#5C3420;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Inspo Polaroid Images ── -->
+        <div style="margin-top:14px;padding:16px;background:#faf7f2;border-radius:8px;border:1px solid #e8ddd0;">
+          <div style="font-size:12px;font-weight:700;color:#5C3420;letter-spacing:.05em;text-transform:uppercase;margin-bottom:14px;">🖼️ "Bring Your Inspo" Polaroid Images</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+            {% for slot, label in [('front','Front / Main'), ('bl','Back Left'), ('br','Back Right')] %}
+            {% set inspo_sec = hs.get('bring_inspo', {}) %}
+            {% set inspo_img = inspo_sec.get('img_' + slot, '') %}
+            <div>
+              <div style="font-size:11px;font-weight:600;color:#5C3420;margin-bottom:6px;">{{ label }}</div>
+              {% if inspo_img %}
+              <div style="position:relative;margin-bottom:6px;">
+                <img src="{{ inspo_img }}" style="width:100%;height:90px;object-fit:cover;border-radius:6px;border:1px solid #e8ddd0;" loading="lazy">
+                <button type="button" onclick="inspoRemove('{{ slot }}')" style="position:absolute;top:3px;right:3px;background:#dc2626;color:#fff;border:none;border-radius:3px;padding:1px 7px;font-size:10px;cursor:pointer;">✕</button>
+              </div>
+              {% else %}
+              <div style="height:60px;border:2px dashed #d4c5b0;border-radius:6px;display:flex;align-items:center;justify-content:center;margin-bottom:6px;color:#9a8472;font-size:11px;">Unsplash (default)</div>
+              {% endif %}
+              <input type="file" id="inspoFile_{{ slot }}" accept="image/jpeg,image/png,image/webp" style="display:none;" onchange="inspoUpload(this,'{{ slot }}')">
+              <button type="button" class="hp-edit-btn" onclick="document.getElementById('inspoFile_{{ slot }}').click()" style="width:100%;font-size:10px;">Upload</button>
+              <div id="inspoStatus_{{ slot }}" style="font-size:10px;margin-top:3px;color:#5C3420;"></div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
         {% else %}
         <div style="font-size:13px;color:#7a6a58;padding:8px 0;">No editable fields for this section yet.</div>
         {% endif %}
@@ -643,6 +715,47 @@ function toggleCatProd(el){
     if(chk) chk.style.display='none';
   }
   catUpdateHidden();
+}
+
+// ── AI Preview media upload ──────────────────────────────────────
+function aipUpload(input, slot){
+  var file = input.files[0]; if(!file) return;
+  var statusEl = document.getElementById('aip'+(slot==='left'?'Left':'Right')+'Status');
+  statusEl.textContent='Uploading…';
+  var fd=new FormData(); fd.append('file',file); fd.append('slot',slot);
+  fetch('/owner/website/homepage/ai-preview/upload',{method:'POST',body:fd,credentials:'same-origin'})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.ok){statusEl.style.color='#2D6A3F';statusEl.textContent='✓ Saved! Reloading…';setTimeout(function(){location.reload();},1000);}
+      else{statusEl.style.color='#dc2626';statusEl.textContent='Error: '+d.error;}
+    }).catch(function(){statusEl.style.color='#dc2626';statusEl.textContent='Upload failed.';});
+  input.value='';
+}
+function aipRemoveMedia(slot){
+  if(!confirm('Remove this media?')) return;
+  fetch('/owner/website/homepage/ai-preview/remove',{method:'POST',credentials:'same-origin',
+    headers:{'Content-Type':'application/json'},body:JSON.stringify({slot:slot})})
+    .then(function(r){return r.json();}).then(function(d){if(d.ok)location.reload();});
+}
+// ── Inspo polaroid upload ─────────────────────────────────────────
+function inspoUpload(input, slot){
+  var file=input.files[0]; if(!file) return;
+  var statusEl=document.getElementById('inspoStatus_'+slot);
+  statusEl.textContent='Uploading…';
+  var fd=new FormData(); fd.append('file',file); fd.append('slot',slot);
+  fetch('/owner/website/homepage/inspo/upload',{method:'POST',body:fd,credentials:'same-origin'})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.ok){statusEl.style.color='#2D6A3F';statusEl.textContent='✓ Saved!';setTimeout(function(){location.reload();},1000);}
+      else{statusEl.style.color='#dc2626';statusEl.textContent='Error: '+d.error;}
+    }).catch(function(){statusEl.style.color='#dc2626';statusEl.textContent='Upload failed.';});
+  input.value='';
+}
+function inspoRemove(slot){
+  if(!confirm('Remove this image?')) return;
+  fetch('/owner/website/homepage/ai-preview/remove',{method:'POST',credentials:'same-origin',
+    headers:{'Content-Type':'application/json'},body:JSON.stringify({slot:'inspo_'+slot})} )
+    .then(function(){location.reload();});
 }
 </script>
 {% endblock %}

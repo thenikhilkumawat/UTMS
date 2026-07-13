@@ -59,8 +59,8 @@
 .inspo-cta:hover{background:var(--gold-l);transform:translateY(-2px);box-shadow:0 10px 32px rgba(200,144,58,.32);}
 /* Right-side feature cards */
 /* ── Inspo polaroid stack ── */
-.inspo-visual{position:relative;height:420px;display:flex;align-items:center;justify-content:center;}
-.inspo-pstack{position:relative;width:320px;height:380px;}
+.inspo-visual{position:relative;height:560px;display:flex;align-items:center;justify-content:center;}
+.inspo-pstack{position:relative;width:420px;height:500px;}
 .inspo-pol{
   position:absolute;
   background:#FEFCF8;
@@ -77,22 +77,22 @@
 }
 /* back-left card */
 .inspo-pol--bl{
-  width:178px;left:0px;top:60px;
+  width:230px;left:0px;top:70px;
   transform:rotate(-9deg);z-index:1;opacity:.82;
 }
-.inspo-pol--bl img{width:158px;height:200px;}
+.inspo-pol--bl img{width:210px;height:265px;}
 /* back-right card */
 .inspo-pol--br{
-  width:162px;right:0px;top:80px;
+  width:210px;right:0px;top:90px;
   transform:rotate(7deg);z-index:2;opacity:.88;
 }
-.inspo-pol--br img{width:142px;height:185px;}
+.inspo-pol--br img{width:190px;height:245px;}
 /* front card */
 .inspo-pol--front{
-  width:210px;left:50%;top:20px;
+  width:275px;left:50%;top:20px;
   transform:translateX(-50%) rotate(-2deg);z-index:3;
 }
-.inspo-pol--front img{width:190px;height:248px;}
+.inspo-pol--front img{width:255px;height:330px;}
 .inspo-pol--front:hover{transform:translateX(-50%) rotate(-2deg) translateY(-6px);box-shadow:0 20px 50px rgba(0,0,0,.22);}
 /* "Your inspo" pill on front card */
 .inspo-pol-pill{
@@ -131,11 +131,11 @@
 @media(max-width:900px){
   .inspo-inner{grid-template-columns:1fr;gap:3rem;}
   .inspo-section{padding:4.5rem 1.5rem;}
-  .inspo-visual{height:360px;}
-  .inspo-pstack{width:280px;height:330px;}
-  .inspo-pol--bl{width:150px;} .inspo-pol--bl img{width:130px;height:170px;}
-  .inspo-pol--br{width:138px;} .inspo-pol--br img{width:118px;height:155px;}
-  .inspo-pol--front{width:178px;} .inspo-pol--front img{width:158px;height:208px;}
+  .inspo-visual{height:420px;}
+  .inspo-pstack{width:340px;height:400px;}
+  .inspo-pol--bl{width:185px;} .inspo-pol--bl img{width:165px;height:210px;}
+  .inspo-pol--br{width:170px;} .inspo-pol--br img{width:150px;height:195px;}
+  .inspo-pol--front{width:220px;} .inspo-pol--front img{width:200px;height:265px;}
 }
 @media(max-width:900px){
   .inspo-inner{grid-template-columns:1fr;gap:3rem;}
@@ -969,7 +969,7 @@ fetch('/api/occasions/upcoming').then(function(r){return r.json();}).then(functi
   <div style="position:absolute;top:-80px;left:-80px;width:400px;height:400px;background:radial-gradient(circle,rgba(200,144,58,.18) 0%,transparent 70%);pointer-events:none;"></div>
   <div style="position:absolute;bottom:-60px;right:-60px;width:350px;height:350px;background:radial-gradient(circle,rgba(200,144,58,.12) 0%,transparent 70%);pointer-events:none;"></div>
 
-  <div style="max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;">
+  <div style="max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:start;">
 
     <!-- Left: Text + CTA -->
     <div>
@@ -1012,30 +1012,48 @@ fetch('/api/occasions/upcoming').then(function(r){return r.json();}).then(functi
       <div style="background:rgba(255,255,255,.04);border:1px solid rgba(200,144,58,.2);border-radius:16px;padding:24px;backdrop-filter:blur(10px);">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
 
-          <!-- Left card: fabric swatch -->
-          <div style="border-radius:10px;overflow:hidden;aspect-ratio:3/4;position:relative;background:#120a02;">
-            <!-- CSS fabric texture -->
+          <!-- Left card: fabric swatch / custom media -->
+          {% set _aip_c = hs.get('ai_preview',{}) %}
+          <div style="border-radius:10px;overflow:hidden;aspect-ratio:2/3;position:relative;background:#120a02;">
+            {% if _aip_c.get('left_media') %}
+              {% if _aip_c.get('left_media_type') == 'video' %}
+              <video src="{{ _aip_c['left_media'] }}" autoplay muted loop playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.9;"></video>
+              {% else %}
+              <img src="{{ _aip_c['left_media'] }}" alt="Fabric" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.9;" loading="lazy">
+              {% endif %}
+              <!-- Overlay label -->
+              <div style="position:absolute;top:12px;left:12px;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);border:1px solid rgba(200,144,58,.3);border-radius:6px;padding:5px 10px;">
+                <div style="font-size:9px;font-weight:700;letter-spacing:.1em;color:#C8903A;text-transform:uppercase;">Fabric</div>
+              </div>
+            {% else %}
+            <!-- CSS fabric texture fallback -->
             <div style="position:absolute;inset:0;background:
               repeating-linear-gradient(90deg,rgba(200,144,58,.07) 0px,rgba(200,144,58,.07) 1px,transparent 1px,transparent 14px),
               repeating-linear-gradient(0deg,rgba(200,144,58,.07) 0px,rgba(200,144,58,.07) 1px,transparent 1px,transparent 14px),
               repeating-linear-gradient(45deg,rgba(200,144,58,.04) 0px,rgba(200,144,58,.04) 1px,transparent 1px,transparent 10px),
               linear-gradient(160deg,#1e1005,#2a1608,#160d03);"></div>
-            <!-- Fabric label -->
             <div style="position:absolute;top:12px;left:12px;background:rgba(200,144,58,.15);border:1px solid rgba(200,144,58,.3);border-radius:6px;padding:5px 10px;">
               <div style="font-size:9px;font-weight:700;letter-spacing:.1em;color:#C8903A;text-transform:uppercase;">Fabric</div>
               <div style="font-size:11px;color:rgba(250,240,228,.85);margin-top:2px;">Premium Cotton</div>
             </div>
-            <!-- Swatch chips -->
             <div style="position:absolute;bottom:14px;left:0;right:0;display:flex;justify-content:center;gap:6px;">
               <div style="width:18px;height:18px;border-radius:50%;background:#2B5C8A;border:2px solid rgba(255,255,255,.4);"></div>
               <div style="width:18px;height:18px;border-radius:50%;background:#8B2525;border:2px solid rgba(255,255,255,.4);"></div>
               <div style="width:18px;height:18px;border-radius:50%;background:#1a1008;border:2px solid rgba(200,144,58,.6);box-shadow:0 0 0 1px #C8903A;"></div>
               <div style="width:18px;height:18px;border-radius:50%;background:#4A6741;border:2px solid rgba(255,255,255,.4);"></div>
             </div>
+            {% endif %}
           </div>
 
-          <!-- Right card: mannequin with stitched garment -->
-          <div style="border-radius:10px;overflow:hidden;aspect-ratio:3/4;background:linear-gradient(160deg,#e8ddd0,#d4c8b8);position:relative;">
+          <!-- Right card: mannequin / custom AI preview media -->
+          <div style="border-radius:10px;overflow:hidden;aspect-ratio:2/3;background:linear-gradient(160deg,#e8ddd0,#d4c8b8);position:relative;">
+            {% if _aip_c.get('right_media') %}
+              {% if _aip_c.get('right_media_type') == 'video' %}
+              <video src="{{ _aip_c['right_media'] }}" autoplay muted loop playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></video>
+              {% else %}
+              <img src="{{ _aip_c['right_media'] }}" alt="AI Preview" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" loading="lazy">
+              {% endif %}
+            {% else %}
             <!-- Mannequin SVG silhouette wearing a blazer -->
             <svg viewBox="0 0 160 240" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block;">
               <!-- Background warm beige -->
@@ -1102,6 +1120,7 @@ fetch('/api/occasions/upcoming').then(function(r){return r.json();}).then(functi
               <rect x="76" y="165" width="8" height="6" rx="1" fill="#C8903A" opacity=".9"/>
             </svg>
             <!-- AI Preview badge -->
+            {% endif %}
             <div style="position:absolute;top:10px;right:10px;background:linear-gradient(135deg,#C8903A,#e0a84a);color:#1a0e00;font-size:9px;font-weight:800;letter-spacing:.08em;padding:4px 10px;border-radius:20px;">AI PREVIEW</div>
           </div>
         </div>
@@ -1551,22 +1570,23 @@ fetch('/api/occasions/upcoming').then(function(r){return r.json();}).then(functi
     <div class="inspo-visual reveal-right">
       <div class="inspo-pstack">
 
+        {% set _ins = hs.get('bring_inspo', {}) %}
         <!-- Back-left polaroid -->
         <div class="inspo-pol inspo-pol--bl">
-          <img src="https://images.unsplash.com/photo-1519741497674-611481863552?w=400&q=82&auto=format&fit=crop" alt="Wedding wear inspo" loading="lazy">
+          <img src="{{ _ins.get('img_bl','https://images.unsplash.com/photo-1519741497674-611481863552?w=400&q=82&auto=format&fit=crop') }}" alt="Wedding wear inspo" loading="lazy">
           <span class="inspo-pol-lbl">Saved from Pinterest</span>
         </div>
 
         <!-- Back-right polaroid -->
         <div class="inspo-pol inspo-pol--br">
-          <img src="https://images.unsplash.com/photo-1617127365659-c47fa864d8bc?w=400&q=82&auto=format&fit=crop" alt="Blazer inspo" loading="lazy">
+          <img src="{{ _ins.get('img_br','https://images.unsplash.com/photo-1617127365659-c47fa864d8bc?w=400&q=82&auto=format&fit=crop') }}" alt="Blazer inspo" loading="lazy">
           <span class="inspo-pol-lbl">Screenshot from Insta</span>
         </div>
 
         <!-- Front / main polaroid -->
         <div class="inspo-pol inspo-pol--front">
           <span class="inspo-pol-pill">Your Inspo</span>
-          <img src="https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=500&q=85&auto=format&fit=crop" alt="Bespoke suit inspiration" loading="lazy">
+          <img src="{{ _ins.get('img_front','https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=500&q=85&auto=format&fit=crop') }}" alt="Bespoke suit inspiration" loading="lazy">
           <span class="inspo-pol-lbl">Magazine clipping ✦</span>
         </div>
 

@@ -297,9 +297,11 @@ def home():
     hs_active = {}
     try:
         rows = db.execute("SELECT section_key,content,active,sort_order FROM home_sections ORDER BY sort_order").fetchall()
+        # Keys that always load (images/media used even when section is inactive)
+        _always_load = {"bring_inspo", "ai_preview"}
         for r in rows:
             hs_active[r["section_key"]] = bool(r["active"])
-            if r["active"]:
+            if r["active"] or r["section_key"] in _always_load:
                 try: hs[r["section_key"]] = _json.loads(r["content"])
                 except: hs[r["section_key"]] = {}
     except: pass
@@ -312,6 +314,7 @@ def home():
         ("brands_ticker",   "Brands Ticker",    0),
         ("action_cards",    "Action Cards",     1),
         ("ai_preview",      "AI Style Preview", 1),
+        ("bring_inspo",     "Bring Your Inspo", 1),
     ]
     try:
         for _key, _title, _active in _new_sections:

@@ -3877,7 +3877,13 @@ def homepage_admin():
     except:
         pass
 
-    return render_template("owner/homepage_admin.html", sections=sections_data, all_products=all_products)
+    # Build hs dict for media previews (ai_preview images, inspo images)
+    import json as _json_hp
+    hs = {}
+    for _s in sections_data:
+        try: hs[_s["section_key"]] = _json_hp.loads(_s["content"]) if _s.get("content") else {}
+        except: hs[_s["section_key"]] = {}
+    return render_template("owner/homepage_admin.html", sections=sections_data, all_products=all_products, hs=hs)
 
 @bp.route("/website/homepage/section/get/<section_key>")
 def homepage_section_get(section_key):
@@ -3969,6 +3975,110 @@ def homepage_hero_upload_image():
             pass
         url = "/static/website/img/hero/" + fname
         return jsonify({"ok": True})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+# ── AI Preview section image/video upload ─────────────────────────
+@bp.route("/website/homepage/ai-preview/upload", methods=["POST"])
+def homepage_ai_preview_upload():
+    if not session.get("owner_logged_in"):
+        return jsonify({"ok": False, "error": "Unauthorized"}), 403
+    import os as _os, uuid as _uuid
+    try:
+        slot = request.form.get("slot", "left")  # 'left' or 'right'
+        file = request.files.get("file")
+        if not file or not file.filename:
+            return jsonify({"ok": False, "error": "No file received"})
+        ext = _os.path.splitext(file.filename)[1].lower()
+        allowed_img = [".jpg", ".jpeg", ".png", ".webp", ".gif"]
+        allowed_vid = [".mp4", ".webm", ".mov"]
+        if ext not in allowed_img + allowed_vid:
+            return jsonify({"ok": False, "error": "Unsupported file type"})
+        is_video = ext in allowed_vid
+        folder = _os.path.join(_os.path.dirname(__file__), "../../static/website/img/ai_preview")
+        _os.makedirs(folder, exist_ok=True)
+        fname = f"aip_{slot}_{_uuid.uuid4().hex[:10]}{ext}"
+        fpath = _os.path.join(folder, fname)
+        file.save(fpath)
+        if not is_video:
+            try:
+                from app.utils.image_optimize import optimize_image as _oi
+                fpath = _oi(fpath)
+                fname = _os.path.basename(fpath)
+            except Exception:
+                pass
+        url = "/static/website/img/ai_preview/" + fname
+        # Save URL into ai_preview section content
+        from database import get_db
+        db = get_db()
+        import json as _json
+        row = db.execute("SELECT content FROM home_sections WHERE section_key='ai_preview'").fetchone()
+        c = _json.loads(row["content"]) if row and row["content"] else {}
+        key = "left_media" if slot == "left" else "right_media"
+        c[key] = url
+        c[key + "_type"] = "video" if is_video else "image"
+        db.execute("UPDATE home_sections SET content=? WHERE section_key='ai_preview'", (_json.dumps(c),))
+        db.commit()
+        return jsonify({"ok": True, "url": url, "type": "video" if is_video else "image"})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+@bp.route("/website/homepage/ai-preview/remove", methods=["POST"])
+def homepage_ai_preview_remove():
+    if not session.get("owner_logged_in"):
+        return jsonify({"ok": False, "error": "Unauthorized"}), 403
+    from database import get_db
+    import json as _json
+    slot = (request.get_json() or {}).get("slot", "left")
+    db = get_db()
+    row = db.execute("SELECT content FROM home_sections WHERE section_key='ai_preview'").fetchone()
+    c = _json.loads(row["content"]) if row and row["content"] else {}
+    key = "left_media" if slot == "left" else "right_media"
+    c.pop(key, None); c.pop(key + "_type", None)
+    db.execute("UPDATE home_sections SET content=? WHERE section_key='ai_preview'", (_json.dumps(c),))
+    db.commit()
+    return jsonify({"ok": True})
+
+# ── Inspo section image upload ─────────────────────────────────────
+@bp.route("/website/homepage/inspo/upload", methods=["POST"])
+def homepage_inspo_upload():
+    if not session.get("owner_logged_in"):
+        return jsonify({"ok": False, "error": "Unauthorized"}), 403
+    import os as _os, uuid as _uuid
+    try:
+        slot = request.form.get("slot", "front")  # 'front', 'bl', 'br'
+        file = request.files.get("file")
+        if not file or not file.filename:
+            return jsonify({"ok": False, "error": "No file received"})
+        ext = _os.path.splitext(file.filename)[1].lower()
+        if ext not in [".jpg", ".jpeg", ".png", ".webp"]:
+            ext = ".jpg"
+        folder = _os.path.join(_os.path.dirname(__file__), "../../static/website/img/inspo")
+        _os.makedirs(folder, exist_ok=True)
+        fname = f"inspo_{slot}_{_uuid.uuid4().hex[:10]}{ext}"
+        fpath = _os.path.join(folder, fname)
+        file.save(fpath)
+        try:
+            from app.utils.image_optimize import optimize_image as _oi
+            fpath = _oi(fpath)
+            fname = _os.path.basename(fpath)
+        except Exception:
+            pass
+        url = "/static/website/img/inspo/" + fname
+        from database import get_db
+        db = get_db()
+        import json as _json
+        # inspo images stored in 'bring_inspo' section or fall back to settings
+        row = db.execute("SELECT content FROM home_sections WHERE section_key='bring_inspo'").fetchone()
+        if not row:
+            db.execute("INSERT OR IGNORE INTO home_sections(section_key,section_title,content,sort_order,active) VALUES('bring_inspo','Bring Your Inspo','{}',16,1)")
+            db.commit()
+            row = db.execute("SELECT content FROM home_sections WHERE section_key='bring_inspo'").fetchone()
+        c = _json.loads(row["content"]) if row and row["content"] else {}
+        c[f"img_{slot}"] = url
+        db.execute("UPDATE home_sections SET content=? WHERE section_key='bring_inspo'", (_json.dumps(c),))
+        db.commit()
+        return jsonify({"ok": True, "url": url})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
 
