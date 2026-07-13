@@ -246,7 +246,7 @@ img,video,iframe{max-width:100%;height:auto;}
 .action-cards{background:var(--bg)!important;}
 .action-cards .section-title{color:var(--dark)!important;}
 .action-cards .kicker{color:var(--gold)!important;}
-.ac-card{background:var(--dark)!important;border-color:rgba(250,240,228,.08)!important;}
+.ac-card{background:var(--dark)!important;border-color:rgba(250,240,228,.28)!important;}
 .ac-card .ac-num{color:rgba(250,240,228,.07)!important;}
 .ac-card .ac-title{color:#FAF0E4!important;}
 .ac-card .ac-desc,.ac-card .ac-who{color:rgba(250,240,228,.5)!important;}
