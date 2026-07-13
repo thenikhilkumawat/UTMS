@@ -857,7 +857,7 @@ fetch('/api/occasions/upcoming').then(function(r){return r.json();}).then(functi
   </div>
   <div class="hero-overlay"></div>
   <div class="hero-content">
-    <a href="#aiPreview" class="hero-ai-badge">✨ AI-Powered Style Preview — see it before you order</a>
+    <a href="/ai-customize" class="hero-ai-badge">✨ AI-Powered Style Preview — see it before you order</a>
     <div class="hero-eyebrow">
       <span class="eyebrow-line"></span>
       {{ h.get('eyebrow','Subhash Chowk, Sikar · Est. 1987') }}
@@ -961,103 +961,79 @@ fetch('/api/occasions/upcoming').then(function(r){return r.json();}).then(functi
 </section>
 {% endif %}
 
+
 {# ═══════ 01c AI STYLE PREVIEW ═══════ #}
 {% if hs_active.get('ai_preview', True) %}
-{% set aip = hs.get('ai_preview',{}) %}
-<section class="ai-preview-section" id="aiPreview">
-  <div class="section-header section-header--center">
-    <p class="kicker aip-kicker">✨ {{ aip.get('kicker','AI-Powered') }}</p>
-    <h2 class="section-title">{{ aip.get('title','See your garment before we even thread the needle.') }}</h2>
-    <p class="section-sub">{{ aip.get('subtitle','Pick a garment below — our AI instantly renders a real preview of your style choice.') }}</p>
-  </div>
-  <div class="aip-flip" id="aipFlip">
-    <div class="aip-face aip-face--front is-active" id="aipFaceBrowse">
-      <div class="aip-cats" id="aipCats">
-        <div class="aip-cat active" data-cat="all" onclick="aipFilterCat('all',this)">All</div>
-        {% for cat in pricing_cats %}
-        <div class="aip-cat" data-cat="cat-{{ loop.index }}" onclick="aipFilterCat('cat-{{ loop.index }}',this)">{{ cat.name }}</div>
-        {% endfor %}
+<section id="aiPreview" style="background:linear-gradient(135deg,#0e0700 0%,#1a0e00 40%,#0a0500 100%);padding:100px 20px;position:relative;overflow:hidden;">
+  <!-- Ambient glow blobs -->
+  <div style="position:absolute;top:-80px;left:-80px;width:400px;height:400px;background:radial-gradient(circle,rgba(200,144,58,.18) 0%,transparent 70%);pointer-events:none;"></div>
+  <div style="position:absolute;bottom:-60px;right:-60px;width:350px;height:350px;background:radial-gradient(circle,rgba(200,144,58,.12) 0%,transparent 70%);pointer-events:none;"></div>
+
+  <div style="max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;">
+
+    <!-- Left: Text + CTA -->
+    <div>
+      <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(200,144,58,.12);border:1px solid rgba(200,144,58,.3);border-radius:50px;padding:6px 16px;margin-bottom:28px;">
+        <span style="font-size:15px;">✨</span>
+        <span style="font-size:11.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#C8903A;">AI-Powered</span>
       </div>
-      <div class="aip-slider-wrap">
-        <div class="aip-arrow aip-arrow--l" onclick="aipScroll(-1)" aria-hidden="true">&#8249;</div>
-        <div class="aip-slider" id="aipSlider">
-          {% for cat in pricing_cats %}
-          {% set cat_idx = loop.index %}
-          {% for item in cat.products %}
-          <div class="aip-gcard" data-cat="cat-{{ cat_idx }}" data-id="{{ item.id }}" data-name="{{ item.name }}" data-img="{{ item.image_url or '' }}" onclick="aipSelectGarment(this)">
-            <img src="{{ item.image_url or 'https://images.unsplash.com/photo-1593030103066-0093718efeb9?w=300&q=80' }}" alt="{{ item.name }}" loading="lazy">
-            <span>{{ item.name }}</span>
-          </div>
-          {% endfor %}
-          {% endfor %}
-        </div>
-        <div class="aip-arrow aip-arrow--r" onclick="aipScroll(1)" aria-hidden="true">&#8250;</div>
+      <h2 style="font-family:'Cormorant Garamond',Georgia,serif;font-size:clamp(2.2rem,4.5vw,3.4rem);font-weight:600;color:#FAF0E4;line-height:1.15;margin:0 0 20px;">
+        See your garment<br><em style="color:#C8903A;font-style:italic;">before we stitch it.</em>
+      </h2>
+      <p style="font-size:15px;color:rgba(250,240,228,.65);line-height:1.75;margin:0 0 36px;max-width:440px;">
+        Choose your fabric, collar, fit and style — our AI renders a real photo of your finished garment in seconds. No more guesswork. What you see is what we stitch.
+      </p>
+
+      <!-- Feature pills -->
+      <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:40px;">
+        <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 16px;font-size:12.5px;color:rgba(250,240,228,.8);">⚡ Result in ~30 seconds</div>
+        <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 16px;font-size:12.5px;color:rgba(250,240,228,.8);">🎁 3 free previews</div>
+        <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 16px;font-size:12.5px;color:rgba(250,240,228,.8);">👔 Shirts, suits, kurtas & more</div>
       </div>
-      <p class="aip-hint">{{ aip.get('hint','Click any garment to customise it & generate your AI preview') }}</p>
+
+      <a href="/ai-customize" style="display:inline-flex;align-items:center;gap:10px;background:linear-gradient(135deg,#C8903A,#e0a84a);color:#1a0e00;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:16px 36px;border-radius:6px;text-decoration:none;transition:transform .2s,box-shadow .2s;box-shadow:0 4px 24px rgba(200,144,58,.35);" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 32px rgba(200,144,58,.5)'" onmouseout="this.style.transform='';this.style.boxShadow='0 4px 24px rgba(200,144,58,.35)'">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        Open AI Style Studio
+      </a>
+      <div style="margin-top:14px;font-size:12px;color:rgba(250,240,228,.35);">No account needed for your first free preview</div>
     </div>
-    <div class="aip-face aip-face--back" id="aipFaceCustomize">
-      <button class="aip-back-btn" onclick="aipBackToBrowse()">&larr; Back to all garments</button>
-      <div class="aip-customize-grid">
-        <div class="aip-options">
-          <div class="aip-selected-name" id="aipSelName">&mdash;</div>
-          <div class="aip-opt-group">
-            <span class="aip-opt-lbl">Fit</span>
-            <div class="aip-chips" data-group="fit">
-              <div class="aip-chip active" data-val="slim fit" onclick="aipPickChip(this)">Slim</div>
-              <div class="aip-chip" data-val="regular fit" onclick="aipPickChip(this)">Regular</div>
-              <div class="aip-chip" data-val="relaxed fit" onclick="aipPickChip(this)">Relaxed</div>
-            </div>
+
+    <!-- Right: Visual showcase -->
+    <div style="position:relative;">
+      <!-- Main card -->
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(200,144,58,.2);border-radius:16px;padding:28px;backdrop-filter:blur(10px);">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+          <div style="border-radius:10px;overflow:hidden;aspect-ratio:3/4;background:#1a1008;">
+            <img src="https://images.unsplash.com/photo-1594938298603-c8148c4b4471?w=400&q=80" alt="Your style pick" style="width:100%;height:100%;object-fit:cover;opacity:.85;">
           </div>
-          <div class="aip-opt-group">
-            <span class="aip-opt-lbl">Collar</span>
-            <div class="aip-chips" data-group="collar">
-              <div class="aip-chip" data-val="classic collar" onclick="aipPickChip(this)">Classic</div>
-              <div class="aip-chip" data-val="mandarin collar" onclick="aipPickChip(this)">Mandarin</div>
-              <div class="aip-chip" data-val="button-down collar" onclick="aipPickChip(this)">Button-down</div>
-              <div class="aip-chip" data-val="cutaway collar" onclick="aipPickChip(this)">Cutaway</div>
-            </div>
+          <div style="border-radius:10px;overflow:hidden;aspect-ratio:3/4;background:#1a1008;position:relative;">
+            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80" alt="AI generated preview" style="width:100%;height:100%;object-fit:cover;opacity:.85;">
+            <div style="position:absolute;top:10px;right:10px;background:linear-gradient(135deg,#C8903A,#e0a84a);color:#1a0e00;font-size:9px;font-weight:800;letter-spacing:.08em;padding:4px 10px;border-radius:20px;">AI PREVIEW</div>
           </div>
-          <div class="aip-opt-group">
-            <span class="aip-opt-lbl">Sleeve</span>
-            <div class="aip-chips" data-group="sleeve">
-              <div class="aip-chip" data-val="full sleeve" onclick="aipPickChip(this)">Full sleeve</div>
-              <div class="aip-chip" data-val="half sleeve" onclick="aipPickChip(this)">Half sleeve</div>
-              <div class="aip-chip" data-val="roll-up sleeve" onclick="aipPickChip(this)">Roll-up</div>
-            </div>
-          </div>
-          <div class="aip-opt-group">
-            <span class="aip-opt-lbl">Pocket</span>
-            <div class="aip-chips" data-group="pocket">
-              <div class="aip-chip" data-val="no pocket" onclick="aipPickChip(this)">None</div>
-              <div class="aip-chip" data-val="one pocket" onclick="aipPickChip(this)">One</div>
-              <div class="aip-chip" data-val="two pockets" onclick="aipPickChip(this)">Two</div>
-            </div>
-          </div>
-          <button class="btn-gold aip-generate-btn" id="aipGenBtn" onclick="aipGenerate()">&#10024; Generate My AI Preview &rarr;</button>
-          <div class="aip-note" id="aipNote">{{ aip.get('note','3 free AI previews — then a quick sign-in to keep generating.') }}</div>
         </div>
-        <div class="aip-result">
-          <div class="aip-compare">
-            <div class="aip-pane">
-              <div class="aip-img-wrap"><img id="aipBeforeImg" src="" alt="Your pick"></div>
-              <span class="aip-tag">Your pick</span>
-            </div>
-            <div class="aip-pane">
-              <div class="aip-img-wrap" id="aipAfterWrap">
-                <div class="aip-placeholder" id="aipPlaceholder">&#10024;<br>Pick your styles, then hit Generate<br>to see your AI preview</div>
-              </div>
-              <span class="aip-tag aip-tag--ai">AI preview</span>
-            </div>
-          </div>
-          <div class="aip-cta">
-            <a href="/commission" id="aipCtaLink" class="btn-primary">Continue this style on the order page &rarr;</a>
-          </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:rgba(200,144,58,.08);border-radius:8px;">
+          <div style="width:8px;height:8px;border-radius:50%;background:#4ade80;flex-shrink:0;animation:pulse 2s infinite;"></div>
+          <span style="font-size:12px;color:rgba(250,240,228,.7);">AI is rendering your preview...</span>
+          <div style="margin-left:auto;font-size:11px;color:#C8903A;font-weight:700;">~30s</div>
         </div>
       </div>
+      <!-- Floating label -->
+      <div style="position:absolute;top:-16px;left:50%;transform:translateX(-50%);background:#C8903A;color:#1a0e00;font-size:11px;font-weight:800;letter-spacing:.08em;padding:5px 16px;border-radius:20px;white-space:nowrap;">LIVE DEMO</div>
     </div>
+
   </div>
+
+  <!-- Mobile: show button centered below -->
+  <style>
+    @media(max-width:768px){
+      #aiPreview .aip-grid{grid-template-columns:1fr!important;}
+      #aiPreview .aip-right{display:none!important;}
+    }
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  </style>
 </section>
 {% endif %}
+
 
 {# ═══════ 02 HERITAGE STATS ═══════ #}
 {% if hs_active.get('heritage', True) %}
@@ -1816,18 +1792,11 @@ function pickOcc(occ,el){
       afterWrap.innerHTML='<div class="aip-placeholder">Something went wrong. Please try again.</div>';
     });
   };
-  /* Deep-link from a product Quick View: ?ai_item=<id>#aiPreview */
+  /* Deep-link from a product Quick View: ?ai_item=<id> → redirect to AI Studio */
   try{
     var _aiItem=new URLSearchParams(window.location.search).get('ai_item');
     if(_aiItem){
-      var _aiCard=document.querySelector('.aip-gcard[data-id="'+_aiItem+'"]');
-      if(_aiCard){
-        window.aipSelectGarment(_aiCard);
-        setTimeout(function(){
-          var sec=document.getElementById('aiPreview');
-          if(sec) sec.scrollIntoView({behavior:'smooth',block:'start'});
-        },150);
-      }
+      window.location.href='/ai-customize?item='+encodeURIComponent(_aiItem);
     }
   }catch(e){}
 })();
