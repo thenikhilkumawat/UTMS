@@ -2140,8 +2140,8 @@ def api_send_email_otp():
         except Exception:
             pass
         db.execute(
-            "INSERT INTO web_otp_store(mobile, otp, expires_at) VALUES(?, ?, datetime('now','localtime','+10 minutes'))",
-            (email, otp)
+            "INSERT INTO web_otp_store(phone, mobile, otp, expires_at) VALUES(?, ?, ?, datetime('now','localtime','+10 minutes'))",
+            (email, email, otp)
         )
         db.commit()
 
