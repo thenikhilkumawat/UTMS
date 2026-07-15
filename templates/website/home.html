@@ -992,13 +992,97 @@ fetch('/api/occasions/upcoming').then(function(r){return r.json();}).then(functi
 
     <!-- Left: Text + CTA -->
     <div>
-      <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(200,144,58,.12);border:1px solid rgba(200,144,58,.3);border-radius:50px;padding:6px 16px;margin-bottom:28px;">
+      <div class="aip-badge-pill" style="display:inline-flex;align-items:center;gap:8px;background:rgba(200,144,58,.12);border:1px solid rgba(200,144,58,.3);border-radius:50px;padding:6px 16px;margin-bottom:28px;">
         <span style="font-size:15px;">✨</span>
         <span style="font-size:11.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#C8903A;">AI-Powered</span>
       </div>
       <h2 style="font-family:'Cormorant Garamond',Georgia,serif;font-size:clamp(2.2rem,4.5vw,3.4rem);font-weight:600;color:#FAF0E4;line-height:1.15;margin:0 0 20px;">
         See your garment<br><em style="color:#C8903A;font-style:italic;">before we stitch it.</em>
       </h2>
+
+      <!-- Mobile-only live demo (shown below heading on small screens) -->
+      <div class="aip-demo-mobile" style="display:none;position:relative;margin-bottom:32px;">
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(200,144,58,.2);border-radius:16px;padding:18px;backdrop-filter:blur(10px);">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+            {% set _aip_cm = hs.get('ai_preview',{}) %}
+            <!-- Left: fabric -->
+            <div style="border-radius:10px;overflow:hidden;aspect-ratio:2/3;position:relative;background:#120a02;">
+              {% if _aip_cm.get('left_media') %}
+                {% if _aip_cm.get('left_media_type') == 'video' %}
+                <video src="{{ _aip_cm['left_media'] }}" autoplay muted loop playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.9;"></video>
+                {% else %}
+                <img src="{{ _aip_cm['left_media'] }}" alt="Fabric" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.9;" loading="lazy">
+                {% endif %}
+                <div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);border:1px solid rgba(200,144,58,.3);border-radius:5px;padding:4px 8px;">
+                  <div style="font-size:8px;font-weight:700;letter-spacing:.1em;color:#C8903A;text-transform:uppercase;">Fabric</div>
+                </div>
+              {% else %}
+              <div style="position:absolute;inset:0;background:repeating-linear-gradient(90deg,rgba(200,144,58,.07) 0px,rgba(200,144,58,.07) 1px,transparent 1px,transparent 14px),repeating-linear-gradient(0deg,rgba(200,144,58,.07) 0px,rgba(200,144,58,.07) 1px,transparent 1px,transparent 14px),linear-gradient(160deg,#1e1005,#2a1608,#160d03);"></div>
+              <div style="position:absolute;top:8px;left:8px;background:rgba(200,144,58,.15);border:1px solid rgba(200,144,58,.3);border-radius:5px;padding:4px 8px;">
+                <div style="font-size:8px;font-weight:700;letter-spacing:.1em;color:#C8903A;text-transform:uppercase;">Fabric</div>
+                <div style="font-size:10px;color:rgba(250,240,228,.85);margin-top:1px;">Premium Cotton</div>
+              </div>
+              <div style="position:absolute;bottom:10px;left:0;right:0;display:flex;justify-content:center;gap:5px;">
+                <div style="width:14px;height:14px;border-radius:50%;background:#2B5C8A;border:2px solid rgba(255,255,255,.4);"></div>
+                <div style="width:14px;height:14px;border-radius:50%;background:#8B2525;border:2px solid rgba(255,255,255,.4);"></div>
+                <div style="width:14px;height:14px;border-radius:50%;background:#1a1008;border:2px solid rgba(200,144,58,.6);box-shadow:0 0 0 1px #C8903A;"></div>
+                <div style="width:14px;height:14px;border-radius:50%;background:#4A6741;border:2px solid rgba(255,255,255,.4);"></div>
+              </div>
+              {% endif %}
+            </div>
+            <!-- Right: AI preview / mannequin -->
+            <div style="border-radius:10px;overflow:hidden;aspect-ratio:2/3;background:linear-gradient(160deg,#e8ddd0,#d4c8b8);position:relative;">
+              {% if _aip_cm.get('right_media') %}
+                {% if _aip_cm.get('right_media_type') == 'video' %}
+                <video src="{{ _aip_cm['right_media'] }}" autoplay muted loop playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></video>
+                {% else %}
+                <img src="{{ _aip_cm['right_media'] }}" alt="AI Preview" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" loading="lazy">
+                {% endif %}
+              {% else %}
+              <svg viewBox="0 0 160 240" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block;">
+                <rect width="160" height="240" fill="url(#bgGradM)"/>
+                <defs>
+                  <linearGradient id="bgGradM" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#e8ddd0"/><stop offset="100%" stop-color="#c8b89a"/></linearGradient>
+                  <linearGradient id="fabricGradM" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#1e2a1a"/><stop offset="100%" stop-color="#0f1a0c"/></linearGradient>
+                  <linearGradient id="lapelGradM" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#2a3826"/><stop offset="100%" stop-color="#1e2a1a"/></linearGradient>
+                  <pattern id="weaveM" width="4" height="4" patternUnits="userSpaceOnUse"><line x1="0" y1="0" x2="4" y2="4" stroke="rgba(255,255,255,.04)" stroke-width=".5"/><line x1="4" y1="0" x2="0" y2="4" stroke="rgba(255,255,255,.03)" stroke-width=".5"/></pattern>
+                </defs>
+                <ellipse cx="80" cy="24" rx="16" ry="18" fill="#c8a882"/>
+                <rect x="74" y="38" width="12" height="14" rx="4" fill="#c8a882"/>
+                <path d="M20 62 Q80 52 140 62 L138 75 Q80 65 22 75Z" fill="url(#fabricGradM)"/>
+                <path d="M22 75 L18 170 L142 170 L138 75 Q80 65 22 75Z" fill="url(#fabricGradM)"/>
+                <path d="M22 75 L18 170 L142 170 L138 75 Q80 65 22 75Z" fill="url(#weaveM)"/>
+                <path d="M80 68 L60 80 L65 140 L80 135Z" fill="url(#lapelGradM)" opacity=".9"/>
+                <path d="M80 68 L100 80 L95 140 L80 135Z" fill="url(#lapelGradM)" opacity=".9"/>
+                <path d="M80 72 L76 90 L80 88 L84 90Z" fill="#e8ddd0" opacity=".8"/>
+                <line x1="80" y1="95" x2="80" y2="165" stroke="rgba(200,144,58,.5)" stroke-width=".8"/>
+                <circle cx="80" cy="108" r="2.5" fill="#C8903A" opacity=".9"/>
+                <circle cx="80" cy="122" r="2.5" fill="#C8903A" opacity=".9"/>
+                <circle cx="80" cy="136" r="2.5" fill="#C8903A" opacity=".9"/>
+                <path d="M22 75 L8 140 L20 145 L30 85Z" fill="url(#fabricGradM)"/>
+                <path d="M22 75 L8 140 L20 145 L30 85Z" fill="url(#weaveM)"/>
+                <path d="M138 75 L152 140 L140 145 L130 85Z" fill="url(#fabricGradM)"/>
+                <path d="M138 75 L152 140 L140 145 L130 85Z" fill="url(#weaveM)"/>
+                <rect x="42" y="90" width="16" height="10" rx="1" fill="#C8903A" opacity=".7" transform="rotate(-3 50 95)"/>
+                <line x1="42" y1="90" x2="58" y2="90" stroke="#e0a84a" stroke-width=".8" opacity=".6"/>
+                <rect x="40" y="168" width="35" height="75" rx="4" fill="url(#fabricGradM)" opacity=".95"/>
+                <rect x="85" y="168" width="35" height="75" rx="4" fill="url(#fabricGradM)" opacity=".95"/>
+                <rect x="38" y="164" width="84" height="8" rx="2" fill="#3d2b10" opacity=".9"/>
+                <rect x="76" y="165" width="8" height="6" rx="1" fill="#C8903A" opacity=".9"/>
+              </svg>
+              {% endif %}
+              <div style="position:absolute;top:8px;right:8px;background:linear-gradient(135deg,#C8903A,#e0a84a);color:#1a0e00;font-size:8px;font-weight:800;letter-spacing:.08em;padding:3px 8px;border-radius:20px;">AI PREVIEW</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(200,144,58,.08);border-radius:8px;">
+            <div style="width:7px;height:7px;border-radius:50%;background:#4ade80;flex-shrink:0;animation:pulse 2s infinite;"></div>
+            <span style="font-size:11px;color:rgba(250,240,228,.7);">AI is rendering your preview...</span>
+            <div style="margin-left:auto;font-size:10px;color:#C8903A;font-weight:700;">~30s</div>
+          </div>
+        </div>
+        <div style="position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:#C8903A;color:#1a0e00;font-size:10px;font-weight:800;letter-spacing:.08em;padding:4px 14px;border-radius:20px;white-space:nowrap;">LIVE DEMO</div>
+      </div>
+
       <p style="font-size:15px;color:rgba(250,240,228,.65);line-height:1.75;margin:0 0 36px;max-width:440px;">
         Choose your fabric, collar, fit and style — our AI renders a real photo of your finished garment in seconds. No more guesswork. What you see is what we stitch.
       </p>
@@ -1160,6 +1244,10 @@ fetch('/api/occasions/upcoming').then(function(r){return r.json();}).then(functi
     @media(max-width:768px){
       #aiPreview .aip-grid{grid-template-columns:1fr!important;}
       #aiPreview .aip-right{display:none!important;}
+      .aip-demo-mobile{display:block!important;}
+      .aip-badge-pill{padding:4px 11px!important;}
+      .aip-badge-pill span:first-child{font-size:12px!important;}
+      .aip-badge-pill span:last-child{font-size:9px!important;}
     }
     @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
   </style>
