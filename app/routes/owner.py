@@ -1347,21 +1347,34 @@ def fix_order_customer():
 @bp.route("/api/fix-order-code")
 @owner_required
 def fix_order_code():
+    from database import invalidate_settings_cache
+
+    # Allow manual override: /owner/api/fix-order-code?set=3922
+    manual = request.args.get("set", "").strip()
+    if manual and manual.isdigit():
+        max_code = int(manual)
+        set_setting("last_order_code", str(max_code))
+        set_setting("recycled_order_codes", "")
+        invalidate_settings_cache()
+        return f"<h2>✅ Manually set! last_order_code={max_code}. Next new order = #{max_code+1}</h2><a href='/new-order'>Go to New Order →</a>"
+
+    # Auto-detect: only consider codes <= 9999 (new orders)
+    # Past orders often have old diary codes like 34001, 50000 etc.
+    # which should NOT affect the new order counter
     conn = get_db()
-    # Find the actual highest numeric order code in the database
     rows = conn.execute("SELECT order_code FROM orders").fetchall()
-    nums = [int(r["order_code"]) for r in rows if str(r["order_code"]).isdigit()]
+    nums = [int(r["order_code"]) for r in rows
+            if str(r["order_code"]).isdigit() and int(r["order_code"]) <= 9999]
     max_code = max(nums) if nums else 3599
     conn.close()
 
     set_setting("last_order_code", str(max_code))
-    set_setting("recycled_order_codes", "")  # Clear recycled pool too — prevents stale/used codes resurfacing
-    try:
-        from database import invalidate_settings_cache
-        invalidate_settings_cache()
-    except Exception:
-        pass
-    return f"<h2>✅ Fixed! Highest existing order = #{max_code}. last_order_code={max_code}, recycled pool cleared. Next order = #{max_code+1}</h2><a href='/owner/settings'>← Settings</a><br><a href='/new-order'>Go to New Order →</a>"
+    set_setting("recycled_order_codes", "")
+    invalidate_settings_cache()
+    return (f"<h2>✅ Fixed! Highest new order = #{max_code}. Next order = #{max_code+1}</h2>"
+            f"<p style='color:#666'>Past order codes (>9999) were ignored.</p>"
+            f"<p>To manually set: <a href='/owner/api/fix-order-code?set=3922'>/owner/api/fix-order-code?set=3922</a></p>"
+            f"<a href='/new-order'>Go to New Order →</a>")
 
 
 @bp.route("/api/force-order-code/<int:value>")
