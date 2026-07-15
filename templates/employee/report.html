@@ -6,168 +6,94 @@
 <title>रिपोर्ट — उत्तम टेलर्स</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:-apple-system,'Segoe UI',sans-serif;background:#0f172a;min-height:100vh;color:#f1f5f9;}
+body{font-family:-apple-system,'Segoe UI',sans-serif;background:#f1f5f9;min-height:100vh;color:#1e293b;}
 
-/* Header */
 .header{
-  background:linear-gradient(135deg,#1e1b4b,#312e81,#4338ca);
-  padding:28px 20px 24px;
-  text-align:center;
-  position:relative;
-  overflow:hidden;
+  background:linear-gradient(135deg,#4338ca,#6366f1,#818cf8);
+  padding:28px 20px 24px;text-align:center;
 }
-.header::before{
-  content:'';position:absolute;top:-40px;right:-40px;
-  width:140px;height:140px;border-radius:50%;
-  background:rgba(255,255,255,0.05);
-}
-.header::after{
-  content:'';position:absolute;bottom:-30px;left:-20px;
-  width:100px;height:100px;border-radius:50%;
-  background:rgba(255,255,255,0.04);
-}
-.shop-name{font-size:11px;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:#a5b4fc;margin-bottom:6px;}
-.header h1{font-size:26px;font-weight:900;color:#fff;margin-bottom:8px;}
-.date-chip{
-  display:inline-block;background:rgba(255,255,255,0.12);
-  border:1px solid rgba(255,255,255,0.2);
-  border-radius:20px;padding:5px 16px;
-  font-size:13px;font-weight:600;color:#c7d2fe;
-}
-.time-small{font-size:11px;color:#818cf8;margin-top:6px;}
+.shop-name{font-size:11px;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:#c7d2fe;margin-bottom:6px;}
+.header h1{font-size:24px;font-weight:900;color:#fff;margin-bottom:10px;}
+.date-chip{display:inline-block;background:rgba(255,255,255,0.25);border-radius:20px;padding:5px 16px;font-size:13px;font-weight:700;color:#fff;}
+.time-small{font-size:12px;color:#c7d2fe;margin-top:6px;}
 
-/* Main content */
 .content{padding:16px;}
 
-/* Net profit highlight */
+/* Net profit */
 .net-hero{
-  background:linear-gradient(135deg,#064e3b,#065f46,#047857);
-  border-radius:20px;padding:22px;
-  text-align:center;margin-bottom:14px;
-  border:1px solid rgba(52,211,153,0.2);
-  position:relative;overflow:hidden;
+  border-radius:20px;padding:22px;text-align:center;margin-bottom:14px;
 }
-.net-hero::before{
-  content:'💰';font-size:60px;position:absolute;
-  right:-10px;top:-10px;opacity:0.1;
-}
-.net-hero .label{font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#6ee7b7;margin-bottom:4px;}
-.net-hero .amount{font-size:42px;font-weight:900;color:#fff;}
-.net-hero .sub{font-size:11px;color:#34d399;margin-top:4px;}
+.net-hero.profit{background:linear-gradient(135deg,#bbf7d0,#86efac);border:2px solid #4ade80;}
+.net-hero.loss  {background:linear-gradient(135deg,#fecaca,#fca5a5);border:2px solid #f87171;}
+.net-hero .label{font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#064e3b;margin-bottom:4px;}
+.net-hero.loss .label{color:#7f1d1d;}
+.net-hero .amount{font-size:42px;font-weight:900;color:#14532d;}
+.net-hero.loss .amount{color:#7f1d1d;}
+.net-hero .sub{font-size:13px;font-weight:700;margin-top:6px;color:#15803d;}
+.net-hero.loss .sub{color:#b91c1c;}
 
-/* Income / Expense cards row */
+/* 2 col */
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
 
-.income-card{
-  background:linear-gradient(160deg,#052e16,#14532d);
-  border:1px solid rgba(34,197,94,0.25);
-  border-radius:16px;padding:16px;text-align:center;
-}
-.income-card .icon{font-size:24px;margin-bottom:6px;}
-.income-card .label{font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#86efac;margin-bottom:4px;}
-.income-card .amount{font-size:24px;font-weight:900;color:#4ade80;}
+.income-card{background:#f0fdf4;border:2px solid #86efac;border-radius:16px;padding:16px;text-align:center;}
+.income-card .icon{font-size:22px;margin-bottom:4px;}
+.income-card .lbl{font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#15803d;margin-bottom:4px;}
+.income-card .amt{font-size:24px;font-weight:900;color:#166534;}
 
-.expense-card{
-  background:linear-gradient(160deg,#2d0a0a,#450a0a);
-  border:1px solid rgba(239,68,68,0.25);
-  border-radius:16px;padding:16px;text-align:center;
-}
-.expense-card .icon{font-size:24px;margin-bottom:6px;}
-.expense-card .label{font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#fca5a5;margin-bottom:4px;}
-.expense-card .amount{font-size:24px;font-weight:900;color:#f87171;}
+.expense-card{background:#fff1f2;border:2px solid #fca5a5;border-radius:16px;padding:16px;text-align:center;}
+.expense-card .icon{font-size:22px;margin-bottom:4px;}
+.expense-card .lbl{font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#b91c1c;margin-bottom:4px;}
+.expense-card .amt{font-size:24px;font-weight:900;color:#991b1b;}
+
+/* Cards */
+.card{background:#fff;border-radius:16px;padding:16px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,0.06);}
+.card-title{font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#64748b;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.card-title::after{content:'';flex:1;height:1px;background:#f1f5f9;}
 
 /* Income breakdown */
-.breakdown{
-  background:#1e293b;border-radius:16px;
-  padding:16px;margin-bottom:14px;
-  border:1px solid #334155;
-}
-.section-title{
-  font-size:11px;font-weight:800;letter-spacing:1.5px;
-  text-transform:uppercase;margin-bottom:14px;color:#94a3b8;
-  display:flex;align-items:center;gap:8px;
-}
-.section-title::after{content:'';flex:1;height:1px;background:#334155;}
-
-.break-row{
-  display:flex;justify-content:space-between;align-items:center;
-  padding:8px 0;border-bottom:1px solid #1e293b;
-}
+.break-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f8fafc;}
 .break-row:last-child{border-bottom:none;}
-.break-label{display:flex;align-items:center;gap:8px;font-size:14px;color:#cbd5e1;font-weight:600;}
-.break-icon{
-  width:32px;height:32px;border-radius:8px;
-  display:flex;align-items:center;justify-content:center;font-size:16px;
-}
-.cash-icon{background:rgba(34,197,94,0.15);}
-.upi-icon{background:rgba(99,102,241,0.15);}
-.break-amount{font-size:16px;font-weight:800;color:#4ade80;}
+.break-left{display:flex;align-items:center;gap:10px;}
+.break-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;}
+.cash-icon{background:#dcfce7;}
+.upi-icon{background:#ede9fe;}
+.break-name{font-size:15px;font-weight:700;color:#374151;}
+.break-sub{font-size:11px;color:#94a3b8;}
+.break-amt{font-size:18px;font-weight:900;color:#16a34a;}
+.break-amt.upi{color:#7c3aed;}
 
-/* Expense list */
-.exp-section{
-  background:#1e293b;border-radius:16px;
-  padding:16px;margin-bottom:14px;
-  border:1px solid rgba(239,68,68,0.2);
-}
-.exp-row{
-  display:flex;justify-content:space-between;align-items:center;
-  padding:10px 0;border-bottom:1px solid #0f172a;
-}
+/* Expenses */
+.exp-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f8fafc;}
 .exp-row:last-child{border-bottom:none;}
-.exp-name{
-  display:flex;align-items:center;gap:8px;font-size:14px;color:#fecaca;font-weight:600;
-}
+.exp-left{display:flex;align-items:center;gap:8px;}
 .exp-dot{width:8px;height:8px;border-radius:50%;background:#ef4444;flex-shrink:0;}
-.exp-amount{font-size:15px;font-weight:800;color:#f87171;}
+.exp-name{font-size:14px;font-weight:600;color:#374151;}
+.exp-amt{font-size:15px;font-weight:800;color:#dc2626;}
 
-/* Orders section */
-.orders-section{
-  background:#1e293b;border-radius:16px;
-  padding:16px;margin-bottom:14px;
-  border:1px solid #334155;
-}
-.order-row{
-  display:flex;align-items:center;gap:10px;
-  padding:10px 0;border-bottom:1px solid #0f172a;
-}
+/* Orders */
+.order-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f8fafc;}
 .order-row:last-child{border-bottom:none;}
-.order-code{
-  background:#312e81;color:#a5b4fc;
-  font-size:12px;font-weight:900;
-  padding:4px 8px;border-radius:8px;min-width:48px;text-align:center;
-}
+.order-code{background:#eef2ff;color:#4338ca;font-size:12px;font-weight:900;padding:4px 8px;border-radius:8px;min-width:48px;text-align:center;}
 .order-info{flex:1;}
-.order-name{font-size:15px;font-weight:700;color:#f1f5f9;}
-.order-garment{font-size:11px;color:#64748b;margin-top:1px;}
-.badge{font-size:10px;font-weight:800;padding:3px 8px;border-radius:20px;}
-.badge-pending{background:#451a03;color:#fdba74;}
-.badge-ready{background:#052e16;color:#86efac;}
-.badge-delivered{background:#1e1b4b;color:#a5b4fc;}
+.order-name{font-size:15px;font-weight:700;color:#1e293b;}
+.order-garment{font-size:11px;color:#94a3b8;margin-top:1px;}
+.badge{font-size:10px;font-weight:800;padding:3px 9px;border-radius:20px;}
+.badge-pending  {background:#fef3c7;color:#92400e;}
+.badge-ready    {background:#d1fae5;color:#065f46;}
+.badge-delivered{background:#ede9fe;color:#5b21b6;}
 
-.empty-msg{text-align:center;padding:20px;color:#475569;font-size:14px;}
+.empty-msg{text-align:center;padding:18px;color:#94a3b8;font-size:14px;}
+.count-chip{background:#f1f5f9;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;color:#64748b;margin-left:auto;}
 
-/* Delivered section */
-.del-section{
-  background:#1e293b;border-radius:16px;
-  padding:16px;margin-bottom:14px;
-  border:1px solid rgba(52,211,153,0.15);
-}
-
-/* Refresh */
 .refresh-btn{
   width:100%;padding:16px;
   background:linear-gradient(135deg,#4338ca,#6366f1);
   color:#fff;border:none;border-radius:16px;
   font-size:16px;font-weight:800;cursor:pointer;
-  margin-bottom:20px;
-  box-shadow:0 4px 20px rgba(99,102,241,0.3);
+  box-shadow:0 4px 16px rgba(99,102,241,0.25);
+  margin-bottom:24px;
 }
 .refresh-btn:active{transform:scale(0.98);}
-
-.count-badge{
-  background:rgba(255,255,255,0.1);border-radius:20px;
-  padding:2px 10px;font-size:11px;margin-left:auto;color:#94a3b8;
-}
 </style>
 </head>
 <body>
@@ -181,71 +107,69 @@ body{font-family:-apple-system,'Segoe UI',sans-serif;background:#0f172a;min-heig
 
 <div class="content">
 
-  <!-- Net -->
-  <div class="net-hero">
-    <div class="label">आज की कुल कमाई</div>
-    <div class="amount">₹<span id="total-income">—</span></div>
+  <div class="net-hero profit" id="net-hero">
+    <div class="label">आज की शुद्ध कमाई</div>
+    <div class="amount">₹<span id="net-amount">—</span></div>
     <div class="sub" id="net-sub"></div>
   </div>
 
-  <!-- Income vs Expense -->
   <div class="two-col">
     <div class="income-card">
       <div class="icon">📈</div>
-      <div class="label">कुल आमदनी</div>
-      <div class="amount">₹<span id="gross-in">—</span></div>
+      <div class="lbl">कुल आमदनी</div>
+      <div class="amt">₹<span id="gross-in">—</span></div>
     </div>
     <div class="expense-card">
       <div class="icon">📉</div>
-      <div class="label">कुल खर्चा</div>
-      <div class="amount">₹<span id="total-exp">—</span></div>
+      <div class="lbl">कुल खर्चा</div>
+      <div class="amt">₹<span id="total-exp">—</span></div>
     </div>
   </div>
 
-  <!-- Cash / UPI breakdown -->
-  <div class="breakdown">
-    <div class="section-title">💵 आमदनी का हिसाब</div>
+  <div class="card">
+    <div class="card-title">💵 आमदनी का हिसाब</div>
     <div class="break-row">
-      <div class="break-label"><span class="break-icon cash-icon">💵</span>नकद मिला</div>
-      <div class="break-amount">₹<span id="cash-in">—</span></div>
+      <div class="break-left">
+        <span class="break-icon cash-icon">💵</span>
+        <div><div class="break-name">नकद</div><div class="break-sub">Cash in hand</div></div>
+      </div>
+      <div class="break-amt">₹<span id="cash-in">—</span></div>
     </div>
     <div class="break-row">
-      <div class="break-label"><span class="break-icon upi-icon">📱</span>UPI / बैंक</div>
-      <div class="break-amount" style="color:#818cf8;">₹<span id="upi-in">—</span></div>
+      <div class="break-left">
+        <span class="break-icon upi-icon">📱</span>
+        <div><div class="break-name">UPI / बैंक</div><div class="break-sub">Online payment</div></div>
+      </div>
+      <div class="break-amt upi">₹<span id="upi-in">—</span></div>
     </div>
   </div>
 
-  <!-- Expenses -->
-  <div class="exp-section">
-    <div class="section-title" style="color:#f87171;">🔴 आज के खर्चे</div>
+  <div class="card" style="border-left:4px solid #ef4444;">
+    <div class="card-title" style="color:#dc2626;">🔴 आज के खर्चे</div>
     <div id="expense-list"><div class="empty-msg">आज कोई खर्चा नहीं ✅</div></div>
   </div>
 
-  <!-- Today's Orders -->
-  <div class="orders-section">
-    <div class="section-title">
+  <div class="card">
+    <div class="card-title">
       🧵 आज के ऑर्डर
-      <span class="count-badge" id="order-count">0</span>
+      <span class="count-chip" id="order-count">0</span>
     </div>
     <div id="order-list"><div class="empty-msg">लोड हो रहा है...</div></div>
   </div>
 
-  <!-- Delivered -->
-  <div class="del-section">
-    <div class="section-title" style="color:#34d399;">
+  <div class="card" style="border-left:4px solid #22c55e;">
+    <div class="card-title" style="color:#16a34a;">
       ✅ आज डिलीवर हुए
-      <span class="count-badge" id="del-count">0</span>
+      <span class="count-chip" id="del-count">0</span>
     </div>
     <div id="del-list"><div class="empty-msg">लोड हो रहा है...</div></div>
   </div>
 
   <button class="refresh-btn" onclick="loadData()">🔄 ताज़ा करें</button>
-
 </div>
 
 <script>
 function fmt(n){return Math.round(n||0).toLocaleString('en-IN');}
-
 function setDate(){
   var now=new Date();
   var days=['रविवार','सोमवार','मंगलवार','बुधवार','गुरुवार','शुक्रवार','शनिवार'];
@@ -254,7 +178,6 @@ function setDate(){
   var h=now.getHours(),m=now.getMinutes();
   document.getElementById('now-time').textContent=(h>=12?'शाम':'सुबह')+' '+(h%12||12)+':'+(m<10?'0'+m:m)+' बजे';
 }
-
 async function loadData(){
   setDate();
   try{
@@ -263,33 +186,30 @@ async function loadData(){
     document.getElementById('total-exp').textContent=fmt(d.total_expense);
     document.getElementById('cash-in').textContent=fmt(d.cash_in);
     document.getElementById('upi-in').textContent=fmt(d.upi_in);
-
     var net=d.total_in-d.total_expense;
-    document.getElementById('total-income').textContent=fmt(Math.abs(net));
-    document.getElementById('net-sub').textContent=net>=0?'मुनाफा है 🎉':'नुकसान है ⚠️';
-    document.querySelector('.net-hero').style.background=net>=0
-      ?'linear-gradient(135deg,#064e3b,#065f46,#047857)'
-      :'linear-gradient(135deg,#450a0a,#7f1d1d,#991b1b)';
-
-    // Expenses
+    document.getElementById('net-amount').textContent=fmt(Math.abs(net));
+    var hero=document.getElementById('net-hero');
+    if(net>=0){
+      hero.className='net-hero profit';
+      document.getElementById('net-sub').textContent='मुनाफा 🎉';
+    }else{
+      hero.className='net-hero loss';
+      document.getElementById('net-sub').textContent='खर्चा ज़्यादा है ⚠️';
+    }
     var expEl=document.getElementById('expense-list');
     expEl.innerHTML=d.expenses.length?d.expenses.map(function(e){
-      return '<div class="exp-row"><span class="exp-name"><span class="exp-dot"></span>'+(e.note||'खर्चा')+'</span><span class="exp-amount">−₹'+fmt(e.amount)+'</span></div>';
+      return '<div class="exp-row"><div class="exp-left"><span class="exp-dot"></span><span class="exp-name">'+(e.note||'खर्चा')+'</span></div><span class="exp-amt">−₹'+fmt(e.amount)+'</span></div>';
     }).join(''):'<div class="empty-msg">आज कोई खर्चा नहीं ✅</div>';
-
-    // Orders
     var ordEl=document.getElementById('order-list');
     document.getElementById('order-count').textContent=d.orders.length;
     ordEl.innerHTML=d.orders.length?d.orders.map(function(o){
-      var b=o.status==='ready'?'<span class="badge badge-ready">तैयार</span>':o.status==='delivered'?'<span class="badge badge-delivered">मिल गया</span>':'<span class="badge badge-pending">बाकी</span>';
+      var b=o.status==='ready'?'<span class="badge badge-ready">तैयार ✓</span>':o.status==='delivered'?'<span class="badge badge-delivered">मिल गया</span>':'<span class="badge badge-pending">बाकी है</span>';
       return '<div class="order-row"><div class="order-code">#'+o.order_code+'</div><div class="order-info"><div class="order-name">'+o.name+'</div><div class="order-garment">'+(o.garments||'')+'</div></div>'+b+'</div>';
     }).join(''):'<div class="empty-msg">आज कोई ऑर्डर नहीं</div>';
-
-    // Delivered
     var delEl=document.getElementById('del-list');
     document.getElementById('del-count').textContent=d.delivered.length;
     delEl.innerHTML=d.delivered.length?d.delivered.map(function(o){
-      return '<div class="order-row"><div class="order-code">#'+o.order_code+'</div><div class="order-info"><div class="order-name">'+o.name+'</div><div class="order-garment">'+(o.garments||'')+'</div></div><span class="badge badge-delivered">✅</span></div>';
+      return '<div class="order-row"><div class="order-code">#'+o.order_code+'</div><div class="order-info"><div class="order-name">'+o.name+'</div><div class="order-garment">'+(o.garments||'')+'</div></div><span class="badge badge-delivered">✅ मिला</span></div>';
     }).join(''):'<div class="empty-msg">आज कोई डिलीवरी नहीं</div>';
   }catch(e){console.error(e);}
 }
