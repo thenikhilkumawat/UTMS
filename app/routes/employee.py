@@ -813,51 +813,60 @@ def report_page():
 
 @bp.route("/mummy/data")
 def mummy_data():
-    """JSON data for the mummy summary page."""
-    from datetime import date
-    conn = get_db()
-    today = date.today().isoformat()
+    """JSON data for the report/mummy summary page."""
+    from datetime import datetime, timedelta, timezone
+    # IST = UTC+5:30
+    ist = timezone(timedelta(hours=5, minutes=30))
+    today = datetime.now(ist).strftime("%Y-%m-%d")
 
-    # Finance: income today
+    conn = get_db()
+
+    # Finance income today — use LIKE to match both "2026-07-15" and "2026-07-15 14:30:00"
     fin = conn.execute("""
         SELECT mode, SUM(amount) as total
         FROM finance
-        WHERE tx_date=? AND tx_type='income'
+        WHERE tx_date LIKE ? AND tx_type='income'
         GROUP BY mode
-    """, (today,)).fetchall()
-    cash_in = sum(r["total"] for r in fin if r["mode"] == "cash")
-    upi_in  = sum(r["total"] for r in fin if r["mode"] in ("upi","bank","online"))
+    """, (today + "%",)).fetchall()
+
+    cash_in = 0; upi_in = 0
+    for r in fin:
+        m = (r["mode"] or "").lower()
+        if m == "cash":
+            cash_in += (r["total"] or 0)
+        else:
+            upi_in += (r["total"] or 0)
     total_in = cash_in + upi_in
 
-    # Finance: expenses today
+    # Finance expenses today
     exp_rows = conn.execute("""
-        SELECT note, amount FROM finance
-        WHERE tx_date=? AND tx_type='expense'
+        SELECT note, amount, category FROM finance
+        WHERE tx_date LIKE ? AND tx_type='expense'
         ORDER BY id DESC
-    """, (today,)).fetchall()
-    total_expense = sum(r["amount"] for r in exp_rows)
+    """, (today + "%",)).fetchall()
+    total_expense = sum((r["amount"] or 0) for r in exp_rows)
 
     # Orders created today
     orders = conn.execute("""
         SELECT o.order_code, o.status, c.name,
-               GROUP_CONCAT(oi.garment_type, ', ') as garments
+               string_agg(oi.garment_type, ', ') as garments
         FROM orders o
         LEFT JOIN customers c ON c.id=o.customer_id
         LEFT JOIN order_items oi ON oi.order_id=o.id
         WHERE o.order_date=? AND o.status != 'delivered'
-        GROUP BY o.id
+        GROUP BY o.id, o.order_code, o.status, c.name
         ORDER BY o.id DESC
     """, (today,)).fetchall()
 
     # Delivered today
     delivered = conn.execute("""
         SELECT o.order_code, c.name,
-               GROUP_CONCAT(oi.garment_type, ', ') as garments
+               string_agg(oi.garment_type, ', ') as garments
         FROM orders o
         LEFT JOIN customers c ON c.id=o.customer_id
         LEFT JOIN order_items oi ON oi.order_id=o.id
         WHERE o.delivered_at LIKE ? AND o.status='delivered'
-        GROUP BY o.id
+        GROUP BY o.id, o.order_code, c.name
         ORDER BY o.id DESC
     """, (today + "%",)).fetchall()
 
@@ -867,11 +876,14 @@ def mummy_data():
         "upi_in":        round(upi_in, 2),
         "total_in":      round(total_in, 2),
         "total_expense": round(total_expense, 2),
-        "expenses":      [{"note": r["note"] or "खर्चा", "amount": r["amount"]} for r in exp_rows],
+        "expenses":      [{"note": (r["note"] or r["category"] or "खर्चा"),
+                           "amount": (r["amount"] or 0)} for r in exp_rows],
         "orders":        [{"order_code": r["order_code"], "status": r["status"],
-                           "name": r["name"] or "—", "garments": r["garments"] or ""} for r in orders],
+                           "name": r["name"] or "—",
+                           "garments": r["garments"] or ""} for r in orders],
         "delivered":     [{"order_code": r["order_code"],
-                           "name": r["name"] or "—", "garments": r["garments"] or ""} for r in delivered],
+                           "name": r["name"] or "—",
+                           "garments": r["garments"] or ""} for r in delivered],
     })
 
 @bp.route("/save-order", methods=["POST"])
