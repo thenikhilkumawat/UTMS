@@ -800,8 +800,15 @@ def apply_current_rates():
 
 @bp.route("/mummy")
 def mummy_page():
-    """Family-friendly daily summary page — for Mummy ji."""
-    return render_template("employee/mummy.html")
+    """Legacy redirect."""
+    from flask import redirect
+    return redirect("/report")
+
+
+@bp.route("/report")
+def report_page():
+    """Premium daily report page — for family."""
+    return render_template("employee/report.html")
 
 
 @bp.route("/mummy/data")
