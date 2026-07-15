@@ -108,7 +108,7 @@ body{font-family:-apple-system,'Segoe UI',sans-serif;background:#f1f5f9;min-heig
 <div class="content">
 
   <div class="net-hero profit" id="net-hero">
-    <div class="label">आज की शुद्ध कमाई</div>
+    <div class="label">आज की कमाई</div>
     <div class="amount">₹<span id="net-amount">—</span></div>
     <div class="sub" id="net-sub"></div>
   </div>
@@ -166,6 +166,7 @@ body{font-family:-apple-system,'Segoe UI',sans-serif;background:#f1f5f9;min-heig
   </div>
 
   <button class="refresh-btn" onclick="loadData()">🔄 ताज़ा करें</button>
+  <div style="text-align:center;font-size:11px;color:#94a3b8;margin-top:-16px;margin-bottom:24px;">आखिरी बार: <span id="last-updated">—</span></div>
 </div>
 
 <script>
@@ -212,9 +213,12 @@ async function loadData(){
       return '<div class="order-row"><div class="order-code">#'+o.order_code+'</div><div class="order-info"><div class="order-name">'+o.name+'</div><div class="order-garment">'+(o.garments||'')+'</div></div><span class="badge badge-delivered">✅ मिला</span></div>';
     }).join(''):'<div class="empty-msg">आज कोई डिलीवरी नहीं</div>';
   }catch(e){console.error(e);}
+  var now=new Date();
+  var h=now.getHours(),m=now.getMinutes(),s=now.getSeconds();
+  document.getElementById('last-updated').textContent=(h%12||12)+':'+(m<10?'0'+m:m)+':'+(s<10?'0'+s:s)+(h>=12?' शाम':' सुबह');
 }
 loadData();
-setInterval(loadData,60000);
+setInterval(loadData, 30000);  // every 30 seconds
 </script>
 </body>
 </html>
