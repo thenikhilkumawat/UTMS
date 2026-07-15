@@ -116,11 +116,13 @@
 @media(max-width:768px){
   .hiw-steps{grid-template-columns:1fr!important;}
   .hiw-step{border-right:none!important;border-bottom:1px solid rgba(250,240,228,.07)!important;padding:2rem 1.25rem!important;}
+  .hiw-num{color:#E2C07A!important;font-size:48px!important;}
+  .hiw{padding-bottom:3rem!important;}
 }
 
 /* ── Reviews marquee ── */
 @media(max-width:768px){
-  .reviews{padding:4rem 0!important;}
+  .reviews{padding:3rem 0 3rem!important;}
   .review-card{min-width:260px!important;max-width:280px!important;padding:1.5rem!important;}
 }
 
@@ -241,30 +243,34 @@ img,video,iframe{max-width:100%;height:auto;}
   .hero-scroll{display:none!important;}
 }
 
-/* ── 4. COLOR SWAP — Section 01 (action cards) dark, Section 02 (heritage) beige ── */
-/* Action cards 01: make dark */
+/* ── 4. ACTION CARDS — 01 beige bg, 02 dark brown ── */
 .action-cards{background:var(--bg)!important;}
 .action-cards .section-title{color:var(--dark)!important;}
 .action-cards .kicker{color:var(--gold)!important;}
-.ac-card{background:var(--dark)!important;border-color:rgba(250,240,228,.28)!important;}
-.ac-card .ac-num{color:rgba(250,240,228,.07)!important;}
-.ac-card .ac-title{color:#FAF0E4!important;}
-.ac-card .ac-desc,.ac-card .ac-who{color:rgba(250,240,228,.5)!important;}
-.ac-card .ac-for{color:var(--gold-l)!important;}
-.ac-card .ac-features li{color:rgba(250,240,228,.75)!important;}
-.ac-card .ac-price{color:rgba(250,240,228,.28)!important;}
-.ac-card .ac-cta{background:var(--bg)!important;color:var(--dark)!important;border:1.5px solid var(--bg)!important;}
-.ac-card .ac-cta:hover{background:#FAF0E4!important;}
-.ac-card:hover{border-color:rgba(250,240,228,.18)!important;box-shadow:0 12px 40px rgba(0,0,0,.4)!important;}
-/* Dark card (02) stays same but flip to make it lighter */
-.ac-card--dark{background:var(--bg)!important;border-color:rgba(92,52,32,.45)!important;}
-.ac-card--dark .ac-title{color:var(--dark)!important;}
-.ac-card--dark .ac-desc,.ac-card--dark .ac-who{color:var(--muted)!important;}
-.ac-card--dark .ac-for{color:var(--gold)!important;}
-.ac-card--dark .ac-features li{color:var(--dark)!important;}
-.ac-card--dark .ac-cta{background:var(--dark)!important;color:var(--bg)!important;}
-.ac-card--dark .ac-cta:hover{background:var(--brown)!important;}
-.ac-card--dark .ac-num{color:var(--border)!important;}
+/* Card 01: beige background */
+.ac-card{background:var(--bg)!important;border-color:rgba(92,52,32,.35)!important;}
+.ac-card .ac-num{color:rgba(92,52,32,.12)!important;}
+.ac-card .ac-title{color:var(--dark)!important;}
+.ac-card .ac-desc,.ac-card .ac-who{color:var(--muted)!important;}
+.ac-card .ac-for{color:var(--gold)!important;}
+.ac-card .ac-features li{color:var(--dark)!important;}
+.ac-card .ac-features li::before{color:var(--gold)!important;}
+.ac-card .ac-price{color:var(--muted)!important;}
+.ac-card .ac-cta{background:var(--dark)!important;color:var(--bg)!important;border:none!important;padding:13px 28px!important;}
+.ac-card .ac-cta:hover{background:var(--brown)!important;}
+.ac-card:hover{border-color:rgba(92,52,32,.25)!important;box-shadow:0 12px 40px rgba(92,52,32,.08)!important;}
+/* Card 02: dark brown */
+.ac-card--dark{background:var(--dark)!important;border-color:rgba(250,240,228,.14)!important;}
+.ac-card--dark .ac-num{color:rgba(250,240,228,.07)!important;}
+.ac-card--dark .ac-title{color:#FAF0E4!important;}
+.ac-card--dark .ac-desc,.ac-card--dark .ac-who{color:rgba(250,240,228,.55)!important;}
+.ac-card--dark .ac-for{color:var(--gold-l)!important;}
+.ac-card--dark .ac-features li{color:rgba(250,240,228,.75)!important;}
+.ac-card--dark .ac-features li::before{color:var(--gold-l)!important;}
+.ac-card--dark .ac-price{color:rgba(250,240,228,.28)!important;}
+.ac-card--dark .ac-cta{background:var(--bg)!important;color:var(--dark)!important;border:none!important;padding:13px 28px!important;}
+.ac-card--dark .ac-cta:hover{background:#FAF0E4!important;}
+.ac-card--dark:hover{border-color:rgba(250,240,228,.22)!important;box-shadow:0 12px 40px rgba(0,0,0,.35)!important;}
 /* Heritage strip: beige background */
 .heritage{background:var(--bg)!important;border-color:var(--border)!important;}
 .h-num{color:var(--dark)!important;}
@@ -287,17 +293,7 @@ img,video,iframe{max-width:100%;height:auto;}
   #aiPreview > div > div:first-child > div[style*="margin-top:14px"]{text-align:center!important;}
 }
 
-/* ── 6. HERITAGE — moved to 2nd (CSS order trick for mobile) ── */
-@media(max-width:768px){
-  /* We reorder via flex on the page wrapper if it's flex; otherwise use targeted order */
-  .heritage{order:-1!important;}
-  /* Heritage 2×2 on mobile */
-  .heritage-inner{display:grid!important;grid-template-columns:1fr 1fr!important;}
-  .heritage-item{flex:none!important;border-right:none!important;border-bottom:1px solid var(--border)!important;padding:2rem 1rem!important;}
-  .heritage-item:nth-child(odd){border-right:1px solid var(--border)!important;}
-  .heritage-item:last-child,.heritage-item:nth-last-child(2):nth-child(odd){border-bottom:none!important;}
-  .h-num{font-size:40px!important;}
-}
+
 
 /* ── 7. CATALOGUE — price bigger + below name; button bigger ── */
 .cat-name-row{flex-direction:column!important;gap:4px!important;align-items:flex-start!important;}
@@ -316,17 +312,21 @@ img,video,iframe{max-width:100%;height:auto;}
 
 /* ── 8. BRING YOUR INSPO — mobile column reflow ── */
 @media(max-width:768px){
-  .inspo-inner{display:flex!important;flex-direction:column!important;gap:2.5rem!important;padding:0!important;}
-  .inspo-text{order:1!important;}
-  .inspo-visual{order:2!important;height:420px!important;width:100%!important;}
-  .inspo-pstack{width:280px!important;height:360px!important;margin:0 auto!important;}
+  /* display:contents dissolves .inspo-text so children can be ordered within .inspo-inner */
+  .inspo-inner{display:flex!important;flex-direction:column!important;padding:0!important;}
+  .inspo-text{display:contents!important;}
+  .inspo-head{order:1!important;margin-bottom:1.5rem!important;text-align:center!important;}
+  .inspo-visual{order:2!important;height:380px!important;width:100%!important;margin-bottom:1.75rem!important;}
+  .inspo-sub{order:3!important;text-align:center!important;font-size:14px!important;max-width:100%!important;margin-bottom:1.5rem!important;}
+  .inspo-steps{order:4!important;margin-bottom:1.5rem!important;}
+  .inspo-cta{order:5!important;width:100%!important;justify-content:center!important;}
+  .inspo-pstack{width:260px!important;height:340px!important;margin:0 auto!important;}
   .inspo-title{font-size:clamp(28px,8vw,40px)!important;text-align:center!important;}
-  .inspo-text .kicker{text-align:center!important;display:block!important;}
-  .inspo-sub{text-align:center!important;font-size:14px!important;max-width:100%!important;}
-  .inspo-steps{margin-bottom:1.5rem!important;}
-  .inspo-cta{width:100%!important;justify-content:center!important;}
-  .inspo-section{padding:4rem 1.5rem!important;}
+  .inspo-head .kicker{text-align:center!important;display:block!important;}
+  .inspo-section{padding:3.5rem 1.5rem!important;}
 }
+/* Inspo step numbers — beige */
+.inspo-step-num{color:#E2C07A!important;}
 
 /* ── 9a. WORKSHOP — portrait images fix (both desktop+mobile) ── */
 .craft-tile img{object-position:top center!important;}
@@ -346,14 +346,16 @@ img,video,iframe{max-width:100%;height:auto;}
   .craft-head-right{display:flex!important;flex-direction:column!important;align-items:center!important;gap:8px!important;}
   .craft-head-title{font-size:clamp(28px,8vw,40px)!important;text-align:center!important;}
   .craft-head-sub{text-align:center!important;max-width:280px!important;margin:0 auto!important;}
-  /* Horizontal scroll slider */
+  /* Updated Daily pill inline before heading */
+  .craft-live-pill--inline{display:inline-flex!important;margin-bottom:.75rem!important;}
+  /* Horizontal scroll slider — center snap so half-left + half-right image shows */
   .craft-grid{
     display:flex!important;
     overflow-x:auto!important;
     scroll-snap-type:x mandatory!important;
     -webkit-overflow-scrolling:touch!important;
-    gap:10px!important;
-    padding:0 1.25rem 1rem!important;
+    gap:12px!important;
+    padding:0 calc(50vw - 35vw) 1rem!important;
     scrollbar-width:none!important;
     grid-template-columns:unset!important;
     grid-template-rows:unset!important;
@@ -362,10 +364,10 @@ img,video,iframe{max-width:100%;height:auto;}
   .craft-tile{
     flex:0 0 70vw!important;
     height:300px!important;
-    scroll-snap-align:start!important;
+    scroll-snap-align:center!important;
     border-radius:8px!important;
   }
-  .craft-tile:nth-child(1){grid-row:unset!important;flex:0 0 80vw!important;height:320px!important;}
+  .craft-tile:nth-child(1){grid-row:unset!important;flex:0 0 70vw!important;height:300px!important;}
   /* Arrows */
   .craft-slider-nav{display:flex!important;}
   .craft-footer{
@@ -380,6 +382,8 @@ img,video,iframe{max-width:100%;height:auto;}
   justify-content:center;gap:12px;
   padding:0 1.25rem .75rem;
 }
+/* On desktop, pill-inline shows inline before heading */
+.craft-live-pill--inline{margin-bottom:.75rem;}
 .craft-slider-btn{
   width:36px;height:36px;border-radius:50%;
   border:1px solid rgba(200,144,58,.4);
@@ -409,14 +413,28 @@ img,video,iframe{max-width:100%;height:auto;}
   .inspo-pol--br img{width:125px!important;height:165px!important;}
 }
 
-/* Mobile heritage strip — show after hero on mobile, hide on desktop */
-.mobile-heritage-strip{display:none;}
+/* Heritage section — 2x2 grid on mobile */
 @media(max-width:768px){
-  .mobile-heritage-strip{display:block!important;}
-  /* Hide the original heritage section on mobile */
-  section.heritage:not(.mobile-heritage-strip section.heritage){display:none!important;}
+  .heritage-inner{display:grid!important;grid-template-columns:1fr 1fr!important;}
+  .heritage-item{flex:none!important;border-right:none!important;border-bottom:1px solid var(--border)!important;padding:2rem 1rem!important;}
+  .heritage-item:nth-child(odd){border-right:1px solid var(--border)!important;}
+  .heritage-item:last-child{border-bottom:none!important;}
+  .h-num{font-size:40px!important;}
 }
 
+
+/* ── MOBILE: consistent section spacing ── */
+@media(max-width:768px){
+  .pricing-section{padding-top:3.5rem!important;padding-bottom:3.5rem!important;}
+  .occasion-section{padding-top:3rem!important;padding-bottom:3rem!important;}
+  .hiw{padding-top:0!important;}
+  .reviews{padding-top:2.5rem!important;padding-bottom:2.5rem!important;}
+  .inspo-section{padding-top:3.5rem!important;padding-bottom:3.5rem!important;}
+  .fabric-guide{padding-top:3rem!important;padding-bottom:3rem!important;}
+  .papa-story{padding:3rem 1.25rem!important;}
+  .catalogue{padding-bottom:3.5rem!important;}
+  .big-cta{padding-top:4rem!important;padding-bottom:4rem!important;}
+}
 /* Workshop section — portrait grid override (applied globally) */
 .craft-grid{
   grid-template-rows:320px 280px!important;

@@ -19,8 +19,8 @@
   <div class="tl-line" aria-hidden="true"></div>
 
   {% if timeline %}
-    {% for i, entry in enumerate(timeline) %}
-    <div class="tl-item {{ 'tl-left' if i % 2 == 0 else 'tl-right' }}">
+    {% for entry in timeline %}
+    <div class="tl-item {{ 'tl-left' if loop.index0 % 2 == 0 else 'tl-right' }}">
       <div class="tl-year">{{ entry.year }}</div>
       <div class="tl-dot {% if loop.last %}tl-dot--gold{% endif %}" aria-hidden="true"></div>
       <div class="tl-card {% if loop.last %}tl-card--gold{% endif %}">

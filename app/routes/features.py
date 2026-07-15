@@ -2189,6 +2189,14 @@ def razorpay_create_order():
 
     key_id     = _os.environ.get("RAZORPAY_KEY_ID", "")
     key_secret = _os.environ.get("RAZORPAY_KEY_SECRET", "")
+    # Fallback: read from DB settings (admin may have saved keys there)
+    if not key_id or not key_secret:
+        try:
+            _db = get_db()
+            key_id     = key_id     or (_db.execute("SELECT value FROM settings WHERE key='razorpay_key_id'").fetchone()     or {}).get("value","").strip()
+            key_secret = key_secret or (_db.execute("SELECT value FROM settings WHERE key='razorpay_key_secret'").fetchone() or {}).get("value","").strip()
+        except Exception:
+            pass
     if not key_id or not key_secret:
         return jsonify({"ok": False, "error": "Payment gateway not configured on server"}), 500
 
@@ -2224,6 +2232,12 @@ def razorpay_verify_payment():
     advance_rs    = float(d.get("advance_amount", 0))
 
     key_secret = _os.environ.get("RAZORPAY_KEY_SECRET", "")
+    if not key_secret:
+        try:
+            _db2 = get_db()
+            key_secret = (_db2.execute("SELECT value FROM settings WHERE key='razorpay_key_secret'").fetchone() or {}).get("value","").strip()
+        except Exception:
+            pass
     if not key_secret:
         return jsonify({"ok": False, "error": "Payment gateway not configured"}), 500
 

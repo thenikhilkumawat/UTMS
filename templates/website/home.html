@@ -921,20 +921,19 @@ fetch('/api/occasions/upcoming').then(function(r){return r.json();}).then(functi
 </a>
 
 
-{# Mobile-only heritage strip shown right after hero #}
-<div class="mobile-heritage-strip">
-  {% if hs_active.get('heritage', True) %}
-  {% set hh = hs.get('heritage',{}) %}
-  <div class="heritage" style="margin:0;">
-    <div class="heritage-inner">
-      {% set stats=[
-        (hh.get('stat1_num','35+'),hh.get('stat1_lbl','Years of mastery')),
-        (hh.get('stat2_num','1,00,000+'),hh.get('stat2_lbl','Garments stitched')),
-        (hh.get('stat3_num','1987'),hh.get('stat3_lbl','Est. in Sikar')),
-        (hh.get('stat4_num','7'),hh.get('stat4_lbl','Days delivery'))
-      ] %}
-      {% for num,lbl in stats %}
-      <div class="heritage-item"><span class="h-num">{{ num }}</span><span class="h-label">{{ lbl }}</span></div>
+{# ═══════ 02 HERITAGE STATS ═══════ #}
+{% if hs_active.get('heritage', True) %}
+{% set hh = hs.get('heritage',{}) %}
+<section class="heritage">
+  <div class="heritage-inner">
+    <div class="heritage-item"><span class="h-num">{{ hh.get('stat1_num','1987') }}</span><span class="h-label">{{ hh.get('stat1_label','Est. since') }}</span></div>
+    <div class="heritage-item"><span class="h-num">{{ hh.get('stat2_num','37+') }}</span><span class="h-label">{{ hh.get('stat2_label','Years of craft') }}</span></div>
+    <div class="heritage-item"><span class="h-num">{{ hh.get('stat3_num','1 Lakh+') }}</span><span class="h-label">{{ hh.get('stat3_label','Garments delivered') }}</span></div>
+    <div class="heritage-item"><span class="h-num">{{ hh.get('stat4_num','7') }}</span><span class="h-label">{{ hh.get('stat4_label','Day turnaround') }}</span></div>
+  </div>
+</section>
+{% endif %}
+
       {% endfor %}
     </div>
   </div>
@@ -1254,19 +1253,6 @@ fetch('/api/occasions/upcoming').then(function(r){return r.json();}).then(functi
 </section>
 {% endif %}
 
-
-{# ═══════ 02 HERITAGE STATS ═══════ #}
-{% if hs_active.get('heritage', True) %}
-{% set hh = hs.get('heritage',{}) %}
-<section class="heritage">
-  <div class="heritage-inner">
-    <div class="heritage-item"><span class="h-num">{{ hh.get('stat1_num','1987') }}</span><span class="h-label">{{ hh.get('stat1_label','Est. since') }}</span></div>
-    <div class="heritage-item"><span class="h-num">{{ hh.get('stat2_num','37+') }}</span><span class="h-label">{{ hh.get('stat2_label','Years of craft') }}</span></div>
-    <div class="heritage-item"><span class="h-num">{{ hh.get('stat3_num','1 Lakh+') }}</span><span class="h-label">{{ hh.get('stat3_label','Garments delivered') }}</span></div>
-    <div class="heritage-item"><span class="h-num">{{ hh.get('stat4_num','7') }}</span><span class="h-label">{{ hh.get('stat4_label','Day turnaround') }}</span></div>
-  </div>
-</section>
-{% endif %}
 
 {# ═══════ 03 WHAT WE MAKE (catalogue) ═══════ #}
 {% if hs_active.get('catalogue', True) %}
@@ -1650,8 +1636,10 @@ fetch('/api/occasions/upcoming').then(function(r){return r.json();}).then(functi
 <section class="inspo-section">
   <div class="inspo-inner">
     <div class="inspo-text reveal-left">
-      <p class="kicker">Your Style, Your Rules</p>
-      <h2 class="inspo-title">Bring Your <em>Inspo</em></h2>
+      <div class="inspo-head">
+        <p class="kicker">Your Style, Your Rules</p>
+        <h2 class="inspo-title">Bring Your <em>Inspo</em></h2>
+      </div>
       <p class="inspo-sub">Found a look you love? Share a photo, screenshot, or magazine cut — and we'll recreate it in your exact measurements, fabric and fit.</p>
       <div class="inspo-steps">
         <div class="inspo-step">
@@ -1732,14 +1720,13 @@ fetch('/api/occasions/upcoming').then(function(r){return r.json();}).then(functi
     <!-- Split editorial header -->
     <div class="craft-head reveal">
       <div class="craft-head-left">
-        <span class="kicker">Stitched This Week</span>
-        <h2 class="craft-head-title">Fresh From<br><em>The Workshop</em></h2>
-      </div>
-      <div class="craft-head-right">
-        <div class="craft-live-pill">
+        <div class="craft-live-pill craft-live-pill--inline">
           <span class="craft-live-dot"></span>
           Updated Daily
         </div>
+        <h2 class="craft-head-title">Fresh From<br><em>The Workshop</em></h2>
+      </div>
+      <div class="craft-head-right">
         <p class="craft-head-sub">Real work, no stock photos — every piece hand-stitched in Sikar</p>
       </div>
     </div>
