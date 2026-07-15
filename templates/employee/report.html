@@ -213,12 +213,13 @@ async function loadData(){
       return '<div class="order-row"><div class="order-code">#'+o.order_code+'</div><div class="order-info"><div class="order-name">'+o.name+'</div><div class="order-garment">'+(o.garments||'')+'</div></div><span class="badge badge-delivered">✅ मिला</span></div>';
     }).join(''):'<div class="empty-msg">आज कोई डिलीवरी नहीं</div>';
   }catch(e){console.error(e);}
+  try{
   var now=new Date();
   var h=now.getHours(),m=now.getMinutes(),s=now.getSeconds();
   document.getElementById('last-updated').textContent=(h%12||12)+':'+(m<10?'0'+m:m)+':'+(s<10?'0'+s:s)+(h>=12?' शाम':' सुबह');
 }
 loadData();
-setInterval(loadData, 30000);  // every 30 seconds
+setInterval(loadData, 5000);  // every 5 seconds
 </script>
 </body>
 </html>
