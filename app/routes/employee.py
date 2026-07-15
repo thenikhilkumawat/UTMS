@@ -797,6 +797,76 @@ def apply_current_rates():
     return jsonify({"ok": True, "updated": updated,
                     "message": f"✅ {updated} work log entries updated with current rates (today & yesterday)"})
 
+
+@bp.route("/mummy")
+def mummy_page():
+    """Family-friendly daily summary page — for Mummy ji."""
+    return render_template("employee/mummy.html")
+
+
+@bp.route("/mummy/data")
+def mummy_data():
+    """JSON data for the mummy summary page."""
+    from datetime import date
+    conn = get_db()
+    today = date.today().isoformat()
+
+    # Finance: income today
+    fin = conn.execute("""
+        SELECT mode, SUM(amount) as total
+        FROM finance
+        WHERE tx_date=? AND tx_type='income'
+        GROUP BY mode
+    """, (today,)).fetchall()
+    cash_in = sum(r["total"] for r in fin if r["mode"] == "cash")
+    upi_in  = sum(r["total"] for r in fin if r["mode"] in ("upi","bank","online"))
+    total_in = cash_in + upi_in
+
+    # Finance: expenses today
+    exp_rows = conn.execute("""
+        SELECT note, amount FROM finance
+        WHERE tx_date=? AND tx_type='expense'
+        ORDER BY id DESC
+    """, (today,)).fetchall()
+    total_expense = sum(r["amount"] for r in exp_rows)
+
+    # Orders created today
+    orders = conn.execute("""
+        SELECT o.order_code, o.status, c.name,
+               GROUP_CONCAT(oi.garment_type, ', ') as garments
+        FROM orders o
+        LEFT JOIN customers c ON c.id=o.customer_id
+        LEFT JOIN order_items oi ON oi.order_id=o.id
+        WHERE o.order_date=? AND o.status != 'delivered'
+        GROUP BY o.id
+        ORDER BY o.id DESC
+    """, (today,)).fetchall()
+
+    # Delivered today
+    delivered = conn.execute("""
+        SELECT o.order_code, c.name,
+               GROUP_CONCAT(oi.garment_type, ', ') as garments
+        FROM orders o
+        LEFT JOIN customers c ON c.id=o.customer_id
+        LEFT JOIN order_items oi ON oi.order_id=o.id
+        WHERE o.delivered_at LIKE ? AND o.status='delivered'
+        GROUP BY o.id
+        ORDER BY o.id DESC
+    """, (today + "%",)).fetchall()
+
+    conn.close()
+    return jsonify({
+        "cash_in":       round(cash_in, 2),
+        "upi_in":        round(upi_in, 2),
+        "total_in":      round(total_in, 2),
+        "total_expense": round(total_expense, 2),
+        "expenses":      [{"note": r["note"] or "खर्चा", "amount": r["amount"]} for r in exp_rows],
+        "orders":        [{"order_code": r["order_code"], "status": r["status"],
+                           "name": r["name"] or "—", "garments": r["garments"] or ""} for r in orders],
+        "delivered":     [{"order_code": r["order_code"],
+                           "name": r["name"] or "—", "garments": r["garments"] or ""} for r in delivered],
+    })
+
 @bp.route("/save-order", methods=["POST"])
 def save_order():
     data = request.get_json(silent=True) or {}
