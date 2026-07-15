@@ -8,218 +8,281 @@
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:-apple-system,'Segoe UI',sans-serif;background:#f1f5f9;min-height:100vh;color:#1e293b;}
 
-.header{
-  background:linear-gradient(135deg,#4338ca,#6366f1,#818cf8);
-  padding:28px 20px 24px;text-align:center;
-}
-.shop-name{font-size:11px;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:#c7d2fe;margin-bottom:6px;}
-.header h1{font-size:24px;font-weight:900;color:#fff;margin-bottom:10px;}
-.date-chip{display:inline-block;background:rgba(255,255,255,0.25);border-radius:20px;padding:5px 16px;font-size:13px;font-weight:700;color:#fff;}
-.time-small{font-size:12px;color:#c7d2fe;margin-top:6px;}
+.header{background:linear-gradient(135deg,#4338ca,#6366f1,#818cf8);padding:24px 20px 0;}
+.shop-name{font-size:11px;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:#c7d2fe;margin-bottom:4px;}
+.header h1{font-size:22px;font-weight:900;color:#fff;margin-bottom:10px;}
 
-.content{padding:16px;}
+/* Tabs */
+.tabs{display:flex;gap:4px;padding:0 0 0 0;}
+.tab-btn{flex:1;padding:11px;background:rgba(255,255,255,0.15);border:none;
+  color:rgba(255,255,255,0.7);font-size:13px;font-weight:700;cursor:pointer;
+  border-radius:12px 12px 0 0;transition:all 0.2s;}
+.tab-btn.active{background:#f1f5f9;color:#4338ca;}
 
-/* Net profit */
-.net-hero{
-  border-radius:20px;padding:22px;text-align:center;margin-bottom:14px;
-}
+.content{padding:14px;}
+
+/* Net hero */
+.net-hero{border-radius:18px;padding:20px;text-align:center;margin-bottom:12px;}
 .net-hero.profit{background:linear-gradient(135deg,#bbf7d0,#86efac);border:2px solid #4ade80;}
-.net-hero.loss  {background:linear-gradient(135deg,#fecaca,#fca5a5);border:2px solid #f87171;}
-.net-hero .label{font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#064e3b;margin-bottom:4px;}
+.net-hero.loss{background:linear-gradient(135deg,#fecaca,#fca5a5);border:2px solid #f87171;}
+.net-hero .label{font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#064e3b;margin-bottom:4px;}
 .net-hero.loss .label{color:#7f1d1d;}
-.net-hero .amount{font-size:42px;font-weight:900;color:#14532d;}
+.net-hero .amount{font-size:40px;font-weight:900;color:#14532d;}
 .net-hero.loss .amount{color:#7f1d1d;}
-.net-hero .sub{font-size:13px;font-weight:700;margin-top:6px;color:#15803d;}
+.net-hero .sub{font-size:12px;font-weight:700;margin-top:4px;color:#15803d;}
 .net-hero.loss .sub{color:#b91c1c;}
 
-/* 2 col */
-.two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.income-card{background:#f0fdf4;border:2px solid #86efac;border-radius:14px;padding:14px;text-align:center;}
+.income-card .icon{font-size:20px;margin-bottom:3px;}
+.income-card .lbl{font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#15803d;margin-bottom:3px;}
+.income-card .amt{font-size:22px;font-weight:900;color:#166534;}
+.expense-card{background:#fff1f2;border:2px solid #fca5a5;border-radius:14px;padding:14px;text-align:center;}
+.expense-card .icon{font-size:20px;margin-bottom:3px;}
+.expense-card .lbl{font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#b91c1c;margin-bottom:3px;}
+.expense-card .amt{font-size:22px;font-weight:900;color:#991b1b;}
 
-.income-card{background:#f0fdf4;border:2px solid #86efac;border-radius:16px;padding:16px;text-align:center;}
-.income-card .icon{font-size:22px;margin-bottom:4px;}
-.income-card .lbl{font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#15803d;margin-bottom:4px;}
-.income-card .amt{font-size:24px;font-weight:900;color:#166534;}
-
-.expense-card{background:#fff1f2;border:2px solid #fca5a5;border-radius:16px;padding:16px;text-align:center;}
-.expense-card .icon{font-size:22px;margin-bottom:4px;}
-.expense-card .lbl{font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#b91c1c;margin-bottom:4px;}
-.expense-card .amt{font-size:24px;font-weight:900;color:#991b1b;}
-
-/* Cards */
-.card{background:#fff;border-radius:16px;padding:16px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,0.06);}
-.card-title{font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#64748b;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.card{background:#fff;border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:0 2px 6px rgba(0,0,0,0.05);}
+.card-title{font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#64748b;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
 .card-title::after{content:'';flex:1;height:1px;background:#f1f5f9;}
-
-/* Income breakdown */
-.break-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f8fafc;}
-.break-row:last-child{border-bottom:none;}
-.break-left{display:flex;align-items:center;gap:10px;}
-.break-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;}
-.cash-icon{background:#dcfce7;}
-.upi-icon{background:#ede9fe;}
-.break-name{font-size:15px;font-weight:700;color:#374151;}
-.break-sub{font-size:11px;color:#94a3b8;}
-.break-amt{font-size:18px;font-weight:900;color:#16a34a;}
-.break-amt.upi{color:#7c3aed;}
-
-/* Expenses */
-.exp-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f8fafc;}
-.exp-row:last-child{border-bottom:none;}
-.exp-left{display:flex;align-items:center;gap:8px;}
-.exp-dot{width:8px;height:8px;border-radius:50%;background:#ef4444;flex-shrink:0;}
-.exp-name{font-size:14px;font-weight:600;color:#374151;}
-.exp-amt{font-size:15px;font-weight:800;color:#dc2626;}
-
-/* Orders */
-.order-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f8fafc;}
-.order-row:last-child{border-bottom:none;}
-.order-code{background:#eef2ff;color:#4338ca;font-size:12px;font-weight:900;padding:4px 8px;border-radius:8px;min-width:48px;text-align:center;}
-.order-info{flex:1;}
-.order-name{font-size:15px;font-weight:700;color:#1e293b;}
-.order-garment{font-size:11px;color:#94a3b8;margin-top:1px;}
-.badge{font-size:10px;font-weight:800;padding:3px 9px;border-radius:20px;}
-.badge-pending  {background:#fef3c7;color:#92400e;}
-.badge-ready    {background:#d1fae5;color:#065f46;}
-.badge-delivered{background:#ede9fe;color:#5b21b6;}
-
-.empty-msg{text-align:center;padding:18px;color:#94a3b8;font-size:14px;}
 .count-chip{background:#f1f5f9;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;color:#64748b;margin-left:auto;}
 
-.refresh-btn{
-  width:100%;padding:16px;
-  background:linear-gradient(135deg,#4338ca,#6366f1);
-  color:#fff;border:none;border-radius:16px;
-  font-size:16px;font-weight:800;cursor:pointer;
-  box-shadow:0 4px 16px rgba(99,102,241,0.25);
-  margin-bottom:24px;
-}
+.break-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #f8fafc;}
+.break-row:last-child{border-bottom:none;}
+.break-left{display:flex;align-items:center;gap:10px;}
+.break-icon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;}
+.cash-icon{background:#dcfce7;}.upi-icon{background:#ede9fe;}
+.break-name{font-size:14px;font-weight:700;color:#374151;}
+.break-sub{font-size:10px;color:#94a3b8;}
+.break-amt{font-size:17px;font-weight:900;color:#16a34a;}
+.break-amt.upi{color:#7c3aed;}
+
+.exp-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #f8fafc;}
+.exp-row:last-child{border-bottom:none;}
+.exp-left{display:flex;align-items:center;gap:8px;}
+.exp-dot{width:7px;height:7px;border-radius:50%;background:#ef4444;flex-shrink:0;}
+.exp-name{font-size:13px;font-weight:600;color:#374151;}
+.exp-amt{font-size:14px;font-weight:800;color:#dc2626;}
+
+.order-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f8fafc;}
+.order-row:last-child{border-bottom:none;}
+.order-code{background:#eef2ff;color:#4338ca;font-size:11px;font-weight:900;padding:4px 7px;border-radius:7px;min-width:44px;text-align:center;}
+.order-info{flex:1;}
+.order-name{font-size:14px;font-weight:700;color:#1e293b;}
+.order-garment{font-size:10px;color:#94a3b8;margin-top:1px;}
+.badge{font-size:10px;font-weight:800;padding:2px 8px;border-radius:20px;}
+.badge-pending{background:#fef3c7;color:#92400e;}
+.badge-ready{background:#d1fae5;color:#065f46;}
+.badge-delivered{background:#ede9fe;color:#5b21b6;}
+
+/* Daily table */
+.daily-row{display:flex;align-items:center;padding:8px 0;border-bottom:1px solid #f8fafc;gap:8px;}
+.daily-row:last-child{border-bottom:none;}
+.daily-date{font-size:12px;font-weight:700;color:#475569;min-width:60px;}
+.daily-in{font-size:13px;font-weight:700;color:#16a34a;flex:1;text-align:right;}
+.daily-exp{font-size:13px;font-weight:700;color:#dc2626;flex:1;text-align:right;}
+.daily-net{font-size:13px;font-weight:900;flex:1;text-align:right;}
+.daily-net.pos{color:#059669;}.daily-net.neg{color:#dc2626;}
+.daily-header{display:flex;gap:8px;padding:6px 0 8px;border-bottom:2px solid #e2e8f0;margin-bottom:4px;}
+.daily-header span{font-size:10px;font-weight:800;text-transform:uppercase;color:#94a3b8;}
+.dh-date{min-width:60px;}.dh-in{flex:1;text-align:right;}.dh-exp{flex:1;text-align:right;}.dh-net{flex:1;text-align:right;}
+
+.month-stat{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f8fafc;}
+.month-stat:last-child{border-bottom:none;}
+.ms-label{font-size:14px;font-weight:600;color:#374151;display:flex;align-items:center;gap:8px;}
+.ms-val{font-size:16px;font-weight:900;}
+
+.empty-msg{text-align:center;padding:16px;color:#94a3b8;font-size:13px;}
+.refresh-btn{width:100%;padding:14px;background:linear-gradient(135deg,#4338ca,#6366f1);
+  color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:800;cursor:pointer;
+  box-shadow:0 4px 14px rgba(99,102,241,0.25);margin-bottom:6px;}
 .refresh-btn:active{transform:scale(0.98);}
+.last-upd{text-align:center;font-size:11px;color:#94a3b8;margin-bottom:20px;}
 </style>
 </head>
 <body>
 
 <div class="header">
   <div class="shop-name">उत्तम टेलर्स — सीकर</div>
-  <h1>📊 आज की रिपोर्ट</h1>
-  <div class="date-chip" id="today-date">—</div>
-  <div class="time-small" id="now-time"></div>
+  <h1>📊 रिपोर्ट</h1>
+  <div class="tabs">
+    <button class="tab-btn active" id="tab-today" onclick="switchTab('today')">📅 आज</button>
+    <button class="tab-btn" id="tab-month" onclick="switchTab('month')">📆 इस महीने</button>
+  </div>
 </div>
 
 <div class="content">
 
+<!-- ── TODAY TAB ── -->
+<div id="view-today">
   <div class="net-hero profit" id="net-hero">
     <div class="label">आज की कमाई</div>
     <div class="amount">₹<span id="net-amount">—</span></div>
     <div class="sub" id="net-sub"></div>
   </div>
-
   <div class="two-col">
-    <div class="income-card">
-      <div class="icon">📈</div>
-      <div class="lbl">कुल आमदनी</div>
-      <div class="amt">₹<span id="gross-in">—</span></div>
-    </div>
-    <div class="expense-card">
-      <div class="icon">📉</div>
-      <div class="lbl">कुल खर्चा</div>
-      <div class="amt">₹<span id="total-exp">—</span></div>
-    </div>
+    <div class="income-card"><div class="icon">📈</div><div class="lbl">कुल आमदनी</div><div class="amt">₹<span id="t-gross">—</span></div></div>
+    <div class="expense-card"><div class="icon">📉</div><div class="lbl">कुल खर्चा</div><div class="amt">₹<span id="t-exp">—</span></div></div>
   </div>
-
   <div class="card">
     <div class="card-title">💵 आमदनी का हिसाब</div>
     <div class="break-row">
-      <div class="break-left">
-        <span class="break-icon cash-icon">💵</span>
-        <div><div class="break-name">नकद</div><div class="break-sub">Cash in hand</div></div>
-      </div>
-      <div class="break-amt">₹<span id="cash-in">—</span></div>
+      <div class="break-left"><span class="break-icon cash-icon">💵</span><div><div class="break-name">नकद</div><div class="break-sub">Cash in hand</div></div></div>
+      <div class="break-amt">₹<span id="t-cash">—</span></div>
     </div>
     <div class="break-row">
-      <div class="break-left">
-        <span class="break-icon upi-icon">📱</span>
-        <div><div class="break-name">UPI / बैंक</div><div class="break-sub">Online payment</div></div>
-      </div>
-      <div class="break-amt upi">₹<span id="upi-in">—</span></div>
+      <div class="break-left"><span class="break-icon upi-icon">📱</span><div><div class="break-name">UPI / बैंक</div><div class="break-sub">Online payment</div></div></div>
+      <div class="break-amt upi">₹<span id="t-upi">—</span></div>
     </div>
   </div>
-
   <div class="card" style="border-left:4px solid #ef4444;">
     <div class="card-title" style="color:#dc2626;">🔴 आज के खर्चे</div>
-    <div id="expense-list"><div class="empty-msg">आज कोई खर्चा नहीं ✅</div></div>
+    <div id="t-expense-list"><div class="empty-msg">आज कोई खर्चा नहीं ✅</div></div>
   </div>
-
   <div class="card">
-    <div class="card-title">
-      🧵 आज के ऑर्डर
-      <span class="count-chip" id="order-count">0</span>
-    </div>
-    <div id="order-list"><div class="empty-msg">लोड हो रहा है...</div></div>
+    <div class="card-title">🧵 आज के ऑर्डर<span class="count-chip" id="t-ord-count">0</span></div>
+    <div id="t-order-list"><div class="empty-msg">लोड हो रहा है...</div></div>
   </div>
-
   <div class="card" style="border-left:4px solid #22c55e;">
-    <div class="card-title" style="color:#16a34a;">
-      ✅ आज डिलीवर हुए
-      <span class="count-chip" id="del-count">0</span>
-    </div>
-    <div id="del-list"><div class="empty-msg">लोड हो रहा है...</div></div>
+    <div class="card-title" style="color:#16a34a;">✅ आज डिलीवर हुए<span class="count-chip" id="t-del-count">0</span></div>
+    <div id="t-del-list"><div class="empty-msg">लोड हो रहा है...</div></div>
   </div>
+</div>
 
-  <button class="refresh-btn" onclick="loadData()">🔄 ताज़ा करें</button>
-  <div style="text-align:center;font-size:11px;color:#94a3b8;margin-top:-16px;margin-bottom:24px;">आखिरी बार: <span id="last-updated">—</span></div>
+<!-- ── MONTHLY TAB ── -->
+<div id="view-month" style="display:none;">
+  <div class="net-hero profit" id="m-net-hero">
+    <div class="label" id="m-month-label">इस महीने की कमाई</div>
+    <div class="amount">₹<span id="m-net">—</span></div>
+    <div class="sub" id="m-sub"></div>
+  </div>
+  <div class="two-col">
+    <div class="income-card"><div class="icon">📈</div><div class="lbl">कुल आमदनी</div><div class="amt">₹<span id="m-gross">—</span></div></div>
+    <div class="expense-card"><div class="icon">📉</div><div class="lbl">कुल खर्चा</div><div class="amt">₹<span id="m-exp">—</span></div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">📊 महीने का हिसाब</div>
+    <div class="month-stat"><span class="ms-label">💵 नकद मिला</span><span class="ms-val" style="color:#16a34a;">₹<span id="m-cash">—</span></span></div>
+    <div class="month-stat"><span class="ms-label">📱 UPI/बैंक</span><span class="ms-val" style="color:#7c3aed;">₹<span id="m-upi">—</span></span></div>
+    <div class="month-stat"><span class="ms-label">🧵 कुल ऑर्डर</span><span class="ms-val" style="color:#4338ca;"><span id="m-orders">—</span></span></div>
+  </div>
+  <div class="card" style="border-left:4px solid #ef4444;">
+    <div class="card-title" style="color:#dc2626;">🔴 महीने के खर्चे</div>
+    <div id="m-expense-list"><div class="empty-msg">लोड हो रहा है...</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">📅 दिन-वार कमाई</div>
+    <div class="daily-header">
+      <span class="dh-date">तारीख</span>
+      <span class="dh-in">आमदनी</span>
+      <span class="dh-exp">खर्चा</span>
+      <span class="dh-net">बचत</span>
+    </div>
+    <div id="m-daily-list"><div class="empty-msg">लोड हो रहा है...</div></div>
+  </div>
+</div>
+
+<button class="refresh-btn" onclick="loadCurrent()">🔄 ताज़ा करें</button>
+<div class="last-upd">आखिरी बार: <span id="last-updated">—</span></div>
 </div>
 
 <script>
+var currentTab = 'today';
 function fmt(n){return Math.round(n||0).toLocaleString('en-IN');}
-function setDate(){
-  var now=new Date();
-  var days=['रविवार','सोमवार','मंगलवार','बुधवार','गुरुवार','शुक्रवार','शनिवार'];
-  var months=['जनवरी','फरवरी','मार्च','अप्रैल','मई','जून','जुलाई','अगस्त','सितंबर','अक्टूबर','नवंबर','दिसंबर'];
-  document.getElementById('today-date').textContent=days[now.getDay()]+', '+now.getDate()+' '+months[now.getMonth()]+' '+now.getFullYear();
-  var h=now.getHours(),m=now.getMinutes();
-  document.getElementById('now-time').textContent=(h>=12?'शाम':'सुबह')+' '+(h%12||12)+':'+(m<10?'0'+m:m)+' बजे';
+function fmtDate(s){
+  if(!s)return'—';
+  var p=s.split('-');
+  var months=['जन','फर','मार','अप्र','मई','जून','जुल','अग','सित','अक्','नव','दिस'];
+  return p[2]+' '+months[parseInt(p[1])-1];
 }
-async function loadData(){
-  setDate();
+
+function switchTab(tab){
+  currentTab=tab;
+  document.getElementById('view-today').style.display = tab==='today'?'block':'none';
+  document.getElementById('view-month').style.display = tab==='month'?'block':'none';
+  document.getElementById('tab-today').className='tab-btn'+(tab==='today'?' active':'');
+  document.getElementById('tab-month').className='tab-btn'+(tab==='month'?' active':'');
+  loadCurrent();
+}
+
+function loadCurrent(){
+  if(currentTab==='today') loadToday();
+  else loadMonth();
+}
+
+async function loadToday(){
   try{
     var d=await(await fetch('/mummy/data')).json();
-    document.getElementById('gross-in').textContent=fmt(d.total_in);
-    document.getElementById('total-exp').textContent=fmt(d.total_expense);
-    document.getElementById('cash-in').textContent=fmt(d.cash_in);
-    document.getElementById('upi-in').textContent=fmt(d.upi_in);
+    document.getElementById('t-gross').textContent=fmt(d.total_in);
+    document.getElementById('t-exp').textContent=fmt(d.total_expense);
+    document.getElementById('t-cash').textContent=fmt(d.cash_in);
+    document.getElementById('t-upi').textContent=fmt(d.upi_in);
     var net=d.total_in-d.total_expense;
     document.getElementById('net-amount').textContent=fmt(Math.abs(net));
     var hero=document.getElementById('net-hero');
-    if(net>=0){
-      hero.className='net-hero profit';
-      document.getElementById('net-sub').textContent='मुनाफा 🎉';
-    }else{
-      hero.className='net-hero loss';
-      document.getElementById('net-sub').textContent='खर्चा ज़्यादा है ⚠️';
-    }
-    var expEl=document.getElementById('expense-list');
-    expEl.innerHTML=d.expenses.length?d.expenses.map(function(e){
+    hero.className='net-hero '+(net>=0?'profit':'loss');
+    document.getElementById('net-sub').textContent=net>=0?'मुनाफा 🎉':'खर्चा ज़्यादा ⚠️';
+
+    var expEl=document.getElementById('t-expense-list');
+    expEl.innerHTML=d.expenses&&d.expenses.length?d.expenses.map(function(e){
       return '<div class="exp-row"><div class="exp-left"><span class="exp-dot"></span><span class="exp-name">'+(e.note||'खर्चा')+'</span></div><span class="exp-amt">−₹'+fmt(e.amount)+'</span></div>';
     }).join(''):'<div class="empty-msg">आज कोई खर्चा नहीं ✅</div>';
-    var ordEl=document.getElementById('order-list');
-    document.getElementById('order-count').textContent=d.orders.length;
-    ordEl.innerHTML=d.orders.length?d.orders.map(function(o){
+
+    document.getElementById('t-ord-count').textContent=d.orders?d.orders.length:0;
+    var ordEl=document.getElementById('t-order-list');
+    ordEl.innerHTML=d.orders&&d.orders.length?d.orders.map(function(o){
       var b=o.status==='ready'?'<span class="badge badge-ready">तैयार ✓</span>':o.status==='delivered'?'<span class="badge badge-delivered">मिल गया</span>':'<span class="badge badge-pending">बाकी है</span>';
       return '<div class="order-row"><div class="order-code">#'+o.order_code+'</div><div class="order-info"><div class="order-name">'+o.name+'</div><div class="order-garment">'+(o.garments||'')+'</div></div>'+b+'</div>';
     }).join(''):'<div class="empty-msg">आज कोई ऑर्डर नहीं</div>';
-    var delEl=document.getElementById('del-list');
-    document.getElementById('del-count').textContent=d.delivered.length;
-    delEl.innerHTML=d.delivered.length?d.delivered.map(function(o){
+
+    document.getElementById('t-del-count').textContent=d.delivered?d.delivered.length:0;
+    var delEl=document.getElementById('t-del-list');
+    delEl.innerHTML=d.delivered&&d.delivered.length?d.delivered.map(function(o){
       return '<div class="order-row"><div class="order-code">#'+o.order_code+'</div><div class="order-info"><div class="order-name">'+o.name+'</div><div class="order-garment">'+(o.garments||'')+'</div></div><span class="badge badge-delivered">✅ मिला</span></div>';
     }).join(''):'<div class="empty-msg">आज कोई डिलीवरी नहीं</div>';
   }catch(e){console.error(e);}
+  updateTime();
+}
+
+async function loadMonth(){
   try{
+    var d=await(await fetch('/mummy/monthly')).json();
+    document.getElementById('m-month-label').textContent=(d.month||'इस महीने')+' की कमाई';
+    document.getElementById('m-gross').textContent=fmt(d.total_in);
+    document.getElementById('m-exp').textContent=fmt(d.total_expense);
+    document.getElementById('m-cash').textContent=fmt(d.cash_in);
+    document.getElementById('m-upi').textContent=fmt(d.upi_in);
+    document.getElementById('m-orders').textContent=d.orders_count||0;
+    var net=d.net||0;
+    document.getElementById('m-net').textContent=fmt(Math.abs(net));
+    var hero=document.getElementById('m-net-hero');
+    hero.className='net-hero '+(net>=0?'profit':'loss');
+    document.getElementById('m-sub').textContent=net>=0?'मुनाफा 🎉':'खर्चा ज़्यादा ⚠️';
+
+    var expEl=document.getElementById('m-expense-list');
+    expEl.innerHTML=d.expenses&&d.expenses.length?d.expenses.map(function(e){
+      return '<div class="exp-row"><div class="exp-left"><span class="exp-dot"></span><span class="exp-name">'+(e.note||'खर्चा')+'</span></div><span class="exp-amt">−₹'+fmt(e.amount)+'</span></div>';
+    }).join(''):'<div class="empty-msg">इस महीने कोई खर्चा नहीं ✅</div>';
+
+    var dayEl=document.getElementById('m-daily-list');
+    dayEl.innerHTML=d.daily&&d.daily.length?d.daily.map(function(day){
+      var nc=day.net>=0?'pos':'neg';
+      return '<div class="daily-row"><span class="daily-date">'+fmtDate(day.date)+'</span><span class="daily-in">+₹'+fmt(day.income)+'</span><span class="daily-exp">−₹'+fmt(day.expense)+'</span><span class="daily-net '+nc+'">'+(day.net>=0?'+':'')+'₹'+fmt(Math.abs(day.net))+'</span></div>';
+    }).join(''):'<div class="empty-msg">कोई डेटा नहीं</div>';
+  }catch(e){console.error(e);}
+  updateTime();
+}
+
+function updateTime(){
   var now=new Date();
   var h=now.getHours(),m=now.getMinutes(),s=now.getSeconds();
   document.getElementById('last-updated').textContent=(h%12||12)+':'+(m<10?'0'+m:m)+':'+(s<10?'0'+s:s)+(h>=12?' शाम':' सुबह');
 }
-loadData();
-setInterval(loadData, 5000);  // every 5 seconds
+
+// Load today on start
+loadToday();
+// Auto refresh every 5 seconds
+setInterval(loadCurrent, 5000);
 </script>
 </body>
 </html>
