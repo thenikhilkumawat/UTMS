@@ -811,6 +811,83 @@ def report_page():
     return render_template("employee/report.html")
 
 
+
+@bp.route("/mummy/monthly")
+def mummy_monthly():
+    """Monthly summary data for the report page."""
+    from datetime import datetime, timedelta, timezone
+    ist = timezone(timedelta(hours=5, minutes=30))
+    now_ist = datetime.now(ist)
+    month_prefix = now_ist.strftime("%Y-%m")  # e.g. "2026-07"
+    month_name_map = {
+        "01":"जनवरी","02":"फरवरी","03":"मार्च","04":"अप्रैल",
+        "05":"मई","06":"जून","07":"जुलाई","08":"अगस्त",
+        "09":"सितंबर","10":"अक्टूबर","11":"नवंबर","12":"दिसंबर"
+    }
+    month_label = month_name_map.get(now_ist.strftime("%m"), "") + " " + now_ist.strftime("%Y")
+
+    conn = get_db()
+
+    # Monthly income
+    fin = conn.execute("""
+        SELECT mode, SUM(amount) as total
+        FROM finance
+        WHERE tx_date LIKE ? AND tx_type='income'
+        GROUP BY mode
+    """, (month_prefix + "%",)).fetchall()
+    cash_in = sum((r["total"] or 0) for r in fin if (r["mode"] or "").lower() == "cash")
+    upi_in  = sum((r["total"] or 0) for r in fin if (r["mode"] or "").lower() != "cash")
+    total_in = cash_in + upi_in
+
+    # Monthly expenses
+    exp_rows = conn.execute("""
+        SELECT note, amount, category FROM finance
+        WHERE tx_date LIKE ? AND tx_type='expense'
+        ORDER BY id DESC
+    """, (month_prefix + "%",)).fetchall()
+    total_expense = sum((r["amount"] or 0) for r in exp_rows)
+
+    # Monthly orders count
+    orders_count = conn.execute("""
+        SELECT COUNT(*) as cnt FROM orders
+        WHERE order_date LIKE ?
+    """, (month_prefix + "%",)).fetchone()["cnt"]
+
+    # Daily breakdown this month
+    daily = conn.execute("""
+        SELECT tx_date::text as day, tx_type, SUM(amount) as total
+        FROM finance
+        WHERE tx_date LIKE ?
+        GROUP BY tx_date::text, tx_type
+        ORDER BY tx_date::text ASC
+    """, (month_prefix + "%",)).fetchall()
+
+    # Build daily summary
+    daily_map = {}
+    for r in daily:
+        d = str(r["day"])[:10]
+        if d not in daily_map:
+            daily_map[d] = {"income": 0, "expense": 0}
+        daily_map[d][r["tx_type"]] = (r["total"] or 0)
+
+    daily_list = [{"date": d, "income": v["income"], "expense": v["expense"],
+                   "net": v["income"] - v["expense"]}
+                  for d, v in sorted(daily_map.items())]
+
+    conn.close()
+    return jsonify({
+        "month": month_label,
+        "cash_in": round(cash_in, 2),
+        "upi_in": round(upi_in, 2),
+        "total_in": round(total_in, 2),
+        "total_expense": round(total_expense, 2),
+        "net": round(total_in - total_expense, 2),
+        "orders_count": orders_count,
+        "expenses": [{"note": (r["note"] or r["category"] or "खर्चा"),
+                      "amount": (r["amount"] or 0)} for r in exp_rows],
+        "daily": daily_list,
+    })
+
 @bp.route("/mummy/data")
 def mummy_data():
     """JSON data for the report/mummy summary page."""
