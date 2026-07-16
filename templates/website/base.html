@@ -225,13 +225,38 @@ body.drawer-open .wa-fab,body.drawer-open .supp-fab{display:none!important;visib
 {% block head %}{% endblock %}
 
 {# ── Dynamic logo sizes ── #}
+{% set _lh_d = web_settings.get('web_logo_height_desktop','42')|int %}
+{% set _lh_m = web_settings.get('web_logo_height_mobile','36')|int %}
+{% set _flh_d = web_settings.get('web_footer_logo_height_desktop', web_settings.get('web_footer_logo_height','48'))|int %}
+{% set _flh_m = web_settings.get('web_footer_logo_height_mobile', web_settings.get('web_footer_logo_height','40'))|int %}
+{% set _nav_h_d = [_lh_d + 28, 60]|max %}
+{% set _nav_h_m = [_lh_m + 24, 54]|max %}
 <style>
-.nav-logo-img{max-height:{{ web_settings.get('web_logo_height_desktop','42') }}px!important;}
-.nav-logo-mobile-img{max-height:{{ web_settings.get('web_logo_height_mobile','36') }}px!important;}
-.footer-logo-img{max-height:{{ web_settings.get('web_footer_logo_height_desktop', web_settings.get('web_footer_logo_height','48')) }}px!important;}
+/* Header logo */
+.nav-logo-img{max-height:{{ _lh_d }}px!important;width:auto!important;}
+.nav-logo-mobile-img{max-height:{{ _lh_m }}px!important;width:auto!important;}
+/* Nav bar height — grows with logo */
+.nav-inner{height:{{ _nav_h_d }}px!important;}
+/* Page top offset = ann-bar(36px desktop) + nav height */
+.hero,.page-hero,.contact-page,.services-hero,.com-header{margin-top:{{ _nav_h_d + 36 }}px!important;}
+.pdp-wrap{padding-top:{{ _nav_h_d + 36 }}px!important;}
+.services-page-top{margin-top:{{ _nav_h_d + 36 }}px!important;}
+/* Footer logo */
+.footer-logo-img{max-height:{{ _flh_d }}px!important;width:auto!important;}
 @media(max-width:768px){
-  .nav-logo-img{max-height:{{ web_settings.get('web_logo_height_mobile','36') }}px!important;}
-  .footer-logo-img{max-height:{{ web_settings.get('web_footer_logo_height_mobile', web_settings.get('web_footer_logo_height','40')) }}px!important;}
+  .nav-logo-img{max-height:{{ _lh_m }}px!important;}
+  .nav-inner{height:{{ _nav_h_m }}px!important;}
+  /* ann-bar = 32px at 768px */
+  .hero,.page-hero,.contact-page,.services-hero,.com-header{margin-top:{{ _nav_h_m + 32 }}px!important;}
+  .pdp-wrap{padding-top:{{ _nav_h_m + 32 }}px!important;}
+  .services-page-top{margin-top:{{ _nav_h_m + 32 }}px!important;}
+  .footer-logo-img{max-height:{{ _flh_m }}px!important;}
+}
+@media(max-width:480px){
+  /* ann-bar = 28px at 480px */
+  .hero,.page-hero,.contact-page,.services-hero,.com-header{margin-top:{{ _nav_h_m + 28 }}px!important;}
+  .pdp-wrap{padding-top:{{ _nav_h_m + 28 }}px!important;}
+  .services-page-top{margin-top:{{ _nav_h_m + 28 }}px!important;}
 }
 </style>
 </head>
@@ -360,7 +385,7 @@ body.drawer-open .wa-fab,body.drawer-open .supp-fab{display:none!important;visib
         <img src="{{ web_settings['web_logo_url'] }}" alt="{{ web_settings.get('web_shop_name','Uttam Tailors') }}" class="nav-logo-img" style="width:auto;object-fit:contain;display:block;">
       {% else %}
         <span class="logo-name">{{ web_settings.get('web_shop_name','Uttam Tailors') }}</span>
-        <span class="logo-est">{{ web_settings.get('web_shop_est','Est. 1987 &middot; Sikar') }}</span>
+        <span class="logo-est">{{ web_settings.get('web_shop_est','Est. 1987 · Sikar') }}</span>
       {% endif %}
     </a>
     <!-- RIGHT: Actions -->
