@@ -2022,6 +2022,32 @@ window.craftSlide = function(dir){
   g.scrollBy({left: dir * w, behavior: 'smooth'});
 };
 
+// Mobile craft slider — center scale / active tile effect
+(function(){
+  var grid = document.getElementById('craftHomeGrid');
+  if(!grid) return;
+  function isMob(){ return window.innerWidth <= 768; }
+  function updateActive(){
+    if(!isMob()) return;
+    var tiles = Array.prototype.slice.call(grid.querySelectorAll('.craft-tile'));
+    if(!tiles.length) return;
+    var center = grid.scrollLeft + grid.offsetWidth / 2;
+    var closest = null, best = Infinity;
+    tiles.forEach(function(t){
+      var tc = t.offsetLeft + t.offsetWidth / 2;
+      var d = Math.abs(tc - center);
+      if(d < best){ best = d; closest = t; }
+    });
+    tiles.forEach(function(t){ t.classList.remove('craft-active'); });
+    if(closest) closest.classList.add('craft-active');
+  }
+  grid.addEventListener('scroll', updateActive, {passive:true});
+  // Watch for tile injection from API
+  var obs = new MutationObserver(function(){ setTimeout(updateActive, 150); });
+  obs.observe(grid, {childList:true});
+  setTimeout(updateActive, 400);
+})();
+
 // Personalised Recommendations — lazy-load widget
 (function(){
   var section = document.getElementById('aiRecommendSection');
