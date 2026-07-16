@@ -97,9 +97,12 @@
 
 /* ── Papa / Story section ── */
 @media(max-width:768px){
-  .papa-content{grid-template-columns:1fr!important;gap:2rem!important;padding:4rem 1.25rem!important;}
-  .papa-img{max-height:300px;overflow:hidden;border-radius:6px;}
-  .papa-img img{width:100%;height:100%;object-fit:cover;}
+  .papa-story{background:var(--dark)!important;}
+  .papa-img{position:relative!important;inset:auto!important;height:240px!important;max-height:240px!important;overflow:hidden;border-radius:0!important;}
+  .papa-img img{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:cover!important;filter:brightness(.4) sepia(.2)!important;}
+  .papa-content{position:relative!important;z-index:1!important;grid-template-columns:1fr!important;gap:2rem!important;padding:2.5rem 1.25rem 3rem!important;}
+  .papa-quote{font-size:clamp(20px,6vw,28px)!important;}
+  .papa-body{display:block!important;color:rgba(250,240,228,.6)!important;}
 }
 
 /* ── Fabric journey (fj) section ── */
