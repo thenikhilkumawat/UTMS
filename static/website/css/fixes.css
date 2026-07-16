@@ -272,10 +272,10 @@ img,video,iframe{max-width:100%;height:auto;}
 .ac-card--dark .ac-cta:hover{background:#FAF0E4!important;}
 .ac-card--dark:hover{border-color:rgba(250,240,228,.22)!important;box-shadow:0 12px 40px rgba(0,0,0,.35)!important;}
 /* Heritage strip: beige background */
-.heritage{background:var(--bg)!important;border-color:var(--border)!important;}
-.h-num{color:var(--dark)!important;}
-.h-label{color:var(--muted)!important;}
-.heritage-item{border-right-color:var(--border)!important;}
+.heritage{background:var(--dark)!important;border-top:2px solid rgba(184,120,48,0.35)!important;border-color:rgba(255,255,255,.07)!important;}
+.h-num{color:var(--bg)!important;}
+.h-label{color:rgba(250,240,228,.5)!important;}
+.heritage-item{border-right-color:rgba(255,255,255,.08)!important;}
 
 /* ── 5. AI PREVIEW SECTION — mobile reflow ── */
 @media(max-width:768px){
@@ -534,7 +534,7 @@ img,video,iframe{max-width:100%;height:auto;}
 #aiPreview { padding-top: 5.5rem !important; padding-bottom: 5.5rem !important; }
 
 /* 3. Compact strips: heritage (stats bar) + brands-bar (logo row) */
-.heritage  { padding-top: 3rem !important; padding-bottom: 3rem !important; }
+.heritage  { padding-top: 1.2rem !important; padding-bottom: 1.2rem !important; }
 .brands-bar{ padding-top: 2.5rem !important; padding-bottom: 2.5rem !important; }
 
 /* ── Mobile (≤ 640px) ── */
@@ -564,7 +564,7 @@ img,video,iframe{max-width:100%;height:auto;}
 
   #aiPreview { padding-top: 3.5rem !important; padding-bottom: 3.5rem !important; }
 
-  .heritage  { padding-top: 2rem !important; padding-bottom: 2rem !important; }
+  .heritage  { padding-top: 1rem !important; padding-bottom: 1rem !important; }
   .brands-bar{ padding-top: 1.5rem !important; padding-bottom: 1.5rem !important; }
 }
 
