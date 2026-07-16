@@ -1237,9 +1237,19 @@ fetch('/api/occasions/upcoming').then(function(r){return r.json();}).then(functi
       #aiPreview .aip-grid{grid-template-columns:1fr!important;}
       #aiPreview .aip-right{display:none!important;}
       .aip-demo-mobile{display:block!important;}
-      .aip-badge-pill{padding:4px 11px!important;}
+      .aip-badge-pill{
+        padding:4px 11px!important;
+        width:fit-content!important;
+        align-self:center!important;
+        margin-left:auto!important;
+        margin-right:auto!important;
+        margin-bottom:14px!important;
+      }
       .aip-badge-pill span:first-child{font-size:12px!important;}
       .aip-badge-pill span:last-child{font-size:9px!important;}
+      #aiPreview > div > div:first-child > h2,
+      #aiPreview h2{margin-bottom:16px!important;}
+      #aiPreview{padding-bottom:3rem!important;}
     }
     @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
   </style>
