@@ -3478,35 +3478,58 @@ def admin_daily_craft_list():
 
 @bp.route("/api/daily-craft/upload", methods=["POST"])
 def admin_daily_craft_upload():
-    if not session.get("owner_logged_in"): return jsonify({"ok":False,"error":"Unauthorized"}),403
-    import os
+    import os, time as _t, traceback
     from werkzeug.utils import secure_filename
-    file = request.files.get("image")
-    if not file or not file.filename:
-        return jsonify({"ok":False,"error":"No image provided"})
-    ext = os.path.splitext(secure_filename(file.filename))[1].lower()
-    if ext not in (".jpg",".jpeg",".png",".webp"):
-        return jsonify({"ok":False,"error":"Images only (jpg/png/webp)"})
-    caption = (request.form.get("caption","") or "").strip()[:200]
-    tag = (request.form.get("tag","") or "").strip()[:60]
-    save_dir = os.path.join(os.path.dirname(__file__), "../../static/uploads/daily_craft")
-    os.makedirs(save_dir, exist_ok=True)
-    import time as _t
-    fname = str(int(_t.time()*1000)) + ext
-    fpath = os.path.join(save_dir, fname)
-    file.save(fpath)
-    # Optimise — capture new path so the stored URL matches the converted file
+    if not session.get("owner_logged_in"):
+        return jsonify({"ok":False,"error":"Unauthorized"}),403
     try:
-        from app.utils.image_optimize import optimize_image
-        fpath = optimize_image(fpath)
-        fname = os.path.basename(fpath)
-    except Exception:
-        pass
-    url = "/static/uploads/daily_craft/" + fname
-    db = get_db()
-    db.execute("INSERT INTO web_daily_craft(image_url,caption,tag,is_published) VALUES(?,?,?,1)", (url,caption,tag))
-    db.commit()
-    return jsonify({"ok":True,"url":url})
+        file = request.files.get("image")
+        if not file or not file.filename:
+            return jsonify({"ok":False,"error":"No image provided"})
+
+        # 20 MB size guard
+        file.seek(0, 2)
+        size = file.tell()
+        file.seek(0)
+        if size > 20 * 1024 * 1024:
+            return jsonify({"ok":False,"error":"File too large (max 20 MB)"})
+
+        # Accept any common image extension — we convert to WebP anyway
+        orig_ext = os.path.splitext(secure_filename(file.filename))[1].lower()
+        if orig_ext not in (".jpg",".jpeg",".png",".webp",".gif",".bmp",".tiff",".heic",".heif"):
+            return jsonify({"ok":False,"error":"Images only (jpg/png/webp/heic…)"})
+
+        caption = (request.form.get("caption","") or "").strip()[:200]
+        tag     = (request.form.get("tag","") or "").strip()[:60]
+
+        save_dir = os.path.join(os.path.dirname(__file__), "../../static/uploads/daily_craft")
+        os.makedirs(save_dir, exist_ok=True)
+
+        fname = str(int(_t.time()*1000)) + orig_ext
+        fpath = os.path.join(save_dir, fname)
+        file.save(fpath)
+
+        # Auto-convert to WebP/AVIF — shrinks file & normalises format
+        try:
+            from app.utils.image_optimize import optimize_image
+            fpath = optimize_image(fpath)
+            fname = os.path.basename(fpath)
+        except Exception as _oe:
+            pass  # keep original if conversion fails
+
+        url = "/static/uploads/daily_craft/" + fname
+        db = get_db()
+        db.execute(
+            "INSERT INTO web_daily_craft(image_url,caption,tag,is_published) VALUES(?,?,?,1)",
+            (url, caption, tag)
+        )
+        db.commit()
+        return jsonify({"ok":True,"url":url})
+
+    except Exception as exc:
+        tb = traceback.format_exc()
+        print("[daily-craft/upload] ERROR:", tb)
+        return jsonify({"ok":False,"error":"Server error: "+str(exc)})
 
 @bp.route("/api/daily-craft/<int:item_id>/toggle", methods=["POST"])
 def admin_daily_craft_toggle(item_id):

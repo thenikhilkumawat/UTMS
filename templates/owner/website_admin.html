@@ -2338,7 +2338,7 @@ function dcUpload(){
       var d = JSON.parse(xhr.responseText);
       if(d.ok){ toast('Photo uploaded!'); fileInp.value=''; document.getElementById('dc_tag').value=''; document.getElementById('dc_caption').value=''; loadDcList(); }
       else toast(d.error||'Upload failed',true);
-    }catch(e){ toast('Upload error',true); }
+    }catch(e){ toast('Upload error (status '+xhr.status+')',true); console.error('Upload raw response:',xhr.responseText); }
   };
   xhr.onerror = function(){ bar.style.display='none'; toast('Upload failed',true); };
   xhr.send(fd);
