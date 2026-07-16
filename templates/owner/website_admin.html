@@ -658,7 +658,62 @@
   <div class="wa-pnl" id="wp-navfooter">
     <div class="wa-card">
       <div class="wa-card-title">🔝 Header</div>
-      <div class="wa-row"><div><label class="wa-lbl">Shop name (logo text)</label><input class="wa-in" id="web_shop_name" value="{{ web_settings.get('web_shop_name','Uttam Tailors') }}"></div><div><label class="wa-lbl">Tagline below logo</label><input class="wa-in" id="web_shop_est" value="{{ web_settings.get('web_shop_est','EST. 1987 · SIKAR') }}"></div></div>
+      
+      <!-- ── LOGO UPLOAD ── -->
+      <div style="background:#fdf8f2;border:1.5px dashed #d4a96a;border-radius:10px;padding:16px 18px;margin-bottom:16px;">
+        <div style="font-size:11px;font-weight:700;color:#7a6a58;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">🖼 Website Logo Image</div>
+        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+          <div id="logoPreviewWrap" style="width:130px;height:56px;border:1px solid #e0d5c5;border-radius:8px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;">
+            {% if web_settings.get('web_logo_url') %}
+              <img id="logoPreviewImg" src="{{ web_settings.get('web_logo_url') }}" style="max-width:120px;max-height:50px;object-fit:contain;">
+            {% else %}
+              <span id="logoPreviewPlaceholder" style="font-size:11px;color:#aaa;">No logo</span>
+            {% endif %}
+          </div>
+          <div style="flex:1;min-width:180px;">
+            <div style="font-size:11px;color:#7a6a58;margin-bottom:8px;">PNG/SVG recommended · max 5MB · shows in header, mobile menu &amp; footer</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+              <label style="cursor:pointer;background:#C8903A;color:#fff;padding:7px 14px;border-radius:6px;font-size:11px;font-weight:700;">
+                Choose Logo
+                <input type="file" accept=".png,.jpg,.jpeg,.webp,.svg" style="display:none;" onchange="waUploadLogo(this)">
+              </label>
+              {% if web_settings.get('web_logo_url') %}
+              <button onclick="waRemoveLogo()" style="background:#dc2626;color:#fff;border:none;padding:7px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">Remove</button>
+              {% endif %}
+              <span id="waLogoStatus" style="font-size:11px;color:#7a6a58;"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── FAVICON UPLOAD ── -->
+      <div style="background:#fdf8f2;border:1.5px dashed #d4a96a;border-radius:10px;padding:16px 18px;margin-bottom:16px;">
+        <div style="font-size:11px;font-weight:700;color:#7a6a58;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">🌐 Website Favicon (Browser Tab Icon)</div>
+        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+          <div id="faviconPreviewWrap2" style="width:56px;height:56px;border:1px solid #e0d5c5;border-radius:8px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;">
+            {% if web_settings.get('web_favicon_url') %}
+              <img id="faviconPreviewImg2" src="{{ web_settings.get('web_favicon_url') }}" style="width:32px;height:32px;object-fit:contain;">
+            {% else %}
+              <span id="faviconPreviewPlaceholder2" style="font-size:10px;color:#aaa;text-align:center;">No icon</span>
+            {% endif %}
+          </div>
+          <div style="flex:1;min-width:180px;">
+            <div style="font-size:11px;color:#7a6a58;margin-bottom:8px;">ICO or PNG 32×32 recommended · max 2MB · shown in browser tab &amp; bookmarks</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+              <label style="cursor:pointer;background:#C8903A;color:#fff;padding:7px 14px;border-radius:6px;font-size:11px;font-weight:700;">
+                Choose Favicon
+                <input type="file" accept=".ico,.png,.svg,.jpg,.jpeg,.webp" style="display:none;" onchange="waUploadFavicon(this)">
+              </label>
+              {% if web_settings.get('web_favicon_url') %}
+              <button onclick="waRemoveFavicon()" style="background:#dc2626;color:#fff;border:none;padding:7px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">Remove</button>
+              {% endif %}
+              <span id="waFaviconStatus" style="font-size:11px;color:#7a6a58;"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+<div class="wa-row"><div><label class="wa-lbl">Shop name (logo text)</label><input class="wa-in" id="web_shop_name" value="{{ web_settings.get('web_shop_name','Uttam Tailors') }}"></div><div><label class="wa-lbl">Tagline below logo</label><input class="wa-in" id="web_shop_est" value="{{ web_settings.get('web_shop_est','EST. 1987 · SIKAR') }}"></div></div>
       <div class="wa-row"><div><label class="wa-lbl">CTA Button Text</label><input class="wa-in" id="web_header_cta_text" value="{{ web_settings.get('web_header_cta_text','Customise Your Garment') }}"></div><div><label class="wa-lbl">CTA Button URL</label><input class="wa-in" id="web_header_cta_url" value="{{ web_settings.get('web_header_cta_url','/commission') }}"></div></div>
       <div style="margin-top:14px;"><div class="wa-lbl" style="margin-bottom:8px;">Navigation Links</div><div id="navItemsList">{% for item in nav_items %}<div class="nav-item-row" style="display:flex;gap:8px;align-items:center;padding:8px;background:#f9f5ef;border-radius:8px;margin-bottom:6px;" data-id="{{ item.id }}"><input class="wa-in nav-lbl-in" style="flex:1;" value="{{ item.label }}" placeholder="Label"><input class="wa-in nav-url-in" style="flex:1.5;" value="{{ item.url }}" placeholder="URL"><select class="wa-in" style="width:110px;"><option value="0" {% if not item.open_new_tab %}selected{% endif %}>Same tab</option><option value="1" {% if item.open_new_tab %}selected{% endif %}>New tab</option></select><button class="wa-btn gold" style="padding:5px 10px;" onclick="updateNavItem({{ item.id }},this)">Save</button><button class="wa-btn red" style="padding:5px 8px;" onclick="deleteNavItem({{ item.id }},this)">&#x2715;</button></div>{% endfor %}</div><div style="display:flex;gap:8px;margin-top:8px;padding:8px;background:#f9f5ef;border-radius:8px;"><input class="wa-in" id="newNavLabel" placeholder="Label e.g. Blog" style="flex:1;"><input class="wa-in" id="newNavUrl" placeholder="URL e.g. /blog" style="flex:1.5;"><button class="wa-btn" style="background:#1a0e06;color:#fff;padding:7px 14px;" onclick="addNavItem()">+ Add</button></div></div>
       <div style="margin-top:12px;text-align:right;"><button class="wa-btn gold" onclick="saveHeaderSettings()">Save Header</button></div>
@@ -2568,6 +2623,45 @@ waTab=function(n,b){
   }
 };
 
+
+function waUploadLogo(input){
+  var file=input.files[0]; if(!file) return;
+  var st=document.getElementById('waLogoStatus'); st.textContent='Uploading...'; st.style.color='#7a6a58';
+  var fd=new FormData(); fd.append('logo',file);
+  apiFetch('/owner/api/website/logo/upload',{method:'POST',body:fd})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.ok){
+        document.getElementById('logoPreviewWrap').innerHTML='<img src="'+d.url+'" style="max-width:120px;max-height:50px;object-fit:contain;">';
+        st.textContent='Logo saved!'; st.style.color='#16a34a';
+      } else { st.textContent='Error: '+d.error; st.style.color='#dc2626'; }
+    }).catch(function(){ st.textContent='Upload failed.'; st.style.color='#dc2626'; });
+}
+function waRemoveLogo(){
+  if(!confirm('Remove logo? Shop name text will be used instead.')) return;
+  apiFetch('/owner/api/website/logo/remove',{method:'POST'}).then(function(r){return r.json();}).then(function(d){
+    if(d.ok){ document.getElementById('logoPreviewWrap').innerHTML='<span style="font-size:11px;color:#aaa;">No logo</span>'; document.getElementById('waLogoStatus').textContent='Removed.'; }
+  });
+}
+function waUploadFavicon(input){
+  var file=input.files[0]; if(!file) return;
+  var st=document.getElementById('waFaviconStatus'); st.textContent='Uploading...'; st.style.color='#7a6a58';
+  var fd=new FormData(); fd.append('favicon',file);
+  apiFetch('/owner/api/website/favicon/upload',{method:'POST',body:fd})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.ok){
+        document.getElementById('faviconPreviewWrap2').innerHTML='<img src="'+d.url+'" style="width:32px;height:32px;object-fit:contain;">';
+        st.textContent='Favicon saved!'; st.style.color='#16a34a';
+      } else { st.textContent='Error: '+d.error; st.style.color='#dc2626'; }
+    }).catch(function(){ st.textContent='Upload failed.'; st.style.color='#dc2626'; });
+}
+function waRemoveFavicon(){
+  if(!confirm('Remove favicon?')) return;
+  apiFetch('/owner/api/website/favicon/remove',{method:'POST'}).then(function(r){return r.json();}).then(function(d){
+    if(d.ok){ document.getElementById('faviconPreviewWrap2').innerHTML='<span style="font-size:10px;color:#aaa;text-align:center;">No icon</span>'; document.getElementById('waFaviconStatus').textContent='Removed.'; }
+  });
+}
 </script>
 {% endblock %}
 </body>
