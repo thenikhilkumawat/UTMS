@@ -614,3 +614,17 @@ img,video,iframe{max-width:100%;height:auto;}
 @media (max-width: 768px) {
   .kicker { font-size: 12px !important; }
 }
+
+/* ── Pricing table: compact on small mobile ── */
+@media(max-width:480px){
+  .prc-td-name,.prc-td-price{font-size:14px!important;}
+  .prc-td-num{width:24px!important;font-size:8px!important;}
+  .prc-table td{padding:.8rem .4rem!important;}
+  .prc-td-price{white-space:normal!important;}
+}
+
+/* ── Occasion result panel: less padding on mobile ── */
+@media(max-width:600px){
+  .occ-result{padding:1.75rem 1.25rem!important;}
+  .occ-garment{font-size:15px!important;padding:10px 18px!important;}
+}
