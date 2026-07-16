@@ -898,14 +898,22 @@ def order_confirmed():
     from flask import request as _req
     order_id   = _req.args.get("id", type=int)
     order_code = (_req.args.get("code") or "").strip()
+    paid_flag  = _req.args.get("paid") == "1"
+    cod_flag   = _req.args.get("cod")  == "1"
     order = None
     try:
         db = get_db()
         if order_id:
-            row = db.execute("SELECT * FROM orders WHERE id=?", (order_id,)).fetchone()
+            row = db.execute(
+                "SELECT o.*, c.name as cust_name, c.mobile as cust_mobile, c.address as cust_address "
+                "FROM orders o LEFT JOIN customers c ON c.id=o.customer_id "
+                "WHERE o.id=?", (order_id,)
+            ).fetchone()
         elif order_code:
             row = db.execute(
-                "SELECT * FROM orders WHERE order_code=? ORDER BY id DESC LIMIT 1",
+                "SELECT o.*, c.name as cust_name, c.mobile as cust_mobile, c.address as cust_address "
+                "FROM orders o LEFT JOIN customers c ON c.id=o.customer_id "
+                "WHERE o.order_code=? ORDER BY o.id DESC LIMIT 1",
                 (order_code,)
             ).fetchone()
         else:
@@ -914,7 +922,8 @@ def order_confirmed():
             order = dict(row)
     except Exception:
         pass
-    return render_template("website/order_confirmed.html", order=order)
+    return render_template("website/order_confirmed.html",
+        order=order, paid_flag=paid_flag, cod_flag=cod_flag)
 
 
 @website_bp.route("/create-order", methods=["POST"])

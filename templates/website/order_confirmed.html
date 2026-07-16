@@ -1,148 +1,653 @@
 {% extends "website/base.html" %}
-{% block title %}Order Confirmed &mdash; Uttam Tailors{% endblock %}
+{% block title %}Order Confirmed — Uttam Tailors{% endblock %}
 {% block head %}
 <style>
-.confirmed-wrap{min-height:80vh;display:flex;align-items:center;justify-content:center;padding:120px 1rem 4rem;}
-.confirmed-box{text-align:center;max-width:500px;width:100%;}
-.confirmed-icon-wrap{margin-bottom:1.5rem;display:inline-block;}
-.confirmed-icon{
-  font-size:52px;color:var(--gold);display:inline-block;
-  animation: starDrop 1s cubic-bezier(.22,.61,.36,1) both;
+/* ═══════════════════════ ORDER CONFIRMED PAGE ═══════════════════════ */
+.oc-page{padding-bottom:5rem;}
+
+/* ── Hero Banner ── */
+.oc-hero{
+  background:linear-gradient(135deg,#1C0F06 0%,#2E1A0C 60%,#1C0F06 100%);
+  padding:110px 1.5rem 3rem;
+  text-align:center;
+  position:relative;
+  overflow:hidden;
 }
-@keyframes starDrop{
-  0%  {transform:translateY(-60px) rotate(0deg) scale(0.4);opacity:0;}
-  40% {transform:translateY(8px) rotate(180deg) scale(1.15);opacity:1;}
-  60% {transform:translateY(-4px) rotate(160deg) scale(1);}
-  80% {transform:translateY(2px) rotate(175deg) scale(1.02);}
-  100%{transform:translateY(0) rotate(180deg) scale(1);opacity:1;}
+.oc-hero::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 80%,rgba(184,120,48,.15) 0%,transparent 70%);
 }
-.confirmed-title{font-family:var(--fd);font-size:42px;font-weight:300;color:var(--dark);margin-bottom:.75rem;}
-.confirmed-id{font-family:var(--fm);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:1rem;}
-.confirmed-body{font-size:15px;color:var(--muted);margin-bottom:1.5rem;line-height:1.6;}
-.confirmed-details{background:var(--bg2);border-radius:var(--rLg);padding:1rem 1.5rem;margin-bottom:1.5rem;text-align:left;}
-.cd-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:14px;}
-.cd-row:last-child{border-bottom:none;font-weight:700;}
-.whatsapp-note{background:#dcfce7;border-radius:8px;padding:12px 16px;font-size:13px;color:#166534;margin-bottom:1.5rem;}
-/* Stitch Tracker */
-.tracker-wrap{background:var(--bg2);border-radius:var(--rLg);padding:1.25rem 1.5rem;margin-bottom:1.5rem;text-align:left;}
-.tracker-title{font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:var(--muted);margin-bottom:1rem;}
-.tracker-steps{display:flex;gap:0;position:relative;}
-.tracker-step{flex:1;text-align:center;position:relative;}
-.tracker-step::before{content:'';position:absolute;top:12px;left:-50%;width:100%;height:3px;background:var(--border);z-index:0;}
-.tracker-step:first-child::before{display:none;}
-.tracker-step.done::before{background:var(--gold);}
-.tracker-dot{width:26px;height:26px;border-radius:50%;border:3px solid var(--border);background:#fff;margin:0 auto 8px;position:relative;z-index:1;display:flex;align-items:center;justify-content:center;}
-.tracker-step.done .tracker-dot{background:var(--gold);border-color:var(--gold);color:#fff;font-size:13px;}
-.tracker-step.current .tracker-dot{border-color:var(--gold);box-shadow:0 0 0 4px rgba(var(--gold-rgb,180,118,9),.18);}
-.tracker-label{font-size:10px;color:var(--muted);line-height:1.3;font-weight:500;}
-.tracker-step.current .tracker-label{color:var(--dark);font-weight:800;}
-.tracker-note{font-size:12px;color:var(--muted);margin-top:.75rem;border-top:1px solid var(--border);padding-top:.75rem;font-style:italic;}
+.oc-check-wrap{
+  width:72px;height:72px;border-radius:50%;
+  border:2px solid rgba(184,120,48,.4);
+  background:rgba(184,120,48,.12);
+  display:inline-flex;align-items:center;justify-content:center;
+  margin-bottom:1.25rem;
+  animation:ocPop .7s cubic-bezier(.22,1,.36,1) both;
+  position:relative;
+}
+.oc-check-wrap::after{
+  content:'';position:absolute;inset:-6px;border-radius:50%;
+  border:1px solid rgba(184,120,48,.2);
+  animation:ocRing 2.5s ease 1s infinite;
+}
+@keyframes ocPop{0%{transform:scale(0);opacity:0;}60%{transform:scale(1.1);}100%{transform:scale(1);opacity:1;}}
+@keyframes ocRing{0%{transform:scale(1);opacity:.6;}100%{transform:scale(1.5);opacity:0;}}
+.oc-check-icon{font-size:32px;color:#B87830;animation:ocCheckIn .5s ease .4s both;}
+@keyframes ocCheckIn{0%{transform:scale(0) rotate(-30deg);opacity:0;}100%{transform:scale(1) rotate(0);opacity:1;}}
+
+.oc-hero-title{
+  font-family:var(--fd);font-size:clamp(32px,5vw,52px);font-weight:300;
+  color:#FAF0E4;margin-bottom:.4rem;position:relative;
+}
+.oc-hero-code{
+  font-family:var(--fm);font-size:11px;letter-spacing:.22em;
+  text-transform:uppercase;color:rgba(184,120,48,.85);margin-bottom:.75rem;
+  position:relative;
+}
+.oc-hero-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:5px 14px;border-radius:20px;font-size:11px;font-weight:700;
+  letter-spacing:.06em;text-transform:uppercase;position:relative;
+  font-family:var(--fm);
+}
+.oc-hero-badge.paid{background:rgba(22,163,74,.2);color:#86efac;border:1px solid rgba(22,163,74,.3);}
+.oc-hero-badge.cod{background:rgba(234,179,8,.15);color:#fde68a;border:1px solid rgba(234,179,8,.25);}
+
+/* ── Content wrapper ── */
+.oc-content{max-width:920px;margin:0 auto;padding:2rem 1.25rem 0;}
+
+/* ── Cards ── */
+.oc-card{
+  background:#fff;border:1px solid var(--border);border-radius:14px;
+  padding:1.5rem;margin-bottom:1.25rem;
+}
+.oc-card-title{
+  font-family:var(--fm);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:1.1rem;padding-bottom:.75rem;
+  border-bottom:1px solid var(--border);display:flex;align-items:center;gap:7px;
+}
+.oc-card-title span{font-size:14px;}
+
+/* ── Grid ── */
+.oc-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem;}
+@media(max-width:640px){.oc-grid{grid-template-columns:1fr;}.oc-card{padding:1.25rem;}}
+
+/* ── Garment info ── */
+.oc-garment-name{
+  font-family:var(--fd);font-size:26px;font-weight:400;color:var(--dark);
+  margin-bottom:.5rem;line-height:1.2;
+}
+.oc-badge-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1rem;}
+.oc-badge{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;
+  font-family:var(--fm);letter-spacing:.04em;
+}
+.oc-badge.urgent{background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;}
+.oc-badge.home{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;}
+.oc-badge.pickup{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;}
+.oc-badge.cod{background:#fefce8;color:#854d0e;border:1px solid #fde68a;}
+
+.oc-info-row{
+  display:flex;justify-content:space-between;align-items:flex-start;
+  padding:8px 0;border-bottom:1px solid var(--border);font-size:13.5px;
+  gap:12px;
+}
+.oc-info-row:last-child{border-bottom:none;}
+.oc-info-label{color:var(--muted);flex-shrink:0;}
+.oc-info-val{color:var(--dark);font-weight:600;text-align:right;}
+.oc-note-box{
+  background:var(--bg);border-radius:8px;padding:10px 14px;margin-top:.75rem;
+  font-size:13px;color:var(--muted);border-left:3px solid var(--gold);
+  font-style:italic;line-height:1.5;
+}
+
+/* ── Payment card ── */
+.oc-pay-total{
+  font-family:var(--fd);font-size:36px;font-weight:400;color:var(--dark);
+  margin-bottom:.25rem;line-height:1;
+}
+.oc-pay-sub{font-size:12px;color:var(--muted);margin-bottom:1.25rem;}
+.oc-pay-row{
+  display:flex;justify-content:space-between;padding:7px 0;
+  border-bottom:1px solid var(--border);font-size:13.5px;
+}
+.oc-pay-row:last-child{border-bottom:none;}
+.oc-pay-row.final{font-weight:700;font-size:14.5px;padding-top:10px;margin-top:2px;}
+.oc-pay-row.discount{color:#16a34a;}
+.oc-balance-box{
+  margin-top:1rem;padding:12px 16px;border-radius:10px;
+  display:flex;justify-content:space-between;align-items:center;
+  font-size:13.5px;font-weight:700;
+}
+.oc-balance-box.due{background:#fff7ed;border:1.5px solid #fed7aa;color:#c2410c;}
+.oc-balance-box.paid{background:#f0fdf4;border:1.5px solid #bbf7d0;color:#166534;}
+
+/* ── Delivery card (full width) ── */
+.oc-delivery-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;
+}
+@media(max-width:600px){.oc-delivery-grid{grid-template-columns:1fr;gap:1rem;}}
+
+.oc-del-block{display:flex;gap:14px;align-items:flex-start;}
+.oc-del-icon{
+  width:42px;height:42px;border-radius:10px;background:var(--bg2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;flex-shrink:0;
+}
+.oc-del-label{font-size:11px;color:var(--muted);font-family:var(--fm);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px;}
+.oc-del-val{font-size:14.5px;font-weight:600;color:var(--dark);line-height:1.4;}
+.oc-del-val small{font-size:12px;color:var(--muted);font-weight:400;}
+
+/* ── WhatsApp notice ── */
+.oc-wa-box{
+  display:flex;gap:12px;align-items:center;
+  background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;
+  padding:12px 16px;margin-bottom:1.25rem;font-size:13.5px;color:#166534;
+}
+.oc-wa-icon{font-size:22px;flex-shrink:0;}
+
+/* ── COD reminder ── */
+.oc-cod-box{
+  background:#fffbeb;border:1.5px solid #fcd34d;border-radius:10px;
+  padding:14px 18px;margin-bottom:1.25rem;
+  display:flex;gap:12px;align-items:flex-start;
+}
+.oc-cod-icon{font-size:22px;flex-shrink:0;margin-top:1px;}
+.oc-cod-title{font-weight:700;font-size:14px;color:#92400e;margin-bottom:3px;}
+.oc-cod-body{font-size:13px;color:#78350f;line-height:1.5;}
+
+/* ── Stitch Tracker ── */
+.oc-tracker{
+  background:#fff;border:1px solid var(--border);border-radius:14px;
+  padding:1.5rem;margin-bottom:1.25rem;
+}
+.oc-tracker-title{
+  font-family:var(--fm);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:1.5rem;display:flex;align-items:center;gap:8px;
+}
+.oc-tracker-title::after{
+  content:'';flex:1;height:1px;background:var(--border);
+}
+.oc-tracker-live{
+  display:inline-flex;align-items:center;gap:4px;margin-left:auto;
+  font-size:10px;color:#16a34a;font-family:var(--fm);
+}
+.oc-tracker-live-dot{
+  width:6px;height:6px;border-radius:50%;background:#22c55e;
+  animation:livePulse 1.5s ease infinite;
+}
+@keyframes livePulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+.oc-steps{display:flex;position:relative;gap:0;overflow-x:auto;padding-bottom:4px;}
+.oc-step{
+  flex:1;min-width:70px;text-align:center;position:relative;padding-top:4px;
+}
+.oc-step::before{
+  content:'';position:absolute;top:16px;left:calc(-50% + 13px);
+  right:calc(50% + 13px);height:3px;background:var(--border);z-index:0;
+}
+.oc-step:first-child::before{display:none;}
+.oc-step.done::before,.oc-step.current::before{background:var(--gold);}
+
+.oc-dot{
+  width:32px;height:32px;border-radius:50%;
+  border:3px solid var(--border);background:#fff;
+  margin:0 auto 8px;position:relative;z-index:1;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;color:var(--muted);
+  transition:all .3s;
+}
+.oc-step.done .oc-dot{
+  background:var(--gold);border-color:var(--gold);color:#fff;
+  box-shadow:0 2px 8px rgba(184,120,48,.3);
+}
+.oc-step.current .oc-dot{
+  border-color:var(--gold);color:var(--gold);
+  box-shadow:0 0 0 5px rgba(184,120,48,.12);
+  animation:stepPulse 2s ease infinite;
+}
+@keyframes stepPulse{0%,100%{box-shadow:0 0 0 5px rgba(184,120,48,.12);}50%{box-shadow:0 0 0 8px rgba(184,120,48,.06);}}
+
+.oc-step-label{font-size:10px;color:var(--muted);line-height:1.3;font-weight:500;letter-spacing:.01em;}
+.oc-step.current .oc-step-label{color:var(--dark);font-weight:800;}
+.oc-step.done .oc-step-label{color:var(--gold-d,#8A5820);}
+
+.oc-tracker-note{
+  margin-top:1.25rem;padding:10px 14px;background:var(--bg);
+  border-radius:8px;font-size:12.5px;color:var(--muted);
+  font-style:italic;border-left:3px solid var(--gold);
+  display:none;
+}
+
+/* ── Next steps ── */
+.oc-next{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem;
+}
+@media(max-width:600px){.oc-next{grid-template-columns:1fr;gap:.75rem;}}
+.oc-next-item{
+  background:var(--bg);border:1px solid var(--border);border-radius:12px;
+  padding:1rem 1.1rem;display:flex;gap:12px;align-items:flex-start;
+}
+.oc-next-num{
+  font-family:var(--fm);font-size:11px;color:var(--gold);
+  font-weight:700;flex-shrink:0;margin-top:1px;
+}
+.oc-next-body{}
+.oc-next-head{font-size:13.5px;font-weight:700;color:var(--dark);margin-bottom:3px;}
+.oc-next-text{font-size:12.5px;color:var(--muted);line-height:1.5;}
+
+/* ── Action buttons ── */
+.oc-actions{display:flex;flex-direction:column;align-items:center;gap:12px;}
+.oc-btn-primary{
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;
+  padding:15px 40px;background:var(--dark);color:var(--bg);
+  font-size:13px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
+  border-radius:6px;text-decoration:none;transition:background .2s;
+  width:100%;max-width:360px;
+}
+.oc-btn-primary:hover{background:var(--dark2,#2E1A0C);}
+.oc-btn-wa{
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;
+  padding:14px 40px;background:#16a34a;color:#fff;
+  font-size:13px;font-weight:600;letter-spacing:.05em;
+  border-radius:6px;text-decoration:none;transition:background .2s;
+  width:100%;max-width:360px;
+}
+.oc-btn-wa:hover{background:#15803d;}
+.oc-btn-ghost{
+  font-size:13px;color:var(--muted);text-decoration:none;
+  letter-spacing:.04em;transition:color .15s;
+}
+.oc-btn-ghost:hover{color:var(--dark);}
+
+/* ── Shop info ── */
+.oc-shop-box{
+  background:var(--bg);border:1px solid var(--border);border-radius:10px;
+  padding:14px 18px;margin-bottom:1.25rem;
+  display:flex;gap:14px;align-items:flex-start;
+}
 </style>
 {% endblock %}
+
 {% block content %}
-<section class="confirmed-wrap">
-  <div class="confirmed-box">
-    <div class="confirmed-icon-wrap">
-      <div class="confirmed-icon">&#10022;</div>
+{% set _note = order.note or '' if order else '' %}
+{% set _parts = _note.split('|') %}
+
+{# Parse note parts #}
+{% set _garment = namespace(name='Custom Garment', fabric='own', extra_note='', coupon_code='', coupon_amt=0, meas='') %}
+{% if _parts|length > 1 %}{% set _garment.name = _parts[1].strip() %}{% endif %}
+{% for _p in _parts %}
+  {% set _ps = _p.strip() %}
+  {% if _ps.lower().startswith('coupon:') %}
+    {% set _ci = _ps[7:] %}
+    {% set _garment.coupon_code = _ci.split('(')[0].strip() %}
+    {% if '-Rs.' in _ci %}{% set _garment.coupon_amt = _ci.split('-Rs.')[1].rstrip(')') | int %}{% endif %}
+  {% endif %}
+  {% if _ps.startswith('[NOTE]') %}{% set _garment.extra_note = _ps[6:].strip() %}{% endif %}
+  {% if _ps.startswith('fabric:') %}{% set _garment.fabric = _ps[7:].strip() %}{% endif %}
+{% endfor %}
+
+{% set _is_home = 'delivery:home' in _note %}
+{% set _is_cod  = (order and (order.payment_mode == 'cod' or cod_flag)) if order else cod_flag %}
+{% set _is_paid_online = (not _is_cod) and (paid_flag or (order and order.advance_paid and order.advance_paid > 0)) %}
+
+<div class="oc-page">
+
+  <!-- ═══════════════ HERO BANNER ═══════════════ -->
+  <section class="oc-hero">
+    <div class="oc-check-wrap">
+      <div class="oc-check-icon">✓</div>
     </div>
-    <h1 class="confirmed-title">Order confirmed.</h1>
+    <h1 class="oc-hero-title">Order confirmed.</h1>
     {% if order %}
-    <p class="confirmed-id">Order #{{ order.order_code }}</p>
-    <div class="whatsapp-note">
-      📱 WhatsApp confirmation will be sent to your number shortly.
+    <p class="oc-hero-code">Order #{{ order.order_code }}</p>
+    {% if _is_cod %}
+    <span class="oc-hero-badge cod">💵 Pay on Delivery</span>
+    {% elif _is_paid_online %}
+    <span class="oc-hero-badge paid">✓ Advance Paid</span>
+    {% else %}
+    <span class="oc-hero-badge cod">⏳ Payment Pending</span>
+    {% endif %}
+    {% else %}
+    <p style="color:rgba(250,240,228,.6);font-size:14px;margin-top:.5rem;">We've received your order.</p>
+    {% endif %}
+  </section>
+
+  <div class="oc-content">
+
+    {% if order %}
+    <!-- ═══════════════ WHATSAPP NOTICE ═══════════════ -->
+    <div class="oc-wa-box">
+      <div class="oc-wa-icon">📱</div>
+      <div>WhatsApp confirmation is being sent to your number. You can also <strong>track your order live</strong> using the button below.</div>
     </div>
-    <div class="confirmed-details">
-      {% set _note = order.note or '' %}
-      {% set _parts = _note.split('|') %}
-      {% set _garment = _parts[1].strip() if _parts|length > 1 else 'Custom order' %}
-      {% set _coupon_part = namespace(code='', amt=0) %}
-      {% for p in _parts %}
-        {% if p.strip().lower().startswith('coupon:') %}
-          {% set _ci = p.strip()[7:] %}
-          {% set _coupon_part.code = _ci.split('(')[0].strip() %}
-          {% set _coupon_part.amt = _ci.split('-Rs.')[1].rstrip(')') if '-Rs.' in _ci else '0' %}
-        {% endif %}
-      {% endfor %}
-      <div class="cd-row"><span>Garment</span><span>{{ _garment }}</span></div>
-      <div class="cd-row"><span>Order date</span><span>{{ order.order_date }}</span></div>
-      {% if order.delivery_date %}<div class="cd-row"><span>Ready by</span><span>{{ order.delivery_date }}</span></div>{% endif %}
-      <div class="cd-row"><span>Stitching charge</span><span>Rs. {{ order.total_amount|int }}</span></div>
-      {% if order.extra_charges and order.extra_charges > 0 %}
-      <div class="cd-row"><span>Urgent surcharge</span><span>Rs. {{ order.extra_charges|int }}</span></div>
-      {% endif %}
-      {% if _coupon_part.code %}
-      <div class="cd-row" style="color:#16a34a;font-weight:700;"><span>🎟 Coupon ({{ _coupon_part.code }})</span><span>-Rs. {{ _coupon_part.amt }}</span></div>
-      {% endif %}
-      <div class="cd-row" style="font-weight:800;border-top:1px solid #e5e7eb;padding-top:8px;margin-top:4px;"><span>Total payable</span><span>Rs. {{ order.payable_amount|int }}</span></div>
-      <div class="cd-row"><span>Advance paid</span><span>Rs. {{ order.advance_paid|int }}</span></div>
-      <div class="cd-row" style="{% if order.remaining > 0 %}color:#dc2626;font-weight:800;{% else %}color:#16a34a;font-weight:700;{% endif %}">
-        <span>{% if order.remaining > 0 %}Balance on delivery{% else %}✓ Fully paid{% endif %}</span>
-        <span>Rs. {{ order.remaining|int }}</span>
+
+    {% if _is_cod and order.remaining and order.remaining > 0 %}
+    <!-- ═══════════════ COD REMINDER ═══════════════ -->
+    <div class="oc-cod-box">
+      <div class="oc-cod-icon">💵</div>
+      <div>
+        <div class="oc-cod-title">Pay on Delivery — ₹{{ order.remaining|int }}</div>
+        <div class="oc-cod-body">Keep ₹{{ order.remaining|int }} ready at the time of delivery or pickup. No advance needed.</div>
       </div>
     </div>
-    {% else %}
-    <p class="confirmed-body">Your order has been received. We will confirm via WhatsApp shortly.</p>
     {% endif %}
-    {% if order %}
-    <div class="tracker-wrap" id="stitchTracker" style="display:none;">
-      <div class="tracker-title">Live Stitch Tracker</div>
-      <div class="tracker-steps" id="trackerSteps"></div>
-      <div class="tracker-note" id="trackerNote" style="display:none;"></div>
+
+    <!-- ═══════════════ 2-COL GRID ═══════════════ -->
+    <div class="oc-grid">
+
+      <!-- GARMENT CARD -->
+      <div class="oc-card">
+        <div class="oc-card-title"><span>✂</span> Garment Details</div>
+        <div class="oc-garment-name">{{ _garment.name }}</div>
+        <div class="oc-badge-row">
+          {% if order.is_urgent %}<span class="oc-badge urgent">⚡ Urgent Order</span>{% endif %}
+          {% if _is_home %}<span class="oc-badge home">🚚 Home Delivery</span>
+          {% else %}<span class="oc-badge pickup">🏪 Pickup from Shop</span>{% endif %}
+          {% if _is_cod %}<span class="oc-badge cod">💵 COD</span>{% endif %}
+        </div>
+
+        {% set _cname = order.cust_name or (_parts[0].strip() if _parts else '') %}
+        {% if _cname %}
+        <div class="oc-info-row">
+          <span class="oc-info-label">Customer</span>
+          <span class="oc-info-val">{{ _cname }}</span>
+        </div>
+        {% endif %}
+        {% if order.cust_mobile %}
+        <div class="oc-info-row">
+          <span class="oc-info-label">Mobile</span>
+          <span class="oc-info-val">{{ order.cust_mobile }}</span>
+        </div>
+        {% endif %}
+        <div class="oc-info-row">
+          <span class="oc-info-label">Order placed</span>
+          <span class="oc-info-val">{{ order.order_date }}</span>
+        </div>
+        {% if order.delivery_date %}
+        <div class="oc-info-row">
+          <span class="oc-info-label">{% if _is_home %}Expected delivery{% else %}Ready by{% endif %}</span>
+          <span class="oc-info-val">{{ order.delivery_date }}</span>
+        </div>
+        {% endif %}
+        <div class="oc-info-row">
+          <span class="oc-info-label">Fabric</span>
+          <span class="oc-info-val">{% if _garment.fabric == 'own' %}Customer's own{% else %}{{ _garment.fabric|title }}{% endif %}</span>
+        </div>
+        {% if _garment.extra_note %}
+        <div class="oc-note-box">📝 {{ _garment.extra_note }}</div>
+        {% endif %}
+      </div>
+
+      <!-- PAYMENT CARD -->
+      <div class="oc-card">
+        <div class="oc-card-title"><span>💳</span> Payment Summary</div>
+        <div class="oc-pay-total">₹{{ order.payable_amount|int }}</div>
+        <div class="oc-pay-sub">Total order amount</div>
+
+        <div class="oc-pay-row">
+          <span style="color:var(--muted)">Stitching charge</span>
+          <span>₹{{ order.total_amount|int }}</span>
+        </div>
+        {% if order.extra_charges and order.extra_charges > 0 %}
+        <div class="oc-pay-row">
+          <span style="color:var(--muted)">Urgent surcharge (10%)</span>
+          <span>₹{{ order.extra_charges|int }}</span>
+        </div>
+        {% endif %}
+        {% if _garment.coupon_code %}
+        <div class="oc-pay-row discount">
+          <span>🎟 Coupon ({{ _garment.coupon_code }})</span>
+          <span>−₹{{ _garment.coupon_amt }}</span>
+        </div>
+        {% endif %}
+        <div class="oc-pay-row final">
+          <span>Total payable</span>
+          <span style="color:var(--gold)">₹{{ order.payable_amount|int }}</span>
+        </div>
+
+        {% if _is_cod %}
+        <div class="oc-balance-box due" style="margin-top:1rem;">
+          <span>💵 Pay on Delivery</span>
+          <span>₹{{ order.remaining|int }}</span>
+        </div>
+        {% elif order.advance_paid and order.advance_paid > 0 %}
+        <div class="oc-pay-row" style="padding-top:10px;border-top:1px solid var(--border);border-bottom:none;color:#16a34a;">
+          <span>✓ Advance paid</span>
+          <span>₹{{ order.advance_paid|int }}</span>
+        </div>
+        {% if order.remaining and order.remaining > 0 %}
+        <div class="oc-balance-box due">
+          <span>Balance on pickup</span>
+          <span>₹{{ order.remaining|int }}</span>
+        </div>
+        {% else %}
+        <div class="oc-balance-box paid">
+          <span>✓ Fully paid</span>
+          <span>₹0 due</span>
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="oc-balance-box due">
+          <span>Balance to pay</span>
+          <span>₹{{ order.remaining|int }}</span>
+        </div>
+        {% endif %}
+
+        <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:4px;font-family:var(--fm);letter-spacing:.06em;text-transform:uppercase;">Payment mode</div>
+          {% if _is_cod %}
+          <div style="font-size:13.5px;font-weight:700;color:#92400e;">Cash on Delivery</div>
+          {% elif order.payment_mode in ('razorpay','online') %}
+          <div style="font-size:13.5px;font-weight:700;color:#166534;">Online (Razorpay)</div>
+          {% else %}
+          <div style="font-size:13.5px;font-weight:700;color:var(--dark);">{{ order.payment_mode|title if order.payment_mode else '—' }}</div>
+          {% endif %}
+        </div>
+      </div>
     </div>
-    {% endif %}
-    <div style="background:#fdf6ee;border:1px solid #e8d9c5;border-radius:10px;padding:14px 18px;margin-bottom:1.25rem;text-align:left;">
-      <div style="font-size:11px;font-weight:700;color:#7a6a58;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;">✂ For Alterations</div>
-      <div style="font-size:13px;color:#3a2a18;line-height:1.6;">Please visit our shop with your garment.<br>
-      <strong>Uttam Tailors</strong> · Subhash Chowk, Sikar, Rajasthan 332001<br>
-      <a href="tel:+916375471453" style="color:var(--gold);font-weight:600;">+91 63754 71453</a></div>
+
+    <!-- ═══════════════ DELIVERY CARD ═══════════════ -->
+    <div class="oc-card">
+      <div class="oc-card-title"><span>{% if _is_home %}🚚{% else %}🏪{% endif %}</span> Delivery Information</div>
+      <div class="oc-delivery-grid">
+        {% if _is_home %}
+        <div class="oc-del-block">
+          <div class="oc-del-icon">📍</div>
+          <div>
+            <div class="oc-del-label">Delivery address</div>
+            <div class="oc-del-val">
+              {% if order.cust_address %}{{ order.cust_address }}{% else %}Address on file{% endif %}
+            </div>
+          </div>
+        </div>
+        <div class="oc-del-block">
+          <div class="oc-del-icon">📅</div>
+          <div>
+            <div class="oc-del-label">Expected delivery</div>
+            <div class="oc-del-val">
+              {% if order.delivery_date %}{{ order.delivery_date }}{% else %}Will be confirmed{% endif %}
+              <small><br>We'll message you before dispatching</small>
+            </div>
+          </div>
+        </div>
+        {% else %}
+        <div class="oc-del-block">
+          <div class="oc-del-icon">🏪</div>
+          <div>
+            <div class="oc-del-label">Pickup location</div>
+            <div class="oc-del-val">
+              Uttam Tailors, Subhash Chowk<br>
+              <small>Sikar, Rajasthan 332001</small>
+            </div>
+          </div>
+        </div>
+        <div class="oc-del-block">
+          <div class="oc-del-icon">📅</div>
+          <div>
+            <div class="oc-del-label">Ready by</div>
+            <div class="oc-del-val">
+              {% if order.delivery_date %}{{ order.delivery_date }}{% else %}Will be confirmed{% endif %}
+              <small><br>We'll WhatsApp you when it's ready</small>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="oc-del-block">
+          <div class="oc-del-icon">📞</div>
+          <div>
+            <div class="oc-del-label">Contact us</div>
+            <div class="oc-del-val">
+              <a href="tel:+916375471453" style="color:var(--gold);text-decoration:none;">+91 63754 71453</a>
+              <small><br>Mon–Sat, 9am–7pm</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="oc-del-block">
+          <div class="oc-del-icon">⏱</div>
+          <div>
+            <div class="oc-del-label">Order status</div>
+            <div class="oc-del-val">
+              {% set _st = (order.status or 'pending').lower() %}
+              {% if _st == 'delivered' %}✓ Delivered
+              {% elif _st == 'out_for_delivery' %}🚚 Out for Delivery
+              {% elif _st == 'ready' %}✅ Ready for Pickup
+              {% elif _st == 'stitching' %}✂ In Progress
+              {% elif _st == 'quality_check' %}🔍 Quality Check
+              {% else %}📋 Order Received{% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-    <div style="display:flex;flex-direction:column;gap:12px;align-items:center;">
-      {% if order %}
-      <a href="{{ url_for('website.track_order') }}?code={{ order.order_code }}" class="btn-primary" style="display:inline-flex;align-items:center;gap:.5rem;justify-content:center;padding:14px 32px;background:#2e1a0e;">
+
+    <!-- ═══════════════ LIVE STITCH TRACKER ═══════════════ -->
+    <div class="oc-tracker" id="stitchTracker">
+      <div class="oc-tracker-title">
+        Live Stitch Tracker
+        <span class="oc-tracker-live" style="margin-left:6px;">
+          <span class="oc-tracker-live-dot"></span>Live
+        </span>
+      </div>
+      <div class="oc-steps" id="trackerSteps">
+        <!-- Rendered by JS -->
+        <div style="color:var(--muted);font-size:13px;padding:1rem 0;">Loading tracker…</div>
+      </div>
+      <div class="oc-tracker-note" id="trackerNote"></div>
+    </div>
+
+    <!-- ═══════════════ NEXT STEPS ═══════════════ -->
+    <div class="oc-next">
+      <div class="oc-next-item">
+        <div class="oc-next-num">01</div>
+        <div class="oc-next-body">
+          <div class="oc-next-head">Bring your fabric</div>
+          <div class="oc-next-text">If you're using your own fabric, bring it to our shop as soon as possible so we can start cutting.</div>
+        </div>
+      </div>
+      <div class="oc-next-item">
+        <div class="oc-next-num">02</div>
+        <div class="oc-next-body">
+          <div class="oc-next-head">We'll keep you updated</div>
+          <div class="oc-next-text">WhatsApp updates at each stage — fabric cut, stitching, quality check, and when it's ready.</div>
+        </div>
+      </div>
+      <div class="oc-next-item">
+        <div class="oc-next-num">03</div>
+        <div class="oc-next-body">
+          <div class="oc-next-head">{% if _is_home %}Delivered to you{% else %}Collect your garment{% endif %}</div>
+          <div class="oc-next-text">
+            {% if _is_home %}
+            We'll dispatch your order and notify you with a tracking update before it's out for delivery.
+            {% else %}
+            Visit us at Subhash Chowk, Sikar to pick up your garment. Pay the remaining balance on collection.
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ ACTION BUTTONS ═══════════════ -->
+    <div class="oc-actions">
+      <a href="{{ url_for('website.track_order') }}?code={{ order.order_code }}" class="oc-btn-primary">
         📦 Track Your Order
       </a>
-      {% endif %}
-      <a href="{{ url_for('website.home') }}" style="font-size:13px;color:var(--muted);text-decoration:none;">← Back to Home</a>
+      <a href="https://wa.me/916375471453?text={{ ('Hi! I placed an order ' ~ order.order_code ~ ' and have a question.')|urlencode }}" 
+         target="_blank" class="oc-btn-wa">
+        WhatsApp Us
+      </a>
+      <a href="{{ url_for('website.home') }}" class="oc-btn-ghost">← Back to Home</a>
     </div>
-  </div>
-</section>
+
+    {% else %}
+    <!-- No order found fallback -->
+    <div style="text-align:center;padding:3rem 1rem;">
+      <div style="font-size:48px;margin-bottom:1rem;">✂</div>
+      <div style="font-family:var(--fd);font-size:28px;color:var(--dark);margin-bottom:.75rem;">Order received.</div>
+      <div style="font-size:15px;color:var(--muted);margin-bottom:2rem;">We'll send a WhatsApp confirmation to your number shortly.</div>
+      <a href="{{ url_for('website.home') }}" class="oc-btn-primary" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;">← Back to Home</a>
+    </div>
+    {% endif %}
+
+  </div><!-- .oc-content -->
+</div><!-- .oc-page -->
+
 {% if order %}
 <script>
-/* Meta Pixel — Purchase event */
+/* ── Meta Pixel Purchase ── */
 try{if(window.fbq)fbq('track','Purchase',{value:{{ order.payable_amount|int }},currency:'INR',content_ids:['{{ order.order_code|e }}'],content_type:'product'});}catch(e){}
-</script>
-<script>
+
+/* ── Stitch Tracker ── */
 (function(){
-  var orderCode = '{{ order.order_code|e }}';
+  var code = '{{ order.order_code|e }}';
+  var isHome = {{ 'true' if _is_home else 'false' }};
+
   var STAGES = [
-    {num:1,name:'Order Received'},{num:2,name:'Fabric Cut'},
-    {num:3,name:'Stitching'},{num:4,name:'Quality Check'},{num:5,name:'Ready'}
+    {num:1, icon:'📋', name:'Order\nReceived'},
+    {num:2, icon:'✂',  name:'Fabric\nCut'},
+    {num:3, icon:'🧵', name:'Stitching'},
+    {num:4, icon:'🔍', name:'Quality\nCheck'},
+    {num:5, icon:'✅', name:'Ready'}
   ];
+  if(isHome){
+    STAGES.push({num:6, icon:'🚚', name:'Out for\nDelivery'});
+    STAGES.push({num:7, icon:'🏠', name:'Delivered'});
+  }
+
   function renderTracker(current, note){
-    var wrap=document.getElementById('stitchTracker');
-    var steps=document.getElementById('trackerSteps');
-    if(!wrap||!steps) return;
-    var html='';
+    var steps = document.getElementById('trackerSteps');
+    if(!steps) return;
+    var html = '';
     STAGES.forEach(function(s){
-      var done=s.num<current; var cur=s.num===current;
-      var cls=done?'done':(cur?'current':'');
-      html+='<div class="tracker-step '+cls+'">'+
-        '<div class="tracker-dot">'+(done?'&#10003;':'')+'</div>'+
-        '<div class="tracker-label">'+s.name+'</div>'+
-      '</div>';
+      var done = s.num < current;
+      var cur  = s.num === current;
+      var cls  = done ? 'done' : (cur ? 'current' : '');
+      html += '<div class="oc-step '+cls+'">' +
+        '<div class="oc-dot">' + (done ? '✓' : s.icon) + '</div>' +
+        '<div class="oc-step-label">' + s.name.replace('\n','<br>') + '</div>' +
+        '</div>';
     });
-    steps.innerHTML=html;
-    var noteEl=document.getElementById('trackerNote');
-    if(note&&noteEl){noteEl.textContent=note;noteEl.style.display='block';}
-    wrap.style.display='block';
+    steps.innerHTML = html;
+    var noteEl = document.getElementById('trackerNote');
+    if(note && noteEl){noteEl.textContent = note; noteEl.style.display = 'block';}
+    else if(noteEl){noteEl.style.display='none';}
   }
+
   function fetchStage(){
-    fetch('/api/order/stage/'+orderCode).then(function(r){return r.json();}).then(function(d){
-      if(d.ok) renderTracker(d.stage||1,d.note||'');
-    }).catch(function(){});
+    fetch('/api/order/stage/' + code)
+      .then(function(r){return r.json();})
+      .then(function(d){
+        if(d.ok) renderTracker(d.stage || 1, d.note || '');
+      })
+      .catch(function(){renderTracker(1,'');});
   }
+
   fetchStage();
-  setInterval(fetchStage,30000);
+  setInterval(fetchStage, 30000);
 })();
 </script>
 {% endif %}
