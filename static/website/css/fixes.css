@@ -610,3 +610,7 @@ img,video,iframe{max-width:100%;height:auto;}
     padding: 3rem 0 1rem;
   }
 }
+
+@media (max-width: 768px) {
+  .kicker { font-size: 12px !important; }
+}
