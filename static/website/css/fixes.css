@@ -568,5 +568,3 @@ img,video,iframe{max-width:100%;height:auto;}
   .brands-bar{ padding-top: 1.5rem !important; padding-bottom: 1.5rem !important; }
 }
 
-/* ── Action card buttons: same size (match dark brown button) ── */
-.ac-cta{width:auto!important;min-width:210px!important;justify-content:center!important;box-sizing:border-box!important;}
