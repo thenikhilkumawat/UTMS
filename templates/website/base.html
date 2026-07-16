@@ -346,7 +346,7 @@ body.drawer-open .wa-fab,body.drawer-open .supp-fab{display:none!important;visib
     <!-- CENTER: Logo -->
     <a href="{{ url_for('website.home') }}" class="nav-logo-center" aria-label="Uttam Tailors Home">
       {% if web_settings.get('web_logo_url') %}
-        <img src="{{ web_settings['web_logo_url'] }}" alt="{{ web_settings.get('web_shop_name','Uttam Tailors') }}" class="nav-logo-img" style="max-height:42px;width:auto;object-fit:contain;display:block;">
+        <img src="{{ web_settings['web_logo_url'] }}" alt="{{ web_settings.get('web_shop_name','Uttam Tailors') }}" class="nav-logo-img" style="max-height:{{ web_settings.get('web_logo_height','42') }}px;width:auto;object-fit:contain;display:block;">
       {% else %}
         <span class="logo-name">{{ web_settings.get('web_shop_name','Uttam Tailors') }}</span>
         <span class="logo-est">{{ web_settings.get('web_shop_est','Est. 1987 &middot; Sikar') }}</span>
@@ -378,7 +378,7 @@ body.drawer-open .wa-fab,body.drawer-open .supp-fab{display:none!important;visib
 <div class="mm-p1" id="mmP1">
   <div class="drawer-head">
     {% if web_settings.get('web_logo_url') %}
-      <img src="{{ web_settings['web_logo_url'] }}" alt="{{ web_settings.get('web_shop_name','Uttam Tailors') }}" style="max-height:36px;width:auto;object-fit:contain;">
+      <img src="{{ web_settings['web_logo_url'] }}" alt="{{ web_settings.get('web_shop_name','Uttam Tailors') }}" style="max-height:{{ (web_settings.get('web_logo_height','42')|int * 0.86)|int }}px;width:auto;object-fit:contain;">
     {% else %}
       <span class="drawer-logo">{{ web_settings.get('web_shop_name','Uttam Tailors') }}</span>
     {% endif %}
@@ -506,7 +506,7 @@ body.drawer-open .wa-fab,body.drawer-open .supp-fab{display:none!important;visib
   <div class="footer-inner">
     <div class="footer-brand">
       {% if web_settings.get('web_logo_url') %}
-        <img src="{{ web_settings['web_logo_url'] }}" alt="{{ web_settings.get('web_shop_name','Uttam Tailors') }}" class="footer-logo-img" style="max-height:48px;width:auto;object-fit:contain;margin-bottom:12px;">
+        <img src="{{ web_settings['web_logo_url'] }}" alt="{{ web_settings.get('web_shop_name','Uttam Tailors') }}" class="footer-logo-img" style="max-height:{{ (web_settings.get('web_logo_height','42')|int * 1.14)|int }}px;width:auto;object-fit:contain;margin-bottom:12px;">
       {% else %}
         <p class="footer-logo">{{ web_settings.get('web_shop_name','Uttam Tailors') }}</p>
       {% endif %}

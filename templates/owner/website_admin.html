@@ -686,7 +686,23 @@
         </div>
       </div>
 
-      <!-- ── FAVICON UPLOAD ── -->
+      
+      <!-- ── LOGO SIZE ── -->
+      <div style="background:#fdf8f2;border:1.5px dashed #d4a96a;border-radius:10px;padding:16px 18px;margin-bottom:16px;">
+        <div style="font-size:11px;font-weight:700;color:#7a6a58;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">📐 Logo Size (Header Height)</div>
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+          <input type="range" id="web_logo_height" min="24" max="80" step="2"
+            value="{{ web_settings.get('web_logo_height','42') }}"
+            oninput="document.getElementById('logoHeightVal').textContent=this.value+'px'"
+            style="flex:1;min-width:160px;accent-color:#C8903A;">
+          <span id="logoHeightVal" style="font-size:13px;font-weight:700;color:#C8903A;min-width:38px;">{{ web_settings.get('web_logo_height','42') }}px</span>
+          <button onclick="saveLogoHeight()" style="background:#C8903A;color:#fff;border:none;padding:7px 16px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">Save Size</button>
+          <span id="waLogoSizeStatus" style="font-size:11px;color:#7a6a58;"></span>
+        </div>
+        <div style="font-size:10px;color:#aaa;margin-top:8px;">Range: 24px – 80px. Default 42px. Mobile menu and footer scale automatically.</div>
+      </div>
+
+<!-- ── FAVICON UPLOAD ── -->
       <div style="background:#fdf8f2;border:1.5px dashed #d4a96a;border-radius:10px;padding:16px 18px;margin-bottom:16px;">
         <div style="font-size:11px;font-weight:700;color:#7a6a58;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">🌐 Website Favicon (Browser Tab Icon)</div>
         <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
@@ -2661,6 +2677,18 @@ function waRemoveFavicon(){
   apiFetch('/owner/api/website/favicon/remove',{method:'POST'}).then(function(r){return r.json();}).then(function(d){
     if(d.ok){ document.getElementById('faviconPreviewWrap2').innerHTML='<span style="font-size:10px;color:#aaa;text-align:center;">No icon</span>'; document.getElementById('waFaviconStatus').textContent='Removed.'; }
   });
+}
+
+function saveLogoHeight(){
+  var v = document.getElementById('web_logo_height').value;
+  var st = document.getElementById('waLogoSizeStatus');
+  st.textContent = 'Saving...'; st.style.color = '#7a6a58';
+  apiFetch('/owner/website/settings/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'web_logo_height',value:v})})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      st.textContent = d.ok ? 'Saved!' : 'Error'; 
+      st.style.color = d.ok ? '#16a34a' : '#dc2626';
+    }).catch(function(){ st.textContent='Error'; st.style.color='#dc2626'; });
 }
 </script>
 {% endblock %}
