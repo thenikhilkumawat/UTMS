@@ -3558,6 +3558,53 @@ def website_favicon_remove():
     db.commit()
     return jsonify({"ok":True})
 
+
+@bp.route("/api/website/footer-logo/upload", methods=["POST"])
+def website_footer_logo_upload():
+    import os, time as _t
+    from werkzeug.utils import secure_filename
+    if not session.get("owner_logged_in"):
+        return jsonify({"ok":False,"error":"Unauthorized"}),403
+    try:
+        file = request.files.get("footer_logo")
+        if not file or not file.filename:
+            return jsonify({"ok":False,"error":"No file"})
+        file.seek(0,2); size=file.tell(); file.seek(0)
+        if size > 10*1024*1024:
+            return jsonify({"ok":False,"error":"Max 10MB"})
+        ext = os.path.splitext(secure_filename(file.filename))[1].lower()
+        if ext not in (".jpg",".jpeg",".png",".webp",".svg"):
+            return jsonify({"ok":False,"error":"jpg/png/webp/svg only"})
+        save_dir = os.path.join(os.path.dirname(__file__),"../../static/uploads/branding")
+        os.makedirs(save_dir, exist_ok=True)
+        fname = "footer_logo_" + str(int(_t.time()*1000)) + ext
+        fpath = os.path.join(save_dir, fname)
+        file.save(fpath)
+        if ext != ".svg":
+            try:
+                from app.utils.image_optimize import optimize_image
+                fpath = optimize_image(fpath)
+                fname = os.path.basename(fpath)
+            except Exception:
+                pass
+        url = "/static/uploads/branding/" + fname
+        from database import get_db
+        db = get_db()
+        db.execute("INSERT OR REPLACE INTO settings(key,value) VALUES(?,?)", ("web_footer_logo_url", url))
+        db.commit()
+        return jsonify({"ok":True,"url":url})
+    except Exception as exc:
+        return jsonify({"ok":False,"error":str(exc)})
+
+@bp.route("/api/website/footer-logo/remove", methods=["POST"])
+def website_footer_logo_remove():
+    if not session.get("owner_logged_in"): return jsonify({"ok":False}),403
+    from database import get_db
+    db = get_db()
+    db.execute("INSERT OR REPLACE INTO settings(key,value) VALUES(?,?)", ("web_footer_logo_url",""))
+    db.commit()
+    return jsonify({"ok":True})
+
 # ── Daily Craft (Fresh From The Workshop) ─────────────────────────────────────
 
 @bp.route("/api/daily-craft", methods=["GET"])

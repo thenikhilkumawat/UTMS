@@ -736,6 +736,50 @@
     </div>
     <div class="wa-card">
       <div class="wa-card-title">📞 Footer — Contact &amp; Brand</div>
+
+      <!-- ── FOOTER LOGO UPLOAD ── -->
+      <div style="background:#fdf8f2;border:1.5px dashed #d4a96a;border-radius:10px;padding:16px 18px;margin-bottom:16px;">
+        <div style="font-size:11px;font-weight:700;color:#7a6a58;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">🖼 Footer Logo (separate from header)</div>
+        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+          <div id="footerLogoPreviewWrap" style="width:130px;height:56px;border:1px solid #e0d5c5;border-radius:8px;background:#2E1A0C;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;">
+            {% if web_settings.get('web_footer_logo_url') %}
+              <img src="{{ web_settings.get('web_footer_logo_url') }}" style="max-width:120px;max-height:50px;object-fit:contain;">
+            {% else %}
+              <span style="font-size:10px;color:rgba(250,240,228,.4);text-align:center;padding:4px;">Uses header logo</span>
+            {% endif %}
+          </div>
+          <div style="flex:1;min-width:180px;">
+            <div style="font-size:11px;color:#7a6a58;margin-bottom:8px;">PNG/SVG recommended · max 10MB · preview shows on dark background (footer color)</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+              <label style="cursor:pointer;background:#C8903A;color:#fff;padding:7px 14px;border-radius:6px;font-size:11px;font-weight:700;">
+                Choose Footer Logo
+                <input type="file" accept=".png,.jpg,.jpeg,.webp,.svg" style="display:none;" onchange="waUploadFooterLogo(this)">
+              </label>
+              {% if web_settings.get('web_footer_logo_url') %}
+              <button onclick="waRemoveFooterLogo()" style="background:#dc2626;color:#fff;border:none;padding:7px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">Remove</button>
+              {% endif %}
+              <span id="waFooterLogoStatus" style="font-size:11px;color:#7a6a58;"></span>
+            </div>
+          </div>
+        </div>
+        <div style="font-size:10px;color:#aaa;margin-top:8px;">💡 Footer background is dark brown (#2E1A0C) — use a white/light or transparent PNG logo for best result. If not uploaded, header logo is used.</div>
+      </div>
+
+      <!-- ── FOOTER LOGO SIZE ── -->
+      <div style="background:#fdf8f2;border:1.5px dashed #d4a96a;border-radius:10px;padding:16px 18px;margin-bottom:16px;">
+        <div style="font-size:11px;font-weight:700;color:#7a6a58;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">📐 Footer Logo Size</div>
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+          <input type="range" id="web_footer_logo_height" min="24" max="100" step="2"
+            value="{{ web_settings.get('web_footer_logo_height', web_settings.get('web_logo_height','48')) }}"
+            oninput="document.getElementById('footerLogoHeightVal').textContent=this.value+'px'"
+            style="flex:1;min-width:160px;accent-color:#C8903A;">
+          <span id="footerLogoHeightVal" style="font-size:13px;font-weight:700;color:#C8903A;min-width:38px;">{{ web_settings.get('web_footer_logo_height', web_settings.get('web_logo_height','48')) }}px</span>
+          <button onclick="saveFooterLogoHeight()" style="background:#C8903A;color:#fff;border:none;padding:7px 16px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">Save Size</button>
+          <span id="waFooterLogoSizeStatus" style="font-size:11px;color:#7a6a58;"></span>
+        </div>
+      </div>
+
+
       <div class="wa-row"><div><label class="wa-lbl">Footer tagline</label><input class="wa-in" id="web_footer_tagline" value="{{ web_settings.get('web_footer_tagline','Measured to the thread. Since 1987.') }}"></div><div><label class="wa-lbl">Address</label><input class="wa-in" id="web_footer_address" value="{{ web_settings.get('web_footer_address','Subhash Chowk, Sikar — 332001, Rajasthan') }}"></div></div>
       <div class="wa-row"><div><label class="wa-lbl">Opening hours</label><input class="wa-in" id="web_footer_hours" value="{{ web_settings.get('web_footer_hours','Mon – Sat · 9am – 7pm') }}"></div><div><label class="wa-lbl">Phone number</label><input class="wa-in" id="web_footer_phone" value="{{ web_settings.get('web_footer_phone','+91 XXXXX XXXXX') }}"></div></div>
       <div class="wa-row"><div><label class="wa-lbl">WhatsApp (digits only)</label><input class="wa-in" id="web_footer_whatsapp" value="{{ web_settings.get('web_footer_whatsapp','91XXXXXXXXXX') }}"></div><div><label class="wa-lbl">Email address</label><input class="wa-in" id="web_footer_email" value="{{ web_settings.get('web_footer_email','info.uttamtailors@gmail.com') }}"></div></div>
@@ -2740,6 +2784,58 @@ function saveLogoHeight(){
       st.textContent = d.ok ? 'Saved!' : 'Error'; 
       st.style.color = d.ok ? '#16a34a' : '#dc2626';
     }).catch(function(){ st.textContent='Error'; st.style.color='#dc2626'; });
+}
+
+function waUploadFooterLogo(input){
+  var file=input.files[0]; if(!file) return;
+  var st=document.getElementById('waFooterLogoStatus'); st.textContent='Preparing...'; st.style.color='#7a6a58';
+  function doUpload(blob,fname){
+    st.textContent='Uploading...';
+    var fd=new FormData(); fd.append('footer_logo',blob,fname);
+    fetch('/owner/api/website/footer-logo/upload',{method:'POST',body:fd})
+      .then(function(r){
+        if(!r.ok) return r.text().then(function(t){throw new Error('Server '+r.status+': '+t.substring(0,80));});
+        return r.json();
+      })
+      .then(function(d){
+        if(d.ok){
+          document.getElementById('footerLogoPreviewWrap').innerHTML='<img src="'+d.url+'" style="max-width:120px;max-height:50px;object-fit:contain;">';
+          st.textContent='Footer logo saved!'; st.style.color='#16a34a';
+        } else { st.textContent='Error: '+d.error; st.style.color='#dc2626'; }
+      }).catch(function(e){ st.textContent='Failed: '+(e.message||e); st.style.color='#dc2626'; });
+  }
+  var MAX=1.5*1024*1024;
+  if(file.size<=MAX||file.type==='image/svg+xml'){doUpload(file,file.name);return;}
+  st.textContent='Compressing...';
+  var img=new Image(); var url=URL.createObjectURL(file);
+  img.onload=function(){
+    var MAX_DIM=1200; var w=img.width,h=img.height;
+    if(w>MAX_DIM){h=Math.round(h*MAX_DIM/w);w=MAX_DIM;}
+    if(h>MAX_DIM){w=Math.round(w*MAX_DIM/h);h=MAX_DIM;}
+    var canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h;
+    canvas.getContext('2d').drawImage(img,0,0,w,h);
+    URL.revokeObjectURL(url);
+    canvas.toBlob(function(blob){doUpload(blob,'footer_logo.jpg');},'image/jpeg',0.88);
+  };
+  img.onerror=function(){URL.revokeObjectURL(url);doUpload(file,file.name);};
+  img.src=url;
+}
+function waRemoveFooterLogo(){
+  if(!confirm('Remove footer logo? Header logo will be used instead.')) return;
+  fetch('/owner/api/website/footer-logo/remove',{method:'POST'}).then(function(r){return r.json();}).then(function(d){
+    if(d.ok){
+      document.getElementById('footerLogoPreviewWrap').innerHTML='<span style="font-size:10px;color:rgba(250,240,228,.4);text-align:center;padding:4px;">Uses header logo</span>';
+      document.getElementById('waFooterLogoStatus').textContent='Removed.';
+    }
+  });
+}
+function saveFooterLogoHeight(){
+  var v=document.getElementById('web_footer_logo_height').value;
+  var st=document.getElementById('waFooterLogoSizeStatus'); st.textContent='Saving...'; st.style.color='#7a6a58';
+  apiFetch('/owner/website/settings/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'web_footer_logo_height',value:v})})
+    .then(function(r){return r.json();})
+    .then(function(d){st.textContent=d.ok?'Saved!':'Error';st.style.color=d.ok?'#16a34a':'#dc2626';})
+    .catch(function(){st.textContent='Error';st.style.color='#dc2626';});
 }
 </script>
 {% endblock %}
