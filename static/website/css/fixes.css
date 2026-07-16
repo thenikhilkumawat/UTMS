@@ -256,7 +256,7 @@ img,video,iframe{max-width:100%;height:auto;}
 .ac-card .ac-features li{color:var(--dark)!important;}
 .ac-card .ac-features li::before{color:var(--gold)!important;}
 .ac-card .ac-price{color:var(--muted)!important;}
-.ac-card .ac-cta{background:var(--dark)!important;color:var(--bg)!important;border:none!important;padding:13px 28px!important;}
+.ac-card .ac-cta{background:var(--dark)!important;color:var(--bg)!important;border:none!important;padding:13px 28px!important;width:185px!important;justify-content:center!important;}
 .ac-card .ac-cta:hover{background:var(--brown)!important;}
 .ac-card:hover{border-color:rgba(92,52,32,.25)!important;box-shadow:0 12px 40px rgba(92,52,32,.08)!important;}
 /* Card 02: dark brown */
@@ -268,7 +268,7 @@ img,video,iframe{max-width:100%;height:auto;}
 .ac-card--dark .ac-features li{color:rgba(250,240,228,.75)!important;}
 .ac-card--dark .ac-features li::before{color:var(--gold-l)!important;}
 .ac-card--dark .ac-price{color:rgba(250,240,228,.28)!important;}
-.ac-card--dark .ac-cta{background:var(--bg)!important;color:var(--dark)!important;border:none!important;padding:13px 28px!important;}
+.ac-card--dark .ac-cta{background:var(--bg)!important;color:var(--dark)!important;border:none!important;padding:13px 28px!important;width:185px!important;justify-content:center!important;}
 .ac-card--dark .ac-cta:hover{background:#FAF0E4!important;}
 .ac-card--dark:hover{border-color:rgba(250,240,228,.22)!important;box-shadow:0 12px 40px rgba(0,0,0,.35)!important;}
 /* Heritage strip: beige background */
