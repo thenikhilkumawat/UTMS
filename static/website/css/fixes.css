@@ -19,7 +19,7 @@
   .nav{top:36px!important;}
   /* 2. Icons tight on right so logo stays centered */
   .nav-right{gap:2px!important;}
-  .nav-icon-btn{padding:5px!important;}
+  .nav-icon-btn{padding:4px!important;}
   /* 3. Profile avatar — proper circle on mobile */
   #acctAvatar{width:30px!important;height:30px!important;border-radius:50%!important;overflow:hidden!important;flex-shrink:0!important;}
   #acctAvatar img{width:100%!important;height:100%!important;object-fit:cover!important;border-radius:50%!important;display:block!important;}
@@ -188,8 +188,8 @@
 
 /* ── Navbar improvements ── */
 @media(max-width:768px){
-  .nav-icons{gap:4px!important;}
-  .nav-icon-btn{padding:6px!important;}
+  .nav-icons{gap:2px!important;}
+  .nav-icon-btn{padding:4px!important;}
 }
 
 /* ── Global page padding for mobile ── */
@@ -215,7 +215,8 @@ img,video,iframe{max-width:100%;height:auto;}
   .nav-inner{height:80px!important;padding:0 1.25rem!important;}
   .logo-name{font-size:26px!important;}
   .logo-est{font-size:9px!important;margin-top:-2px!important;}
-  .nav-icon-btn svg{width:22px!important;height:22px!important;}
+  .nav-icon-btn svg{width:17px!important;height:17px!important;}
+  #acctAvatar{width:22px!important;height:22px!important;font-size:9px!important;}
   .nav-cta{display:none!important;}
   /* Announcement bar */
   .nav{top:30px!important;}
