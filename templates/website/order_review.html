@@ -315,6 +315,7 @@
 var _order = {};
 var _delivery = 'pickup';
 var _payMethod = 'online'; // 'online' or 'cod'
+var _orderCreating = false; // guard against double-submit
 var _fromCart = new URLSearchParams(window.location.search).get('from') === 'cart';
 var _cartCheckout = {};
 
@@ -523,11 +524,13 @@ function placeOrder(){
 }
 
 function _doPlaceOrder(){
+  if(_orderCreating){return;}  // prevent double-submit
+  _orderCreating=true;
   var name=(document.getElementById('custName').value||'').trim();
   var phone=(document.getElementById('custPhone').value||'').trim();
-  if(!name||!phone){alert('Please enter your name and mobile number.');return;}
+  if(!name||!phone){_orderCreating=false;alert('Please enter your name and mobile number.');return;}
   var btn=document.querySelector('.rv-place-btn');
-  btn.textContent='Processing...';btn.disabled=true;
+  document.querySelectorAll('.rv-place-btn').forEach(function(b){b.textContent='Processing...';b.disabled=true;});
   var dd=document.getElementById('deliveryDate');
   var cb2=document.getElementById('revUrgent');
   var isUrgentNow=cb2?cb2.checked:(_order.urgent||false);
@@ -595,7 +598,7 @@ function _doPlaceOrder(){
               // User cancelled — delete the order
               fetch('/api/orders/'+orderId+'/cancel',{method:'POST',headers:{'Content-Type':'application/json'}})
                 .finally(function(){
-                  btn.textContent='Place Order & Pay Advance →';btn.disabled=false;
+                  _orderCreating=false;document.querySelectorAll('.rv-place-btn').forEach(function(b){b.disabled=false;b.textContent=(_payMethod==='cod'?'Place Order (Pay on Delivery) →':'Place Order & Pay Advance →');});
                   alert('Payment cancelled. Your order was not placed. Please try again.');
                 });
             }
@@ -625,11 +628,11 @@ function _doPlaceOrder(){
         rzp.on('payment.failed',function(resp){
           fetch('/api/orders/'+orderId+'/cancel',{method:'POST',headers:{'Content-Type':'application/json'}})
             .finally(function(){
-              btn.textContent='Place Order & Pay Advance →';btn.disabled=false;
+              _orderCreating=false;document.querySelectorAll('.rv-place-btn').forEach(function(b){b.disabled=false;b.textContent=(_payMethod==='cod'?'Place Order (Pay on Delivery) →':'Place Order & Pay Advance →');});
               alert('Payment failed. Your order was not placed. Please try again.');
             });
         });
-        btn.textContent='Place Order & Pay Advance →';btn.disabled=false;
+        _orderCreating=false;document.querySelectorAll('.rv-place-btn').forEach(function(b){b.disabled=false;b.textContent=(_payMethod==='cod'?'Place Order (Pay on Delivery) →':'Place Order & Pay Advance →');});
         rzp.open();
       }).catch(function(){
         // Network error creating Razorpay order — fallback to confirmation
@@ -638,10 +641,10 @@ function _doPlaceOrder(){
         window.location.href='/order-confirmed?code='+orderCode;
       });
     } else {
-      btn.textContent='Place Order & Pay Advance →';btn.disabled=false;
+      _orderCreating=false;document.querySelectorAll('.rv-place-btn').forEach(function(b){b.disabled=false;b.textContent=(_payMethod==='cod'?'Place Order (Pay on Delivery) →':'Place Order & Pay Advance →');});
       alert(d.message||'Something went wrong. Please try again.');
     }
-  }).catch(function(){btn.textContent='Place Order & Pay Advance →';btn.disabled=false;alert('Connection error. Please try again.');});
+  }).catch(function(){_orderCreating=false;document.querySelectorAll('.rv-place-btn').forEach(function(b){b.disabled=false;b.textContent=(_payMethod==='cod'?'Place Order (Pay on Delivery) →':'Place Order & Pay Advance →');});alert('Connection error. Please try again.');});
 }
 
 function detectLocation(inputId,btn){
