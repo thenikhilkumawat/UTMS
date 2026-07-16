@@ -1000,6 +1000,27 @@
       <button class="wa-btn" style="background:#1a0e06;color:#fff;" onclick="runMigrations()">Run Migrations</button>
       <div id="migrationResult" style="font-size:11px;margin-top:8px;color:green;display:none;"></div>
     </div>
+
+    <!-- ── Razorpay Payment Gateway ── -->
+    <div class="wa-card" style="margin-top:14px;">
+      <div class="wa-card-title">💳 Razorpay Payment Gateway</div>
+      <p style="font-size:12px;color:#7a6a58;margin-bottom:12px;">Enter your Razorpay API keys. Get them from <a href="https://dashboard.razorpay.com/app/keys" target="_blank" style="color:var(--gold);">Razorpay Dashboard → Settings → API Keys</a>.</p>
+      <div class="wa-row">
+        <div>
+          <label class="wa-lbl">Key ID <small style="color:#aaa;">(starts with rzp_live_ or rzp_test_)</small></label>
+          <input class="wa-in" id="rz_key_id" placeholder="rzp_live_XXXXXXXXXX"
+            value="{{ web_settings.get('razorpay_key_id','') }}"
+            onblur="saveSetting('razorpay_key_id',this.value)">
+        </div>
+        <div>
+          <label class="wa-lbl">Key Secret</label>
+          <input class="wa-in" id="rz_key_secret" type="password" placeholder="••••••••••••••••••••"
+            value="{{ web_settings.get('razorpay_key_secret','') }}"
+            onblur="saveSetting('razorpay_key_secret',this.value)">
+        </div>
+      </div>
+      <p style="font-size:11px;color:#aaa;margin-top:6px;">Keys are saved instantly on blur. Payment gateway activates as soon as both fields are filled.</p>
+    </div>
     </div>
   </div><!-- /wp-settings -->
 

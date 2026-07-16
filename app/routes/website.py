@@ -896,18 +896,24 @@ def contact():
 @website_bp.route("/order-confirmed")
 def order_confirmed():
     from flask import request as _req
-    order_id = _req.args.get("id", type=int)
+    order_id   = _req.args.get("id", type=int)
+    order_code = (_req.args.get("code") or "").strip()
     order = None
-    if order_id:
-        try:
-            db = get_db()
+    try:
+        db = get_db()
+        if order_id:
+            row = db.execute("SELECT * FROM orders WHERE id=?", (order_id,)).fetchone()
+        elif order_code:
             row = db.execute(
-                "SELECT * FROM orders WHERE id=?", (order_id,)
+                "SELECT * FROM orders WHERE order_code=? ORDER BY id DESC LIMIT 1",
+                (order_code,)
             ).fetchone()
-            if row:
-                order = dict(row)
-        except Exception:
-            pass
+        else:
+            row = None
+        if row:
+            order = dict(row)
+    except Exception:
+        pass
     return render_template("website/order_confirmed.html", order=order)
 
 
