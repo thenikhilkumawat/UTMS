@@ -338,8 +338,12 @@ body.drawer-open .wa-fab,body.drawer-open .supp-fab{display:none!important;visib
     </div>
     <!-- CENTER: Logo -->
     <a href="{{ url_for('website.home') }}" class="nav-logo-center" aria-label="Uttam Tailors Home">
-      <span class="logo-name">Uttam Tailors</span>
-      <span class="logo-est">Est. 1987 &middot; Sikar</span>
+      {% if web_settings.get('web_logo_url') %}
+        <img src="{{ web_settings['web_logo_url'] }}" alt="{{ web_settings.get('web_shop_name','Uttam Tailors') }}" class="nav-logo-img" style="max-height:42px;width:auto;object-fit:contain;display:block;">
+      {% else %}
+        <span class="logo-name">{{ web_settings.get('web_shop_name','Uttam Tailors') }}</span>
+        <span class="logo-est">{{ web_settings.get('web_shop_est','Est. 1987 &middot; Sikar') }}</span>
+      {% endif %}
     </a>
     <!-- RIGHT: Actions -->
     <div class="nav-right">
@@ -366,7 +370,11 @@ body.drawer-open .wa-fab,body.drawer-open .supp-fab{display:none!important;visib
 <!-- P1: Main menu (always present, slides with burger) -->
 <div class="mm-p1" id="mmP1">
   <div class="drawer-head">
-    <span class="drawer-logo">Uttam Tailors</span>
+    {% if web_settings.get('web_logo_url') %}
+      <img src="{{ web_settings['web_logo_url'] }}" alt="{{ web_settings.get('web_shop_name','Uttam Tailors') }}" style="max-height:36px;width:auto;object-fit:contain;">
+    {% else %}
+      <span class="drawer-logo">{{ web_settings.get('web_shop_name','Uttam Tailors') }}</span>
+    {% endif %}
     <button class="drawer-close" onclick="mmClose()">&times;</button>
   </div>
   <nav class="drawer-links">
@@ -490,7 +498,11 @@ body.drawer-open .wa-fab,body.drawer-open .supp-fab{display:none!important;visib
 <footer class="footer">
   <div class="footer-inner">
     <div class="footer-brand">
-      <p class="footer-logo">{{ web_settings.get('web_shop_name','Uttam Tailors') }}</p>
+      {% if web_settings.get('web_logo_url') %}
+        <img src="{{ web_settings['web_logo_url'] }}" alt="{{ web_settings.get('web_shop_name','Uttam Tailors') }}" class="footer-logo-img" style="max-height:48px;width:auto;object-fit:contain;margin-bottom:12px;">
+      {% else %}
+        <p class="footer-logo">{{ web_settings.get('web_shop_name','Uttam Tailors') }}</p>
+      {% endif %}
       <p class="footer-tagline">{{ web_settings.get('web_footer_tagline','Measured to the thread. Since 1987.') }}</p>
       <p class="footer-addr">
         {{ web_settings.get('web_footer_address','Subhash Chowk, Sikar — 332001, Rajasthan') }}<br>

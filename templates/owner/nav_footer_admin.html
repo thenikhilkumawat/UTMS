@@ -55,9 +55,38 @@
       <button class="hf-btn gold" onclick="saveHeaderSettings()">Save Header</button>
     </div>
     <div class="hf-section-body">
+
+      <!-- ── LOGO UPLOAD ── -->
+      <div style="background:#fdf8f2;border:1.5px dashed #d4a96a;border-radius:10px;padding:18px 20px;margin-bottom:20px;">
+        <div style="font-size:12px;font-weight:700;color:#7a6a58;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;">🖼 Website Logo Image</div>
+        <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;">
+          <div id="logoPreviewWrap" style="width:140px;height:60px;border:1px solid #e0d5c5;border-radius:8px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;">
+            {% if web_settings.get('web_logo_url') %}
+              <img id="logoPreviewImg" src="{{ web_settings.get('web_logo_url') }}" style="max-width:130px;max-height:54px;object-fit:contain;">
+            {% else %}
+              <span id="logoPreviewImg" style="font-size:11px;color:#aaa;">No logo uploaded</span>
+            {% endif %}
+          </div>
+          <div style="flex:1;min-width:200px;">
+            <div style="font-size:12px;color:#7a6a58;margin-bottom:8px;">Upload your logo (PNG/SVG recommended, max 5MB). It will appear in the <strong>header</strong>, <strong>mobile menu</strong>, and <strong>footer</strong>.</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <label style="cursor:pointer;background:#C8903A;color:#fff;padding:8px 16px;border-radius:6px;font-size:12px;font-weight:700;">
+                Choose Logo
+                <input type="file" accept=".png,.jpg,.jpeg,.webp,.svg" style="display:none;" onchange="uploadLogo(this)">
+              </label>
+              {% if web_settings.get('web_logo_url') %}
+              <button onclick="removeLogo()" style="background:#dc2626;color:#fff;border:none;padding:8px 14px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">Remove</button>
+              {% endif %}
+            </div>
+            <div id="logoUploadStatus" style="font-size:11px;margin-top:6px;color:#7a6a58;"></div>
+          </div>
+        </div>
+        <div style="font-size:11px;color:#aaa;margin-top:10px;">💡 If no image uploaded, the shop name text below is used as logo.</div>
+      </div>
+
       <div class="hf-row">
         <div>
-          <label class="hf-lbl">Shop name (logo text)</label>
+          <label class="hf-lbl">Shop name (logo text — used when no image)</label>
           <input class="hf-in" id="web_shop_name" value="{{ web_settings.get('web_shop_name','Uttam Tailors') }}">
         </div>
         <div>
@@ -366,4 +395,38 @@ function deletePage(id){
   });
 }
 </script>
-{% endblock %}
+{% endblock %}<script>
+function uploadLogo(input){
+  var file = input.files[0];
+  if(!file) return;
+  var status = document.getElementById('logoUploadStatus');
+  status.textContent = 'Uploading...';
+  var fd = new FormData();
+  fd.append('logo', file);
+  fetch('/owner/api/website/logo/upload',{method:'POST',body:fd})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.ok){
+        status.style.color='#16a34a';
+        status.textContent = 'Logo uploaded! Refresh the website to see it.';
+        var wrap = document.getElementById('logoPreviewWrap');
+        wrap.innerHTML = '<img id="logoPreviewImg" src="'+d.url+'" style="max-width:130px;max-height:54px;object-fit:contain;">';
+      } else {
+        status.style.color='#dc2626';
+        status.textContent = 'Error: '+(d.error||'Upload failed');
+      }
+    })
+    .catch(function(){ status.style.color='#dc2626'; status.textContent='Upload failed'; });
+}
+function removeLogo(){
+  if(!confirm('Remove logo image? The shop name text will be used instead.')) return;
+  fetch('/owner/api/website/logo/remove',{method:'POST'})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.ok){
+        document.getElementById('logoPreviewWrap').innerHTML='<span style="font-size:11px;color:#aaa;">No logo uploaded</span>';
+        document.getElementById('logoUploadStatus').textContent='Logo removed.';
+      }
+    });
+}
+</script>
