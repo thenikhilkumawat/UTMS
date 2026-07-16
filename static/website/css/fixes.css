@@ -603,3 +603,10 @@ img,video,iframe{max-width:100%;height:auto;}
     gap: 0rem;
   }
 }
+
+@media (max-width: 768px) {
+  .hiw-cta {
+    text-align: center;
+    padding: 3rem 0 1rem;
+  }
+}
