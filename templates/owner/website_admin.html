@@ -689,17 +689,29 @@
       
       <!-- ── LOGO SIZE ── -->
       <div style="background:#fdf8f2;border:1.5px dashed #d4a96a;border-radius:10px;padding:16px 18px;margin-bottom:16px;">
-        <div style="font-size:11px;font-weight:700;color:#7a6a58;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">📐 Logo Size (Header Height)</div>
-        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
-          <input type="range" id="web_logo_height" min="24" max="80" step="2"
-            value="{{ web_settings.get('web_logo_height','42') }}"
-            oninput="document.getElementById('logoHeightVal').textContent=this.value+'px'"
-            style="flex:1;min-width:160px;accent-color:#C8903A;">
-          <span id="logoHeightVal" style="font-size:13px;font-weight:700;color:#C8903A;min-width:38px;">{{ web_settings.get('web_logo_height','42') }}px</span>
-          <button onclick="saveLogoHeight()" style="background:#C8903A;color:#fff;border:none;padding:7px 16px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">Save Size</button>
-          <span id="waLogoSizeStatus" style="font-size:11px;color:#7a6a58;"></span>
+        <div style="font-size:11px;font-weight:700;color:#7a6a58;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;">📐 Header Logo Size</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <span style="font-size:11px;color:#7a6a58;min-width:70px;">🖥 Desktop</span>
+            <input type="range" id="web_logo_height_desktop" min="24" max="100" step="2"
+              value="{{ web_settings.get('web_logo_height_desktop','42') }}"
+              oninput="document.getElementById('logoHeightDesktopVal').textContent=this.value+'px'"
+              style="flex:1;min-width:120px;accent-color:#C8903A;">
+            <span id="logoHeightDesktopVal" style="font-size:13px;font-weight:700;color:#C8903A;min-width:38px;">{{ web_settings.get('web_logo_height_desktop','42') }}px</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <span style="font-size:11px;color:#7a6a58;min-width:70px;">📱 Mobile</span>
+            <input type="range" id="web_logo_height_mobile" min="20" max="70" step="2"
+              value="{{ web_settings.get('web_logo_height_mobile','36') }}"
+              oninput="document.getElementById('logoHeightMobileVal').textContent=this.value+'px'"
+              style="flex:1;min-width:120px;accent-color:#C8903A;">
+            <span id="logoHeightMobileVal" style="font-size:13px;font-weight:700;color:#C8903A;min-width:38px;">{{ web_settings.get('web_logo_height_mobile','36') }}px</span>
+          </div>
+          <div style="text-align:right;">
+            <button onclick="saveLogoHeight()" style="background:#C8903A;color:#fff;border:none;padding:7px 16px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">Save Sizes</button>
+            <span id="waLogoSizeStatus" style="font-size:11px;color:#7a6a58;margin-left:8px;"></span>
+          </div>
         </div>
-        <div style="font-size:10px;color:#aaa;margin-top:8px;">Range: 24px – 80px. Default 42px. Mobile menu and footer scale automatically.</div>
       </div>
 
 <!-- ── FAVICON UPLOAD ── -->
@@ -767,15 +779,28 @@
 
       <!-- ── FOOTER LOGO SIZE ── -->
       <div style="background:#fdf8f2;border:1.5px dashed #d4a96a;border-radius:10px;padding:16px 18px;margin-bottom:16px;">
-        <div style="font-size:11px;font-weight:700;color:#7a6a58;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">📐 Footer Logo Size</div>
-        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
-          <input type="range" id="web_footer_logo_height" min="24" max="100" step="2"
-            value="{{ web_settings.get('web_footer_logo_height', web_settings.get('web_logo_height','48')) }}"
-            oninput="document.getElementById('footerLogoHeightVal').textContent=this.value+'px'"
-            style="flex:1;min-width:160px;accent-color:#C8903A;">
-          <span id="footerLogoHeightVal" style="font-size:13px;font-weight:700;color:#C8903A;min-width:38px;">{{ web_settings.get('web_footer_logo_height', web_settings.get('web_logo_height','48')) }}px</span>
-          <button onclick="saveFooterLogoHeight()" style="background:#C8903A;color:#fff;border:none;padding:7px 16px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">Save Size</button>
-          <span id="waFooterLogoSizeStatus" style="font-size:11px;color:#7a6a58;"></span>
+        <div style="font-size:11px;font-weight:700;color:#7a6a58;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;">📐 Footer Logo Size</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <span style="font-size:11px;color:#7a6a58;min-width:70px;">🖥 Desktop</span>
+            <input type="range" id="web_footer_logo_height_desktop" min="24" max="120" step="2"
+              value="{{ web_settings.get('web_footer_logo_height_desktop','48') }}"
+              oninput="document.getElementById('footerLogoHeightDesktopVal').textContent=this.value+'px'"
+              style="flex:1;min-width:120px;accent-color:#C8903A;">
+            <span id="footerLogoHeightDesktopVal" style="font-size:13px;font-weight:700;color:#C8903A;min-width:38px;">{{ web_settings.get('web_footer_logo_height_desktop','48') }}px</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <span style="font-size:11px;color:#7a6a58;min-width:70px;">📱 Mobile</span>
+            <input type="range" id="web_footer_logo_height_mobile" min="20" max="80" step="2"
+              value="{{ web_settings.get('web_footer_logo_height_mobile','40') }}"
+              oninput="document.getElementById('footerLogoHeightMobileVal').textContent=this.value+'px'"
+              style="flex:1;min-width:120px;accent-color:#C8903A;">
+            <span id="footerLogoHeightMobileVal" style="font-size:13px;font-weight:700;color:#C8903A;min-width:38px;">{{ web_settings.get('web_footer_logo_height_mobile','40') }}px</span>
+          </div>
+          <div style="text-align:right;">
+            <button onclick="saveFooterLogoHeight()" style="background:#C8903A;color:#fff;border:none;padding:7px 16px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">Save Sizes</button>
+            <span id="waFooterLogoSizeStatus" style="font-size:11px;color:#7a6a58;margin-left:8px;"></span>
+          </div>
         </div>
       </div>
 
@@ -2775,15 +2800,17 @@ function waRemoveFavicon(){
 }
 
 function saveLogoHeight(){
-  var v = document.getElementById('web_logo_height').value;
+  var d = document.getElementById('web_logo_height_desktop').value;
+  var m = document.getElementById('web_logo_height_mobile').value;
   var st = document.getElementById('waLogoSizeStatus');
-  st.textContent = 'Saving...'; st.style.color = '#7a6a58';
-  apiFetch('/owner/website/settings/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'web_logo_height',value:v})})
-    .then(function(r){return r.json();})
-    .then(function(d){
-      st.textContent = d.ok ? 'Saved!' : 'Error'; 
-      st.style.color = d.ok ? '#16a34a' : '#dc2626';
-    }).catch(function(){ st.textContent='Error'; st.style.color='#dc2626'; });
+  st.textContent='Saving...'; st.style.color='#7a6a58';
+  Promise.all([
+    apiFetch('/owner/website/settings/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'web_logo_height_desktop',value:d})}).then(function(r){return r.json();}),
+    apiFetch('/owner/website/settings/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'web_logo_height_mobile',value:m})}).then(function(r){return r.json();})
+  ]).then(function(rs){
+    var ok=rs.every(function(r){return r.ok;});
+    st.textContent=ok?'Saved!':'Error'; st.style.color=ok?'#16a34a':'#dc2626';
+  }).catch(function(){st.textContent='Error';st.style.color='#dc2626';});
 }
 
 function waUploadFooterLogo(input){
@@ -2830,12 +2857,16 @@ function waRemoveFooterLogo(){
   });
 }
 function saveFooterLogoHeight(){
-  var v=document.getElementById('web_footer_logo_height').value;
+  var d=document.getElementById('web_footer_logo_height_desktop').value;
+  var m=document.getElementById('web_footer_logo_height_mobile').value;
   var st=document.getElementById('waFooterLogoSizeStatus'); st.textContent='Saving...'; st.style.color='#7a6a58';
-  apiFetch('/owner/website/settings/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'web_footer_logo_height',value:v})})
-    .then(function(r){return r.json();})
-    .then(function(d){st.textContent=d.ok?'Saved!':'Error';st.style.color=d.ok?'#16a34a':'#dc2626';})
-    .catch(function(){st.textContent='Error';st.style.color='#dc2626';});
+  Promise.all([
+    apiFetch('/owner/website/settings/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'web_footer_logo_height_desktop',value:d})}).then(function(r){return r.json();}),
+    apiFetch('/owner/website/settings/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'web_footer_logo_height_mobile',value:m})}).then(function(r){return r.json();})
+  ]).then(function(rs){
+    var ok=rs.every(function(r){return r.ok;});
+    st.textContent=ok?'Saved!':'Error'; st.style.color=ok?'#16a34a':'#dc2626';
+  }).catch(function(){st.textContent='Error';st.style.color='#dc2626';});
 }
 </script>
 {% endblock %}
