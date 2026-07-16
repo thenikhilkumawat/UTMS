@@ -84,6 +84,36 @@
         <div style="font-size:11px;color:#aaa;margin-top:10px;">💡 If no image uploaded, the shop name text below is used as logo.</div>
       </div>
 
+      <!-- ── FAVICON UPLOAD ── -->
+      <div style="background:#fdf8f2;border:1.5px dashed #d4a96a;border-radius:10px;padding:18px 20px;margin-bottom:20px;">
+        <div style="font-size:12px;font-weight:700;color:#7a6a58;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;">🌐 Website Favicon</div>
+        <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;">
+          <div id="faviconPreviewWrap" style="width:64px;height:64px;border:1px solid #e0d5c5;border-radius:8px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;">
+            {% if web_settings.get('web_favicon_url') %}
+              <img id="faviconPreviewImg" src="{{ web_settings.get('web_favicon_url') }}" style="width:32px;height:32px;object-fit:contain;">
+            {% else %}
+              <span id="faviconPreviewImg" style="font-size:10px;color:#aaa;text-align:center;">No favicon</span>
+            {% endif %}
+          </div>
+          <div style="flex:1;min-width:200px;">
+            <div style="font-size:12px;color:#7a6a58;margin-bottom:8px;">Upload favicon (ICO or PNG 32×32/64×64 recommended, max 2MB). Shown in browser tab and bookmarks.</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <label style="cursor:pointer;background:#C8903A;color:#fff;padding:8px 16px;border-radius:6px;font-size:12px;font-weight:700;">
+                Choose Favicon
+                <input type="file" accept=".ico,.png,.svg,.jpg,.jpeg,.webp" style="display:none;" onchange="uploadFavicon(this)">
+              </label>
+              {% if web_settings.get('web_favicon_url') %}
+              <button onclick="removeFavicon()" style="background:#dc2626;color:#fff;border:none;padding:8px 14px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">Remove</button>
+              {% endif %}
+            </div>
+            <div id="faviconUploadStatus" style="font-size:11px;margin-top:6px;color:#7a6a58;"></div>
+          </div>
+        </div>
+        <div style="font-size:11px;color:#aaa;margin-top:10px;">💡 Use a square image (32×32 or 64×64 px). ICO and PNG work best across all browsers.</div>
+      </div>
+
+
+
       <div class="hf-row">
         <div>
           <label class="hf-lbl">Shop name (logo text — used when no image)</label>
@@ -426,6 +456,39 @@ function removeLogo(){
       if(d.ok){
         document.getElementById('logoPreviewWrap').innerHTML='<span style="font-size:11px;color:#aaa;">No logo uploaded</span>';
         document.getElementById('logoUploadStatus').textContent='Logo removed.';
+      }
+    });
+}
+
+function uploadFavicon(input){
+  var file = input.files[0];
+  if(!file) return;
+  var status = document.getElementById('faviconUploadStatus');
+  status.textContent = 'Uploading...';
+  var fd = new FormData();
+  fd.append('favicon', file);
+  fetch('/owner/api/website/favicon/upload',{method:'POST',body:fd})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.ok){
+        var wrap = document.getElementById('faviconPreviewWrap');
+        wrap.innerHTML = '<img id="faviconPreviewImg" src="'+d.url+'" style="width:32px;height:32px;object-fit:contain;">';
+        status.textContent = 'Favicon uploaded!';
+        status.style.color = '#16a34a';
+      } else {
+        status.textContent = 'Error: ' + d.error;
+        status.style.color = '#dc2626';
+      }
+    }).catch(function(){ status.textContent='Upload failed.'; status.style.color='#dc2626'; });
+}
+function removeFavicon(){
+  if(!confirm('Remove favicon?')) return;
+  fetch('/owner/api/website/favicon/remove',{method:'POST'})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.ok){
+        document.getElementById('faviconPreviewWrap').innerHTML='<span style="font-size:10px;color:#aaa;text-align:center;">No favicon</span>';
+        document.getElementById('faviconUploadStatus').textContent='Favicon removed.';
       }
     });
 }

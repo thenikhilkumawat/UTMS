@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#F7F0E6">
+{# ── Favicon ── #}
+{% if web_settings.get('web_favicon_url') %}
+<link rel="icon" type="image/x-icon" href="{{ web_settings['web_favicon_url'] }}">
+<link rel="apple-touch-icon" href="{{ web_settings['web_favicon_url'] }}">
+{% else %}
+<link rel="icon" type="image/x-icon" href="/static/website/img/favicon.ico">
+{% endif %}
 
 {# ── SEO Meta ── #}
 {% set _t  = page_meta.title    if page_meta and page_meta.title    else 'Uttam Tailors — Master Tailoring, Sikar since 1987' %}

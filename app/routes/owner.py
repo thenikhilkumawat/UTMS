@@ -3510,6 +3510,54 @@ def website_logo_remove():
     db.commit()
     return jsonify({"ok":True})
 
+
+@bp.route("/api/website/favicon/upload", methods=["POST"])
+def website_favicon_upload():
+    import os, time as _t
+    from werkzeug.utils import secure_filename
+    if not session.get("owner_logged_in"):
+        return jsonify({"ok":False,"error":"Unauthorized"}),403
+    try:
+        file = request.files.get("favicon")
+        if not file or not file.filename:
+            return jsonify({"ok":False,"error":"No file"})
+        file.seek(0,2); size=file.tell(); file.seek(0)
+        if size > 2*1024*1024:
+            return jsonify({"ok":False,"error":"Max 2MB"})
+        ext = os.path.splitext(secure_filename(file.filename))[1].lower()
+        if ext not in (".ico",".png",".svg",".jpg",".jpeg",".webp"):
+            return jsonify({"ok":False,"error":"ico/png/svg only"})
+        save_dir = os.path.join(os.path.dirname(__file__),"../../static/uploads/branding")
+        os.makedirs(save_dir, exist_ok=True)
+        fname = "favicon_" + str(int(_t.time()*1000)) + ext
+        fpath = os.path.join(save_dir, fname)
+        file.save(fpath)
+        # Auto-convert non-ICO/SVG to WebP
+        if ext not in (".ico",".svg"):
+            try:
+                from app.utils.image_optimize import optimize_image
+                fpath = optimize_image(fpath)
+                fname = os.path.basename(fpath)
+            except Exception:
+                pass
+        url = "/static/uploads/branding/" + fname
+        from database import get_db
+        db = get_db()
+        db.execute("INSERT OR REPLACE INTO settings(key,value) VALUES(?,?)", ("web_favicon_url", url))
+        db.commit()
+        return jsonify({"ok":True,"url":url})
+    except Exception as exc:
+        return jsonify({"ok":False,"error":str(exc)})
+
+@bp.route("/api/website/favicon/remove", methods=["POST"])
+def website_favicon_remove():
+    if not session.get("owner_logged_in"): return jsonify({"ok":False}),403
+    from database import get_db
+    db = get_db()
+    db.execute("INSERT OR REPLACE INTO settings(key,value) VALUES(?,?)", ("web_favicon_url",""))
+    db.commit()
+    return jsonify({"ok":True})
+
 # ── Daily Craft (Fresh From The Workshop) ─────────────────────────────────────
 
 @bp.route("/api/daily-craft", methods=["GET"])
