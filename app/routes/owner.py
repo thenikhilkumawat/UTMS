@@ -2937,13 +2937,15 @@ def website_admin():
     except: web_items = []
     try:
         web_orders = db.execute("""
-            SELECT o.order_code, o.status, o.order_date, o.payable_amount,
-                   o.advance_paid, o.remaining, o.is_urgent, o.note,
-                   COALESCE(c.name,'—') as cname, COALESCE(c.mobile,'') as mobile
+            SELECT o.order_code, o.status, o.order_date, o.delivery_date,
+                   o.payable_amount, o.advance_paid, o.remaining, o.is_urgent, o.note,
+                   COALESCE(c.name,'—') as cname, COALESCE(c.mobile,'') as mobile,
+                   COALESCE(c.address,'') as caddr,
+                   CASE WHEN o.note LIKE '%delivery:home%' THEN 1 ELSE 0 END as is_home_delivery
             FROM orders o
             LEFT JOIN customers c ON c.id = o.customer_id
-            WHERE o.note LIKE '[WEB/%' OR o.payment_mode IN ('online','razorpay')
-            ORDER BY o.id DESC LIMIT 100
+            WHERE o.note LIKE '[WEB/%' OR o.payment_mode IN ('online','razorpay','cod')
+            ORDER BY o.id DESC LIMIT 200
         """).fetchall()
     except: web_orders = []
     try: nav_items = db.execute("SELECT * FROM web_nav_items ORDER BY sort_order").fetchall()

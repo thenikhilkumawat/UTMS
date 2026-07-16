@@ -2298,3 +2298,77 @@ def order_cancel(order_id):
         return jsonify({"ok": True})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
+
+# ══════════════════════════════════════════════
+# HOME DELIVERY — DISPATCH + DELIVER
+# ══════════════════════════════════════════════
+
+@features_bp.route("/api/orders/<order_code>/dispatch", methods=["POST"])
+def order_dispatch(order_code):
+    """Mark order out_for_delivery, update tracker stage 6, send SMS."""
+    from datetime import datetime as _dt
+    try:
+        db = get_db()
+        row = db.execute(
+            "SELECT o.*, c.name as cname, c.mobile as cmobile, c.address as caddr "
+            "FROM orders o LEFT JOIN customers c ON c.id=o.customer_id "
+            "WHERE o.order_code=? LIMIT 1", (order_code,)
+        ).fetchone()
+        if not row:
+            return jsonify({"ok": False, "error": "Order not found"})
+        now = _dt.now().strftime("%Y-%m-%d %H:%M:%S")
+        db.execute("UPDATE orders SET status='out_for_delivery' WHERE order_code=?", (order_code,))
+        # Upsert stage 6 (unique per order_code)
+        if db.execute("SELECT id FROM order_stages WHERE order_code=?", (order_code,)).fetchone():
+            db.execute("UPDATE order_stages SET stage=6, note='Out for delivery', updated_at=? WHERE order_code=?", (now, order_code))
+        else:
+            db.execute("INSERT INTO order_stages(order_code,stage,note,updated_at) VALUES(?,6,'Out for delivery',?)", (order_code, now))
+        db.commit()
+        try:
+            from app.utils.sms import send_dispatch_sms
+            send_dispatch_sms(row["cmobile"], order_code, row["cname"] or "Customer", row["remaining"] or 0)
+        except Exception:
+            pass
+        return jsonify({"ok": True})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)})
+
+
+@features_bp.route("/api/orders/<order_code>/deliver", methods=["POST"])
+def order_deliver(order_code):
+    """Mark order delivered, optionally clear COD remaining, send SMS."""
+    from datetime import datetime as _dt
+    d = request.get_json(force=True, silent=True) or {}
+    cod_collected = bool(d.get("cod_collected", False))
+    try:
+        db = get_db()
+        row = db.execute(
+            "SELECT o.*, c.name as cname, c.mobile as cmobile "
+            "FROM orders o LEFT JOIN customers c ON c.id=o.customer_id "
+            "WHERE o.order_code=? LIMIT 1", (order_code,)
+        ).fetchone()
+        if not row:
+            return jsonify({"ok": False, "error": "Order not found"})
+        now = _dt.now().strftime("%Y-%m-%d %H:%M:%S")
+        if cod_collected:
+            db.execute(
+                "UPDATE orders SET status='delivered', delivered_at=?, advance_paid=payable_amount, remaining=0 WHERE order_code=?",
+                (now, order_code)
+            )
+        else:
+            db.execute("UPDATE orders SET status='delivered', delivered_at=? WHERE order_code=?", (now, order_code))
+        # Upsert stage to max (7 = delivered for home delivery)
+        if db.execute("SELECT id FROM order_stages WHERE order_code=?", (order_code,)).fetchone():
+            db.execute("UPDATE order_stages SET stage=7, note='Delivered', updated_at=? WHERE order_code=?", (now, order_code))
+        else:
+            db.execute("INSERT INTO order_stages(order_code,stage,note,updated_at) VALUES(?,7,'Delivered',?)", (order_code, now))
+        db.commit()
+        try:
+            from app.utils.sms import send_status_sms
+            send_status_sms(row["cmobile"], order_code, row["cname"] or "Customer", "delivered")
+        except Exception:
+            pass
+        return jsonify({"ok": True})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)})
+

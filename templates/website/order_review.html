@@ -262,7 +262,22 @@
         <div class="rv-sum-div"></div>
         <div class="rv-sum-total"><span>Total</span><span id="sumTotal">—</span></div>
 
-        <div class="rv-advance-box">
+        <!-- Payment method selector (shows COD only for home delivery) -->
+        <div id="payMethodBox" style="display:none;margin-bottom:12px;">
+          <div style="font-family:var(--fm);font-size:8.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Payment Method</div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <label style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:2px solid var(--border);border-radius:10px;cursor:pointer;transition:border-color .2s;" id="payOptOnline" onclick="selectPayMethod('online')">
+              <span style="width:16px;height:16px;border-radius:50%;border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;flex-shrink:0;" id="payDotOnline"><span style="width:8px;height:8px;border-radius:50%;background:var(--gold);display:block;"></span></span>
+              <div><div style="font-size:13px;font-weight:600;color:var(--dark);">Pay Advance Online</div><div style="font-size:11px;color:var(--muted);">Full payment now via Razorpay</div></div>
+            </label>
+            <label style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:2px solid var(--border);border-radius:10px;cursor:pointer;transition:border-color .2s;" id="payOptCod" onclick="selectPayMethod('cod')">
+              <span style="width:16px;height:16px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;" id="payDotCod"><span style="width:8px;height:8px;border-radius:50%;background:transparent;display:block;" id="payDotCodInner"></span></span>
+              <div><div style="font-size:13px;font-weight:600;color:var(--dark);">Pay on Delivery (COD)</div><div style="font-size:11px;color:var(--muted);">Cash when order arrives at your door</div></div>
+            </label>
+          </div>
+        </div>
+
+        <div class="rv-advance-box" id="onlinePayBox">
           <div style="font-family:var(--fm);font-size:8.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);margin-bottom:3px;">Payment</div>
           <div style="font-size:12.5px;color:var(--dark);margin-bottom:5px;">Full payment required upfront</div>
           <div style="font-size:13px;">Advance: <strong id="sumAdvance" style="color:var(--gold);font-size:15px;">—</strong></div>
@@ -274,7 +289,7 @@
         </div>
         <div id="couponMsg" style="font-size:11px;min-height:13px;margin-bottom:2px;"></div>
 
-        <button class="rv-place-btn place-order-btn" onclick="placeOrder()">Place Order &amp; Pay Advance →</button>
+        <button class="rv-place-btn place-order-btn" id="placeOrderBtn2" onclick="placeOrder()">Place Order &amp; Pay Advance →</button>
         <p style="text-align:center;font-size:11px;color:var(--muted);margin-top:8px;line-height:1.4;">+ WhatsApp updates at every step</p>
       </div>
     </div>
@@ -299,6 +314,7 @@
 <script>
 var _order = {};
 var _delivery = 'pickup';
+var _payMethod = 'online'; // 'online' or 'cod'
 var _fromCart = new URLSearchParams(window.location.search).get('from') === 'cart';
 var _cartCheckout = {};
 
@@ -412,8 +428,39 @@ function updateSummary(){
   var cd=document.getElementById('couponDiscount'); if(cd)cd.textContent='-Rs. '+disc;
 }
 
+function selectPayMethod(m){
+  _payMethod=m;
+  var oOpt=document.getElementById('payOptOnline');
+  var cOpt=document.getElementById('payOptCod');
+  var oDot=document.getElementById('payDotOnline');
+  var cDot=document.getElementById('payDotCod');
+  var cDotI=document.getElementById('payDotCodInner');
+  var oBox=document.getElementById('onlinePayBox');
+  var btn=document.querySelector('.rv-place-btn');
+  if(m==='cod'){
+    if(oOpt)oOpt.style.borderColor='var(--border)';
+    if(cOpt)cOpt.style.borderColor='var(--gold)';
+    if(oDot){oDot.style.borderColor='var(--border)';}
+    if(cDot){cDot.style.borderColor='var(--gold)';}
+    if(cDotI){cDotI.style.background='var(--gold)';}
+    if(oBox)oBox.style.display='none';
+    if(btn){btn.textContent='Place Order (Pay on Delivery) →';}
+  } else {
+    if(oOpt)oOpt.style.borderColor='var(--gold)';
+    if(cOpt)cOpt.style.borderColor='var(--border)';
+    if(oDot){oDot.style.borderColor='var(--gold)';}
+    if(cDot){cDot.style.borderColor='var(--border)';}
+    if(cDotI){cDotI.style.background='transparent';}
+    if(oBox)oBox.style.display='block';
+    if(btn){btn.textContent='Place Order & Pay Advance →';}
+  }
+}
 function selectDel(type,el){
   _delivery=type;
+  // Show COD option only for home delivery
+  var pmBox=document.getElementById('payMethodBox');
+  if(pmBox){pmBox.style.display=type==='home'?'block':'none';}
+  if(type!=='home'){selectPayMethod('online');}
   document.querySelectorAll('.rv-del-opt').forEach(function(d){d.classList.remove('active');});
   el.classList.add('active');
   updateSummary();
@@ -493,7 +540,8 @@ function _doPlaceOrder(){
     customer_name:name,customer_phone:phone,
     customer_email:(document.getElementById('custEmail')||{value:''}).value||'',
     customer_address:(document.getElementById('custAddress')||{value:''}).value||'',
-    source:_fromCart?'cart':'product_page'
+    source:_fromCart?'cart':'product_page',
+    payment_mode:_payMethod==='cod'?'cod':'online'
   };
   if(_fromCart&&_cartCheckout.items&&_cartCheckout.items.length){
     payload.cart_items=_cartCheckout.items.map(function(it){return{name:it.name,price:parseFloat(it.price||0),qty:parseInt(it.qty)||1};});
@@ -504,6 +552,13 @@ function _doPlaceOrder(){
       var orderId   = d.order_id;
       var orderCode = d.order_code;
       var totalRs   = parseFloat(d.payable_amount||0);
+      // COD: skip Razorpay entirely
+      if(_payMethod==='cod'){
+        sessionStorage.removeItem('pdp_order');sessionStorage.removeItem('cart_checkout');
+        if(_fromCart){try{localStorage.removeItem('uttam_cart');}catch(e){}if(typeof _updateCartBadge==='function')_updateCartBadge();}
+        window.location.href='/order-confirmed?code='+orderCode+'&cod=1';
+        return;
+      }
       var advancePct= 100;
       var advanceRs = Math.max(1, Math.round(totalRs * advancePct / 100));
       // Create Razorpay order

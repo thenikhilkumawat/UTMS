@@ -266,29 +266,124 @@
 
   <!-- ORDERS -->
   <div class="wa-pnl active" id="wp-orders">
-    <div class="wa-card">
-      <div class="wa-card-title">Online Orders (click any row to manage in UTMS)</div>
-      <div style="overflow-x:auto;">
-        <table class="wa-tbl">
-          <thead><tr><th>Order</th><th>Customer</th><th>Details</th><th>Total</th><th>Advance</th><th>Status</th><th>Date</th></tr></thead>
-          <tbody>
-            {% for o in web_orders %}
-            <tr onclick="window.location='/owner/orders/detail/{{ o.order_code }}'" style="cursor:pointer;">
-              <td><span style="font-weight:800;color:#C8903A;">#{{ o.order_code }}</span><br><span class="badge online">ONLINE</span></td>
-              <td><div style="font-weight:600;">{{ o.cname }}</div><div style="font-size:11px;color:#7a6a58;">{{ o.mobile }}</div></td>
-              <td style="font-size:11px;color:#7a6a58;max-width:180px;">{{ (o.note or '')[:70] }}</td>
-              <td style="font-weight:700;">Rs. {{ o.payable_amount|int }}</td>
-              <td style="color:#C8903A;font-weight:600;">Rs. {{ o.advance_paid|int }}</td>
-              <td><span class="badge {{ o.status }}" style="padding:3px 8px;border-radius:12px;font-size:10px;font-weight:700;letter-spacing:.05em;background:{%if o.status=='received' or o.status=='Pending payment'%}#fef3c7;color:#92400e;{%elif o.status=='in_progress'%}#dbeafe;color:#1e40af;{%elif o.status=='ready'%}#d1fae5;color:#065f46;{%elif o.status=='delivered'%}#f3f4f6;color:#374151;{%else%}#fee2e2;color:#991b1b;{%endif%}">{%if o.status=='received'%}New Order{%elif o.status=='Pending payment'%}⏳ Awaiting Payment{%elif o.status=='in_progress'%}✂ In Progress{%elif o.status=='ready'%}✅ Ready{%elif o.status=='delivered'%}📦 Delivered{%else%}{{ o.status }}{%endif%}</span></td>
-              <td style="font-size:11px;color:#7a6a58;">{{ o.order_date }}</td>
-            </tr>
+
+    <!-- Filter bar -->
+    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center;">
+      <button class="wa-btn gold" id="ordFilterAll" onclick="ordFilter('all')" style="padding:6px 16px;font-size:12px;">All Orders</button>
+      <button class="wa-btn" id="ordFilterDel" onclick="ordFilter('delivery')" style="padding:6px 16px;font-size:12px;">🚚 Home Delivery</button>
+      <button class="wa-btn" id="ordFilterCod" onclick="ordFilter('cod')" style="padding:6px 16px;font-size:12px;">💵 COD Pending</button>
+      <span style="margin-left:auto;font-size:11px;color:#7a6a58;" id="ordCount"></span>
+    </div>
+
+    <!-- Delivery Queue Cards (Home Delivery orders) -->
+    <div id="deliveryCards" style="display:none;margin-bottom:16px;">
+      <div style="font-size:11px;font-weight:700;color:#7a6a58;letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;">🚚 Home Delivery Queue</div>
+      {% set ns = namespace(hd_count=0) %}
+      {% for o in web_orders %}{% if o.is_home_delivery %}
+      {% set ns.hd_count = ns.hd_count + 1 %}
+      <div class="hd-card" data-code="{{ o.order_code }}" data-status="{{ o.status }}" style="border:1px solid #e8d9c5;border-radius:12px;padding:14px 16px;margin-bottom:10px;background:#fff;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+              <span style="font-weight:800;color:#C8903A;font-size:15px;">#{{ o.order_code }}</span>
+              <span style="background:#dbeafe;color:#1e40af;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;letter-spacing:.06em;">HOME DELIVERY</span>
+              {% if o.is_urgent %}<span style="background:#fef3c7;color:#92400e;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;">⚡ URGENT</span>{% endif %}
+            </div>
+            <div style="font-weight:600;color:#1a0e06;">{{ o.cname }}</div>
+            <div style="font-size:12px;color:#7a6a58;">📞 {{ o.mobile }}</div>
+            {% if o.caddr %}<div style="font-size:12px;color:#5a4a38;margin-top:2px;">📍 {{ o.caddr[:80] }}</div>{% endif %}
+            <div style="font-size:11px;color:#7a6a58;margin-top:4px;">{{ (o.note or '')[:60] }}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0;">
+            <div style="font-size:18px;font-weight:800;color:#1a0e06;">Rs. {{ o.payable_amount|int }}</div>
+            {% if o.remaining and o.remaining > 0 %}
+            <div style="font-size:12px;color:#dc2626;font-weight:700;">COD due: Rs. {{ o.remaining|int }}</div>
             {% else %}
-            <tr><td colspan="7" style="text-align:center;color:#7a6a58;padding:40px 0;">No online orders yet.</td></tr>
-            {% endfor %}
-          </tbody>
-        </table>
+            <div style="font-size:12px;color:#16a34a;font-weight:600;">✓ Fully paid</div>
+            {% endif %}
+            {% if o.delivery_date %}<div style="font-size:11px;color:#7a6a58;margin-top:2px;">Due: {{ o.delivery_date }}</div>{% endif %}
+          </div>
+        </div>
+        <!-- Status + Actions -->
+        <div style="display:flex;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap;">
+          <span class="hd-status-badge" id="hdbadge-{{ o.order_code }}" style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:12px;
+            {%if o.status=='out_for_delivery'%}background:#dbeafe;color:#1e40af;
+            {%elif o.status=='delivered'%}background:#d1fae5;color:#065f46;
+            {%elif o.status=='ready'%}background:#fef3c7;color:#92400e;
+            {%else%}background:#f3f4f6;color:#374151;{%endif%}">
+            {%if o.status=='out_for_delivery'%}🚚 Out for Delivery
+            {%elif o.status=='delivered'%}✅ Delivered
+            {%elif o.status=='ready'%}📦 Ready to Ship
+            {%elif o.status=='in_progress'%}✂ In Progress
+            {%else%}{{ o.status }}{%endif%}
+          </span>
+          {% if o.status != 'delivered' %}
+          {% if o.status == 'out_for_delivery' %}
+          <button class="wa-btn gold" style="padding:6px 14px;font-size:11px;" onclick="markDelivered('{{ o.order_code }}', {{ o.remaining|int }}, this)">
+            {% if o.remaining and o.remaining > 0 %}✅ Delivered + Collected Rs. {{ o.remaining|int }}{% else %}✅ Mark Delivered{% endif %}
+          </button>
+          {% else %}
+          <button class="wa-btn" style="padding:6px 14px;font-size:11px;background:#2563eb;color:#fff;" onclick="dispatchOrder('{{ o.order_code }}', this)">🚚 Out for Delivery</button>
+          <button class="wa-btn gold" style="padding:6px 14px;font-size:11px;" onclick="markDelivered('{{ o.order_code }}', {{ o.remaining|int }}, this)">✅ Mark Delivered</button>
+          {% endif %}
+          {% endif %}
+          <a href="/owner/orders/detail/{{ o.order_code }}" style="font-size:11px;color:#7a6a58;text-decoration:underline;margin-left:auto;">View in UTMS →</a>
+        </div>
+      </div>
+      {% endif %}{% endfor %}
+      {% if ns.hd_count == 0 %}<div style="text-align:center;color:#7a6a58;padding:40px 0;font-size:13px;">No home delivery orders yet.</div>{% endif %}
+    </div>
+
+    <!-- All Orders Table -->
+    <div id="allOrdersTable">
+      <div class="wa-card">
+        <div class="wa-card-title">Online Orders <span style="font-weight:400;font-size:11px;color:#7a6a58;">(click row to manage in UTMS)</span></div>
+        <div style="overflow-x:auto;">
+          <table class="wa-tbl">
+            <thead><tr><th>Order</th><th>Customer</th><th>Garment / Note</th><th>Total</th><th>COD Due</th><th>Status</th><th>Date</th></tr></thead>
+            <tbody>
+              {% for o in web_orders %}
+              <tr onclick="window.location='/owner/orders/detail/{{ o.order_code }}'" style="cursor:pointer;" class="ord-row{% if o.is_home_delivery %} is-hd{% endif %}{% if o.remaining and o.remaining > 0 %} is-cod{% endif %}">
+                <td>
+                  <span style="font-weight:800;color:#C8903A;">#{{ o.order_code }}</span><br>
+                  <span class="badge online">ONLINE</span>
+                  {% if o.is_home_delivery %}<br><span style="font-size:9px;background:#dbeafe;color:#1e40af;padding:1px 6px;border-radius:8px;font-weight:700;">🚚 HOME</span>{% endif %}
+                </td>
+                <td>
+                  <div style="font-weight:600;">{{ o.cname }}</div>
+                  <div style="font-size:11px;color:#7a6a58;">{{ o.mobile }}</div>
+                  {% if o.caddr and o.is_home_delivery %}<div style="font-size:10px;color:#7a6a58;">📍 {{ o.caddr[:40] }}</div>{% endif %}
+                </td>
+                <td style="font-size:11px;color:#7a6a58;max-width:180px;">{{ (o.note or '')[:60] }}</td>
+                <td style="font-weight:700;">Rs. {{ o.payable_amount|int }}</td>
+                <td>{% if o.remaining and o.remaining > 0 %}<span style="color:#dc2626;font-weight:700;font-size:12px;">Rs. {{ o.remaining|int }}</span>{% else %}<span style="color:#16a34a;font-size:11px;">Paid</span>{% endif %}</td>
+                <td>
+                  <span style="padding:3px 8px;border-radius:12px;font-size:10px;font-weight:700;
+                    {%if o.status in ('received','pending')%}background:#fef3c7;color:#92400e;
+                    {%elif o.status=='in_progress'%}background:#dbeafe;color:#1e40af;
+                    {%elif o.status=='ready'%}background:#fef3c7;color:#b45309;
+                    {%elif o.status=='out_for_delivery'%}background:#ede9fe;color:#5b21b6;
+                    {%elif o.status=='delivered'%}background:#d1fae5;color:#065f46;
+                    {%else%}background:#f3f4f6;color:#374151;{%endif%}">
+                    {%if o.status in ('received','pending')%}New
+                    {%elif o.status=='in_progress'%}✂ Stitching
+                    {%elif o.status=='ready'%}📦 Ready
+                    {%elif o.status=='out_for_delivery'%}🚚 Dispatched
+                    {%elif o.status=='delivered'%}✅ Delivered
+                    {%else%}{{ o.status }}{%endif%}
+                  </span>
+                </td>
+                <td style="font-size:11px;color:#7a6a58;">{{ o.order_date }}</td>
+              </tr>
+              {% else %}
+              <tr><td colspan="7" style="text-align:center;color:#7a6a58;padding:40px 0;">No online orders yet.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
+
   </div>
 
   <!-- ACCOUNTS -->
@@ -1316,6 +1411,66 @@
 </div><!-- /admin-shell -->
 
 <script>
+function ordFilter(type){
+  var allBtn=document.getElementById('ordFilterAll');
+  var delBtn=document.getElementById('ordFilterDel');
+  var codBtn=document.getElementById('ordFilterCod');
+  var delCards=document.getElementById('deliveryCards');
+  var allTable=document.getElementById('allOrdersTable');
+  var rows=document.querySelectorAll('.ord-row');
+  var cnt=document.getElementById('ordCount');
+  [allBtn,delBtn,codBtn].forEach(function(b){if(b){b.style.background='';b.style.color='';b.classList.remove('gold');}});
+  if(type==='delivery'){
+    if(delBtn){delBtn.style.background='var(--dark)';delBtn.style.color='var(--bg)';}
+    if(delCards)delCards.style.display='block';
+    if(allTable)allTable.style.display='none';
+    var hdCount=document.querySelectorAll('.hd-card').length;
+    if(cnt)cnt.textContent=hdCount+' home delivery order'+(hdCount!==1?'s':'');
+  } else if(type==='cod'){
+    if(codBtn){codBtn.style.background='#dc2626';codBtn.style.color='#fff';}
+    if(delCards)delCards.style.display='none';
+    if(allTable)allTable.style.display='block';
+    var vis=0;rows.forEach(function(r){var show=r.classList.contains('is-cod');r.style.display=show?'':'none';if(show)vis++;});
+    if(cnt)cnt.textContent=vis+' COD pending';
+  } else {
+    if(allBtn){allBtn.style.background='var(--dark)';allBtn.style.color='var(--bg)';}
+    if(delCards)delCards.style.display='none';
+    if(allTable)allTable.style.display='block';
+    rows.forEach(function(r){r.style.display='';});
+    if(cnt)cnt.textContent=rows.length+' orders';
+  }
+}
+function dispatchOrder(code, btn){
+  if(!confirm('Mark #'+code+' as Out for Delivery? Customer will get SMS.'))return;
+  btn.disabled=true;btn.textContent='Sending…';
+  apiFetch('/api/orders/'+code+'/dispatch',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})
+  .then(function(r){return r.json();}).then(function(d){
+    if(d.ok){
+      toast('✅ Dispatched! SMS sent to customer.');
+      var badge=document.getElementById('hdbadge-'+code);
+      if(badge){badge.style.background='#dbeafe';badge.style.color='#1e40af';badge.textContent='🚚 Out for Delivery';}
+      btn.textContent='🚚 Out for Delivery';btn.style.background='#16a34a';
+      setTimeout(function(){location.reload();},1500);
+    } else {
+      toast(d.error||'Error',true);btn.disabled=false;btn.textContent='🚚 Out for Delivery';
+    }
+  }).catch(function(){toast('Network error',true);btn.disabled=false;});
+}
+function markDelivered(code, codAmount, btn){
+  var msg='Mark #'+code+' as Delivered?';
+  if(codAmount>0)msg+=' COD amount Rs.'+codAmount+' collected?';
+  if(!confirm(msg))return;
+  btn.disabled=true;btn.textContent='Saving…';
+  apiFetch('/api/orders/'+code+'/deliver',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cod_collected:codAmount>0})})
+  .then(function(r){return r.json();}).then(function(d){
+    if(d.ok){
+      toast('✅ Delivered! SMS sent.');
+      setTimeout(function(){location.reload();},1500);
+    } else {
+      toast(d.error||'Error',true);btn.disabled=false;btn.textContent='✅ Mark Delivered';
+    }
+  }).catch(function(){toast('Network error',true);btn.disabled=false;});
+}
 function waTab(n,b){try{
   document.querySelectorAll('.nav-item').forEach(function(t){t.classList.remove('active');});
   document.querySelectorAll('.wa-pnl').forEach(function(p){p.classList.remove('active');});

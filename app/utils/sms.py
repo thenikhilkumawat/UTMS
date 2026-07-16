@@ -185,3 +185,13 @@ def send_ready_sms(mobile: str, order_code: str, customer_name: str,
             f"Track: uttamtailors.in/track-order?code={order_code}"
         )
     return send_sms(mobile, msg)
+
+def send_dispatch_sms(mobile: str, order_code: str, customer_name: str,
+                      remaining: float = 0) -> bool:
+    """SMS when order is dispatched / out for home delivery."""
+    cod_part = f" Rs. {int(remaining)} delivery pe den." if remaining > 0 else ""
+    msg = (
+        f"Namaste {customer_name}! Aapka order #{order_code} ab aapke ghar aa raha hai.{cod_part} "
+        f"Uttam Tailors. Track: uttamtailors.in/track-order?code={order_code}"
+    )
+    return send_sms(mobile, msg)
