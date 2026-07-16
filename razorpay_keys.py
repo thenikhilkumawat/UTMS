@@ -1,5 +1,5 @@
 # ── Razorpay credentials ──────────────────────────────────────────────────────
-# These are committed to git so they survive every deployment.
+# Committed to git (private repo) — survives every deployment, git reset, DB wipe.
 # Update here if you rotate your Razorpay keys.
-RAZORPAY_KEY_ID     = ""   # <-- paste your rzp_live_XXXX key here
-RAZORPAY_KEY_SECRET = ""   # <-- paste your secret here
+RAZORPAY_KEY_ID     = "rzp_live_TCd9QwA30b9Mii"
+RAZORPAY_KEY_SECRET = "xEnTbORZsg756Or9LZedBlLL"
