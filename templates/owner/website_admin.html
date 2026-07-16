@@ -2687,20 +2687,45 @@ function waRemoveLogo(){
 }
 function waUploadFavicon(input){
   var file=input.files[0]; if(!file) return;
-  var st=document.getElementById('waFaviconStatus'); st.textContent='Uploading...'; st.style.color='#7a6a58';
-  var fd=new FormData(); fd.append('favicon',file);
-  apiFetch('/owner/api/website/favicon/upload',{method:'POST',body:fd})
-    .then(function(r){return r.json();})
-    .then(function(d){
-      if(d.ok){
-        document.getElementById('faviconPreviewWrap2').innerHTML='<img src="'+d.url+'" style="width:32px;height:32px;object-fit:contain;">';
-        st.textContent='Favicon saved!'; st.style.color='#16a34a';
-      } else { st.textContent='Error: '+d.error; st.style.color='#dc2626'; }
-    }).catch(function(){ st.textContent='Upload failed.'; st.style.color='#dc2626'; });
+  var st=document.getElementById('waFaviconStatus'); st.textContent='Preparing...'; st.style.color='#7a6a58';
+  function doUpload(blob, fname){
+    st.textContent='Uploading & converting to WebP...';
+    var fd=new FormData(); fd.append('favicon', blob, fname);
+    fetch('/owner/api/website/favicon/upload',{method:'POST',body:fd})
+      .then(function(r){
+        if(!r.ok) return r.text().then(function(t){throw new Error('Server '+r.status+': '+t.substring(0,80));});
+        return r.json();
+      })
+      .then(function(d){
+        if(d.ok){
+          document.getElementById('faviconPreviewWrap2').innerHTML='<img src="'+d.url+'?t='+Date.now()+'" style="width:32px;height:32px;object-fit:contain;">';
+          st.textContent='Favicon saved! (auto-converted to WebP)'; st.style.color='#16a34a';
+        } else { st.textContent='Error: '+d.error; st.style.color='#dc2626'; }
+      }).catch(function(e){ st.textContent='Failed: '+(e.message||e); st.style.color='#dc2626'; });
+  }
+  if(file.type==='image/svg+xml'||file.name.endsWith('.ico')){
+    doUpload(file,file.name); return;
+  }
+  // Compress & resize to favicon dimensions (64x64) via Canvas
+  st.textContent='Compressing image to favicon size...';
+  var img=new Image(); var url=URL.createObjectURL(file);
+  img.onload=function(){
+    var SIZE=64;
+    var canvas=document.createElement('canvas'); canvas.width=SIZE; canvas.height=SIZE;
+    var ctx=canvas.getContext('2d');
+    // Center-crop square
+    var s=Math.min(img.width,img.height);
+    var sx=(img.width-s)/2, sy=(img.height-s)/2;
+    ctx.drawImage(img,sx,sy,s,s,0,0,SIZE,SIZE);
+    URL.revokeObjectURL(url);
+    canvas.toBlob(function(blob){ doUpload(blob,'favicon.png'); },'image/png');
+  };
+  img.onerror=function(){ URL.revokeObjectURL(url); doUpload(file,file.name); };
+  img.src=url;
 }
 function waRemoveFavicon(){
   if(!confirm('Remove favicon?')) return;
-  apiFetch('/owner/api/website/favicon/remove',{method:'POST'}).then(function(r){return r.json();}).then(function(d){
+  fetch('/owner/api/website/favicon/remove',{method:'POST'}).then(function(r){return r.json();}).then(function(d){
     if(d.ok){ document.getElementById('faviconPreviewWrap2').innerHTML='<span style="font-size:10px;color:#aaa;text-align:center;">No icon</span>'; document.getElementById('waFaviconStatus').textContent='Removed.'; }
   });
 }

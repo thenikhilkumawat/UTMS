@@ -3522,8 +3522,8 @@ def website_favicon_upload():
         if not file or not file.filename:
             return jsonify({"ok":False,"error":"No file"})
         file.seek(0,2); size=file.tell(); file.seek(0)
-        if size > 2*1024*1024:
-            return jsonify({"ok":False,"error":"Max 2MB"})
+        if size > 15*1024*1024:
+            return jsonify({"ok":False,"error":"Max 15MB"})
         ext = os.path.splitext(secure_filename(file.filename))[1].lower()
         if ext not in (".ico",".png",".svg",".jpg",".jpeg",".webp"):
             return jsonify({"ok":False,"error":"ico/png/svg only"})

@@ -461,25 +461,36 @@ function removeLogo(){
 }
 
 function uploadFavicon(input){
-  var file = input.files[0];
-  if(!file) return;
-  var status = document.getElementById('faviconUploadStatus');
-  status.textContent = 'Uploading...';
-  var fd = new FormData();
-  fd.append('favicon', file);
-  fetch('/owner/api/website/favicon/upload',{method:'POST',body:fd})
-    .then(function(r){return r.json();})
-    .then(function(d){
-      if(d.ok){
-        var wrap = document.getElementById('faviconPreviewWrap');
-        wrap.innerHTML = '<img id="faviconPreviewImg" src="'+d.url+'" style="width:32px;height:32px;object-fit:contain;">';
-        status.textContent = 'Favicon uploaded!';
-        status.style.color = '#16a34a';
-      } else {
-        status.textContent = 'Error: ' + d.error;
-        status.style.color = '#dc2626';
-      }
-    }).catch(function(){ status.textContent='Upload failed.'; status.style.color='#dc2626'; });
+  var file=input.files[0]; if(!file) return;
+  var status=document.getElementById('faviconUploadStatus');
+  status.textContent='Preparing...'; status.style.color='#7a6a58';
+  function doUpload(blob,fname){
+    status.textContent='Uploading...';
+    var fd=new FormData(); fd.append('favicon',blob,fname);
+    fetch('/owner/api/website/favicon/upload',{method:'POST',body:fd})
+      .then(function(r){
+        if(!r.ok) return r.text().then(function(t){throw new Error('Server '+r.status);});
+        return r.json();
+      })
+      .then(function(d){
+        if(d.ok){
+          document.getElementById('faviconPreviewWrap').innerHTML='<img id="faviconPreviewImg" src="'+d.url+'?t='+Date.now()+'" style="width:32px;height:32px;object-fit:contain;">';
+          status.textContent='Favicon saved! (converted to WebP)'; status.style.color='#16a34a';
+        } else { status.textContent='Error: '+d.error; status.style.color='#dc2626'; }
+      }).catch(function(e){ status.textContent='Failed: '+(e.message||e); status.style.color='#dc2626'; });
+  }
+  if(file.type==='image/svg+xml'||file.name.endsWith('.ico')){ doUpload(file,file.name); return; }
+  status.textContent='Resizing to 64x64...';
+  var img=new Image(); var url=URL.createObjectURL(file);
+  img.onload=function(){
+    var SIZE=64; var canvas=document.createElement('canvas'); canvas.width=SIZE; canvas.height=SIZE;
+    var s=Math.min(img.width,img.height); var sx=(img.width-s)/2,sy=(img.height-s)/2;
+    canvas.getContext('2d').drawImage(img,sx,sy,s,s,0,0,SIZE,SIZE);
+    URL.revokeObjectURL(url);
+    canvas.toBlob(function(blob){ doUpload(blob,'favicon.png'); },'image/png');
+  };
+  img.onerror=function(){ URL.revokeObjectURL(url); doUpload(file,file.name); };
+  img.src=url;
 }
 function removeFavicon(){
   if(!confirm('Remove favicon?')) return;
