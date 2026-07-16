@@ -2642,20 +2642,46 @@ waTab=function(n,b){
 
 function waUploadLogo(input){
   var file=input.files[0]; if(!file) return;
-  var st=document.getElementById('waLogoStatus'); st.textContent='Uploading...'; st.style.color='#7a6a58';
-  var fd=new FormData(); fd.append('logo',file);
-  apiFetch('/owner/api/website/logo/upload',{method:'POST',body:fd})
-    .then(function(r){return r.json();})
-    .then(function(d){
-      if(d.ok){
-        document.getElementById('logoPreviewWrap').innerHTML='<img src="'+d.url+'" style="max-width:120px;max-height:50px;object-fit:contain;">';
-        st.textContent='Logo saved!'; st.style.color='#16a34a';
-      } else { st.textContent='Error: '+d.error; st.style.color='#dc2626'; }
-    }).catch(function(){ st.textContent='Upload failed.'; st.style.color='#dc2626'; });
+  var st=document.getElementById('waLogoStatus'); st.textContent='Preparing...'; st.style.color='#7a6a58';
+  // Compress large images client-side using Canvas (logos only need ~200KB max)
+  var MAX_BYTES = 1.5 * 1024 * 1024; // 1.5MB threshold — compress if larger
+  function doUpload(blob, fname){
+    st.textContent='Uploading...';
+    var fd=new FormData(); fd.append('logo', blob, fname);
+    fetch('/owner/api/website/logo/upload',{method:'POST',body:fd})
+      .then(function(r){
+        if(!r.ok) return r.text().then(function(t){throw new Error('Server error '+r.status+': '+t.substring(0,80));});
+        return r.json();
+      })
+      .then(function(d){
+        if(d.ok){
+          document.getElementById('logoPreviewWrap').innerHTML='<img src="'+d.url+'" style="max-width:120px;max-height:50px;object-fit:contain;">';
+          st.textContent='Logo saved!'; st.style.color='#16a34a';
+        } else { st.textContent='Error: '+d.error; st.style.color='#dc2626'; }
+      }).catch(function(e){ st.textContent='Failed: '+(e.message||e); st.style.color='#dc2626'; });
+  }
+  if(file.size <= MAX_BYTES || file.type === 'image/svg+xml'){
+    doUpload(file, file.name); return;
+  }
+  // Compress via Canvas
+  st.textContent='Compressing large image...';
+  var img=new Image(); var url=URL.createObjectURL(file);
+  img.onload=function(){
+    var MAX_DIM=1200;
+    var w=img.width, h=img.height;
+    if(w>MAX_DIM){h=Math.round(h*MAX_DIM/w);w=MAX_DIM;}
+    if(h>MAX_DIM){w=Math.round(w*MAX_DIM/h);h=MAX_DIM;}
+    var canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h;
+    canvas.getContext('2d').drawImage(img,0,0,w,h);
+    URL.revokeObjectURL(url);
+    canvas.toBlob(function(blob){ doUpload(blob,'logo.jpg'); },'image/jpeg',0.88);
+  };
+  img.onerror=function(){ URL.revokeObjectURL(url); doUpload(file,file.name); };
+  img.src=url;
 }
 function waRemoveLogo(){
   if(!confirm('Remove logo? Shop name text will be used instead.')) return;
-  apiFetch('/owner/api/website/logo/remove',{method:'POST'}).then(function(r){return r.json();}).then(function(d){
+  fetch('/owner/api/website/logo/remove',{method:'POST'}).then(function(r){return r.json();}).then(function(d){
     if(d.ok){ document.getElementById('logoPreviewWrap').innerHTML='<span style="font-size:11px;color:#aaa;">No logo</span>'; document.getElementById('waLogoStatus').textContent='Removed.'; }
   });
 }

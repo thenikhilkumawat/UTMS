@@ -3474,8 +3474,8 @@ def website_logo_upload():
         if not file or not file.filename:
             return jsonify({"ok":False,"error":"No file"})
         file.seek(0,2); size=file.tell(); file.seek(0)
-        if size > 5*1024*1024:
-            return jsonify({"ok":False,"error":"Max 5MB"})
+        if size > 10*1024*1024:
+            return jsonify({"ok":False,"error":"Max 10MB"})
         ext = os.path.splitext(secure_filename(file.filename))[1].lower()
         if ext not in (".jpg",".jpeg",".png",".webp",".svg"):
             return jsonify({"ok":False,"error":"jpg/png/webp/svg only"})
