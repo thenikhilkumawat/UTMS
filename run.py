@@ -111,12 +111,12 @@ def add_header(response):
     # 'unsafe-inline' needed for Jinja2 inline styles/scripts; tighten further if you add nonces
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' https://cdn.razorpay.com https://checkout.razorpay.com https://cdnjs.cloudflare.com; "
+        "script-src 'self' 'unsafe-inline' https://cdn.razorpay.com https://checkout.razorpay.com https://cdnjs.cloudflare.com https://nominatim.openstreetmap.org; "
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
         "font-src 'self' https://fonts.gstatic.com data:; "
         "img-src 'self' data: blob: https:; "
-        "connect-src 'self' https://api.razorpay.com https://api.replicate.com https://www.google-analytics.com; "
-        "frame-src https://checkout.razorpay.com; "
+        "connect-src 'self' https://*.razorpay.com https://api.replicate.com https://www.google-analytics.com https://nominatim.openstreetmap.org; "
+        "frame-src https://*.razorpay.com https://checkout.razorpay.com; "
         "object-src 'none'; base-uri 'self';"
     )
     return response
