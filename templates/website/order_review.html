@@ -511,11 +511,12 @@ function _doPlaceOrder(){
         method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({order_id:orderId,order_code:orderCode,amount:advanceRs})
       }).then(function(r2){return r2.json();}).then(function(rz){
+        // DEBUG — remove after fix
+        console.log('RZ_RESPONSE:', JSON.stringify(rz));
         if(!rz.ok){
-          // Razorpay not configured — still confirm order (COD fallback)
-          sessionStorage.removeItem('pdp_order');sessionStorage.removeItem('cart_checkout');
-          if(_fromCart){try{localStorage.removeItem('uttam_cart');}catch(e){}if(typeof _updateCartBadge==='function')_updateCartBadge();}
-          window.location.href='/order-confirmed?code='+orderCode;
+          // DEBUG
+          alert('Payment gateway error: ' + (rz.error || JSON.stringify(rz)));
+          btn.textContent='Place Order & Pay Advance →';btn.disabled=false;
           return;
         }
         var custName  = (document.getElementById('custName')||{value:''}).value||name;
