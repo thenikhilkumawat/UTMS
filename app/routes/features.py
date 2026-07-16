@@ -2187,9 +2187,17 @@ def razorpay_create_order():
     if not order_id or amount_rs < 1:
         return jsonify({"ok": False, "error": "Invalid order details"})
 
-    key_id     = _os.environ.get("RAZORPAY_KEY_ID", "")
-    key_secret = _os.environ.get("RAZORPAY_KEY_SECRET", "")
-    # Fallback: read from DB settings (admin may have saved keys there)
+    # 1) hardcoded in razorpay_keys.py (survives every deployment)
+    try:
+        import razorpay_keys as _rzkeys
+        key_id     = (_rzkeys.RAZORPAY_KEY_ID     or "").strip()
+        key_secret = (_rzkeys.RAZORPAY_KEY_SECRET or "").strip()
+    except ImportError:
+        key_id = key_secret = ""
+    # 2) env vars
+    if not key_id:     key_id     = _os.environ.get("RAZORPAY_KEY_ID", "").strip()
+    if not key_secret: key_secret = _os.environ.get("RAZORPAY_KEY_SECRET", "").strip()
+    # 3) DB settings (admin panel)
     if not key_id or not key_secret:
         try:
             _db = get_db()
@@ -2231,7 +2239,12 @@ def razorpay_verify_payment():
     order_code    = d.get("order_code", "")
     advance_rs    = float(d.get("advance_amount", 0))
 
-    key_secret = _os.environ.get("RAZORPAY_KEY_SECRET", "")
+    try:
+        import razorpay_keys as _rzkeys2
+        key_secret = (_rzkeys2.RAZORPAY_KEY_SECRET or "").strip()
+    except ImportError:
+        key_secret = ""
+    if not key_secret: key_secret = _os.environ.get("RAZORPAY_KEY_SECRET", "").strip()
     if not key_secret:
         try:
             _db2 = get_db()
