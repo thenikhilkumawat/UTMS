@@ -817,7 +817,7 @@
 .live-strip{background:var(--dark2);border-top:1px solid rgba(184,120,48,.18);border-bottom:1px solid rgba(184,120,48,.18);padding:1.25rem 0;}
 .live-inner{max-width:1400px;margin:0 auto;padding:0 3rem;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;}
 .live-dot{width:8px;height:8px;border-radius:50%;background:#4ade80;animation:livepulse 2s ease-in-out infinite;flex-shrink:0;}
-@keyframes livepulse{0%,100%{opacity:1;box-shadow:0 0 6px rgba(74,222,128,.6);}50%{opacity:.4;box-shadow:none;}}
+@keyframes livepulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(.85);}}
 .live-label{font-family:var(--fm);font-size:10px;color:var(--gold-l);letter-spacing:.1em;text-transform:uppercase;}
 .live-count{font-family:var(--fd);font-size:32px;color:#FAF0E4;line-height:1;margin:0 6px;}
 .live-desc{font-size:13px;color:rgba(250,240,228,.5);}

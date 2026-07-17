@@ -4817,6 +4817,39 @@ def website_services_item_upload(iid):
     return jsonify({"ok":True, "url": img_url})
 
 
+# ── Bulk re-optimize existing service images (fixes large pre-compression uploads) ─
+@bp.route("/website/services/reoptimize-images", methods=["POST"])
+def website_services_reoptimize_images():
+    if not session.get("owner_logged_in"): return jsonify({"ok":False}), 403
+    import os as _os
+    from app.utils.image_optimize import optimize_image as _oi
+    from database import get_db
+    _db = get_db()
+    results = {"processed": 0, "saved_kb": 0, "errors": 0}
+    _svc_dir = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.dirname(__file__))), "static","website","img","services")
+    rows = _db.execute("SELECT id, image_url FROM web_service_items WHERE image_url LIKE '/static/website/img/services/%'").fetchall()
+    for row in rows:
+        url = row["image_url"]
+        fname = _os.path.basename(url)
+        fpath = _os.path.join(_svc_dir, fname)
+        if not _os.path.exists(fpath): continue
+        ext = _os.path.splitext(fname)[1].lower()
+        if ext in ('.avif', '.webp'): continue  # already optimized
+        try:
+            old_size = _os.path.getsize(fpath)
+            new_path = _oi(fpath)
+            new_fname = _os.path.basename(new_path)
+            new_size = _os.path.getsize(new_path)
+            new_url = "/static/website/img/services/" + new_fname
+            _db.execute("UPDATE web_service_items SET image_url=? WHERE id=?", (new_url, row["id"]))
+            _db.execute("UPDATE web_item_media SET url=? WHERE url=?", (new_url, url))
+            results["saved_kb"] += (old_size - new_size) // 1024
+            results["processed"] += 1
+        except Exception as _e:
+            results["errors"] += 1
+    _db.commit()
+    return jsonify({"ok": True, **results})
+
 # ── Fabric swatch image upload for a service item ─────────────────────────────
 @bp.route("/website/services/item/upload-fabric-image/<int:iid>", methods=["POST"])
 def website_services_item_upload_fabric(iid):

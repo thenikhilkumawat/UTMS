@@ -86,7 +86,7 @@
   position:fixed;inset:0;z-index:999999;
   background:radial-gradient(ellipse at 50% 38%,#2B1609 0%,#1C0F06 62%);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  animation:loaderHide 0.6s ease 1.4s forwards;
+  animation:loaderHide 0.5s ease 0.7s forwards;
 }
 @keyframes loaderHide{to{opacity:0;visibility:hidden;pointer-events:none;}}
 #site-loader.ldr-hidden{opacity:0;visibility:hidden;pointer-events:none;}
@@ -111,9 +111,9 @@
   width:0;height:1px;
   background:linear-gradient(90deg,transparent,rgba(200,144,58,.6),transparent);
   margin-bottom:2.2rem;
-  animation:ldrRuleGrow .65s ease .55s both;
+  animation:ldrRuleGrow .65s ease .55s both;transform-origin:left center;
 }
-@keyframes ldrRuleGrow{from{width:0;opacity:0;}to{width:180px;opacity:1;}}
+@keyframes ldrRuleGrow{from{transform:scaleX(0);opacity:0;}to{transform:scaleX(1);opacity:1;}}
 
 /* ── Icons stage (row) ── */
 .ldr-stage{

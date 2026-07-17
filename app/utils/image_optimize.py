@@ -15,10 +15,10 @@ import logging
 
 _log = logging.getLogger(__name__)
 
-_AVIF_QUALITY = 72   # 0-100  (72 ≈ visually lossless for photos, ~70 % smaller than JPEG)
-_WEBP_QUALITY = 82   # 0-100  (82 gives excellent quality)
+_AVIF_QUALITY = 68   # 0-100  (72 ≈ visually lossless for photos, ~70 % smaller than JPEG)
+_WEBP_QUALITY = 78   # 0-100  (82 gives excellent quality)
 _WEBP_METHOD  = 4    # 0-6    (4 = good speed/size balance)
-_MAX_DIMENSION = 2400  # pixels — downscale huge originals to save even more space
+_MAX_DIMENSION = 1400  # pixels — downscale huge originals to save even more space
 
 
 def optimize_image(src_path: str) -> str:
