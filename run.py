@@ -23,6 +23,39 @@ except ImportError:
     pass  # flask-compress not installed yet — run pip install flask-compress
 
 
+
+# ── CSS bundle: combine + minify site.css + fixes.css on startup ─────────────
+def _build_css_bundle():
+    import re, os, hashlib
+    css_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static/website/css")
+    sources = ["site.css", "fixes.css"]
+    combined = ""
+    for src in sources:
+        try:
+            with open(os.path.join(css_dir, src)) as fp:
+                combined += fp.read() + "\n"
+        except Exception:
+            pass
+    # Minify
+    m = combined
+    m = re.sub(r"/\*[\s\S]*?\*/", "", m)
+    m = re.sub(r"\s+", " ", m)
+    m = re.sub(r"\s*([{};:,>~+])\s*", r"\1", m)
+    m = re.sub(r";+\}", "}", m)
+    m = m.strip()
+    # Write bundle + version hash (first 8 chars of md5)
+    vh = hashlib.md5(m.encode()).hexdigest()[:8]
+    out_css  = os.path.join(css_dir, "bundle.min.css")
+    out_hash = os.path.join(css_dir, "bundle.ver")
+    with open(out_css, "w") as fp:
+        fp.write(m)
+    with open(out_hash, "w") as fp:
+        fp.write(vh)
+    logger.info(f"CSS bundle built: {len(m)//1024}KB  v={vh}")
+    return vh
+
+_css_bundle_ver = _build_css_bundle()
+
 # ── Logging ───────────────────────────────────────────────────────────────────
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -377,6 +410,17 @@ def export_orders_root():
     from app.routes.owner import export_orders as _exp
     return _exp()
 
+
+@app.context_processor
+def inject_css_ver():
+    """Expose CSS bundle version for cache-busting."""
+    try:
+        import os
+        vf = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static/website/css/bundle.ver")
+        with open(vf) as fp:
+            return {"css_bundle_ver": fp.read().strip()}
+    except Exception:
+        return {"css_bundle_ver": "1"}
 
 @app.context_processor
 def inject_web_settings():

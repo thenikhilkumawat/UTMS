@@ -47,9 +47,7 @@
 {% set _gtm = web_settings.get('tracking_gtm_id','') %}
 {% set _ga4 = web_settings.get('tracking_ga4_id','') %}
 {% if _gsc %}<meta name="google-site-verification" content="{{ _gsc }}">{% endif %}
-{% if _gtm %}
-<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','{{ _gtm }}');</script>
-{% elif _ga4 %}
+{% if _ga4 and not _gtm %}
 <script async src="https://www.googletagmanager.com/gtag/js?id={{ _ga4 }}"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{ _ga4 }}');</script>
 {% endif %}
@@ -77,8 +75,7 @@
 <!-- Single non-blocking font load: display=swap prevents FOUT without double request -->
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=DM+Sans:wght@400;500&family=DM+Mono:wght@400&display=swap" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=DM+Sans:wght@400;500&family=DM+Mono:wght@400&display=swap"></noscript>
-<link rel="stylesheet" href="{{ url_for('static', filename='website/css/site.css') }}?v=20260714b">
-<link rel="stylesheet" href="{{ url_for('static', filename='website/css/fixes.css') }}?v=20260714b">
+<link rel="stylesheet" href="{{ url_for('static', filename='website/css/bundle.min.css') }}?v={{ css_bundle_ver }}">
 <style>
 /* ═══════════════════════════════ PAGE LOADER ═══════════════════════════════ */
 #site-loader{
@@ -1692,3 +1689,15 @@ setTimeout(function(){
     }
   }
 })();
+
+</script>
+{% if _gtm %}
+<script>window.addEventListener('load',function(){
+  (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});
+  var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';
+  j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;
+  f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','{{ _gtm }}');
+});</script>
+{% endif %}
+</body>
+</html>
