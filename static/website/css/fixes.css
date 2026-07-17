@@ -691,3 +691,16 @@ img,video,iframe{max-width:100%;height:auto;}
 @media(min-width:769px){
   .mm-back-btn{display:none!important;}
 }
+
+/* "View all services" link in P2 */
+.mm-view-all-link{
+  display:block;
+  font-family:var(--fm);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--gold);text-decoration:none;
+  padding:10px 1.5rem 12px;
+  border-bottom:1px solid var(--border);
+}
+.mm-view-all-link:hover{color:var(--brown);}
+@media(max-width:768px){
+  .mm-view-all-link{font-size:13px!important;padding:14px 1.5rem!important;}
+}

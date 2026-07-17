@@ -274,6 +274,20 @@ def _current_account():
         return None
 
 
+@website_bp.route("/favicon.ico")
+def favicon():
+    """Serve favicon.ico — Google & browsers look here first."""
+    from flask import redirect
+    from database import get_db
+    db = get_db()
+    row = db.execute("SELECT value FROM settings WHERE key='web_favicon_url'").fetchone()
+    if row and row[0]:
+        return redirect(row[0], code=302)
+    # Fallback: 204 No Content (avoids 404 noise in logs)
+    from flask import Response
+    return Response(status=204)
+
+
 @website_bp.route("/")
 def home():
     import json as _json

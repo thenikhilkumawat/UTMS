@@ -459,6 +459,9 @@ body.drawer-open .wa-fab,body.drawer-open .supp-fab{display:none!important;visib
     <button class="drawer-close" onclick="mmClose()">&times;</button>
   </div>
   <div class="mm-panel-title">Our Services</div>
+  <!-- View all — prominent on mobile, subtle on desktop -->
+  <a href="{{ url_for('website.our_services') }}" onclick="mmClose()"
+     class="mm-view-all-link">View all services &rarr;</a>
   {% for cat, items, media in nav_services %}
   <div class="mm-cat-row" data-cat="{{ loop.index0 }}"
        onmouseenter="mmOpenP3({{ loop.index0 }}, this)"
@@ -467,9 +470,6 @@ body.drawer-open .wa-fab,body.drawer-open .supp-fab{display:none!important;visib
     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
   </div>
   {% endfor %}
-  <div class="mm-panel-footer">
-    <a href="{{ url_for('website.our_services') }}" onclick="mmClose()">View all services &rarr;</a>
-  </div>
 </div>
 
 <!-- P3: Items with images (independent fixed panel, right of P2) -->
