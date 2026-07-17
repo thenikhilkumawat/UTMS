@@ -1685,12 +1685,11 @@ setTimeout(function(){
     document.head.appendChild(s1);
   }
   // Only register if browser supports it
+  // Defer Firebase entirely until after page load — keeps it off the critical rendering path
   if("serviceWorker" in navigator && "Notification" in window){
-    if(document.readyState === "loading"){
-      document.addEventListener("DOMContentLoaded", function(){ _loadFcmConfig(function(cfg, vapid){ _registerFCM(cfg, vapid); }); });
-    } else {
-      _loadFcmConfig(function(cfg, vapid){ _registerFCM(cfg, vapid); });
-    }
+    window.addEventListener("load", function(){
+      setTimeout(function(){ _loadFcmConfig(function(cfg, vapid){ _registerFCM(cfg, vapid); }); }, 2000);
+    });
   }
 })();
 
