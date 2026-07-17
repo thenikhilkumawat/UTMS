@@ -430,11 +430,12 @@ body.drawer-open .wa-fab,body.drawer-open .supp-fab{display:none!important;visib
   <nav class="drawer-links">
     <a href="{{ url_for('website.home') }}" class="drawer-link {% if active=='home' %}active-link{% endif %}">Home</a>
     <a href="{{ url_for('website.services') }}" class="drawer-link {% if active=='services' %}active-link{% endif %}">Our Craft</a>
-    <div class="drawer-link mm-svc-row" id="mmSvcRow"
+    <a href="{{ url_for('website.our_services') }}" class="drawer-link {% if active=='our_services' %}active-link{% endif %}" onclick="mmClose()">Our Services</a>
+    <div class="drawer-link mm-svc-row drawer-browse-cat" id="mmSvcRow"
          onmouseenter="mmOpenP2()"
          onmouseleave="mmCheckLeave(event)"
          onclick="mmMobileTapServices()">
-      <span>Our Services</span>
+      <span>Browse by Category</span>
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
     </div>
     <a href="{{ url_for('website.about') }}" class="drawer-link {% if active=='about' %}active-link{% endif %}">Our Story</a>

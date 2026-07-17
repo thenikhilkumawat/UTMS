@@ -704,3 +704,25 @@ img,video,iframe{max-width:100%;height:auto;}
 @media(max-width:768px){
   .mm-view-all-link{font-size:13px!important;padding:14px 1.5rem!important;}
 }
+
+/* ── Mobile drawer: show CTA button + style browse-cat row ── */
+@media(max-width:768px){
+  /* Show "Customise Your Garment" in drawer footer on mobile */
+  .drawer-footer .nav-cta{
+    display:block!important;
+    text-align:center;
+    padding:14px 20px!important;
+    font-size:12px!important;
+    width:100%;
+    box-sizing:border-box;
+  }
+  /* "Browse by Category" — slightly smaller, indented, muted */
+  .drawer-browse-cat{
+    font-size:14px!important;
+    padding:10px 0 10px 16px!important;
+    color:var(--muted)!important;
+    border-bottom:none!important;
+    margin-bottom:4px!important;
+  }
+  .drawer-browse-cat span{color:var(--muted);}
+}
