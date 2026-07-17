@@ -132,23 +132,31 @@ def _get_account():
 def _now():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+_addresses_table_ready = False
 def _ensure_addresses_table():
-    db = get_db()
-    db.execute("""CREATE TABLE IF NOT EXISTS web_addresses (
-        id         INTEGER PRIMARY KEY AUTOINCREMENT,
-        account_id INTEGER NOT NULL,
-        label      TEXT DEFAULT 'Home',
-        full_name  TEXT DEFAULT '',
-        mobile     TEXT DEFAULT '',
-        line1      TEXT DEFAULT '',
-        line2      TEXT DEFAULT '',
-        city       TEXT DEFAULT '',
-        state      TEXT DEFAULT '',
-        pincode    TEXT DEFAULT '',
-        is_default INTEGER DEFAULT 0,
-        created_at TEXT DEFAULT (datetime('now','localtime'))
-    )""")
-    db.commit()
+    global _addresses_table_ready
+    if _addresses_table_ready:
+        return
+    try:
+        db = get_db()
+        db.execute("""CREATE TABLE IF NOT EXISTS web_addresses (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            account_id INTEGER NOT NULL,
+            label      TEXT DEFAULT 'Home',
+            full_name  TEXT DEFAULT '',
+            mobile     TEXT DEFAULT '',
+            line1      TEXT DEFAULT '',
+            line2      TEXT DEFAULT '',
+            city       TEXT DEFAULT '',
+            state      TEXT DEFAULT '',
+            pincode    TEXT DEFAULT '',
+            is_default INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT (datetime('now','localtime'))
+        )""")
+        db.commit()
+        _addresses_table_ready = True
+    except Exception:
+        pass
 
 def _ensure_payment_methods_table():
     db = get_db()

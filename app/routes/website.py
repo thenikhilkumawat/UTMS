@@ -319,25 +319,7 @@ def home():
                 try: hs[r["section_key"]] = _json.loads(r["content"])
                 except: hs[r["section_key"]] = {}
     except: pass
-    # Seed new sections if missing in DB
-    _new_sections = [
-        ("price_estimator", "Price Estimator",  1),
-        ("occasion_finder", "Occasion Finder",  1),
-        ("fabric_guide",    "Fabric Guide",     1),
-        ("shop_status",     "Live Shop Status", 1),
-        ("brands_ticker",   "Brands Ticker",    0),
-        ("action_cards",    "Action Cards",     1),
-        ("ai_preview",      "AI Style Preview", 1),
-        ("bring_inspo",     "Bring Your Inspo", 1),
-    ]
-    try:
-        for _key, _title, _active in _new_sections:
-            db.execute(
-                "INSERT OR IGNORE INTO home_sections (section_key, section_title, content, sort_order, active) VALUES (?, ?, '{}', 99, ?)",
-                (_key, _title, _active)
-            )
-        db.commit()
-    except: pass
+    # (section seeding moved to init_db — no longer runs on every request)
     # Catalogue items from admin selection
     cat_ids = []
     if hs.get("catalogue",{}).get("item_ids"):

@@ -859,6 +859,65 @@ def run_account_migrations():
             pass
         db.commit()
 
+
+        # ── Performance indexes (added once, SQLite ignores if already exists) ──
+        try:
+            db.executescript("""
+                CREATE INDEX IF NOT EXISTS idx_web_item_media_item_id
+                    ON web_item_media(item_id);
+                CREATE INDEX IF NOT EXISTS idx_web_service_items_cat_id
+                    ON web_service_items(category_id);
+                CREATE INDEX IF NOT EXISTS idx_web_service_items_sort
+                    ON web_service_items(sort_order, id);
+                CREATE INDEX IF NOT EXISTS idx_orders_status
+                    ON orders(status);
+                CREATE INDEX IF NOT EXISTS idx_orders_customer_id
+                    ON orders(customer_id);
+                CREATE INDEX IF NOT EXISTS idx_orders_order_code
+                    ON orders(order_code);
+                CREATE INDEX IF NOT EXISTS idx_web_accounts_mobile
+                    ON web_accounts(mobile);
+                CREATE INDEX IF NOT EXISTS idx_web_accounts_email
+                    ON web_accounts(email);
+                CREATE INDEX IF NOT EXISTS idx_occasions_account_id
+                    ON occasions(account_id);
+                CREATE INDEX IF NOT EXISTS idx_home_sections_key
+                    ON home_sections(section_key);
+                CREATE INDEX IF NOT EXISTS idx_web_daily_craft_published
+                    ON web_daily_craft(is_published, id);
+                CREATE INDEX IF NOT EXISTS idx_web_addresses_account_id
+                    ON web_addresses(account_id);
+            """)
+            db.commit()
+        except Exception:
+            pass
+
+        # ── Seed homepage sections (runs once at startup via init_db) ──────────
+        try:
+            _default_sections = [
+                ("hero",            "Hero",              1),
+                ("price_estimator", "Price Estimator",   1),
+                ("occasion_finder", "Occasion Finder",   1),
+                ("fabric_guide",    "Fabric Guide",      1),
+                ("shop_status",     "Live Shop Status",  1),
+                ("brands_ticker",   "Brands Ticker",     0),
+                ("action_cards",    "Action Cards",      1),
+                ("ai_preview",      "AI Style Preview",  1),
+                ("bring_inspo",     "Bring Your Inspo",  1),
+                ("catalogue",       "Catalogue",         1),
+                ("reviews",         "Reviews",           1),
+                ("heritage",        "Heritage",          1),
+            ]
+            for _key, _title, _active in _default_sections:
+                db.execute(
+                    "INSERT OR IGNORE INTO home_sections (section_key,section_title,content,sort_order,active)"
+                    " VALUES (?,?,'{}',99,?)",
+                    (_key, _title, _active)
+                )
+            db.commit()
+        except Exception:
+            pass
+
     except Exception:
         pass
 
