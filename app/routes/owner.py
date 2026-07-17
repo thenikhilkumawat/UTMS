@@ -3532,12 +3532,18 @@ def website_favicon_upload():
         fname = "favicon_" + str(int(_t.time()*1000)) + ext
         fpath = os.path.join(save_dir, fname)
         file.save(fpath)
-        # Auto-convert non-ICO/SVG to WebP
-        if ext not in (".ico",".svg"):
+        # For favicons: convert to PNG (NOT WebP) — iOS Safari doesn't support WebP favicons
+        if ext not in (".ico",".svg",".png"):
             try:
-                from app.utils.image_optimize import optimize_image
-                fpath = optimize_image(fpath)
-                fname = os.path.basename(fpath)
+                from PIL import Image as _Img
+                img = _Img.open(fpath).convert("RGBA")
+                img = img.resize((64,64), _Img.LANCZOS)
+                png_fname = "favicon_" + str(int(_t.time()*1000)) + ".png"
+                png_fpath = os.path.join(save_dir, png_fname)
+                img.save(png_fpath, "PNG", optimize=True)
+                os.remove(fpath)
+                fpath = png_fpath
+                fname = png_fname
             except Exception:
                 pass
         url = "/static/uploads/branding/" + fname
