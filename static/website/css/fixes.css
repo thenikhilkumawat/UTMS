@@ -25,7 +25,7 @@
   #acctAvatar img{width:100%!important;height:100%!important;object-fit:cover!important;border-radius:50%!important;display:block!important;}
   /* Adjust margins for taller ann-bar */
   .hero,.page-hero,.contact-page,.services-hero,.com-header{margin-top:116px!important;}
-  .com-summary{position:static!important;order:-1!important;top:0!important;}
+  .com-summary{position:static!important;order:2!important;top:0!important;}
   .nav-inner{height:70px;}
 }
 @media(max-width:480px){
