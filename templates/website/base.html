@@ -1640,6 +1640,31 @@ setTimeout(function(){
   window._srInit = _initSR;
 })();
 
+/* ═══ PAUSE INFINITE ANIMATIONS WHEN OFF-SCREEN ═══ */
+(function(){
+  if(!("IntersectionObserver" in window)) return;
+  function _pauseOffscreen(selector){
+    document.querySelectorAll(selector).forEach(function(el){
+      var root = el.parentElement || el;
+      var obs = new IntersectionObserver(function(entries){
+        entries.forEach(function(e){
+          el.style.animationPlayState = e.isIntersecting ? "running" : "paused";
+        });
+      },{threshold:0.01,rootMargin:"200px"});
+      obs.observe(root);
+    });
+  }
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",function(){
+      _pauseOffscreen(".reviews-track");
+      _pauseOffscreen(".brands-track");
+    });
+  } else {
+    _pauseOffscreen(".reviews-track");
+    _pauseOffscreen(".brands-track");
+  }
+})();
+
 /* ═══ FCM PUSH NOTIFICATION REGISTRATION ═══ */
 (function(){
   // Only runs if Firebase config is stored in settings (set via admin panel)
