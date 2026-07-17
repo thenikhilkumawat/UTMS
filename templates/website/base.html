@@ -432,7 +432,8 @@ body.drawer-open .wa-fab,body.drawer-open .supp-fab{display:none!important;visib
     <a href="{{ url_for('website.services') }}" class="drawer-link {% if active=='services' %}active-link{% endif %}">Our Craft</a>
     <div class="drawer-link mm-svc-row" id="mmSvcRow"
          onmouseenter="mmOpenP2()"
-         onmouseleave="mmCheckLeave(event)">
+         onmouseleave="mmCheckLeave(event)"
+         onclick="mmMobileTapServices()">
       <span>Our Services</span>
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
     </div>
@@ -450,10 +451,18 @@ body.drawer-open .wa-fab,body.drawer-open .supp-fab{display:none!important;visib
 <div class="mm-p2" id="mmP2"
      onmouseenter="mmP2Enter()"
      onmouseleave="mmP2Leave(event)">
+  <div class="drawer-head" style="border-bottom:1px solid var(--border);">
+    <button class="mm-back-btn" onclick="mmMobileBackToP1()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      Back
+    </button>
+    <button class="drawer-close" onclick="mmClose()">&times;</button>
+  </div>
   <div class="mm-panel-title">Our Services</div>
   {% for cat, items, media in nav_services %}
   <div class="mm-cat-row" data-cat="{{ loop.index0 }}"
-       onmouseenter="mmOpenP3({{ loop.index0 }}, this)">
+       onmouseenter="mmOpenP3({{ loop.index0 }}, this)"
+       onclick="mmMobileTapCat({{ loop.index0 }}, this)">
     <span>{{ cat.name }}</span>
     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
   </div>
@@ -467,6 +476,13 @@ body.drawer-open .wa-fab,body.drawer-open .supp-fab{display:none!important;visib
 <div class="mm-p3" id="mmP3"
      onmouseenter="mmP3Enter()"
      onmouseleave="mmP3Leave(event)">
+  <div class="drawer-head" style="border-bottom:1px solid var(--border);">
+    <button class="mm-back-btn" onclick="mmMobileBackToP2()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      <span id="mmP3BackLabel">Our Services</span>
+    </button>
+    <button class="drawer-close" onclick="mmClose()">&times;</button>
+  </div>
   {% for cat, items, media in nav_services %}
   <div class="mm-items" data-panel="{{ loop.index0 }}">
     {% for item in items %}
@@ -793,7 +809,9 @@ function _saveCart(c){try{localStorage.setItem('ut_cart',JSON.stringify(c));}cat
 var _mmP2Open = false, _mmP3Open = false;
 
 function openDrawer(){
-  document.getElementById('mmP1').classList.add('open');
+  var p1=document.getElementById('mmP1');
+  p1.classList.remove('mm-slide-back');
+  p1.classList.add('open');
   document.getElementById('navOverlay').classList.add('open');
   document.body.style.overflow='hidden';
 }
@@ -874,6 +892,66 @@ document.addEventListener('DOMContentLoaded',function(){
   var ov=document.getElementById('navOverlay');
   if(ov)ov.addEventListener('click',mmClose);
 });
+
+/* ── Mobile slide-in menu (≤768px) ── */
+function _mmIsMobile(){ return window.innerWidth <= 768; }
+
+/* Tap "Our Services" row on mobile → slide P1 out, P2 in */
+function mmMobileTapServices(){
+  if(!_mmIsMobile()) return;
+  var p1=document.getElementById('mmP1');
+  var p2=document.getElementById('mmP2');
+  p1.classList.remove('open');
+  p1.classList.add('mm-slide-back');
+  p2.classList.add('open');
+  _mmP2Open=true;
+}
+
+/* Back button on P2 → slide P2 out, P1 in */
+function mmMobileBackToP1(){
+  var p1=document.getElementById('mmP1');
+  var p2=document.getElementById('mmP2');
+  p2.classList.remove('open');
+  p1.classList.remove('mm-slide-back');
+  p1.classList.add('open');
+  _mmP2Open=false;
+}
+
+/* Tap a category on mobile → slide P2 out, P3 in */
+function mmMobileTapCat(idx, el){
+  if(!_mmIsMobile()){ mmOpenP3(idx, el); return; }
+  document.querySelectorAll('.mm-cat-row').forEach(function(r){r.classList.remove('active');});
+  el.classList.add('active');
+  document.querySelectorAll('.mm-items').forEach(function(p){p.classList.remove('active');});
+  var panel=document.querySelector('.mm-items[data-panel="'+idx+'"]');
+  if(panel) panel.classList.add('active');
+  var p2=document.getElementById('mmP2');
+  var p3=document.getElementById('mmP3');
+  p2.classList.remove('open');
+  p3.classList.add('open');
+  _mmP3Open=true;
+  /* Update back-button label to category name */
+  var lbl=document.getElementById('mmP3BackLabel');
+  var catSpan=el.querySelector('span');
+  if(lbl && catSpan) lbl.textContent=catSpan.textContent.trim();
+}
+
+/* Back button on P3 → slide P3 out, P2 in */
+function mmMobileBackToP2(){
+  var p2=document.getElementById('mmP2');
+  var p3=document.getElementById('mmP3');
+  p3.classList.remove('open');
+  p2.classList.add('open');
+  _mmP3Open=false;
+}
+
+/* Override mmClose to also reset mobile-specific classes */
+var _origMmClose = mmClose;
+mmClose = function(){
+  _origMmClose();
+  var p1=document.getElementById('mmP1');
+  if(p1) p1.classList.remove('mm-slide-back');
+};
 
 
 /* ── Cart & Wishlist helpers ── */
