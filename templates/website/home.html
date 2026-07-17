@@ -3,6 +3,21 @@
 {% block title %}Uttam Tailors — Custom Tailoring in Sikar since 1987{% endblock %}
 
 {% block head %}
+{# ── LCP optimisation: preconnect + preload hero image ── #}
+{% set _hero_url = hs.get('hero',{}).get('bg_image','') if hs else '' %}
+{% set _hero_url_m = hs.get('hero',{}).get('bg_image_mobile','') if hs else '' %}
+{% if _hero_url %}
+<link rel="preconnect" href="{{ _hero_url.split('/')[0] }}//{{ _hero_url.split('/')[2] }}" crossorigin>
+<link rel="preload" as="image"
+  href="{{ _hero_url }}"
+  {% if _hero_url_m %}imagesrcset="{{ _hero_url_m }} 768w, {{ _hero_url }} 1920w" imagesizes="100vw"{% endif %}
+  fetchpriority="high">
+{% else %}
+<link rel="preconnect" href="https://images.unsplash.com" crossorigin>
+<link rel="preload" as="image"
+  href="https://images.unsplash.com/photo-1593030103066-0093718efeb9?w=1920&q=85&auto=format&fit=crop"
+  fetchpriority="high">
+{% endif %}
 <style>
 /* ── HERO ── */
 .hero{min-height:90vh;}
@@ -867,7 +882,7 @@ fetch('/api/occasions/upcoming').then(function(r){return r.json();}).then(functi
     {% set _hero_img_m = h.get('bg_image_mobile','') %}
     <picture>
       {% if _hero_img_m %}<source media="(max-width:768px)" srcset="{{ _hero_img_m }}">{% endif %}
-      <img src="{{ _hero_img if _hero_img else 'https://images.unsplash.com/photo-1593030103066-0093718efeb9?w=1920&q=85&auto=format&fit=crop' }}" alt="Uttam Tailors workshop" loading="eager">
+      <img src="{{ _hero_img if _hero_img else 'https://images.unsplash.com/photo-1593030103066-0093718efeb9?w=1920&q=85&auto=format&fit=crop' }}" alt="Uttam Tailors workshop" loading="eager" fetchpriority="high" decoding="async" width="1920" height="1080">
     </picture>
   </div>
   <div class="hero-overlay"></div>
