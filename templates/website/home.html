@@ -16,7 +16,7 @@
 {% else %}
 <link rel="preconnect" href="https://images.unsplash.com" crossorigin>
 <link rel="preload" as="image" fetchpriority="high"
-  href="https://images.unsplash.com/photo-1593030103066-0093718efeb9?w=1920&q=85&auto=format&fit=crop">
+  href="https://images.unsplash.com/photo-1593030103066-0093718efeb9?w=1400&q=80&auto=format&fit=crop">
 {% endif %}
 <style>
 /* ── HERO ── */
@@ -882,7 +882,7 @@ fetch('/api/occasions/upcoming').then(function(r){return r.json();}).then(functi
     {% set _hero_img_m = h.get('bg_image_mobile','') %}
     <picture>
       {% if _hero_img_m %}<source media="(max-width:768px)" srcset="{{ _hero_img_m }}">{% endif %}
-      <img src="{{ _hero_img if _hero_img else 'https://images.unsplash.com/photo-1593030103066-0093718efeb9?w=1920&q=85&auto=format&fit=crop' }}" alt="Uttam Tailors workshop" loading="eager" fetchpriority="high" decoding="async" width="1920" height="1080">
+      <img src="{{ _hero_img if _hero_img else 'https://images.unsplash.com/photo-1593030103066-0093718efeb9?w=1400&q=80&auto=format&fit=crop' }}" alt="Uttam Tailors workshop" loading="eager" fetchpriority="high" decoding="async" width="1920" height="1080">
     </picture>
   </div>
   <div class="hero-overlay"></div>

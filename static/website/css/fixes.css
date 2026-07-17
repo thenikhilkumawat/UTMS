@@ -726,3 +726,6 @@ img,video,iframe{max-width:100%;height:auto;}
   }
   .drawer-browse-cat span{color:var(--muted);}
 }
+
+/* ── Hero: instant dark background before image loads (improves perceived LCP) ── */
+.hero-img{background-color:#1e110a;}

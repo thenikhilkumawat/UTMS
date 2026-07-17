@@ -100,7 +100,7 @@ def add_header(response):
         ext = request.path.rsplit(".", 1)[-1].lower() if "." in request.path else ""
         if ext in ("css", "js", "woff", "woff2", "ttf", "otf"):
             response.headers["Cache-Control"] = "public, max-age=604800"  # 7 days
-        elif ext in ("jpg", "jpeg", "png", "webp", "gif", "svg", "ico"):
+        elif ext in ("jpg", "jpeg", "png", "webp", "gif", "svg", "ico", "avif"):
             response.headers["Cache-Control"] = "public, max-age=2592000"  # 30 days
         else:
             response.headers["Cache-Control"] = "public, max-age=86400"
