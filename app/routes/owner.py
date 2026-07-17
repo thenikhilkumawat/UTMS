@@ -4141,8 +4141,30 @@ def homepage_hero_upload_image():
         fpath = _os.path.join(folder, fname)
         file.save(fpath)
         try:
-            from app.utils.image_optimize import optimize_image as _oi
-            fpath = _oi(fpath)
+            # Hero images: aggressively compress — they cover full screen as bg
+            # Target: ≤80KB for fast LCP on mobile. Resize to 1400px max, AVIF q60/WebP q75
+            from PIL import Image as _PILImg
+            import hashlib as _hs
+            with _PILImg.open(fpath) as _img:
+                _img.load()
+                _w, _h = _img.size
+                if max(_w, _h) > 1400:
+                    _scale = 1400 / max(_w, _h)
+                    _img = _img.resize((int(_w*_scale), int(_h*_scale)), _PILImg.LANCZOS)
+                if _img.mode not in ("RGB", "RGBA"):
+                    _img = _img.convert("RGB")
+                _stem = _os.path.splitext(fpath)[0]
+                # Try AVIF first, then WebP
+                try:
+                    _avif = _stem + ".avif"
+                    _img.save(_avif, "AVIF", quality=60)
+                    _os.remove(fpath)
+                    fpath = _avif
+                except Exception:
+                    _wbp = _stem + ".webp"
+                    _img.save(_wbp, "WEBP", quality=72, method=4)
+                    _os.remove(fpath)
+                    fpath = _wbp
             fname = _os.path.basename(fpath)
         except Exception:
             pass

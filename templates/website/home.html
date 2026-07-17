@@ -3,20 +3,20 @@
 {% block title %}Uttam Tailors — Custom Tailoring in Sikar since 1987{% endblock %}
 
 {% block head %}
-{# ── LCP optimisation: preconnect + preload hero image ── #}
+{# ── LCP optimisation: preload hero image ── #}
 {% set _hero_url = hs.get('hero',{}).get('bg_image','') if hs else '' %}
 {% set _hero_url_m = hs.get('hero',{}).get('bg_image_mobile','') if hs else '' %}
+{% set _hero_is_external = _hero_url.startswith('http') %}
+{% if _hero_is_external %}
+<link rel="preconnect" href="{{ _hero_url[:_hero_url.find('/',8)] }}" crossorigin>
+{% endif %}
 {% if _hero_url %}
-<link rel="preconnect" href="{{ _hero_url.split('/')[0] }}//{{ _hero_url.split('/')[2] }}" crossorigin>
-<link rel="preload" as="image"
-  href="{{ _hero_url }}"
-  {% if _hero_url_m %}imagesrcset="{{ _hero_url_m }} 768w, {{ _hero_url }} 1920w" imagesizes="100vw"{% endif %}
-  fetchpriority="high">
+<link rel="preload" as="image" href="{{ _hero_url }}" fetchpriority="high"
+  {% if _hero_url_m %}imagesrcset="{{ _hero_url_m }} 768w, {{ _hero_url }} 1920w" imagesizes="100vw"{% endif %}>
 {% else %}
 <link rel="preconnect" href="https://images.unsplash.com" crossorigin>
-<link rel="preload" as="image"
-  href="https://images.unsplash.com/photo-1593030103066-0093718efeb9?w=1920&q=85&auto=format&fit=crop"
-  fetchpriority="high">
+<link rel="preload" as="image" fetchpriority="high"
+  href="https://images.unsplash.com/photo-1593030103066-0093718efeb9?w=1920&q=85&auto=format&fit=crop">
 {% endif %}
 <style>
 /* ── HERO ── */
