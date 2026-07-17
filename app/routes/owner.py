@@ -4169,7 +4169,27 @@ def homepage_hero_upload_image():
         except Exception:
             pass
         url = "/static/website/img/hero/" + fname
-        return jsonify({"ok": True})
+        # Persist URL into hero section content in DB
+        field = request.form.get("field", "bg_image")  # bg_image or bg_image_mobile
+        try:
+            from database import get_db
+            import json as _j
+            _db = get_db()
+            row = _db.execute("SELECT content FROM home_sections WHERE section_key='hero'").fetchone()
+            existing = _j.loads(row["content"]) if row and row["content"] else {}
+            existing[field] = url
+            _db.execute(
+                "INSERT OR IGNORE INTO home_sections(section_key,section_title,content,sort_order,active)"
+                " VALUES('hero','Hero','{}',1,1)"
+            )
+            _db.execute(
+                "UPDATE home_sections SET content=? WHERE section_key='hero'",
+                (_j.dumps(existing),)
+            )
+            _db.commit()
+        except Exception as _dbe:
+            pass  # file is saved; DB update failed silently
+        return jsonify({"ok": True, "url": url})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
 

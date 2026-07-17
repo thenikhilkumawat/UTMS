@@ -658,6 +658,7 @@ function heroUploadImage(fileInput, targetFieldId){
     if (statusEl){ statusEl.style.color='#7a6a58'; statusEl.textContent='Uploading… ('+Math.round(blob.size/1024)+'KB)'; }
   var fd = new FormData();
   fd.append('image', blob, 'hero.jpg');
+  fd.append('field', targetFieldId.replace('hero_', ''));
   var httpStatus = 0;
   fetch('/owner/website/homepage/hero/upload-image', { method:'POST', body: fd, credentials:'same-origin' })
     .then(function(r){
