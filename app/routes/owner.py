@@ -1638,22 +1638,42 @@ def api_diary_search():
 
     conn = get_db()
     try:
-        # DISTINCT ON (customer_id): only each customer's LATEST order — the
-        # diary is a measurements lookup, so one card per person (their current
-        # naap) instead of flooding results with the person's whole history.
-        # Customers sharing a mobile (family members) stay separate cards.
-        rows = conn.execute(f"""
-            SELECT * FROM (
-                SELECT DISTINCT ON (o.customer_id)
-                       o.id, o.order_code, o.order_date, o.delivery_date, o.status,
+        rows = None
+
+        # Numeric query that exactly matches an order code → show ONLY that
+        # order. (Typing "2890" was also substring-matching every mobile number
+        # containing 2890, burying the actual order.) If no order has that
+        # exact code, fall through to normal search so typing the beginning
+        # of a mobile number still works.
+        qnum = q.lstrip("#")
+        if qnum.isdigit():
+            rows = conn.execute("""
+                SELECT o.id, o.order_code, o.order_date, o.delivery_date, o.status,
                        o.payable_amount, o.advance_paid, o.remaining, o.note, o.is_urgent,
                        c.name as cname, c.mobile, c.address
                 FROM orders o JOIN customers c ON c.id=o.customer_id
-                WHERE {word_clauses}
-                ORDER BY o.customer_id, o.id DESC
-            ) sub
-            ORDER BY sub.id DESC LIMIT 60
-        """, word_params).fetchall()
+                WHERE o.order_code = ?
+            """, (qnum,)).fetchall()
+            if not rows:
+                rows = None
+
+        if rows is None:
+            # DISTINCT ON (customer_id): only each customer's LATEST order — the
+            # diary is a measurements lookup, so one card per person (their current
+            # naap) instead of flooding results with the person's whole history.
+            # Customers sharing a mobile (family members) stay separate cards.
+            rows = conn.execute(f"""
+                SELECT * FROM (
+                    SELECT DISTINCT ON (o.customer_id)
+                           o.id, o.order_code, o.order_date, o.delivery_date, o.status,
+                           o.payable_amount, o.advance_paid, o.remaining, o.note, o.is_urgent,
+                           c.name as cname, c.mobile, c.address
+                    FROM orders o JOIN customers c ON c.id=o.customer_id
+                    WHERE {word_clauses}
+                    ORDER BY o.customer_id, o.id DESC
+                ) sub
+                ORDER BY sub.id DESC LIMIT 60
+            """, word_params).fetchall()
 
         ids = [r["id"] for r in rows]
         garments_by_order, image_by_order = {}, {}
