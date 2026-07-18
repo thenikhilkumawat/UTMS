@@ -1625,20 +1625,44 @@ def order_status():
     date_params = (fresh_start_date,) if fresh_start_date else ()
 
     # Single fast query - no correlated subqueries
-    raw = conn.execute(f"""
-        SELECT o.id, o.order_code, o.status, o.is_urgent, o.note,
-               o.order_date, o.delivery_date, o.delivered_at, o.repeat_of,
-               o.payable_amount, o.advance_paid, o.remaining, o.customer_id,
-               o.created_at,
-               c.name as cname, c.mobile, c.address as caddress
-        FROM orders o
-        LEFT JOIN customers c ON c.id = o.customer_id
-        WHERE 1=1 {date_clause}
-        ORDER BY
-          o.is_urgent DESC,
-          CASE o.status WHEN 'pending' THEN 0 WHEN 'ready' THEN 1 ELSE 2 END,
-          o.id DESC
-    """, date_params).fetchall()
+    # Only load ACTIVE orders (pending/ready) + last 7 days delivered
+    # This prevents loading thousands of old delivered orders
+    from datetime import timedelta
+    week_ago = (date.today() - timedelta(days=7)).isoformat()
+
+    if fresh_start_date:
+        raw = conn.execute("""
+            SELECT o.id, o.order_code, o.status, o.is_urgent, o.note,
+                   o.order_date, o.delivery_date, o.delivered_at, o.repeat_of,
+                   o.payable_amount, o.advance_paid, o.remaining, o.customer_id,
+                   o.created_at,
+                   c.name as cname, c.mobile, c.address as caddress
+            FROM orders o
+            LEFT JOIN customers c ON c.id = o.customer_id
+            WHERE o.order_date >= ?
+              AND (o.status IN ('pending','ready')
+                   OR (o.status='delivered' AND o.delivered_at >= ?))
+            ORDER BY
+              o.is_urgent DESC,
+              CASE o.status WHEN 'pending' THEN 0 WHEN 'ready' THEN 1 ELSE 2 END,
+              o.id DESC
+        """, (fresh_start_date, week_ago)).fetchall()
+    else:
+        raw = conn.execute("""
+            SELECT o.id, o.order_code, o.status, o.is_urgent, o.note,
+                   o.order_date, o.delivery_date, o.delivered_at, o.repeat_of,
+                   o.payable_amount, o.advance_paid, o.remaining, o.customer_id,
+                   o.created_at,
+                   c.name as cname, c.mobile, c.address as caddress
+            FROM orders o
+            LEFT JOIN customers c ON c.id = o.customer_id
+            WHERE o.status IN ('pending','ready')
+               OR (o.status='delivered' AND o.delivered_at >= ?)
+            ORDER BY
+              o.is_urgent DESC,
+              CASE o.status WHEN 'pending' THEN 0 WHEN 'ready' THEN 1 ELSE 2 END,
+              o.id DESC
+        """, (week_ago,)).fetchall()
 
     # Customer order counts - only for visible orders' customers
     cust_counts = {}
