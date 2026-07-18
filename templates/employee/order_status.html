@@ -101,7 +101,7 @@
         data-overdue="{{ 'true' if o.overdue else 'false' }}"
         data-upcoming="{{ 'true' if o.due_soon and not o.overdue else 'false' }}"
         data-pickup-pending="{{ 'true' if o.pickup_pending else 'false' }}"
-        data-s="{{ o.order_code }} {{ o.repeat_of or '' }} {{ o.cname|default('')|lower|trim }} {{ o.mobile }} {{ o.garments|map(attribute='garment_type')|join(' ')|lower }}" data-code="{{ o.order_code }}"
+        data-s="{{ o.order_code }} {{ o.repeat_of or '' }} {{ o.cname|default('')|lower|trim }} {{ o.mobile }} {{ o.garments|map(attribute='garment_type')|join(' ')|lower }}"
         data-date="{{ o.delivery_date or '9999-12-31' }}"
         data-order-date="{{ o.order_date or '' }}"
         data-created-at="{{ (o.created_at or '')[:10] }}"
@@ -643,19 +643,8 @@ function filterRows() {
     const upcoming      = row.dataset.upcoming === "true";
     const pickupPending = row.dataset.pickupPending === "true";
     const srch          = (row.dataset.s || "").toLowerCase();
-    const orderCode     = (row.dataset.code || "").toLowerCase();
-
-    // If search is pure number → match ONLY order code (not mobile/name)
-    let matchQ;
-    if (words.length === 0) {
-      matchQ = true;
-    } else if (/^\d+$/.test(raw)) {
-      // Pure numeric search — exact order code match only
-      matchQ = orderCode.startsWith(raw) || orderCode === raw;
-    } else {
-      // Text search — match across name/mobile/garment
-      matchQ = words.every(w => srch.includes(w));
-    }
+    // ALL words must be present somewhere in the search string
+    const matchQ = words.length === 0 || words.every(w => srch.includes(w));
     let matchF = true;
     if      (activeTab === "today")          matchF = row.dataset.orderDate === TODAY_DATE && status !== "delivered";
     else if (activeTab === "late")           matchF = overdue && status !== "delivered" && status !== "cancelled";
