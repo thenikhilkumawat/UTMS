@@ -1640,19 +1640,35 @@ def order_status():
           o.id DESC
     """, date_params).fetchall()
 
-    # Customer order counts in one query
+    # Customer order counts - only for visible orders' customers
     cust_counts = {}
-    for row in conn.execute("SELECT customer_id, COUNT(*) as cnt FROM orders GROUP BY customer_id").fetchall():
-        cust_counts[row["customer_id"]] = row["cnt"]
+    if raw:
+        cust_ids_in = ",".join(set(str(o["customer_id"]) for o in raw if o["customer_id"]))
+        if cust_ids_in:
+            for row in conn.execute(f"SELECT customer_id, COUNT(*) as cnt FROM orders WHERE customer_id IN ({cust_ids_in}) GROUP BY customer_id").fetchall():
+                cust_counts[row["customer_id"]] = row["cnt"]
 
-    # Bulk load ALL order items at once
-    all_items = conn.execute("SELECT id, order_id, garment_type, quantity, rate, amount, measurements, notes FROM order_items").fetchall()
+    # Only load items/work_logs for VISIBLE orders (not entire DB)
+    if raw:
+        order_ids   = [str(o["id"])          for o in raw]
+        order_codes = ["'" + o["order_code"] + "'" for o in raw]
+        ids_in   = ",".join(order_ids)
+        codes_in = ",".join(order_codes)
+
+        all_items = conn.execute(
+            f"SELECT id, order_id, garment_type, quantity, rate, amount, measurements, notes FROM order_items WHERE order_id IN ({ids_in})"
+        ).fetchall()
+        all_wl = conn.execute(
+            f"SELECT order_code, qty_done, notes FROM work_logs WHERE order_code IN ({codes_in})"
+        ).fetchall()
+    else:
+        all_items = []
+        all_wl    = []
+
     items_by_order = {}
     for it in all_items:
         items_by_order.setdefault(it["order_id"], []).append(it)
 
-    # Bulk load ALL work logs at once
-    all_wl = conn.execute("SELECT order_code, qty_done, notes FROM work_logs").fetchall()
     wl_by_code = {}
     for wl in all_wl:
         wl_by_code.setdefault(wl["order_code"], []).append(wl)
