@@ -2471,7 +2471,7 @@ def api_pickup_search():
         code = q.lstrip("#")
         # Exact order_code match
         r = conn.execute("""
-            SELECT o.order_code, o.status, o.delivery_date, o.order_date, o.remaining, o.is_urgent,
+            SELECT o.order_code, o.status, o.delivery_date, o.order_date, o.delivered_at, o.remaining, o.is_urgent,
                    o.repeat_of, c.name as customer_name, c.mobile, c.address
             FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
             WHERE o.order_code=?
@@ -2483,7 +2483,7 @@ def api_pickup_search():
 
         # All orders with repeat_of matching this code (repeat customer's entries)
         r2 = conn.execute("""
-            SELECT o.order_code, o.status, o.delivery_date, o.order_date, o.remaining, o.is_urgent,
+            SELECT o.order_code, o.status, o.delivery_date, o.order_date, o.delivered_at, o.remaining, o.is_urgent,
                    o.repeat_of, c.name as customer_name, c.mobile, c.address
             FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
             WHERE o.repeat_of=?
@@ -2516,7 +2516,7 @@ def api_pickup_search():
             word_params.extend([lk, lk, lk, lk])
 
         r3 = conn.execute(f"""
-            SELECT o.order_code, o.status, o.delivery_date, o.order_date, o.remaining, o.is_urgent,
+            SELECT o.order_code, o.status, o.delivery_date, o.order_date, o.delivered_at, o.remaining, o.is_urgent,
                    o.repeat_of, c.name as customer_name, c.mobile, c.address
             FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
             WHERE {word_clauses}
@@ -2539,6 +2539,7 @@ def api_pickup_search():
         "address":          r["address"] or "" if "address" in r.keys() else "",
         "order_date_fmt":   fmtd(r["order_date"]),
         "delivery_date_fmt":fmtd(r["delivery_date"]),
+        "delivered_at_fmt": fmtd((r["delivered_at"] or "")[:10]) if ("delivered_at" in r.keys() and r["delivered_at"]) else "",
         "remaining":        r["remaining"] or 0,
         "is_urgent":        r["is_urgent"]
     } for r in rows])
