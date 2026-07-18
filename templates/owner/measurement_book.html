@@ -18,8 +18,14 @@
   </div>
 
   <!-- Search bar -->
+  <style>
+    @media (max-width:768px){
+      .mb-search-icon{display:none;}
+      #mb-search{padding-left:16px !important;}
+    }
+  </style>
   <div style="margin-top:16px;position:relative;">
-    <span style="position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:18px;pointer-events:none;">🔍</span>
+    <span class="mb-search-icon" style="position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:18px;pointer-events:none;">🔍</span>
     <input type="text" id="mb-search"
       placeholder="Naam, order code, mobile number, garment type..."
       oninput="filterOrders()"
