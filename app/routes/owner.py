@@ -1638,13 +1638,21 @@ def api_diary_search():
 
     conn = get_db()
     try:
+        # DISTINCT ON (customer_id): only each customer's LATEST order — the
+        # diary is a measurements lookup, so one card per person (their current
+        # naap) instead of flooding results with the person's whole history.
+        # Customers sharing a mobile (family members) stay separate cards.
         rows = conn.execute(f"""
-            SELECT o.id, o.order_code, o.order_date, o.delivery_date, o.status,
-                   o.payable_amount, o.advance_paid, o.remaining, o.note, o.is_urgent,
-                   c.name as cname, c.mobile, c.address
-            FROM orders o JOIN customers c ON c.id=o.customer_id
-            WHERE {word_clauses}
-            ORDER BY o.id DESC LIMIT 60
+            SELECT * FROM (
+                SELECT DISTINCT ON (o.customer_id)
+                       o.id, o.order_code, o.order_date, o.delivery_date, o.status,
+                       o.payable_amount, o.advance_paid, o.remaining, o.note, o.is_urgent,
+                       c.name as cname, c.mobile, c.address
+                FROM orders o JOIN customers c ON c.id=o.customer_id
+                WHERE {word_clauses}
+                ORDER BY o.customer_id, o.id DESC
+            ) sub
+            ORDER BY sub.id DESC LIMIT 60
         """, word_params).fetchall()
 
         ids = [r["id"] for r in rows]
