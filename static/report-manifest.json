@@ -1,0 +1,26 @@
+{
+  "name": "उत्तम टेलर्स — रिपोर्ट",
+  "short_name": "दुकान रिपोर्ट",
+  "description": "आज की कमाई, खर्चे और ऑर्डर की जानकारी",
+  "start_url": "/report",
+  "scope": "/report",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f1f5f9",
+  "theme_color": "#4338ca",
+  "lang": "hi",
+  "icons": [
+    {
+      "src": "/static/img/pwa-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/img/pwa-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
