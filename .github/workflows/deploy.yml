@@ -42,25 +42,43 @@ jobs:
             sudo systemctl kill -s SIGKILL utms || true
             sleep 2
             sudo systemctl restart utms
-            # Service can take >5s to become active on this 1GB box — retry up to 30s.
-            for i in $(seq 1 15); do
+            # Service can take a while to become active on this 1GB box — retry up to 60s.
+            for i in $(seq 1 30); do
               if sudo systemctl is-active --quiet utms; then
                 echo "UTMS_OK after ${i}x2s"
                 exit 0
               fi
               sleep 2
             done
-            echo "UTMS did not become active within 30s"
+            echo "UTMS did not become active within 60s"
             sudo systemctl status utms --no-pager -l | tail -30
             exit 1
           '
 
-      # Only runs if the deploy step above genuinely failed.
-      - name: Recovery — reboot server if deploy step failed
+      # Only runs if the deploy step above failed — but now FIRST verifies the
+      # service is genuinely dead before rebooting. Previously ANY deploy-step
+      # failure (e.g. service coming up a few seconds after the check window)
+      # triggered a full server reboot, taking BOTH apps down for ~1 min. With
+      # frequent pushes this kept the server in a near-constant reboot cycle.
+      - name: Recovery — reboot ONLY if service is truly dead
         if: failure()
         continue-on-error: true
         run: |
-          ssh -i ~/.ssh/deploy_key ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} 'sudo reboot' || true
+          ssh -i ~/.ssh/deploy_key ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} '
+            sleep 20
+            if sudo systemctl is-active --quiet utms; then
+              echo "Service recovered on its own — NO reboot needed"
+              exit 0
+            fi
+            sudo systemctl restart utms || true
+            sleep 15
+            if sudo systemctl is-active --quiet utms; then
+              echo "Service up after one more restart — NO reboot needed"
+              exit 0
+            fi
+            echo "Service genuinely dead — rebooting as last resort"
+            sudo reboot
+          ' || true
 
       - name: Wait after recovery reboot
         if: failure()
