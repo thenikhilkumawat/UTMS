@@ -257,6 +257,15 @@ def _init_pg():
     migrations = [
         "ALTER TABLE finance ADD COLUMN IF NOT EXISTS employee_name TEXT DEFAULT NULL",
         "ALTER TABLE customers ADD COLUMN IF NOT EXISTS alt_mobile TEXT DEFAULT NULL",
+        # Performance indexes
+        "CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)",
+        "CREATE INDEX IF NOT EXISTS idx_orders_customer ON orders(customer_id)",
+        "CREATE INDEX IF NOT EXISTS idx_orders_date ON orders(order_date)",
+        "CREATE INDEX IF NOT EXISTS idx_orders_delivered ON orders(delivered_at)",
+        "CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id)",
+        "CREATE INDEX IF NOT EXISTS idx_work_logs_code ON work_logs(order_code)",
+        "CREATE INDEX IF NOT EXISTS idx_finance_date ON finance(tx_date)",
+        "CREATE INDEX IF NOT EXISTS idx_customers_mobile ON customers(mobile)",
     ]
     for m in migrations:
         try:
