@@ -1580,29 +1580,36 @@ def measurement_book():
             return f"{p[2]}-{p[1]}-{p[0]}" if len(p)==3 else d
 
         orders_data = []
+
+        # Batch-fetch ALL garments and images in 2 queries instead of 2 queries
+        # PER order (the old N+1 loop = ~2×N sequential round-trips to the separate
+        # DB server — at thousands of orders this took tens of seconds and made
+        # the page appear to never load).
+        garments_by_order = {}
+        for g in conn.execute(
+            "SELECT order_id, garment_type, quantity, rate, notes, measurements FROM order_items ORDER BY order_id, id"
+        ).fetchall():
+            try:
+                meas = _json.loads(g["measurements"] or "{}")
+            except Exception:
+                meas = {}
+            garments_by_order.setdefault(g["order_id"], []).append({
+                "type": g["garment_type"], "qty": g["quantity"],
+                "rate": int(g["rate"] or 0),
+                "notes": g["notes"] or "", "meas": meas
+            })
+
+        # First real (non-temp) image per order, one query.
+        image_by_order = {}
+        for r in conn.execute(
+            "SELECT order_id, file_path FROM order_images WHERE file_path NOT LIKE ? ORDER BY order_id, id",
+            ("temp:%",)
+        ).fetchall():
+            if r["order_id"] not in image_by_order and r["file_path"]:
+                image_by_order[r["order_id"]] = r["file_path"]
+
         for o in rows:
             oid = o["id"]
-            garment_rows = conn.execute(
-                "SELECT id, garment_type, quantity, rate, notes, measurements FROM order_items WHERE order_id=? ORDER BY id",
-                (oid,)
-            ).fetchall()
-            garments_list = []
-            for g in garment_rows:
-                try:
-                    meas = _json.loads(g["measurements"] or "{}")
-                except Exception:
-                    meas = {}
-                garments_list.append({
-                    "type": g["garment_type"], "qty": g["quantity"],
-                    "rate": int(g["rate"] or 0),
-                    "notes": g["notes"] or "", "meas": meas
-                })
-            # ONLY use order_images DB table — no filesystem scan to avoid wrong images
-            img_rows = conn.execute(
-                "SELECT file_path FROM order_images WHERE order_id=? ORDER BY id LIMIT 1", (oid,)
-            ).fetchall()
-            images = [r["file_path"] for r in img_rows
-                      if r["file_path"] and not r["file_path"].startswith("temp:")]
             orders_data.append({
                 "code": o["order_code"], "odate": fmtd(o["order_date"]),
                 "ddate": fmtd(o["delivery_date"]), "status": o["status"],
@@ -1614,8 +1621,8 @@ def measurement_book():
                 "cname":   o["cname"]   or "—",
                 "mobile":  o["mobile"]  or "—",
                 "address": o["address"] or "—",
-                "garments": garments_list,
-                "image": images[0] if images else None,
+                "garments": garments_by_order.get(oid, []),
+                "image": image_by_order.get(oid),
                 "image_only": False,
             })
 
