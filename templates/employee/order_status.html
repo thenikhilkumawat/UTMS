@@ -275,7 +275,8 @@
                   <div style="font-size:10px;font-weight:800;color:#92400e;text-transform:uppercase;margin-bottom:6px;">📷 कपड़े की फोटो</div>
                   <div style="display:flex;gap:6px;flex-wrap:wrap;">
                     {% for img in o.images %}
-                    <img src="{{ img }}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:2px solid #fde68a;cursor:zoom-in;"
+                    <img src="{{ img }}" loading="lazy" onerror="this.style.display='none'"
+                      style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:2px solid #fde68a;cursor:zoom-in;"
                       onclick="event.stopPropagation();openZoomModal(this.src,'Order Image')">
                     {% endfor %}
                   </div>
