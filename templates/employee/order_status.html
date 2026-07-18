@@ -91,6 +91,7 @@
       </tr>
     </thead>
     <tbody id="orders-tbody">
+      <tr id="loading-row"><td colspan="6" style="text-align:center;padding:40px;color:#64748b;"><div style="font-size:18px;margin-bottom:8px;">⏳</div>ऑर्डर लोड हो रहे हैं...</td></tr>
       {% for o in orders %}
       {% set total_items = o.garments|sum(attribute='quantity') %}
       {% set done_items  = o.garments|sum(attribute='stitch_done') %}
