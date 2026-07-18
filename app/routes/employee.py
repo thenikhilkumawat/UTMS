@@ -1638,6 +1638,7 @@ def order_status():
           o.is_urgent DESC,
           CASE o.status WHEN 'pending' THEN 0 WHEN 'ready' THEN 1 ELSE 2 END,
           o.id DESC
+        LIMIT 300
     """, date_params).fetchall()
 
     # Customer order counts - only for visible orders' customers
