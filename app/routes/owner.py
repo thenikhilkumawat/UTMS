@@ -1576,14 +1576,19 @@ def measurement_book():
     orders_data = []
     img_base = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.dirname(__file__))), "static", "order_images")
     if _os.path.isdir(img_base):
-        for code in sorted(_os.listdir(img_base), reverse=True):
-            if code in db_codes or not code.isdigit():
+        # Only scan last 100 folders (most recent) — avoids slow scan of 1000s of folders
+        all_codes = sorted(
+            (c for c in _os.listdir(img_base) if c.isdigit()),
+            key=lambda x: int(x), reverse=True
+        )[:100]
+        for code in all_codes:
+            if code in db_codes:
                 continue
             folder = _os.path.join(img_base, code)
             if not _os.path.isfile(_os.path.join(folder, ".diary_upload")):
                 continue
-            imgs = sorted(f for f in _os.listdir(folder)
-                          if f.lower().endswith((".jpg",".jpeg",".png",".webp")))
+            imgs = [f for f in _os.listdir(folder)
+                    if f.lower().endswith((".jpg",".jpeg",".png",".webp"))]
             if not imgs:
                 continue
             orders_data.append({
