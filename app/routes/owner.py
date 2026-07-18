@@ -1559,102 +1559,137 @@ def sync_order_images():
 
 @bp.route("/measurement-book")
 def measurement_book():
-    import os as _os, json as _json
+    import os as _os
     conn = get_db()
     try:
         uc = conn.execute("SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status!='delivered'").fetchone()["c"]
-        rows = conn.execute("""
+        total_orders = conn.execute("SELECT COUNT(*) as c FROM orders").fetchone()["c"]
+        db_codes = set(r["order_code"] for r in conn.execute("SELECT order_code FROM orders").fetchall())
+    finally:
+        conn.close()
+
+    # Initial page: ONLY the pending QR image-only cards (usually a handful).
+    # Previously this route rendered a full card for EVERY order in the DB
+    # (~thousands, hidden with display:none, searched client-side) — a 10-20MB
+    # HTML response that effectively never finished loading on mobile.
+    # Search is now server-side via /owner/api/diary-search.
+    orders_data = []
+    img_base = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.dirname(__file__))), "static", "order_images")
+    if _os.path.isdir(img_base):
+        for code in sorted(_os.listdir(img_base), reverse=True):
+            if code in db_codes or not code.isdigit():
+                continue
+            folder = _os.path.join(img_base, code)
+            if not _os.path.isfile(_os.path.join(folder, ".diary_upload")):
+                continue
+            imgs = sorted(f for f in _os.listdir(folder)
+                          if f.lower().endswith((".jpg",".jpeg",".png",".webp")))
+            if not imgs:
+                continue
+            orders_data.append({
+                "code": code, "odate": "—", "ddate": "—",
+                "status": "image_only", "urgent": False,
+                "payable": 0, "paid": 0, "due": 0,
+                "note": "", "cname": "— Tap to fill details —",
+                "mobile": "—", "address": "—",
+                "garments": [],
+                "image": f"/static/order_images/{code}/{imgs[0]}",
+                "image_only": True,
+            })
+
+    return render_template("owner/measurement_book.html",
+        active_page="measurement_book", show_voice=False,
+        urgent_count=uc, orders=orders_data, total_orders=total_orders)
+
+
+@bp.route("/api/diary-search")
+def api_diary_search():
+    """Server-side Diary search. Returns rendered card HTML for matching orders
+    (word-AND across name/mobile/address/order code/garment type), capped at 60."""
+    import json as _json
+    q = (request.args.get("q") or "").strip()
+    if not q:
+        return ""
+
+    def fmtd(d):
+        if not d: return "—"
+        p = str(d).split("-")
+        return f"{p[2]}-{p[1]}-{p[0]}" if len(p)==3 else d
+
+    words = [w.lower() for w in q.split() if w][:6]
+    if not words:
+        return ""
+
+    word_clauses = " AND ".join(
+        """(LOWER(c.name) LIKE ?
+           OR c.mobile LIKE ?
+           OR LOWER(c.address) LIKE ?
+           OR o.order_code LIKE ?
+           OR EXISTS (
+               SELECT 1 FROM order_items oi
+               WHERE oi.order_id=o.id AND LOWER(oi.garment_type) LIKE ?
+           ))"""
+        for _ in words
+    )
+    word_params = []
+    for w in words:
+        lk = f"%{w}%"
+        word_params.extend([lk, lk, lk, f"%{w.lstrip('#')}%", lk])
+
+    conn = get_db()
+    try:
+        rows = conn.execute(f"""
             SELECT o.id, o.order_code, o.order_date, o.delivery_date, o.status,
                    o.payable_amount, o.advance_paid, o.remaining, o.note, o.is_urgent,
                    c.name as cname, c.mobile, c.address
             FROM orders o JOIN customers c ON c.id=o.customer_id
-            ORDER BY o.id DESC
-        """).fetchall()
+            WHERE {word_clauses}
+            ORDER BY o.id DESC LIMIT 60
+        """, word_params).fetchall()
 
-        # Get all order codes in DB
-        db_codes = set(r["order_code"] for r in rows)
-
-        def fmtd(d):
-            if not d: return "—"
-            p = str(d).split("-")
-            return f"{p[2]}-{p[1]}-{p[0]}" if len(p)==3 else d
-
-        orders_data = []
-
-        # Batch-fetch ALL garments and images in 2 queries instead of 2 queries
-        # PER order (the old N+1 loop = ~2×N sequential round-trips to the separate
-        # DB server — at thousands of orders this took tens of seconds and made
-        # the page appear to never load).
-        garments_by_order = {}
-        for g in conn.execute(
-            "SELECT order_id, garment_type, quantity, rate, notes, measurements FROM order_items ORDER BY order_id, id"
-        ).fetchall():
-            try:
-                meas = _json.loads(g["measurements"] or "{}")
-            except Exception:
-                meas = {}
-            garments_by_order.setdefault(g["order_id"], []).append({
-                "type": g["garment_type"], "qty": g["quantity"],
-                "rate": int(g["rate"] or 0),
-                "notes": g["notes"] or "", "meas": meas
-            })
-
-        # First real (non-temp) image per order, one query.
-        image_by_order = {}
-        for r in conn.execute(
-            "SELECT order_id, file_path FROM order_images WHERE file_path NOT LIKE ? ORDER BY order_id, id",
-            ("temp:%",)
-        ).fetchall():
-            if r["order_id"] not in image_by_order and r["file_path"]:
-                image_by_order[r["order_id"]] = r["file_path"]
-
-        for o in rows:
-            oid = o["id"]
-            orders_data.append({
-                "code": o["order_code"], "odate": fmtd(o["order_date"]),
-                "ddate": fmtd(o["delivery_date"]), "status": o["status"],
-                "urgent": bool(o["is_urgent"]),
-                "payable": int(o["payable_amount"] or 0),
-                "paid":    int(o["advance_paid"]  or 0),
-                "due":     int(o["remaining"]     or 0),
-                "note":    o["note"] or "",
-                "cname":   o["cname"]   or "—",
-                "mobile":  o["mobile"]  or "—",
-                "address": o["address"] or "—",
-                "garments": garments_by_order.get(oid, []),
-                "image": image_by_order.get(oid),
-                "image_only": False,
-            })
-
-        # Image-only: folders with .diary_upload marker (mobile QR uploads not yet converted to orders)
-        img_base = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.dirname(__file__))), "static", "order_images")
-        if _os.path.isdir(img_base):
-            for code in sorted(_os.listdir(img_base), reverse=True):
-                if code in db_codes or not code.isdigit():
-                    continue
-                folder = _os.path.join(img_base, code)
-                if not _os.path.isfile(_os.path.join(folder, ".diary_upload")):
-                    continue
-                imgs = sorted(f for f in _os.listdir(folder)
-                              if f.lower().endswith((".jpg",".jpeg",".png",".webp")))
-                if not imgs:
-                    continue
-                orders_data.insert(0, {
-                    "code": code, "odate": "—", "ddate": "—",
-                    "status": "image_only", "urgent": False,
-                    "payable": 0, "paid": 0, "due": 0,
-                    "note": "", "cname": "— Tap to fill details —",
-                    "mobile": "—", "address": "—",
-                    "garments": [],
-                    "image": f"/static/order_images/{code}/{imgs[0]}",
-                    "image_only": True,
+        ids = [r["id"] for r in rows]
+        garments_by_order, image_by_order = {}, {}
+        if ids:
+            ph = ",".join("?" * len(ids))
+            for g in conn.execute(
+                f"SELECT order_id, garment_type, quantity, rate, notes, measurements FROM order_items WHERE order_id IN ({ph}) ORDER BY order_id, id",
+                ids
+            ).fetchall():
+                try:
+                    meas = _json.loads(g["measurements"] or "{}")
+                except Exception:
+                    meas = {}
+                garments_by_order.setdefault(g["order_id"], []).append({
+                    "type": g["garment_type"], "qty": g["quantity"],
+                    "rate": int(g["rate"] or 0),
+                    "notes": g["notes"] or "", "meas": meas
                 })
-
+            for r in conn.execute(
+                f"SELECT order_id, file_path FROM order_images WHERE order_id IN ({ph}) AND file_path NOT LIKE ? ORDER BY order_id, id",
+                ids + ["temp:%"]
+            ).fetchall():
+                if r["order_id"] not in image_by_order and r["file_path"]:
+                    image_by_order[r["order_id"]] = r["file_path"]
     finally:
         conn.close()
-    return render_template("owner/measurement_book.html",
-        active_page="measurement_book", show_voice=False,
-        urgent_count=uc, orders=orders_data)
+
+    orders_data = [{
+        "code": o["order_code"], "odate": fmtd(o["order_date"]),
+        "ddate": fmtd(o["delivery_date"]), "status": o["status"],
+        "urgent": bool(o["is_urgent"]),
+        "payable": int(o["payable_amount"] or 0),
+        "paid":    int(o["advance_paid"]  or 0),
+        "due":     int(o["remaining"]     or 0),
+        "note":    o["note"] or "",
+        "cname":   o["cname"]   or "—",
+        "mobile":  o["mobile"]  or "—",
+        "address": o["address"] or "—",
+        "garments": garments_by_order.get(o["id"], []),
+        "image": image_by_order.get(o["id"]),
+        "image_only": False,
+    } for o in rows]
+
+    return render_template("owner/_diary_cards.html", orders=orders_data)
 
 
 
