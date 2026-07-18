@@ -3,7 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>रिपोर्ट — उत्तम टेलर्स</title>
+<title>उत्तम टेलर्स रिपोर्ट</title>
+
+<!-- PWA -->
+<link rel="manifest" href="/static/report-manifest.json">
+<meta name="theme-color" content="#4338ca">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="दुकान रिपोर्ट">
+<link rel="apple-touch-icon" href="/static/img/pwa-icon-192.png">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:-apple-system,'Segoe UI',sans-serif;background:#f1f5f9;min-height:100vh;color:#1e293b;}
@@ -283,6 +292,13 @@ function updateTime(){
 loadToday();
 // Auto refresh every 5 seconds
 setInterval(loadCurrent, 300);
+</script>
+<script>
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('/static/report-sw.js', {scope: '/report'})
+    .then(()=>console.log('SW registered'))
+    .catch(e=>console.log('SW error',e));
+}
 </script>
 </body>
 </html>
