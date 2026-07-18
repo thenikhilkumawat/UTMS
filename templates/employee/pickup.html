@@ -256,7 +256,10 @@ function doSearch() {
           +codeLine+' — '+o.customer_name
           +'</div>'
           +(o.address?'<div style="font-size:11px;opacity:0.65;margin-top:2px;">📍 '+o.address+'</div>':'')
-          +'<div style="font-size:11px;opacity:0.55;margin-top:3px;">📅 '+o.order_date_fmt+' → '+(o.delivery_date_fmt||"—")
+          +'<div style="font-size:11px;opacity:0.55;margin-top:3px;">📅 '+o.order_date_fmt
+          +(o.status==="delivered" && o.delivered_at_fmt
+              ? ' · <span style="color:#34d399;font-weight:800;">✅ Delivered: '+o.delivered_at_fmt+'</span>'
+              : ' → '+(o.delivery_date_fmt||"—"))
           +' · <span style="color:'+statusBg+';font-weight:800;text-transform:uppercase;">'+o.status+'</span>'
           +(o.remaining>0?' · ₹'+o.remaining+' due':'')
           +'</div>'
