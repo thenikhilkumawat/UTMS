@@ -1613,128 +1613,301 @@ def api_shop_name():
 
 @bp.route("/order-status")
 def order_status():
-    """Order status page — returns instant shell, orders load via AJAX."""
-    conn = get_db()
-    uc = conn.execute("SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status!='delivered'").fetchone()["c"]
-    conn.close()
-    return render_template("employee/order_status.html",
-        active_page="order_status", show_voice=True,
-        urgent_count=uc, orders=[],
-        total=0, late_count=0, today_count=0,
-        today_iso=date.today().isoformat(),
-        upcoming_count=0, ready_count=0, delivered_count=0)
-
-
-@bp.route("/api/order-status/data")
-def api_order_status_data():
-    """Fast JSON endpoint for order status page — called by AJAX after page load."""
     conn = get_db()
     today = date.today().isoformat()
     now_dt = datetime.now()
 
+    # Fresh start filter
     fresh_start_enabled = get_setting("utms_fresh_start", "0") == "1"
-    fresh_start_date = get_setting("utms_fresh_start_date", "2026-06-01") if fresh_start_enabled else None
+    fresh_start_date    = get_setting("utms_fresh_start_date", "2026-06-01") if fresh_start_enabled else None
 
-    from datetime import timedelta
-    week_ago = (date.today() - timedelta(days=7)).isoformat()
+    date_clause = "AND o.order_date >= ?" if fresh_start_date else ""
+    date_params = (fresh_start_date,) if fresh_start_date else ()
 
-    if fresh_start_date:
-        raw = conn.execute("""
-            SELECT o.id, o.order_code, o.status, o.is_urgent, o.note,
-                   o.order_date, o.delivery_date, o.delivered_at,
-                   o.payable_amount, o.advance_paid, o.remaining, o.customer_id,
-                   o.created_at,
-                   c.name as cname, c.mobile
-            FROM orders o
-            LEFT JOIN customers c ON c.id = o.customer_id
-            WHERE o.order_date >= ?
-              AND (o.status IN ('pending','ready')
-                   OR (o.status='delivered' AND o.delivered_at >= ?))
-            ORDER BY o.is_urgent DESC,
-              CASE o.status WHEN 'pending' THEN 0 WHEN 'ready' THEN 1 ELSE 2 END,
-              o.id DESC LIMIT 200
-        """, (fresh_start_date, week_ago)).fetchall()
+    # Single fast query - no correlated subqueries
+    raw = conn.execute(f"""
+        SELECT o.id, o.order_code, o.status, o.is_urgent, o.note,
+               o.order_date, o.delivery_date, o.delivered_at, o.repeat_of,
+               o.payable_amount, o.advance_paid, o.remaining, o.customer_id,
+               o.created_at,
+               c.name as cname, c.mobile, c.address as caddress
+        FROM orders o
+        LEFT JOIN customers c ON c.id = o.customer_id
+        WHERE 1=1 {date_clause}
+        ORDER BY
+          o.is_urgent DESC,
+          CASE o.status WHEN 'pending' THEN 0 WHEN 'ready' THEN 1 ELSE 2 END,
+          o.id DESC
+    """, date_params).fetchall()
+
+    # Customer order counts - only for visible orders' customers
+    cust_counts = {}
+    if raw:
+        cust_ids_in = ",".join(set(str(o["customer_id"]) for o in raw if o["customer_id"]))
+        if cust_ids_in:
+            for row in conn.execute(f"SELECT customer_id, COUNT(*) as cnt FROM orders WHERE customer_id IN ({cust_ids_in}) GROUP BY customer_id").fetchall():
+                cust_counts[row["customer_id"]] = row["cnt"]
+
+    # Only load items/work_logs for VISIBLE orders (not entire DB)
+    if raw:
+        order_ids   = [str(o["id"])          for o in raw]
+        order_codes = ["'" + o["order_code"] + "'" for o in raw]
+        ids_in   = ",".join(order_ids)
+        codes_in = ",".join(order_codes)
+
+        all_items = conn.execute(
+            f"SELECT id, order_id, garment_type, quantity, rate, amount, measurements, notes FROM order_items WHERE order_id IN ({ids_in})"
+        ).fetchall()
+        all_wl = conn.execute(
+            f"SELECT order_code, qty_done, notes FROM work_logs WHERE order_code IN ({codes_in})"
+        ).fetchall()
     else:
-        raw = conn.execute("""
-            SELECT o.id, o.order_code, o.status, o.is_urgent, o.note,
-                   o.order_date, o.delivery_date, o.delivered_at,
-                   o.payable_amount, o.advance_paid, o.remaining, o.customer_id,
-                   o.created_at,
-                   c.name as cname, c.mobile
-            FROM orders o
-            LEFT JOIN customers c ON c.id = o.customer_id
-            WHERE o.status IN ('pending','ready')
-               OR (o.status='delivered' AND o.delivered_at >= ?)
-            ORDER BY o.is_urgent DESC,
-              CASE o.status WHEN 'pending' THEN 0 WHEN 'ready' THEN 1 ELSE 2 END,
-              o.id DESC LIMIT 200
-        """, (week_ago,)).fetchall()
+        all_items = []
+        all_wl    = []
 
-    # Counts
-    counts = conn.execute("""
-        SELECT
-          COUNT(*) FILTER (WHERE status='pending') as pending,
-          COUNT(*) FILTER (WHERE status='ready')   as ready,
-          COUNT(*) FILTER (WHERE is_urgent=1 AND status!='delivered') as urgent,
-          COUNT(*) FILTER (WHERE delivery_date < ? AND status NOT IN ('delivered','cancelled')) as late,
-          COUNT(*) FILTER (WHERE order_date=?)     as today,
-          COUNT(*) FILTER (WHERE status='delivered' AND delivered_at LIKE ?) as delivered
-        FROM orders
-    """, (today, today, today + "%")).fetchone()
+    items_by_order = {}
+    for it in all_items:
+        items_by_order.setdefault(it["order_id"], []).append(it)
 
-    if not raw:
-        conn.close()
-        return jsonify({"orders": [], "counts": {
-            "pending": 0, "ready": 0, "urgent": 0,
-            "late": 0, "today": 0, "delivered": 0
-        }})
+    wl_by_code = {}
+    for wl in all_wl:
+        wl_by_code.setdefault(wl["order_code"], []).append(wl)
 
-    # Load items + work_logs only for visible orders
-    order_ids   = ",".join(str(o["id"]) for o in raw)
-    order_codes = ",".join("'" + o["order_code"] + "'" for o in raw)
-
-    items_map = {}
-    for it in conn.execute(f"SELECT order_id, garment_type, quantity FROM order_items WHERE order_id IN ({order_ids})").fetchall():
-        items_map.setdefault(it["order_id"], []).append({"type": it["garment_type"], "qty": it["quantity"]})
-
-    conn.close()
-
-    def fmtd(d):
-        if not d: return ""
-        p = str(d)[:10].split("-")
-        return f"{p[2]}-{p[1]}-{p[0]}" if len(p)==3 else d
-
-    orders_list = []
+    orders = []
     for o in raw:
-        garments = items_map.get(o["id"], [])
-        orders_list.append({
-            "order_code":   o["order_code"],
-            "status":       o["status"],
-            "is_urgent":    bool(o["is_urgent"]),
-            "cname":        o["cname"] or "—",
-            "mobile":       o["mobile"] or "",
-            "note":         o["note"] or "",
-            "order_date":   fmtd(o["order_date"]),
-            "delivery_date": fmtd(o["delivery_date"]),
-            "delivered_at": fmtd(o["delivered_at"]),
-            "remaining":    o["remaining"] or 0,
-            "payable":      o["payable_amount"] or 0,
-            "advance":      o["advance_paid"] or 0,
-            "garments":     garments,
-            "created_at":   str(o["created_at"] or "")[:10],
+        items_raw = items_by_order.get(o["id"], [])
+        wl_rows = wl_by_code.get(o["order_code"], [])
+        naap_total = kataai_total = silai_total = 0
+        for wl in wl_rows:
+            n = (wl["notes"] or "").strip()
+            q = wl["qty_done"] or 0
+            if any(x in n for x in ["Measurement","Naap","नाप"]):
+                naap_total += q
+            elif any(x in n for x in ["Kataai","Cutting","कटाई"]):
+                kataai_total += q
+            else:
+                silai_total += q
+
+        # Total garment quantity for this order
+        total_order_qty = sum(it["quantity"] for it in items_raw) or 1
+
+        # Only parse measurements for non-delivered orders (saves time)
+        is_delivered = o["status"] == "delivered"
+        items = []
+        for it in items_raw:
+            qty = it["quantity"] or 1
+            gt  = it["garment_type"]
+            if is_delivered:
+                # Delivered = everything is done, no need to check work logs
+                naap_done = cut_done = stitch_done = qty
+                pct = 100
+                meas = {}
+            else:
+                share = qty / total_order_qty
+                naap_done   = min(qty, int(naap_total   * share + 0.999))
+                cut_done    = min(qty, int(kataai_total  * share + 0.999))
+                stitch_done = min(qty, int(silai_total   * share + 0.999))
+                pct = min(100, int((stitch_done / qty) * 100)) if qty else 0
+                try: meas = json.loads(it["measurements"] or "{}")
+                except: meas = {}
+            items.append({
+                "garment_type":  gt,
+                "quantity":      qty,
+                "rate":          it["rate"],
+                "amount":        it["amount"],
+                "measurements":  meas,
+                "notes":         it["notes"] or "",
+                "logged":        stitch_done,
+                "progress_pct":  pct,
+                "naap_done":     naap_done,
+                "cut_done":      cut_done,
+                "stitch_done":   stitch_done,
+                "naap_pct":      min(100, int((naap_done/qty)*100))   if qty else 0,
+                "cut_pct":       min(100, int((cut_done/qty)*100))    if qty else 0,
+                "stitch_pct":    pct,
+            })
+
+        def fmtd(d):
+            if not d: return "—"
+            p = str(d).split("-")
+            return f"{p[2]}-{p[1]}-{p[0]}" if len(p)==3 else d
+
+        try:
+            dl = datetime.strptime(o["delivery_date"], "%Y-%m-%d").date() if o["delivery_date"] else None
+            overdue  = dl and dl < date.today() and o["status"] != "delivered"
+            days_left = (dl - date.today()).days if dl else 999
+            due_soon = dl and not overdue and days_left <= 5 and o["status"] != "delivered"
+        except:
+            overdue = due_soon = False
+
+        orders.append({
+            "order_code":       o["order_code"],
+            "display_code":     o["repeat_of"] if o["repeat_of"] else o["order_code"],
+            "entry_code":       o["order_code"] if o["repeat_of"] else "",
+            "cname":            o["cname"] or "—",
+            "mobile":           o["mobile"] or "",
+            "address":          o["caddress"] or "",
+            "status":           o["status"],
+            "is_urgent":        o["is_urgent"],
+            "repeat_of":        o["repeat_of"],
+            "delivery_date":    o["delivery_date"] or "",
+            "delivery_date_fmt":fmtd(o["delivery_date"]),
+            "order_date":       o["order_date"] or "",
+            "order_date_fmt":   fmtd(o["order_date"]),
+            "payable_amount":   o["payable_amount"] or 0,
+            "advance_paid":     o["advance_paid"] or 0,
+            "remaining":        o["remaining"] or 0,
+            "note":             o["note"] or "",
+            "overdue":          overdue,
+            "due_soon":         due_soon,
+            "days_left":        days_left if dl else 9999,
+            "delivered_at":     (o["delivered_at"] if "delivered_at" in o.keys() else "") or "",
+            "delivered_at_fmt": fmtd(((o["delivered_at"] if "delivered_at" in o.keys() else "") or "")[:10]),
+            "garments":         items,
+            "customer_order_count": cust_counts.get(o["customer_id"], 1),
+            "pickup_pending":   o["status"] == "ready" and overdue,
         })
 
-    return jsonify({
-        "orders": orders_list,
-        "counts": {
-            "pending":   counts["pending"]   or 0,
-            "ready":     counts["ready"]     or 0,
-            "urgent":    counts["urgent"]    or 0,
-            "late":      counts["late"]      or 0,
-            "today":     counts["today"]     or 0,
-            "delivered": counts["delivered"] or 0,
-        }
-    })
+    # ── Visit Number + Previous Orders System ─────────────────────────────
+    # Build customer_id lookup from raw rows
+    raw_by_code = {r["order_code"]: r for r in raw}
+
+    # Load ALL orders for customers in current view (ignoring fresh start filter)
+    all_cust_orders = {}
+    try:
+        customer_ids_in_view = list({r["customer_id"] for r in raw if r["customer_id"]})
+        if customer_ids_in_view:
+            ph = ",".join(["?" ] * len(customer_ids_in_view))
+            hist_raw = conn.execute(
+                f"SELECT o.id, o.order_code, o.repeat_of, o.order_date, o.delivery_date, "
+                f"o.status, o.payable_amount, o.advance_paid, o.remaining, o.customer_id "
+                f"FROM orders o WHERE o.customer_id IN ({ph}) ORDER BY o.id ASC",
+                tuple(customer_ids_in_view)
+            ).fetchall()
+
+            # Garments for all historical orders
+            hist_ids = [r["id"] for r in hist_raw]
+            hist_items = {}
+            if hist_ids:
+                ph2 = ",".join(["?"] * len(hist_ids))
+                for it in conn.execute(
+                    f"SELECT order_id, garment_type, quantity FROM order_items WHERE order_id IN ({ph2})",
+                    tuple(hist_ids)
+                ).fetchall():
+                    hist_items.setdefault(it["order_id"], []).append(
+                        {"garment_type": it["garment_type"], "quantity": it["quantity"]}
+                    )
+
+            def _fmt(d):
+                if not d: return "—"
+                p = str(d).split("-")
+                return f"{p[2]}-{p[1]}-{p[0]}" if len(p) == 3 else d
+
+            for r in hist_raw:
+                cid = r["customer_id"]
+                all_cust_orders.setdefault(cid, []).append({
+                    "order_code":        r["order_code"],
+                    "display_code":      r["repeat_of"] if r["repeat_of"] else r["order_code"],
+                    "order_date_fmt":    _fmt(r["order_date"]),
+                    "delivery_date_fmt": _fmt(r["delivery_date"]),
+                    "status":            r["status"],
+                    "payable_amount":    r["payable_amount"] or 0,
+                    "advance_paid":      r["advance_paid"] or 0,
+                    "remaining":         r["remaining"] or 0,
+                    "garments":          hist_items.get(r["id"], []),
+                })
+    except Exception:
+        pass  # visit history optional — never crash main page
+
+    # Group order codes per customer sorted by id ASC (oldest = visit 1)
+    from collections import defaultdict
+    cust_visits = defaultdict(list)
+    for cid, corders in all_cust_orders.items():
+        cust_visits[cid] = [o["order_code"] for o in corders]
+
+    # Pass 1: assign visit_number + is_latest to every order
+    for o in orders:
+        raw_row  = raw_by_code.get(o["order_code"])
+        cid      = raw_row["customer_id"] if raw_row else None
+        visits   = cust_visits.get(cid, [o["order_code"]]) if cid else [o["order_code"]]
+        try:    idx = visits.index(o["order_code"])
+        except: idx = 0
+        o["visit_number"] = idx + 1
+        o["is_latest"]    = (idx == len(visits) - 1)
+
+    # Pass 2: build prev_orders_full for expanded panel (uses ALL historical orders)
+    for o in orders:
+        raw_row = raw_by_code.get(o["order_code"])
+        cid     = raw_row["customer_id"] if raw_row else None
+        if not cid:
+            o["prev_orders_full"] = []
+            continue
+        all_visits = all_cust_orders.get(cid, [])
+        total_visits = len(all_visits)
+        prev = []
+        for idx, ho in enumerate(all_visits):
+            if ho["order_code"] == o["order_code"]:
+                continue
+            prev.append({
+                "visit_number":   idx + 1,
+                "code":           ho["display_code"],
+                "order_date":     ho["order_date_fmt"],
+                "delivery_date":  ho["delivery_date_fmt"],
+                "status":         ho["status"],
+                "total":          ho["payable_amount"],
+                "paid":           ho["advance_paid"],
+                "remaining":      ho["remaining"],
+                "garments":       ho["garments"],
+                "is_latest":      (idx == total_visits - 1),
+            })
+        o["prev_orders_full"] = prev
+
+    # Load images for all orders (batch query)
+    all_images = conn.execute("""
+        SELECT oi.order_id, oi.file_path FROM order_images oi
+        WHERE oi.file_path NOT LIKE 'temp:%'
+    """).fetchall()
+    images_by_order = {}
+    for img in all_images:
+        images_by_order.setdefault(img["order_id"], []).append(img["file_path"])
+    # Map order_code -> images using order id
+    order_id_map = {o["order_code"]: o["id"] for o in raw}
+    for o_data in orders:
+        oid = order_id_map.get(o_data["order_code"])
+        o_data["images"] = images_by_order.get(oid, []) if oid else []
+
+    counts = {
+        "total":     len(orders),
+        "late":      sum(1 for o in orders if o["overdue"] and o["status"]!="delivered"),
+        "upcoming":  sum(1 for o in orders if o["due_soon"] and not o["overdue"] and o["status"]!="delivered"),
+        "ready":     sum(1 for o in orders if o["status"]=="ready"),
+        "delivered": sum(1 for o in orders if o["status"]=="delivered"),
+        "cancelled": sum(1 for o in orders if o["status"]=="cancelled"),
+        "urgent":    sum(1 for o in orders if o["is_urgent"] and o["status"]!="delivered"),
+        "pickup_pending": sum(1 for o in orders if o.get("pickup_pending")),
+        "today":     sum(1 for o in orders if o.get("order_date") == date.today().isoformat() and o.get("status") != "delivered"),
+    }
+    conn.close()
+    HINDI_MAP = {
+        "Lambai":"लंबाई","Seeno":"सीना","Kamar":"कमर","Shoulder":"कंधा",
+        "Collar":"कॉलर","Aastin":"आस्तीन","Cough":"कफ",
+        "Part 1":"पाट 1","Part 2":"पाट 2","Part 3":"पाट 3",
+        "Seat":"सीट","Mori":"मोरी","Jangh":"जांघ","Goda":"घुटना",
+        "Langot":"लंगोट","Back Paat":"बैक पाट",
+        "Hip":"हिप","Details":"विवरण",
+    }
+    return render_template("employee/order_status.html",
+        active_page="order_status", show_voice=True,
+        urgent_count=counts["urgent"], orders=orders,
+        total=counts["total"], late_count=counts["late"],
+        today_count=counts["today"], today_iso=date.today().isoformat(),
+        upcoming_count=counts["upcoming"],
+        ready_count=counts["ready"], delivered_count=counts["delivered"],
+        cancelled_count=counts["cancelled"],
+        pickup_pending_count=counts["pickup_pending"],
+        fresh_start_enabled=fresh_start_enabled,
+        fresh_start_date=fresh_start_date or "",
+        hindi_map=HINDI_MAP)
 
 
 @bp.route("/api/order/update-status", methods=["POST"])
