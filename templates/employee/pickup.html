@@ -348,15 +348,22 @@ function forceMarkReady() {
   btn.disabled = true;
   btn.innerHTML = "Processing...";
 
+  // Timeout safety — reset button after 10s if no response
+  var _btnTimeout = setTimeout(function() {
+    btn.disabled = false;
+    btn.innerHTML = "⚡ Force Complete";
+    showToast("⚠️ Timeout — dobara try karo","error");
+  }, 10000);
+
   fetch("/api/pickup/force-complete",{
     method:"POST", headers:{"Content-Type":"application/json"},
     body: JSON.stringify({order_code: currentCode})
   })
   .then(function(r){ return r.json(); })
   .then(function(d){
+    clearTimeout(_btnTimeout);
     if (d.ok) {
       showToast("✅ Order marked Ready — ab deliver kar sakte ho","success");
-      // Reload order details to show updated status + payment panel
       setTimeout(function(){ doPickup(currentCode); }, 400);
     } else {
       showToast("❌ " + (d.error||"Failed"),"error");
