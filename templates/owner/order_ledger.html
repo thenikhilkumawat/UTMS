@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="max-width:900px;margin:0 auto;padding:20px;">
+
+  <!-- Search Box -->
+  <div style="background:linear-gradient(135deg,#4338ca,#6366f1);border-radius:20px;padding:24px;margin-bottom:20px;color:#fff;">
+    <div style="font-size:12px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#c7d2fe;margin-bottom:6px;">ADMIN — ORDER LEDGER</div>
+    <h1 style="font-size:22px;font-weight:900;margin-bottom:16px;">💳 Order Payment History</h1>
+    <div style="display:flex;gap:10px;">
+      <input type="text" id="code-inp" placeholder="Order code daalo... jaise 3901"
+        style="flex:1;padding:12px 16px;border-radius:12px;border:none;font-size:16px;font-weight:700;outline:none;"
+        oninput="debounce(this.value)" onkeydown="if(event.key==='Enter')lookup(this.value.trim())">
+      <button onclick="lookup(document.getElementById('code-inp').value.trim())"
+        style="padding:12px 20px;background:#fff;color:#4338ca;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;">
+        🔍 Dekho
+      </button>
+    </div>
+  </div>
+
+  <!-- Result -->
+  <div id="result"></div>
+</div>
+
+<script>
+var _t = null;
+function debounce(v) {
+  clearTimeout(_t);
+  if (v.trim().length >= 2) _t = setTimeout(function(){ lookup(v.trim()); }, 600);
+}
+
+async function lookup(code) {
+  if (!code) return;
+  document.getElementById('result').innerHTML = '<div style="text-align:center;padding:40px;color:#64748b;">⏳ Load ho raha hai...</div>';
+  try {
+    var r = await fetch('/owner/api/order-ledger?code=' + encodeURIComponent(code));
+    var d = await r.json();
+    if (!d.ok) {
+      document.getElementById('result').innerHTML = '<div style="background:#fff;border-radius:16px;padding:30px;text-align:center;color:#dc2626;font-weight:700;">❌ ' + (d.error||'Order nahi mila') + '</div>';
+      return;
+    }
+    renderLedger(d);
+  } catch(e) {
+    document.getElementById('result').innerHTML = '<div style="background:#fff;border-radius:16px;padding:30px;text-align:center;color:#dc2626;">❌ Error — dobara try karo</div>';
+  }
+}
+
+function fmt(n) { return '₹' + Math.round(n||0).toLocaleString('en-IN'); }
+function fmtDate(s) {
+  if(!s) return '—';
+  var p = str(s).substring(0,10).split('-');
+  return p.length===3 ? p[2]+'-'+p[1]+'-'+p[0] : s;
+}
+function str(s){ return s||''; }
+
+function renderLedger(d) {
+  var o = d.order;
+  var paid = o.payable_amount - o.remaining;
+  var pct  = o.payable_amount > 0 ? Math.round((paid/o.payable_amount)*100) : 0;
+  var statusColor = o.status==='delivered'?'#059669':o.status==='ready'?'#2563eb':'#d97706';
+  var statusLabel = o.status==='delivered'?'✅ Deliver Ho Gaya':o.status==='ready'?'🔔 Taiyaar Hai':'⏳ Kaam Chal Raha Hai';
+
+  var html = '<div>';
+
+  // Order header card
+  html += '<div style="background:#fff;border-radius:16px;padding:20px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,0.06);border-left:5px solid '+statusColor+'">';
+  html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">';
+  html += '<div><div style="font-size:22px;font-weight:900;color:#1e293b;">#'+o.order_code+'</div>';
+  html += '<div style="font-size:16px;font-weight:700;color:#374151;margin-top:2px;">'+str(o.cname)+'</div>';
+  html += '<div style="font-size:13px;color:#64748b;">📱 '+str(o.mobile)+'</div></div>';
+  html += '<div style="text-align:right;"><span style="background:'+statusColor+';color:#fff;padding:5px 14px;border-radius:20px;font-size:12px;font-weight:800;">'+statusLabel+'</span>';
+  if(o.is_urgent) html += '<br><span style="background:#fee2e2;color:#dc2626;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:800;margin-top:4px;display:inline-block;">🔥 Urgent</span>';
+  html += '</div></div>';
+
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:16px;">';
+  html += '<div style="background:#f8fafc;border-radius:10px;padding:12px;text-align:center;"><div style="font-size:10px;font-weight:700;text-transform:uppercase;color:#64748b;margin-bottom:4px;">Order Date</div><div style="font-size:14px;font-weight:800;color:#1e293b;">'+fmtDate(o.order_date)+'</div></div>';
+  html += '<div style="background:#f8fafc;border-radius:10px;padding:12px;text-align:center;"><div style="font-size:10px;font-weight:700;text-transform:uppercase;color:#64748b;margin-bottom:4px;">Delivery Date</div><div style="font-size:14px;font-weight:800;color:#1e293b;">'+fmtDate(o.delivery_date)+'</div></div>';
+  html += '<div style="background:#f8fafc;border-radius:10px;padding:12px;text-align:center;"><div style="font-size:10px;font-weight:700;text-transform:uppercase;color:#64748b;margin-bottom:4px;">Garments</div><div style="font-size:14px;font-weight:800;color:#1e293b;">'+(o.garments||'—')+'</div></div>';
+  html += '</div></div>';
+
+  // Payment summary
+  html += '<div style="background:#fff;border-radius:16px;padding:20px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">';
+  html += '<div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#64748b;margin-bottom:14px;">💰 Payment Summary</div>';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px;">';
+  html += '<div style="background:#f0fdf4;border-radius:12px;padding:14px;text-align:center;"><div style="font-size:10px;font-weight:700;text-transform:uppercase;color:#15803d;margin-bottom:4px;">Kul Raqam</div><div style="font-size:20px;font-weight:900;color:#166534;">'+fmt(o.payable_amount)+'</div></div>';
+  html += '<div style="background:#eff6ff;border-radius:12px;padding:14px;text-align:center;"><div style="font-size:10px;font-weight:700;text-transform:uppercase;color:#1d4ed8;margin-bottom:4px;">Mila</div><div style="font-size:20px;font-weight:900;color:#1e40af;">'+fmt(paid)+'</div></div>';
+  html += '<div style="background:'+(o.remaining>0?'#fff1f2':'#f0fdf4')+';border-radius:12px;padding:14px;text-align:center;"><div style="font-size:10px;font-weight:700;text-transform:uppercase;color:'+(o.remaining>0?'#b91c1c':'#15803d')+';margin-bottom:4px;">Baaki</div><div style="font-size:20px;font-weight:900;color:'+(o.remaining>0?'#991b1b':'#166534')+';">'+fmt(o.remaining)+'</div></div>';
+  html += '</div>';
+  // Progress bar
+  html += '<div style="background:#e2e8f0;border-radius:20px;height:10px;overflow:hidden;"><div style="background:linear-gradient(90deg,#22c55e,#16a34a);height:100%;width:'+pct+'%;border-radius:20px;transition:width 0.5s;"></div></div>';
+  html += '<div style="text-align:right;font-size:12px;color:#64748b;margin-top:4px;">'+pct+'% paid</div>';
+  html += '</div>';
+
+  // Payment transactions
+  html += '<div style="background:#fff;border-radius:16px;padding:20px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">';
+  html += '<div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#64748b;margin-bottom:14px;">📋 Payment History</div>';
+  if (d.payments.length === 0) {
+    html += '<div style="text-align:center;padding:20px;color:#94a3b8;">Koi payment record nahi mila</div>';
+  } else {
+    html += '<table style="width:100%;border-collapse:collapse;">';
+    html += '<tr style="background:#f8fafc;"><th style="padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;color:#64748b;">Date</th><th style="padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;color:#64748b;">Mode</th><th style="padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;color:#64748b;">Note</th><th style="padding:10px 12px;text-align:right;font-size:11px;text-transform:uppercase;color:#64748b;">Amount</th></tr>';
+    d.payments.forEach(function(p, i) {
+      var bg = i%2===0 ? '#fff' : '#f8fafc';
+      var modeIcon = p.mode==='cash'?'💵':'📱';
+      html += '<tr style="background:'+bg+';border-bottom:1px solid #f1f5f9;">';
+      html += '<td style="padding:12px;font-size:13px;font-weight:700;color:#374151;">'+fmtDate(p.tx_date)+'</td>';
+      html += '<td style="padding:12px;font-size:13px;color:#374151;">'+modeIcon+' '+str(p.mode).toUpperCase()+'</td>';
+      html += '<td style="padding:12px;font-size:12px;color:#64748b;">'+str(p.note)+'</td>';
+      html += '<td style="padding:12px;text-align:right;font-size:14px;font-weight:800;color:#16a34a;">'+fmt(p.amount)+'</td>';
+      html += '</tr>';
+    });
+    html += '</table>';
+  }
+  html += '</div>';
+
+  // Other orders by same customer
+  if (d.other_orders && d.other_orders.length > 0) {
+    html += '<div style="background:#fff;border-radius:16px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">';
+    html += '<div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#64748b;margin-bottom:14px;">🧵 '+str(o.cname)+' ke Baaki Orders</div>';
+    d.other_orders.forEach(function(oo) {
+      var sc = oo.status==='delivered'?'#059669':oo.status==='ready'?'#2563eb':'#d97706';
+      html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f1f5f9;cursor:pointer;" onclick="document.getElementById('code-inp').value=''+oo.order_code+'';lookup(''+oo.order_code+'')">';
+      html += '<div><span style="font-weight:800;color:#4338ca;">#'+oo.order_code+'</span> <span style="font-size:12px;color:#64748b;">'+fmtDate(oo.order_date)+'</span></div>';
+      html += '<div style="display:flex;align-items:center;gap:8px;"><span style="font-size:13px;font-weight:700;color:#374151;">'+fmt(oo.payable_amount)+'</span><span style="background:'+sc+';color:#fff;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:800;">'+oo.status+'</span></div>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+
+  html += '</div>';
+  document.getElementById('result').innerHTML = html;
+}
+</script>
+{% endblock %}
