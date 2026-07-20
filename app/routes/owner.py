@@ -1344,6 +1344,93 @@ def fix_order_customer():
     conn.close()
     return "<h2>❌ Could not create customer</h2>"
 
+
+@bp.route("/order-ledger")
+@owner_required
+def order_ledger():
+    """Admin page — search order code to see full payment history."""
+    return render_template("owner/order_ledger.html", active_page="order_ledger")
+
+
+@bp.route("/api/order-ledger")
+@owner_required
+def api_order_ledger():
+    """Return order details + payment history + customer's other orders."""
+    code = request.args.get("code", "").strip().lstrip("#")
+    if not code:
+        return jsonify({"ok": False, "error": "Order code required"})
+
+    conn = get_db()
+
+    # Get order + customer
+    order = conn.execute("""
+        SELECT o.*, c.name as cname, c.mobile, c.address,
+               string_agg(oi.garment_type, ', ') as garments
+        FROM orders o
+        LEFT JOIN customers c ON c.id = o.customer_id
+        LEFT JOIN order_items oi ON oi.order_id = o.id
+        WHERE o.order_code = ?
+        GROUP BY o.id, c.name, c.mobile, c.address
+    """, (code,)).fetchone()
+
+    if not order:
+        conn.close()
+        return jsonify({"ok": False, "error": f"Order #{code} nahi mila"})
+
+    # Payment history from finance table (linked by order_id)
+    payments = conn.execute("""
+        SELECT tx_date, amount, mode, note, created_at
+        FROM finance
+        WHERE order_id = ? AND tx_type = 'income'
+        ORDER BY tx_date ASC, id ASC
+    """, (order["id"],)).fetchall()
+
+    # Also check advance payment if no finance records
+    if not payments and order["advance_paid"] > 0:
+        # Fallback: show order_date as payment date
+        payments = [{
+            "tx_date": order["order_date"] or order["created_at"] or "",
+            "amount": order["advance_paid"],
+            "mode": order["payment_mode"] or "cash",
+            "note": "Advance (order ke waqt)",
+            "created_at": ""
+        }]
+        payments_list = payments
+    else:
+        payments_list = [dict(p) for p in payments]
+
+    # Other orders by same customer
+    other_orders = conn.execute("""
+        SELECT order_code, order_date, delivery_date, payable_amount, remaining, status
+        FROM orders
+        WHERE customer_id = ? AND order_code != ?
+        ORDER BY id DESC LIMIT 20
+    """, (order["customer_id"], code)).fetchall()
+
+    conn.close()
+
+    return jsonify({
+        "ok": True,
+        "order": {
+            "order_code":    order["order_code"],
+            "cname":         order["cname"] or "—",
+            "mobile":        order["mobile"] or "",
+            "order_date":    order["order_date"] or "",
+            "delivery_date": order["delivery_date"] or "",
+            "delivered_at":  order["delivered_at"] or "",
+            "status":        order["status"],
+            "is_urgent":     bool(order["is_urgent"]),
+            "payable_amount":order["payable_amount"] or 0,
+            "advance_paid":  order["advance_paid"] or 0,
+            "remaining":     order["remaining"] or 0,
+            "payment_mode":  order["payment_mode"] or "cash",
+            "garments":      order["garments"] or "—",
+            "note":          order["note"] or "",
+        },
+        "payments": payments_list,
+        "other_orders": [dict(o) for o in other_orders],
+    })
+
 @bp.route("/api/fix-order-code")
 @owner_required
 def fix_order_code():
