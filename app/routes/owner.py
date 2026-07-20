@@ -3503,6 +3503,52 @@ def notify_log_view():
         urgent_count=urgent_count, logs=log_list)
 
 
+
+@bp.route("/api/salary/delete-advance", methods=["GET","POST"])
+@owner_required
+def api_delete_salary_advance():
+    """Delete a specific salary advance entry — GET to preview, POST to delete."""
+    name   = request.args.get("name", "").strip()
+    amount = request.args.get("amount", "").strip()
+    date_q = request.args.get("date", "").strip()
+
+    conn = get_db()
+
+    # Build query based on provided params
+    conditions, params = [], []
+    if name:
+        conditions.append("LOWER(employee_name) LIKE ?")
+        params.append(f"%{name.lower()}%")
+    if amount:
+        conditions.append("amount = ?")
+        params.append(float(amount))
+    if date_q:
+        conditions.append("advance_date LIKE ?")
+        params.append(f"{date_q}%")
+
+    where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
+    rows = conn.execute(f"SELECT id, employee_name, amount, note, advance_date FROM salary_advances {where} ORDER BY id DESC LIMIT 20", params).fetchall()
+
+    if request.method == "GET":
+        # Preview mode
+        table = "".join(f"<tr><td>{r['id']}</td><td>{r['employee_name']}</td><td>₹{r['amount']}</td><td>{r['note'] or ''}</td><td>{r['advance_date'] or ''}</td><td><form method='POST' action='/owner/api/salary/delete-advance?id={r['id']}' style='display:inline'><button style='background:#dc2626;color:#fff;border:none;padding:4px 10px;border-radius:6px;cursor:pointer;'>Delete</button></form></td></tr>" for r in rows)
+        conn.close()
+        return f"""<style>body{{font-family:sans-serif;padding:20px}} table{{border-collapse:collapse;width:100%}} td,th{{border:1px solid #e2e8f0;padding:8px;font-size:13px}}</style>
+        <h2>🔍 Salary Advances — Preview</h2>
+        <p>Found {len(rows)} entries</p>
+        <table><tr><th>ID</th><th>Name</th><th>Amount</th><th>Note</th><th>Date</th><th>Action</th></tr>{table}</table>
+        <br><a href='/owner/salary'>← Salary Page</a>"""
+
+    # POST = delete by id
+    del_id = request.args.get("id", "").strip()
+    if del_id:
+        conn.execute("DELETE FROM salary_advances WHERE id = ?", (del_id,))
+        conn.commit()
+        conn.close()
+        return f"<h2>✅ Entry #{del_id} deleted from salary_advances!</h2><a href='/owner/salary'>← Salary Page</a><br><a href='/owner/api/salary/delete-advance?name={name}&amount={amount}'>← Back to list</a>"
+    conn.close()
+    return "<h2>❌ No id provided</h2>"
+
 # ══════════════════════════════════════════════
 #  SALARY MODULE
 # ══════════════════════════════════════════════
