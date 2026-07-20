@@ -2495,6 +2495,13 @@ def delete_finance_entry(tx_id):
             )
 
     conn.execute("DELETE FROM finance WHERE id=?", (tx_id,))
+    # If it was a salary expense, also remove from salary_advances
+    if entry["tx_type"] == "expense" and entry["category"] and "salary" in entry["category"].lower():
+        emp_name = entry["employee_name"] or entry["note"] or ""
+        if emp_name:
+            conn.execute("""DELETE FROM salary_advances WHERE employee_name=?
+                AND amount=? AND advance_date=?""",
+                (emp_name, entry["amount"], entry["tx_date"]))
     conn.commit()
     conn.close()
     return jsonify({"ok": True})
