@@ -2399,6 +2399,7 @@ def api_worklog_delete(log_id):
 
 
 @bp.route("/api/work-log/delete-by-order", methods=["POST"])
+@owner_required
 def api_worklog_delete_by_order():
     """Delete all work log entries for a specific order code."""
     data = request.get_json(silent=True) or {}
