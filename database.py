@@ -454,11 +454,28 @@ def _save_recycled_codes(conn, codes):
 
 
 def add_recycled_code(code_str):
-    """DISABLED: Order codes are never recycled — deleted order numbers stay retired.
-    The New Order flow must always continue forward from last_order_code, never reuse
-    an old/deleted code (caused confusion when #1001/#2002 resurfaced unexpectedly).
-    This function is now a no-op, kept so existing call sites don't break."""
-    return
+    """Add deleted order code back to recycled pool so it can be reused.
+    Only codes >= (last_order_code - 50) are recycled to prevent very old
+    codes from resurfacing unexpectedly."""
+    if not str(code_str).isdigit():
+        return
+    conn = get_db()
+    try:
+        c = int(code_str)
+        # Safety: only recycle recent codes (within last 50 of current counter)
+        row = conn.execute("SELECT value FROM settings WHERE key='last_order_code'").fetchone()
+        last = int(row["value"]) if row else 0
+        if c < (last - 50):
+            return  # Too old — don't recycle to avoid confusion
+        existing = _get_recycled_codes(conn)
+        if c not in existing:
+            existing.append(c)
+            _save_recycled_codes(conn, existing)
+            conn.commit()
+    except Exception:
+        pass
+    finally:
+        conn.close()
 
 
 def release_order_code_if_latest(code_str):
@@ -489,14 +506,18 @@ def release_order_code_if_latest(code_str):
 
 def peek_order_code():
     """Return next available order code without incrementing.
-    Always continues forward from last_order_code — never reuses old/deleted codes."""
+    Checks recycled pool first (for recently deleted codes), then advances counter."""
     conn = get_db()
     try:
         existing = _get_existing_codes(conn)
+        # Check recycled pool — only use codes NOT already in use
+        recycled = _get_recycled_codes(conn)
+        usable = sorted([c for c in recycled if c not in existing])
+        if usable:
+            return str(usable[0])
         row = conn.execute("SELECT value FROM settings WHERE key='last_order_code'").fetchone()
         setting_last = int(row["value"]) if row else 3599
         candidate = setting_last + 1
-        # Skip any codes that already exist (safety net only)
         while candidate in existing:
             candidate += 1
         return str(candidate)
@@ -508,14 +529,23 @@ def peek_order_code():
 
 def next_order_code():
     """Increment and return next available order code.
-    Always continues forward from last_order_code — never reuses old/deleted codes."""
+    Checks recycled pool first (recently deleted codes), then advances counter."""
     conn = get_db()
     try:
         existing = _get_existing_codes(conn)
+        # Use recycled code if available (not already in use)
+        recycled = _get_recycled_codes(conn)
+        usable = sorted([c for c in recycled if c not in existing])
+        if usable:
+            code = usable[0]
+            recycled.remove(code)
+            _save_recycled_codes(conn, recycled)
+            conn.commit()
+            return str(code)
+        # No recycled codes — advance counter
         row = conn.execute("SELECT value FROM settings WHERE key='last_order_code'").fetchone()
         setting_last = int(row["value"]) if row else 3599
         candidate = setting_last + 1
-        # Skip any codes that already exist (safety net only)
         while candidate in existing:
             candidate += 1
         conn.execute("INSERT OR REPLACE INTO settings(key,value) VALUES('last_order_code',?)", (str(candidate),))
