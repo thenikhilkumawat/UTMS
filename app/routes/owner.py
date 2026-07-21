@@ -2909,7 +2909,7 @@ def backup_download():
                   "gallery_images","measurement_fields","notify_log"]
         for table in tables:
             try:
-                rows = conn.execute(f"SELECT * FROM {table}").fetchall()
+                rows = conn.execute(f"SELECT * FROM {table}").fetchall() if table in ["orders","customers","order_items","finance","work_logs","settings","salary_advances","order_images","notify_log"] else []
                 backup_data[table] = [dict(zip(r.keys(), r.values())) for r in rows]
             except Exception:
                 backup_data[table] = []
@@ -2954,7 +2954,7 @@ def backup_restore():
                 continue
             # Clear existing data
             try:
-                conn.execute(f"DELETE FROM {table}")
+                conn.execute(f"DELETE FROM {table}") if table in ["orders","customers","order_items","finance","work_logs","settings","salary_advances","order_images","notify_log"] else None
             except Exception:
                 continue
             # Insert rows
@@ -2964,7 +2964,7 @@ def backup_restore():
                 col_names = ", ".join(cols)
                 vals = [row[c] for c in cols]
                 try:
-                    conn.execute(f"INSERT INTO {table} ({col_names}) VALUES ({placeholders})", vals)
+                    conn.execute(f"INSERT INTO {table} ({col_names}) VALUES ({placeholders})", vals) if table in ["orders","customers","order_items","finance","work_logs","settings","salary_advances","order_images","notify_log"] else None
                 except Exception:
                     continue
         conn.commit()
