@@ -179,7 +179,15 @@ function filterRows() {
   var words = raw.split(/\s+/).filter(Boolean);
   document.querySelectorAll(".orow").forEach(function(row) {
     var srch   = (row.dataset.s || "").toLowerCase();
-    var matchQ = words.length === 0 || words.every(function(w){ return srch.includes(w); });
+    var matchQ;
+    if (words.length === 0) {
+      matchQ = true;
+    } else if (/^\d+$/.test(raw)) {
+      var code = (row.dataset.code || "");
+      matchQ = code === raw || code.startsWith(raw);
+    } else {
+      matchQ = words.every(function(w){ return srch.includes(w); });
+    }
     var matchF = activeTab === "all" || row.dataset.status === activeTab;
     row.style.display = (matchQ && matchF) ? "" : "none";
   });
