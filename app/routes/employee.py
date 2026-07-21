@@ -4,6 +4,7 @@ from database import get_db, get_setting, next_order_code, peek_order_code, next
 import json, os, time
 from config import Config
 from app.common_names import COMMON_NAMES_LOOKUP
+from auth import owner_required
 
 bp = Blueprint("employee", __name__)
 
