@@ -9,6 +9,12 @@ from database import init_db, get_setting
 app = Flask(__name__, template_folder="templates", static_folder="static", static_url_path="/static")
 app.secret_key = Config.SECRET_KEY
 
+# ── Security headers ──────────────────────────────────────
+app.config["SESSION_COOKIE_SECURE"]   = True   # HTTPS only
+app.config["SESSION_COOKIE_HTTPONLY"] = True   # No JS access
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"  # CSRF protection
+app.config["SESSION_COOKIE_NAME"]     = "utms_session"
+
 # ── asset_v(): real cache-busting for static files ──────────────────────────
 # Static files are served with a 1-year "immutable" Cache-Control header, which
 # tells the browser to never even revalidate a given URL again once cached.
@@ -139,6 +145,6 @@ if __name__ == "__main__":
     print("  Owner PIN:  " + get_setting("owner_pin","1234"))
     print("  Next order: #" + str(int(get_setting("last_order_code","3599")) + 1))
     print("="*50 + "\n")
-    app.run(debug=True, host="0.0.0.0", port=5000)
+    app.run(debug=False, host="0.0.0.0", port=5000)
 
 # restart-trigger 2026-07-21 05:53:53
