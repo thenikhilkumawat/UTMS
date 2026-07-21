@@ -3,7 +3,7 @@ import os
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 class Config:
-    SECRET_KEY    = "uttam-tailors-v2-secret-2025"
+    SECRET_KEY = "5ade23bb8401c159f344d87f96353d990fbd264d95c0ff691974dc00f0c91a37"
     # PostgreSQL URL from Render environment variable
     DATABASE_URL  = os.environ.get("DATABASE_URL", "")
     # Fallback to SQLite for local testing only
