@@ -768,6 +768,7 @@ def list_images(order_code):
 
 
 @bp.route("/api/apply-current-rates")
+@owner_required
 def apply_current_rates():
     """Update work_log making_rate for today and yesterday entries to current admin stitching rates."""
     from database import invalidate_settings_cache
