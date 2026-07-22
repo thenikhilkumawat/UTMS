@@ -27,6 +27,23 @@ jobs:
             git checkout -- uttam.db-shm uttam.db-wal 2>/dev/null || true
             git reset --hard origin/website
             echo "AFTER:  $(git rev-parse HEAD)"
+
+            # ── Ensure nginx allows large uploads (20 MB) ─────────────────
+            for CONF in /etc/nginx/sites-enabled/* /etc/nginx/conf.d/*.conf; do
+              [ -f "$CONF" ] || continue
+              if ! grep -q "client_max_body_size" "$CONF"; then
+                echo "Patching nginx client_max_body_size in $CONF"
+                sudo sed -i "0,/server[[:space:]]*{/s/server[[:space:]]*{/server {\n    client_max_body_size 20m;/" "$CONF"
+              fi
+            done
+            if sudo nginx -t 2>/dev/null; then
+              sudo systemctl reload nginx
+              echo "nginx reloaded with client_max_body_size 20m"
+            else
+              echo "nginx config test failed — skipping reload"
+            fi
+            # ─────────────────────────────────────────────────────────────
+
             sudo systemctl restart website
             for i in $(seq 1 15); do
               if sudo systemctl is-active --quiet website; then
