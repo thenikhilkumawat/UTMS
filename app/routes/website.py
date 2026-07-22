@@ -2514,6 +2514,37 @@ def api_tokens_verify_payment():
         return jsonify({"ok": False, "error": str(ex)})
 
 
+@website_bp.route("/api/tokens/history")
+def api_tokens_history():
+    """Return logged-in customer's token balance + full transaction log."""
+    acc = _current_account()
+    if not acc:
+        return jsonify({"ok": False, "error": "Not logged in."}), 401
+    db = get_db()
+    try:
+        bal_row = db.execute(
+            "SELECT token_balance FROM web_accounts WHERE id=?", (acc["id"],)
+        ).fetchone()
+        balance = int(bal_row["token_balance"] or 0) if bal_row else 0
+        rows = db.execute(
+            """SELECT id, tokens, type, razorpay_payment_id, created_at
+               FROM token_transactions
+               WHERE account_id=?
+               ORDER BY id DESC LIMIT 100""",
+            (acc["id"],)
+        ).fetchall()
+        # Reverse-map token count → amount paid for purchase transactions
+        _pack_map = {5: 49, 15: 99, 40: 199}
+        txns = []
+        for r in rows:
+            t = dict(r)
+            t["amount_paid"] = _pack_map.get(t["tokens"], 0) if t["type"] == "purchase" else 0
+            txns.append(t)
+        return jsonify({"ok": True, "balance": balance, "transactions": txns})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)})
+
+
 @website_bp.route("/api/verify-otp", methods=["POST"])
 @_rl("10 per minute; 20 per hour")   # Brute-force guard: max 10 guesses/min per IP
 def api_verify_otp():

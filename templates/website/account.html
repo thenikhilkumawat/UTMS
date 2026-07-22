@@ -100,6 +100,7 @@
       <button class="acctpg-tab" data-tab="measurements" onclick="acctPgSetTab('measurements')">Measurements</button>
       <button class="acctpg-tab" data-tab="occasions" onclick="acctPgSetTab('occasions')">Occasions</button>
       <button class="acctpg-tab" data-tab="wishlist" onclick="acctPgSetTab('wishlist')">Wishlist</button>
+      <button class="acctpg-tab" data-tab="credits" onclick="acctPgSetTab('credits')">AI Credits</button>
       <button class="acctpg-tab" data-tab="payments" onclick="acctPgSetTab('payments')">Payments</button>
       <button class="acctpg-tab" data-tab="settings" onclick="acctPgSetTab('settings')">Settings</button>
     </div>
@@ -130,7 +131,7 @@
 <script>
 (function(){
   var acctPgState = { acc: null, tab: 'profile', formTab: 'signup' };
-  var ACCTPG_TABS = ['profile','addresses','orders','measurements','occasions','wishlist','payments','settings'];
+  var ACCTPG_TABS = ['profile','addresses','orders','measurements','occasions','wishlist','credits','payments','settings'];
 
   window.acctPgSetFormTab = function(t){
     acctPgState.formTab = t;
@@ -270,6 +271,7 @@
     if (t === 'measurements') return acctPgRenderMeasurements(pane);
     if (t === 'occasions') return acctPgRenderOccasions(pane);
     if (t === 'wishlist') return acctPgRenderWishlist(pane);
+    if (t === 'credits')  return acctPgRenderCredits(pane);
     if (t === 'payments') return acctPgRenderPayments(pane);
     if (t === 'settings') return acctPgRenderSettings(pane);
   }
@@ -651,6 +653,116 @@
     var icons = {upi:'📱',card:'💳',cash:'💵',netbanking:'🏦'};
     return icons[type] || '💳';
   }
+  // ── AI Credits ──────────────────────────────────────────────────────────────
+  function acctPgRenderCredits(pane){
+    pane.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:1rem 0;">Loading…</div>';
+    fetch('/api/tokens/history').then(function(r){ return r.json(); }).then(function(d){
+      if(!d.ok){ pane.innerHTML='<div class="acctpg-card" style="color:var(--muted);">Could not load credits.</div>'; return; }
+      var bal = d.balance || 0;
+      var txns = d.transactions || [];
+
+      // Balance card
+      var html = '<div class="acctpg-card" style="background:linear-gradient(135deg,#1e110a 0%,#3a200f 100%);color:#fff;border:none;">';
+      html += '<div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;opacity:.7;margin-bottom:4px;">AI Design Credits</div>';
+      html += '<div style="font-size:42px;font-weight:800;font-family:var(--fm);line-height:1.1;">' + bal + '<span style="font-size:16px;font-weight:500;margin-left:6px;opacity:.8;">credits</span></div>';
+      html += '<div style="font-size:12px;opacity:.65;margin-top:6px;">Each AI outfit design = 1 credit</div>';
+      html += '</div>';
+
+      // Buy packs
+      html += '<div class="acctpg-card">';
+      html += '<div style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--dark);">Buy More Credits</div>';
+      html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">';
+      var packs = [{t:5,p:49,label:'Starter'},{t:15,p:99,label:'Popular'},{t:40,p:199,label:'Best Value'}];
+      packs.forEach(function(pk){
+        var isPopular = pk.t===15;
+        html += '<div onclick="acctBuyPack('+pk.t+')" style="border:2px solid '+(isPopular?'var(--gold)':'var(--border)')+';border-radius:10px;padding:14px 10px;text-align:center;cursor:pointer;position:relative;background:'+(isPopular?'#fff8f0':'#fff')+';">';
+        if(isPopular) html += '<div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--gold);color:#fff;font-size:9px;font-weight:800;letter-spacing:.06em;padding:2px 8px;border-radius:20px;white-space:nowrap;">MOST POPULAR</div>';
+        html += '<div style="font-size:22px;font-weight:800;color:var(--dark);">'+pk.t+'</div>';
+        html += '<div style="font-size:10px;color:var(--muted);margin-bottom:6px;">credits</div>';
+        html += '<div style="font-size:16px;font-weight:700;color:var(--gold);">₹'+pk.p+'</div>';
+        html += '<div style="font-size:9.5px;color:var(--muted);">₹'+(pk.p/pk.t).toFixed(1)+'/credit</div>';
+        html += '</div>';
+      });
+      html += '</div>';
+      html += '<div id="creditsPayMsg" style="font-size:12px;color:var(--muted);margin-top:10px;text-align:center;"></div>';
+      html += '</div>';
+
+      // Transaction history
+      html += '<div class="acctpg-card">';
+      html += '<div style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--dark);">Transaction History</div>';
+      if(!txns.length){
+        html += '<div style="color:var(--muted);font-size:13px;">No transactions yet.</div>';
+      } else {
+        html += '<table style="width:100%;border-collapse:collapse;font-size:12.5px;">';
+        html += '<thead><tr style="border-bottom:2px solid var(--border);color:var(--muted);">';
+        html += '<th style="text-align:left;padding:6px 4px;">Date</th>';
+        html += '<th style="text-align:left;padding:6px 4px;">Description</th>';
+        html += '<th style="text-align:right;padding:6px 4px;">Credits</th>';
+        html += '<th style="text-align:right;padding:6px 4px;">Amount</th>';
+        html += '</tr></thead><tbody>';
+        var typeLabel = {purchase:'Purchase',debit:'AI Design Used',signup_bonus:'Welcome Bonus'};
+        var typeIcon  = {purchase:'🛒',debit:'🎨',signup_bonus:'🎁'};
+        txns.forEach(function(t){
+          var isCredit = t.tokens > 0;
+          var amtStr   = t.amount_paid ? '₹'+t.amount_paid : '—';
+          var dateStr  = t.created_at ? t.created_at.slice(0,10) : '—';
+          html += '<tr style="border-bottom:1px solid var(--border);">';
+          html += '<td style="padding:9px 4px;color:var(--muted);">'+dateStr+'</td>';
+          html += '<td style="padding:9px 4px;">'+(typeIcon[t.type]||'💳')+' '+(typeLabel[t.type]||t.type)+'</td>';
+          html += '<td style="padding:9px 4px;text-align:right;font-weight:700;color:'+(isCredit?'#15803d':'#b91c1c')+';">'+(isCredit?'+':'')+t.tokens+'</td>';
+          html += '<td style="padding:9px 4px;text-align:right;color:var(--muted);">'+amtStr+'</td>';
+          html += '</tr>';
+        });
+        html += '</tbody></table>';
+      }
+      html += '</div>';
+
+      pane.innerHTML = html;
+    }).catch(function(){
+      pane.innerHTML = '<div class="acctpg-card" style="color:var(--muted);">Could not load credits.</div>';
+    });
+  }
+
+  function acctBuyPack(tokens){
+    var msg = document.getElementById('creditsPayMsg');
+    if(msg) msg.textContent = 'Opening payment…';
+    fetch('/api/tokens/create-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tokens:tokens})})
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if(!d.ok){ if(msg) msg.textContent = d.error||'Error. Please try again.'; return; }
+      var rzp = new Razorpay({
+        key: d.razorpay_key,
+        order_id: d.order_id,
+        amount: d.amount,
+        currency:'INR',
+        name:'Uttam Tailors',
+        description: tokens+' AI Credits',
+        theme:{color:'#C8903A'},
+        handler: function(resp){
+          if(msg) msg.textContent = 'Verifying payment…';
+          fetch('/api/tokens/verify-payment',{method:'POST',headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({razorpay_payment_id:resp.razorpay_payment_id,
+              razorpay_order_id:resp.razorpay_order_id,
+              razorpay_signature:resp.razorpay_signature,
+              tokens:tokens})})
+          .then(function(r){ return r.json(); })
+          .then(function(v){
+            if(v.ok){
+              if(msg){ msg.style.color='#15803d'; msg.textContent='✓ '+tokens+' credits added! New balance: '+v.token_balance; }
+              setTimeout(function(){ acctPgRenderCredits(document.getElementById('acctPgPane')); },1200);
+            } else {
+              if(msg) msg.textContent = v.error||'Verification failed.';
+            }
+          });
+        },
+        modal:{ondismiss:function(){ if(msg) msg.textContent=''; }}
+      });
+      rzp.open();
+    }).catch(function(){
+      if(msg) msg.textContent = 'Network error. Please try again.';
+    });
+  }
+
   function acctPgRenderPayments(pane){
     fetch('/api/account/payment-methods').then(function(r){ return r.json(); }).then(function(d){
       var methods = d.methods || [];
