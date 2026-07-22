@@ -2595,6 +2595,7 @@ def api_pickup_order():
         "payable_amount":   o["payable_amount"] or 0,
         "advance_paid":     o["advance_paid"] or 0,
         "remaining":        o["remaining"] or 0,
+        "payment_mode":     o["payment_mode"] or "",
         "note":             o["note"] or "",
         "delivered_at_fmt": fmtd(delivered_at_raw[:10]),
         "garments": [{
