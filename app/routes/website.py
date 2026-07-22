@@ -2480,8 +2480,10 @@ def api_tokens_create_order():
     amount_paise = TOKEN_PACKS[tokens]
     db = get_db()
     try:
-        rz_key_id  = (db.execute("SELECT value FROM settings WHERE key='razorpay_key_id'").fetchone() or {}).get("value","").strip()
-        rz_key_sec = (db.execute("SELECT value FROM settings WHERE key='razorpay_key_secret'").fetchone() or {}).get("value","").strip()
+        _rz1 = db.execute("SELECT value FROM settings WHERE key='razorpay_key_id'").fetchone()
+        _rz2 = db.execute("SELECT value FROM settings WHERE key='razorpay_key_secret'").fetchone()
+        rz_key_id  = (_rz1["value"] if _rz1 else "").strip()
+        rz_key_sec = (_rz2["value"] if _rz2 else "").strip()
     except Exception:
         rz_key_id = rz_key_sec = ""
     if not rz_key_id or not rz_key_sec:
@@ -2519,7 +2521,8 @@ def api_tokens_verify_payment():
         return jsonify({"ok": False, "error": "Invalid payment data."})
     db = get_db()
     try:
-        rz_key_sec = (db.execute("SELECT value FROM settings WHERE key='razorpay_key_secret'").fetchone() or {}).get("value","").strip()
+        _rz2b = db.execute("SELECT value FROM settings WHERE key='razorpay_key_secret'").fetchone()
+        rz_key_sec = (_rz2b["value"] if _rz2b else "").strip()
     except Exception:
         rz_key_sec = ""
     if not rz_key_sec:
