@@ -2466,6 +2466,29 @@ def api_email_login():
         "account": {"id": acc["id"], "name": acc["name"] or "", "email": email}
     })
 
+
+@website_bp.route("/api/tokens/debug-keys")
+def api_tokens_debug_keys():
+    """Temporary debug — shows key format without exposing full values."""
+    from flask import session as _s
+    # Only owner can call this
+    acc = _current_account()
+    if not acc:
+        return jsonify({"ok": False, "error": "not logged in"})
+    db = get_db()
+    _rz1 = db.execute("SELECT value FROM settings WHERE key='razorpay_key_id'").fetchone()
+    _rz2 = db.execute("SELECT value FROM settings WHERE key='razorpay_key_secret'").fetchone()
+    key_id  = (_rz1["value"] if _rz1 else "")
+    key_sec = (_rz2["value"] if _rz2 else "")
+    return jsonify({
+        "key_id_prefix": key_id[:12] if key_id else "(empty)",
+        "key_id_len": len(key_id),
+        "key_sec_prefix": key_sec[:8] if key_sec else "(empty)",
+        "key_sec_len": len(key_sec),
+        "key_id_has_spaces": " " in key_id or key_id != key_id.strip(),
+        "key_sec_has_spaces": " " in key_sec or key_sec != key_sec.strip(),
+    })
+
 @website_bp.route("/api/tokens/create-order", methods=["POST"])
 def api_tokens_create_order():
     """Create a Razorpay order for a token pack purchase."""
