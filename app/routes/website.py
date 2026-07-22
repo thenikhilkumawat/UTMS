@@ -499,12 +499,31 @@ def _render_product(item_id):
         try:
             style_options_rows = db.execute("SELECT * FROM garment_style_options WHERE item_id=? ORDER BY sort_order,id", (item_id,)).fetchall()
             style_options = {}
+            # style_value_images: {group: {value_label: image_url}} — for image chips
+            style_value_images = {}
             for r in style_options_rows:
                 g = r["option_group"]
                 if g not in style_options:
-                    style_options[g] = {"label": r["option_label"], "values": r["option_values"].split(",")}
-        except:
+                    # Try to load per-value rows (new system with image_url + ai_prompt)
+                    try:
+                        val_rows = db.execute(
+                            "SELECT value_label, image_url FROM garment_style_values WHERE option_id=? ORDER BY sort_order,id",
+                            (r["id"],)
+                        ).fetchall()
+                    except Exception:
+                        val_rows = []
+                    if val_rows:
+                        vals = [v["value_label"] for v in val_rows if v["value_label"]]
+                        imgs = {v["value_label"]: v["image_url"] for v in val_rows if v.get("image_url")}
+                        if imgs:
+                            style_value_images[g] = imgs
+                    else:
+                        # Fallback: comma-split from option_values column
+                        vals = [x.strip() for x in (r["option_values"] or "").split(",") if x.strip()]
+                    style_options[g] = {"label": r["option_label"], "values": vals}
+        except Exception:
             style_options = {}
+            style_value_images = {}
         try: item_tiles = db.execute("SELECT * FROM web_item_tiles WHERE item_id=? ORDER BY sort_order", (item_id,)).fetchall()
         except: item_tiles = []
         try: item_faq = db.execute("SELECT * FROM web_item_faq WHERE item_id=? ORDER BY sort_order", (item_id,)).fetchall()
@@ -558,7 +577,7 @@ def _render_product(item_id):
         return render_template("website/product.html", active="services",
             item=item, images=images, videos=videos,
             reviews=reviews, related=related, item_media=get_item_media(),
-            style_options=style_options, fabrics=fabrics,
+            style_options=style_options, style_value_images=style_value_images, fabrics=fabrics,
             item_tiles=item_tiles, item_faq=item_faq, item_bullets=item_bullets,
             complete_look=complete_look, questions=questions, ai_garment_phrase=ai_garment_phrase,
             page_meta=page_meta)
@@ -2009,9 +2028,15 @@ def generate_style_preview():
             return jsonify({"ok": True, "image_url": img_url, "prompt": prompt,
                             "previews_remaining": remaining, "token_balance": token_balance})
 
+        def _extract_url(output):
+            url = (output[0] if isinstance(output, list) else output) or ""
+            return url.strip()
+
         if result.get("status") == "succeeded":
-            output = result.get("output")
-            return _record_and_respond((output[0] if isinstance(output, list) else output) or "")
+            img_url = _extract_url(result.get("output"))
+            if not img_url:
+                return jsonify({"ok": False, "error": "Generation returned no image — please try again."})
+            return _record_and_respond(img_url)
 
         pred_id = result.get("id")
         if not pred_id:
@@ -2022,8 +2047,10 @@ def generate_style_preview():
             poll = requests.get(f"https://api.replicate.com/v1/predictions/{pred_id}",
                                 headers={"Authorization": f"Bearer {api_key}"}, timeout=15).json()
             if poll.get("status") == "succeeded":
-                output = poll.get("output")
-                return _record_and_respond((output[0] if isinstance(output, list) else output) or "")
+                img_url = _extract_url(poll.get("output"))
+                if not img_url:
+                    return jsonify({"ok": False, "error": "Generation returned no image — please try again."})
+                return _record_and_respond(img_url)
             if poll.get("status") in ("failed", "canceled"):
                 return jsonify({"ok": False, "error": "Generation failed: " + str(poll.get("error", ""))})
         return jsonify({"ok": False, "error": "Timed out — please try again"})

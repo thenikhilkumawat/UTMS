@@ -512,14 +512,44 @@
         {% if style_options %}
         <div class="pdp-panel-section">
           <div class="pdp-section-title">Style &amp; Finishing</div>
+          {# JS var: {group: {value_label: image_url}} — injected once before pills #}
+          <script>var _STYLE_IMGS={{ style_value_images|tojson }};var _pdpStylePreviewEl=null;</script>
           {% for group, opts in style_options.items() %}
           <div class="pdp-field-group">
             <span class="pdp-field-label">{{ opts.label }}</span>
+            {# Show image chips if any value in this group has an image, else text pills #}
+            {% set has_images = style_value_images.get(group) %}
+            {% if has_images %}
+            <div class="pdp-style-chips" data-group="{{ group }}" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">
+              {% for val in opts["values"] %}
+              {% set img = style_value_images.get(group, {}).get(val, '') %}
+              <div class="pdp-style-chip" data-group="{{ group }}" data-val="{{ val|e }}"
+                onclick="selectStyleChip('{{ group }}','{{ val|e }}',this)"
+                title="{{ val|e }}"
+                style="cursor:pointer;border:2px solid var(--border);border-radius:8px;overflow:hidden;width:64px;text-align:center;transition:border-color .15s;background:#fff;">
+                {% if img %}
+                <img src="{{ img }}" alt="{{ val|e }}" loading="lazy"
+                  style="width:64px;height:64px;object-fit:cover;display:block;"
+                  onerror="this.style.display='none'">
+                {% else %}
+                <div style="width:64px;height:64px;display:flex;align-items:center;justify-content:center;font-size:20px;background:var(--bg3);">✂️</div>
+                {% endif %}
+                <div style="font-size:10px;padding:3px 2px;line-height:1.2;color:var(--dark);font-weight:500;">{{ val }}</div>
+              </div>
+              {% endfor %}
+            </div>
+            {# Image preview box — shown below chips on selection #}
+            <div id="stylePreview_{{ group }}" style="display:none;margin-top:10px;border-radius:10px;overflow:hidden;max-width:220px;border:1.5px solid var(--gold);">
+              <img id="stylePreviewImg_{{ group }}" src="" alt="" style="width:100%;display:block;object-fit:cover;max-height:200px;">
+              <div id="stylePreviewLbl_{{ group }}" style="font-size:11px;font-weight:700;text-align:center;padding:5px 8px;background:var(--gold);color:#fff;letter-spacing:.04em;text-transform:uppercase;"></div>
+            </div>
+            {% else %}
             <div class="pdp-style-pills" data-group="{{ group }}">
               {% for val in opts["values"] %}
               <button class="pdp-style-pill" onclick="selectStyle('{{ group }}','{{ val|e }}',this)">{{ val }}</button>
               {% endfor %}
             </div>
+            {% endif %}
           </div>
           {% endfor %}
         </div>
@@ -1033,6 +1063,31 @@ function selectStyle(group, val, btn){
   var container = btn.closest('[data-group="'+group+'"]');
   if(container) container.querySelectorAll('.pdp-style-pill').forEach(function(b){b.classList.remove('active');});
   btn.classList.add('active');
+}
+
+function selectStyleChip(group, val, chip){
+  _pdpSelectedStyles[group] = val;
+  // Highlight selected chip
+  var container = chip.closest('[data-group="'+group+'"]');
+  if(container) container.querySelectorAll('.pdp-style-chip').forEach(function(c){
+    c.style.borderColor='var(--border)';
+    c.style.boxShadow='none';
+  });
+  chip.style.borderColor='var(--gold)';
+  chip.style.boxShadow='0 0 0 2px rgba(200,144,58,.25)';
+  // Show image preview if this value has an image
+  var imgs = (_STYLE_IMGS && _STYLE_IMGS[group]) || {};
+  var imgUrl = imgs[val] || '';
+  var previewEl  = document.getElementById('stylePreview_' + group);
+  var previewImg = document.getElementById('stylePreviewImg_' + group);
+  var previewLbl = document.getElementById('stylePreviewLbl_' + group);
+  if(previewEl && imgUrl){
+    if(previewImg) previewImg.src = imgUrl;
+    if(previewLbl) previewLbl.textContent = val;
+    previewEl.style.display = 'block';
+  } else if(previewEl){
+    previewEl.style.display = 'none';
+  }
 }
 
 function selectFabric(id, card){
