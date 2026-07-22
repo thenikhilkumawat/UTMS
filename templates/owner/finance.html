@@ -11,7 +11,35 @@
 <div class="page-body" style="padding:16px 24px;">
 
   <!-- Date filter -->
-  <div style="background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:12px 18px;margin-bottom:14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+  <div style="background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:10px 14px;margin-bottom:14px;">
+
+    <!-- Row 1: Compact date filter -->
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+      <span style="font-size:11px;font-weight:700;color:var(--text-muted);white-space:nowrap;">📅 Period:</span>
+      <input type="date" id="from-date" value="{{ from_date }}" style="padding:4px 8px;border:1.5px solid var(--border);border-radius:7px;font-size:12px;width:130px;">
+      <span style="font-size:11px;color:var(--text-muted);">–</span>
+      <input type="date" id="to-date" value="{{ to_date }}" style="padding:4px 8px;border:1.5px solid var(--border);border-radius:7px;font-size:12px;width:130px;">
+      <button onclick="applyFilter()" class="btn btn-primary btn-sm" style="padding:4px 10px;font-size:11px;">Go</button>
+      <div style="display:flex;gap:4px;margin-left:auto;">
+        <button onclick="setPreset('today')"  class="btn btn-ghost btn-sm" style="padding:3px 8px;font-size:11px;">Today</button>
+        <button onclick="setPreset('week')"   class="btn btn-ghost btn-sm" style="padding:3px 8px;font-size:11px;">Week</button>
+        <button onclick="setPreset('month')"  class="btn btn-ghost btn-sm" style="padding:3px 8px;font-size:11px;">Month</button>
+        <button onclick="setPreset('all')"    class="btn btn-ghost btn-sm" style="padding:3px 8px;font-size:11px;">All</button>
+      </div>
+    </div>
+
+    <!-- Row 2: Order code search -->
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="font-size:11px;font-weight:700;color:var(--text-muted);white-space:nowrap;">🔍 Order:</span>
+      <input type="text" id="order-search" placeholder="Code daalo jaise 3937..." oninput="orderSearch(this.value)"
+        style="flex:1;padding:4px 10px;border:1.5px solid #6366f1;border-radius:7px;font-size:13px;outline:none;">
+      <button onclick="orderSearch('');document.getElementById('order-search').value=''" class="btn btn-ghost btn-sm" style="padding:3px 8px;font-size:11px;">✕ Clear</button>
+    </div>
+
+    <!-- Order history panel -->
+    <div id="order-history-panel" style="display:none;margin-top:10px;border-top:1px solid var(--border);padding-top:10px;"></div>
+
+  </div><div style="background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:12px 18px;margin-bottom:14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
     <span style="font-size:13px;font-weight:700;color:var(--text-muted);">Period:</span>
     <input type="date" id="from-date" value="{{ from_date }}" style="padding:6px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;">
     <span style="color:var(--text-muted);">to</span>
@@ -360,5 +388,47 @@ const SECS=5*60;let last=Date.now();
 ["click","keydown","mousemove","touchstart"].forEach(ev=>document.addEventListener(ev,()=>{last=Date.now();},{passive:true}));
 setInterval(()=>{if(Math.floor((Date.now()-last)/1000)>=SECS)window.location.href="/owner/login?expired=1";},5000);
 window.addEventListener("pageshow",function(e){if(e.persisted){fetch("/owner/logout",{method:"POST",keepalive:true}).finally(()=>{window.location.href="/owner/login";})}});
+
+function orderSearch(code) {
+  var panel = document.getElementById('order-history-panel');
+  if (!code || !code.trim()) {
+    panel.style.display = 'none';
+    panel.innerHTML = '';
+    return;
+  }
+  panel.style.display = 'block';
+  panel.innerHTML = '<div style="text-align:center;padding:10px;color:#94a3b8;font-size:12px;">⏳ Dhoondh raha hai...</div>';
+  fetch('/owner/api/order-ledger?code=' + encodeURIComponent(code.trim()))
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (!d.ok) {
+        panel.innerHTML = '<div style="color:#dc2626;font-size:12px;padding:8px;">❌ ' + (d.error||'Order nahi mila') + '</div>';
+        return;
+      }
+      var o = d.order;
+      var paid = o.payable_amount - o.remaining;
+      var rows = d.payments.map(function(p){
+        var mIcon = p.mode==='cash'?'💵':'📱';
+        return '<tr><td style="padding:6px 8px;font-size:12px;font-weight:600;">'+p.tx_date.substring(0,10)+'</td>'
+          +'<td style="padding:6px 8px;font-size:12px;">'+mIcon+' '+( p.mode||'').toUpperCase()+'</td>'
+          +'<td style="padding:6px 8px;font-size:12px;color:#64748b;">'+( p.note||'')+'</td>'
+          +'<td style="padding:6px 8px;font-size:13px;font-weight:800;color:#16a34a;text-align:right;">₹'+Math.round(p.amount||0)+'</td></tr>';
+      }).join('');
+      panel.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
+        +'<div><b style="color:#4338ca;">#'+o.order_code+'</b> · <b>'+o.cname+'</b> · '+o.garments+'</div>'
+        +'<div style="display:flex;gap:12px;font-size:12px;">'
+        +'<span>Total: <b>₹'+Math.round(o.payable_amount)+'</b></span>'
+        +'<span style="color:#16a34a;">Mila: <b>₹'+Math.round(paid)+'</b></span>'
+        +(o.remaining>0?'<span style="color:#dc2626;">Baaki: <b>₹'+Math.round(o.remaining)+'</b></span>':'<span style="color:#16a34a;">✅ Full Paid</span>')
+        +'</div></div>'
+        +(rows ? '<table style="width:100%;border-collapse:collapse;"><tr style="background:#f8fafc;">'
+          +'<th style="padding:5px 8px;font-size:10px;text-align:left;text-transform:uppercase;color:#64748b;">Date</th>'
+          +'<th style="padding:5px 8px;font-size:10px;text-align:left;text-transform:uppercase;color:#64748b;">Mode</th>'
+          +'<th style="padding:5px 8px;font-size:10px;text-align:left;text-transform:uppercase;color:#64748b;">Note</th>'
+          +'<th style="padding:5px 8px;font-size:10px;text-align:right;text-transform:uppercase;color:#64748b;">Amount</th></tr>'
+          +rows+'</table>'
+        : '<div style="color:#94a3b8;font-size:12px;text-align:center;padding:8px;">Koi payment record nahi mila</div>');
+    }).catch(function(){ panel.innerHTML = '<div style="color:#dc2626;font-size:12px;">❌ Error</div>'; });
+}
 </script>
 {% endblock %}
