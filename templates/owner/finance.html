@@ -39,18 +39,6 @@
     <!-- Order history panel -->
     <div id="order-history-panel" style="display:none;margin-top:10px;border-top:1px solid var(--border);padding-top:10px;"></div>
 
-  </div><div style="background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:12px 18px;margin-bottom:14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
-    <span style="font-size:13px;font-weight:700;color:var(--text-muted);">Period:</span>
-    <input type="date" id="from-date" value="{{ from_date }}" style="padding:6px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;">
-    <span style="color:var(--text-muted);">to</span>
-    <input type="date" id="to-date" value="{{ to_date }}" style="padding:6px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;">
-    <button onclick="applyFilter()" class="btn btn-primary btn-sm">Apply</button>
-    <div style="display:flex;gap:6px;margin-left:auto;">
-      <button onclick="setPreset('today')" class="btn btn-ghost btn-sm">Today</button>
-      <button onclick="setPreset('week')" class="btn btn-ghost btn-sm">This Week</button>
-      <button onclick="setPreset('month')" class="btn btn-ghost btn-sm">This Month</button>
-      <button onclick="setPreset('year')" class="btn btn-ghost btn-sm">This Year</button>
-    </div>
   </div>
 
   <!-- Summary cards — click to filter -->
