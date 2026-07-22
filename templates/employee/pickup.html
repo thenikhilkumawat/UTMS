@@ -103,6 +103,14 @@
               <span style="font-size:12px;font-weight:800;color:#dc2626;">Due</span>
               <span style="font-size:16px;font-weight:900;color:#dc2626;" id="dc-remaining">—</span>
             </div>
+            <div style="display:flex;justify-content:space-between;margin-top:6px;" id="dc-mode-row" style="display:none;">
+              <span style="font-size:11px;color:var(--text-muted);">Payment Mode</span>
+              <span style="font-size:12px;font-weight:800;" id="dc-mode">—</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:4px;" id="dc-deldate-row" style="display:none;">
+              <span style="font-size:11px;color:var(--text-muted);">Delivered On</span>
+              <span style="font-size:12px;font-weight:800;color:#16a34a;" id="dc-deldate">—</span>
+            </div>
           </div>
         </div>
 
@@ -285,6 +293,29 @@ function loadOrder(code) {
       document.getElementById("dc-total").textContent    = "₹" + (o.payable_amount||o.total||0);
       document.getElementById("dc-advance").textContent  = "₹" + (o.advance_paid||0);
       document.getElementById("dc-remaining").textContent= "₹" + (o.remaining||0);
+
+      // Payment mode
+      var modeEl = document.getElementById("dc-mode");
+      var modeRow = document.getElementById("dc-mode-row");
+      if (modeEl && o.payment_mode) {
+        var modeIcon = o.payment_mode === "cash" ? "💵 नकद (Cash)"
+                     : o.payment_mode === "upi"  ? "📱 UPI"
+                     : o.payment_mode === "bank" ? "🏦 Bank"
+                     : o.payment_mode.toUpperCase();
+        modeEl.textContent = modeIcon;
+        if (modeRow) modeRow.style.display = "flex";
+      }
+
+      // Delivered date
+      var delEl  = document.getElementById("dc-deldate");
+      var delRow = document.getElementById("dc-deldate-row");
+      if (delEl && o.delivered_at_fmt) {
+        delEl.textContent = "✅ " + o.delivered_at_fmt;
+        if (delRow) delRow.style.display = "flex";
+      } else if (delRow) {
+        delRow.style.display = "none";
+      }
+
       var rem = parseFloat(o.remaining||0);
       document.getElementById("dc-amount").value = rem > 0 ? rem : "";
       document.getElementById("upi-amt").textContent = rem > 0 ? rem : 0;
