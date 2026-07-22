@@ -3045,40 +3045,65 @@ def website_fabric_upload(fid):
     import os, uuid
     from database import get_db
     f_file = request.files.get("image")
-    if not f_file: return jsonify({"ok":False,"error":"No file"})
-    ext = os.path.splitext(f_file.filename)[1].lower() or '.jpg'
-    fname = f"fab_{fid}_{uuid.uuid4().hex[:8]}{ext}"
-    folder = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-                          "static","website","img","fabrics")
-    os.makedirs(folder, exist_ok=True)
-    _fp = os.path.join(folder, fname); f_file.save(_fp)
-    from app.utils.image_optimize import optimize_image as _oi; _fp = _oi(_fp); fname = os.path.basename(_fp)
-    img_url = "/static/website/img/fabrics/" + fname
-    db = get_db()
-    db.execute("UPDATE web_fabrics SET image_url=? WHERE id=?", (img_url, fid))
-    db.commit()
-    return jsonify({"ok":True, "url": img_url})
+    if not f_file: return jsonify({"ok":False,"error":"No file selected"})
+    try:
+        ext = os.path.splitext(f_file.filename or '')[1].lower() or '.jpg'
+        if ext not in [".jpg",".jpeg",".png",".webp",".gif",".heic",".heif"]:
+            ext = ".jpg"
+        fname = f"fab_{fid}_{uuid.uuid4().hex[:8]}{ext}"
+        folder = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                              "..","..","static","website","img","fabrics")
+        folder = os.path.normpath(folder)
+        os.makedirs(folder, exist_ok=True)
+        _fp = os.path.join(folder, fname)
+        f_file.save(_fp)
+        try:
+            from app.utils.image_optimize import optimize_image as _oi
+            _fp = _oi(_fp)
+            fname = os.path.basename(_fp)
+        except Exception:
+            pass  # keep original file if optimize fails
+        img_url = "/static/website/img/fabrics/" + fname
+        db = get_db()
+        db.execute("UPDATE web_fabrics SET image_url=? WHERE id=?", (img_url, fid))
+        db.commit()
+        return jsonify({"ok":True, "url": img_url})
+    except Exception as e:
+        import traceback
+        import logging
+        logging.getLogger(__name__).error("fabric upload error fid=%s: %s", fid, traceback.format_exc())
+        return jsonify({"ok":False,"error": f"Upload failed: {str(e)}"})
 
 @bp.route("/website/fabric/upload-temp-image", methods=["POST"])
 def website_fabric_upload_temp():
-    """Upload an image for the 'Add New Fabric' form, BEFORE the fabric exists.
-    Just saves the file and returns its URL — addFabric() then sends that URL
-    along with the rest of the new-fabric fields."""
+    """Upload an image for the 'Add New Fabric' form, BEFORE the fabric exists."""
     if not session.get("owner_logged_in"): return jsonify({"ok":False}), 403
     import os, uuid
     f_file = request.files.get("image")
-    if not f_file: return jsonify({"ok":False,"error":"No file"})
-    ext = os.path.splitext(f_file.filename)[1].lower() or '.jpg'
-    if ext not in [".jpg", ".jpeg", ".png", ".webp"]:
-        return jsonify({"ok":False,"error":"Only JPG/PNG/WebP allowed"})
-    fname = f"fab_new_{uuid.uuid4().hex[:10]}{ext}"
-    folder = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-                          "static","website","img","fabrics")
-    os.makedirs(folder, exist_ok=True)
-    _fp = os.path.join(folder, fname); f_file.save(_fp)
-    from app.utils.image_optimize import optimize_image as _oi; _fp = _oi(_fp); fname = os.path.basename(_fp)
-    img_url = "/static/website/img/fabrics/" + fname
-    return jsonify({"ok":True, "url": img_url})
+    if not f_file: return jsonify({"ok":False,"error":"No file selected"})
+    try:
+        ext = os.path.splitext(f_file.filename or '')[1].lower() or '.jpg'
+        if ext not in [".jpg",".jpeg",".png",".webp",".gif",".heic",".heif"]:
+            ext = ".jpg"
+        fname = f"fab_new_{uuid.uuid4().hex[:10]}{ext}"
+        folder = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                              "..","..","static","website","img","fabrics")
+        folder = os.path.normpath(folder)
+        os.makedirs(folder, exist_ok=True)
+        _fp = os.path.join(folder, fname)
+        f_file.save(_fp)
+        try:
+            from app.utils.image_optimize import optimize_image as _oi
+            _fp = _oi(_fp)
+            fname = os.path.basename(_fp)
+        except Exception:
+            pass
+        img_url = "/static/website/img/fabrics/" + fname
+        return jsonify({"ok":True, "url": img_url})
+    except Exception as e:
+        import traceback, logging
+        logging.getLogger(__name__).error("fabric temp upload error: %s", traceback.format_exc())
+        return jsonify({"ok":False,"error": f"Upload failed: {str(e)}"})
 
 @bp.route("/website/fabric/media/list/<int:fid>")
 def website_fabric_media_list(fid):
