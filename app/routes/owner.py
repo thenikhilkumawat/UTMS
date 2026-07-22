@@ -4462,6 +4462,14 @@ def order_edit_save(order_code):
         # would be missing this income entirely. Auto-log the difference
         # so the two stay connected. (Decreases are NOT auto-logged here
         # since those are typically data-entry corrections, not refunds.)
+        # If payment_mode changed → update ALL existing finance entries for this order
+        new_mode = data.get("payment_mode", "cash")
+        if new_mode != (data.get("old_payment_mode") or ""):
+            conn.execute(
+                "UPDATE finance SET mode=? WHERE order_id=? AND tx_type='income'",
+                (new_mode, order_id)
+            )
+
         payment_diff = round(new_advance - old_advance, 2)
         if payment_diff > 0:
             now0 = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
