@@ -3041,19 +3041,22 @@ def website_fabric_add():
 
 @bp.route("/website/fabric/upload-image/<int:fid>", methods=["POST"])
 def website_fabric_upload(fid):
-    if not session.get("owner_logged_in"): return jsonify({"ok":False}), 403
-    import os, uuid
-    from database import get_db
-    f_file = request.files.get("image")
-    if not f_file: return jsonify({"ok":False,"error":"No file selected"})
+    import os, uuid, traceback, logging
+    _log = logging.getLogger(__name__)
     try:
-        ext = os.path.splitext(f_file.filename or '')[1].lower() or '.jpg'
-        if ext not in [".jpg",".jpeg",".png",".webp",".gif",".heic",".heif"]:
+        if not session.get("owner_logged_in"):
+            return jsonify({"ok": False, "error": "Not logged in"}), 403
+        from database import get_db
+        f_file = request.files.get("image")
+        if not f_file or not f_file.filename:
+            return jsonify({"ok": False, "error": "No file selected"})
+        ext = os.path.splitext(f_file.filename)[1].lower()
+        if ext not in [".jpg", ".jpeg", ".png", ".webp", ".gif", ".heic", ".heif"]:
             ext = ".jpg"
         fname = f"fab_{fid}_{uuid.uuid4().hex[:8]}{ext}"
-        folder = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                              "..","..","static","website","img","fabrics")
-        folder = os.path.normpath(folder)
+        folder = os.path.normpath(os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "..", "..", "static", "website", "img", "fabrics"))
         os.makedirs(folder, exist_ok=True)
         _fp = os.path.join(folder, fname)
         f_file.save(_fp)
@@ -3062,17 +3065,15 @@ def website_fabric_upload(fid):
             _fp = _oi(_fp)
             fname = os.path.basename(_fp)
         except Exception:
-            pass  # keep original file if optimize fails
+            pass
         img_url = "/static/website/img/fabrics/" + fname
         db = get_db()
         db.execute("UPDATE web_fabrics SET image_url=? WHERE id=?", (img_url, fid))
         db.commit()
-        return jsonify({"ok":True, "url": img_url})
+        return jsonify({"ok": True, "url": img_url})
     except Exception as e:
-        import traceback
-        import logging
-        logging.getLogger(__name__).error("fabric upload error fid=%s: %s", fid, traceback.format_exc())
-        return jsonify({"ok":False,"error": f"Upload failed: {str(e)}"})
+        _log.error("fabric upload fid=%s: %s", fid, traceback.format_exc())
+        return jsonify({"ok": False, "error": f"Upload failed: {str(e)}"})
 
 @bp.route("/website/fabric/upload-temp-image", methods=["POST"])
 def website_fabric_upload_temp():
