@@ -864,7 +864,7 @@ def api_track_order():
                 "delivery_date":    o.get("delivery_date", ""),
                 "remaining":        o.get("remaining", 0),
                 "total":            o.get("total_amount", 0),
-                "advance":          o.get("advance_amount", 0),
+                "advance":          o.get("advance_paid", 0),
                 "stage":            stage,
                 "stitch_note":      stage_row["note"] if stage_row else "",
                 "is_home_delivery": is_home_delivery,
@@ -1122,7 +1122,8 @@ def create_order():
     except Exception as exc:
         try: db.rollback()
         except: pass
-        # Fallback: redirect home rather than showing raw error
+        import traceback as _tb
+        print(f"[create_order ERROR] {exc}\n{_tb.format_exc()}", flush=True)
         return redirect(url_for("website.home") + "?order_error=1")
 
 
