@@ -2499,7 +2499,8 @@ def api_tokens_create_order():
             timeout=10
         ).json()
         if "id" not in resp:
-            return jsonify({"ok": False, "error": "Could not create payment order. Try again."})
+            rz_err = (resp.get("error") or {}).get("description") or str(resp)
+            return jsonify({"ok": False, "error": f"Razorpay: {rz_err}"})
         return jsonify({"ok": True, "order_id": resp["id"],
                         "amount": amount_paise, "razorpay_key": rz_key_id})
     except Exception as ex:
