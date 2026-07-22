@@ -666,8 +666,22 @@ def ai_customize():
     except Exception:
         items = []
     acc = _current_account()
+    init_tokens = None
+    init_previews = None
+    if acc:
+        try:
+            tok_row = db.execute("SELECT token_balance FROM web_accounts WHERE id=?", (acc["id"],)).fetchone()
+            init_tokens = (tok_row["token_balance"] or 0) if tok_row else 0
+        except Exception:
+            init_tokens = 0
+    else:
+        from flask import session as _sess
+        used = _sess.get("preview_count", 0)
+        init_previews = max(0, FREE_PREVIEW_LIMIT - used)
     return render_template("website/ai_customize.html",
         fabrics=fabrics, items=items,
+        init_tokens=init_tokens,
+        init_previews=init_previews,
         logged_in_name=(acc["name"] if acc else ""),
         logged_in_mobile=(acc["mobile"] if acc else ""),
         page_meta={"title":"AI Style Studio — Uttam Tailors",

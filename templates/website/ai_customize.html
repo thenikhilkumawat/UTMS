@@ -700,7 +700,7 @@ function asGenerate(){
     }
     if(d.need_tokens){
       // Logged in but out of credits — open buy-tokens modal
-      asOpenTokenModal();
+      asShowTokenModal();
       var msg = document.getElementById('asGateMsg');
       if(msg) msg.textContent = d.error || 'No credits left. Buy tokens to continue.';
       return;
@@ -928,6 +928,12 @@ function asOpenTokenModal(){
 }
 // ── Init ──
 document.getElementById('asFabSkip').classList.add('sel');
+// Initialise credits bar from server-rendered balance
+(function(){
+  var initTokens = {{ init_tokens | tojson }};
+  var initPreviews = {{ init_previews | tojson }};
+  asUpdateCreditsBar(initPreviews, initTokens);
+})();
 </script>
 {% endblock %}
                                                 
