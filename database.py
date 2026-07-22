@@ -174,13 +174,16 @@ def _init_pg():
             id SERIAL PRIMARY KEY, order_id INTEGER NOT NULL,
             image_url TEXT NOT NULL, uploaded_at TEXT DEFAULT TO_CHAR(NOW(),'YYYY-MM-DD HH24:MI:SS'))""",
         """CREATE TABLE IF NOT EXISTS work_logs (
-            id SERIAL PRIMARY KEY, order_id INTEGER,
-            stage TEXT, note TEXT, logged_by TEXT,
-            logged_at TEXT DEFAULT TO_CHAR(NOW(),'YYYY-MM-DD HH24:MI:SS'))""",
-        """CREATE TABLE IF NOT EXISTS finance (
-            id SERIAL PRIMARY KEY, txn_date TEXT, category TEXT,
-            description TEXT, amount REAL DEFAULT 0, txn_type TEXT DEFAULT 'income',
+            id SERIAL PRIMARY KEY, order_id INTEGER, order_code TEXT DEFAULT '',
+            garment_type TEXT DEFAULT '', qty_done INTEGER DEFAULT 0,
+            employee_name TEXT DEFAULT '', log_date TEXT,
+            making_rate REAL DEFAULT 0, notes TEXT DEFAULT '',
             created_at TEXT DEFAULT TO_CHAR(NOW(),'YYYY-MM-DD HH24:MI:SS'))""",
+        """CREATE TABLE IF NOT EXISTS finance (
+            id SERIAL PRIMARY KEY, tx_date TEXT, tx_type TEXT DEFAULT 'income',
+            category TEXT, amount REAL DEFAULT 0, mode TEXT DEFAULT '',
+            order_id INTEGER, note TEXT DEFAULT '', employee_name TEXT DEFAULT '',
+            created_by TEXT DEFAULT '', created_at TEXT DEFAULT TO_CHAR(NOW(),'YYYY-MM-DD HH24:MI:SS'))""",
         """CREATE TABLE IF NOT EXISTS employees (
             id SERIAL PRIMARY KEY, name TEXT NOT NULL, role TEXT,
             mobile TEXT, salary REAL DEFAULT 0, join_date TEXT, active INTEGER DEFAULT 1)""",
@@ -194,7 +197,8 @@ def _init_pg():
         """CREATE TABLE IF NOT EXISTS inventory (
             id SERIAL PRIMARY KEY, item_name TEXT NOT NULL, category TEXT,
             quantity REAL DEFAULT 0, unit TEXT DEFAULT 'pcs',
-            reorder_level REAL DEFAULT 0, last_updated TEXT)""",
+            low_threshold REAL DEFAULT 0, low_alert_at REAL DEFAULT 0,
+            last_updated TEXT)""",
         """CREATE TABLE IF NOT EXISTS gallery_types (
             id SERIAL PRIMARY KEY, name TEXT NOT NULL, slug TEXT UNIQUE)""",
         """CREATE TABLE IF NOT EXISTS gallery_images (
@@ -323,13 +327,16 @@ def _init_sqlite():
             id INTEGER PRIMARY KEY AUTOINCREMENT, order_id INTEGER NOT NULL,
             image_url TEXT NOT NULL, uploaded_at TEXT DEFAULT (datetime('now')))""",
         """CREATE TABLE IF NOT EXISTS work_logs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT, order_id INTEGER,
-            stage TEXT, note TEXT, logged_by TEXT,
-            logged_at TEXT DEFAULT (datetime('now')))""",
-        """CREATE TABLE IF NOT EXISTS finance (
-            id INTEGER PRIMARY KEY AUTOINCREMENT, txn_date TEXT, category TEXT,
-            description TEXT, amount REAL DEFAULT 0, txn_type TEXT DEFAULT 'income',
+            id INTEGER PRIMARY KEY AUTOINCREMENT, order_id INTEGER, order_code TEXT DEFAULT '',
+            garment_type TEXT DEFAULT '', qty_done INTEGER DEFAULT 0,
+            employee_name TEXT DEFAULT '', log_date TEXT,
+            making_rate REAL DEFAULT 0, notes TEXT DEFAULT '',
             created_at TEXT DEFAULT (datetime('now')))""",
+        """CREATE TABLE IF NOT EXISTS finance (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, tx_date TEXT, tx_type TEXT DEFAULT 'income',
+            category TEXT, amount REAL DEFAULT 0, mode TEXT DEFAULT '',
+            order_id INTEGER, note TEXT DEFAULT '', employee_name TEXT DEFAULT '',
+            created_by TEXT DEFAULT '', created_at TEXT DEFAULT (datetime('now')))""",
         """CREATE TABLE IF NOT EXISTS employees (
             id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, role TEXT,
             mobile TEXT, salary REAL DEFAULT 0, join_date TEXT, active INTEGER DEFAULT 1)""",
@@ -344,7 +351,8 @@ def _init_sqlite():
         """CREATE TABLE IF NOT EXISTS inventory (
             id INTEGER PRIMARY KEY AUTOINCREMENT, item_name TEXT NOT NULL,
             category TEXT, quantity REAL DEFAULT 0, unit TEXT DEFAULT 'pcs',
-            reorder_level REAL DEFAULT 0, last_updated TEXT)""",
+            low_threshold REAL DEFAULT 0, low_alert_at REAL DEFAULT 0,
+            last_updated TEXT)""",
         """CREATE TABLE IF NOT EXISTS gallery_types (
             id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, slug TEXT UNIQUE)""",
         """CREATE TABLE IF NOT EXISTS gallery_images (
@@ -823,6 +831,83 @@ def run_account_migrations():
             pass
         db.commit()
 
+
+
+        # ── finance table: migrate wrong column names (txn_date→tx_date etc.) ─
+        # database.py used to create finance with txn_date/txn_type/description
+        # but owner.py always expected tx_date/tx_type/mode/order_id/note/etc.
+        # This migration detects the old schema and recreates the table correctly.
+        try:
+            _fcols = {r[1] for r in db.execute("PRAGMA table_info(finance)").fetchall()}
+            if "txn_date" in _fcols:
+                # Recreate with correct schema, preserving existing rows
+                db.executescript("""
+                    CREATE TABLE IF NOT EXISTS finance_new (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        tx_date TEXT,
+                        tx_type TEXT DEFAULT 'income',
+                        category TEXT,
+                        amount REAL DEFAULT 0,
+                        mode TEXT DEFAULT '',
+                        order_id INTEGER,
+                        note TEXT DEFAULT '',
+                        employee_name TEXT DEFAULT '',
+                        created_by TEXT DEFAULT '',
+                        created_at TEXT DEFAULT (datetime('now'))
+                    );
+                    INSERT INTO finance_new(id, tx_date, tx_type, category, amount, created_at)
+                        SELECT id,
+                               COALESCE(txn_date, ''),
+                               COALESCE(txn_type, 'income'),
+                               COALESCE(category, ''),
+                               COALESCE(amount, 0),
+                               COALESCE(created_at, datetime('now'))
+                        FROM finance;
+                    DROP TABLE finance;
+                    ALTER TABLE finance_new RENAME TO finance;
+                """)
+                db.commit()
+        except Exception:
+            pass
+
+        # ── work_logs: migrate old schema (stage/note/logged_by/logged_at → full schema) ──
+        try:
+            _wl_cols = {r[1] for r in db.execute("PRAGMA table_info(work_logs)").fetchall()}
+            if "qty_done" not in _wl_cols:
+                db.executescript("""
+                    CREATE TABLE IF NOT EXISTS work_logs_new (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        order_id INTEGER,
+                        order_code TEXT DEFAULT '',
+                        garment_type TEXT DEFAULT '',
+                        qty_done INTEGER DEFAULT 0,
+                        employee_name TEXT DEFAULT '',
+                        log_date TEXT,
+                        making_rate REAL DEFAULT 0,
+                        notes TEXT DEFAULT '',
+                        created_at TEXT DEFAULT (datetime('now'))
+                    );
+                    INSERT INTO work_logs_new(id, order_id, notes, created_at)
+                        SELECT id, order_id,
+                               COALESCE(note, ''),
+                               COALESCE(logged_at, datetime('now'))
+                        FROM work_logs;
+                    DROP TABLE work_logs;
+                    ALTER TABLE work_logs_new RENAME TO work_logs;
+                """)
+                db.commit()
+        except Exception:
+            pass
+
+        # ── inventory: add low_alert_at / low_threshold if missing ───────────
+        try:
+            _inv_cols = {r[1] for r in db.execute("PRAGMA table_info(inventory)").fetchall()}
+            for _col in ["low_threshold", "low_alert_at"]:
+                if _col not in _inv_cols:
+                    db.execute(f"ALTER TABLE inventory ADD COLUMN {_col} REAL DEFAULT 0")
+            db.commit()
+        except Exception:
+            pass
 
         # ── token_balance on web_accounts + token_transactions table ─────────
         try:

@@ -580,15 +580,27 @@ def dashboard():
     ).fetchall()
 
     dues = conn.execute("SELECT SUM(remaining) as total, COUNT(*) as cnt FROM orders WHERE status != 'delivered' AND remaining > 0").fetchone()
-    work_today = conn.execute("SELECT SUM(qty_done) as total FROM work_logs WHERE log_date=?",(today,)).fetchone()
+    try:
+        work_today = conn.execute("SELECT SUM(qty_done) as total FROM work_logs WHERE log_date=?",(today,)).fetchone()
+        work_today_val = (work_today["total"] or 0) if work_today else 0
+    except Exception:
+        work_today_val = 0
     # If no work logs yet, count items from today's orders as a proxy
-    work_today_val = (work_today["total"] or 0) if work_today else 0
     if work_today_val == 0:
-        items_today = conn.execute("""SELECT COALESCE(SUM(oi.quantity),0) as total
-            FROM order_items oi JOIN orders o ON o.id=oi.order_id
-            WHERE o.order_date=?""",(today,)).fetchone()
-        work_today_proxy = items_today["total"] or 0
-    low_stock = conn.execute("SELECT * FROM inventory WHERE quantity <= low_alert_at ORDER BY quantity ASC").fetchall()
+        try:
+            items_today = conn.execute("""SELECT COALESCE(SUM(oi.quantity),0) as total
+                FROM order_items oi JOIN orders o ON o.id=oi.order_id
+                WHERE o.order_date=?""",(today,)).fetchone()
+            work_today_proxy = items_today["total"] or 0
+        except Exception:
+            work_today_proxy = 0
+    try:
+        low_stock = conn.execute("SELECT * FROM inventory WHERE quantity <= low_alert_at ORDER BY quantity ASC").fetchall()
+    except Exception:
+        try:
+            low_stock = conn.execute("SELECT * FROM inventory WHERE quantity <= low_threshold ORDER BY quantity ASC").fetchall()
+        except Exception:
+            low_stock = []
     urgent_count = conn.execute("SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status != 'delivered' AND delivery_date >= ?",(today,)).fetchone()["c"]
 
     # All rate settings
