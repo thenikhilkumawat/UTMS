@@ -567,6 +567,7 @@ def _render_product(item_id):
 
 
 @website_bp.route("/garment/ask/<int:item_id>", methods=["POST"])
+@_rl("5 per minute; 20 per hour")
 def ask_item_question(item_id):
     """Public Q&A submission — goes in as 'pending' and only appears on the page
     once an admin answers it from the product editor."""
@@ -830,25 +831,26 @@ def api_track_order():
         if status == "ready"     and stage < 5: stage = 5
         if status == "delivered" and stage < max_stage: stage = max_stage + 1
 
-        return jsonify({
-            "ok": True,
-            "order": {
-                "order_code":       o["order_code"],
-                "status":           status,
-                "garment":          garment,
-                "cust_name":        cust_name,
-                "cust_mobile":      cust_mobile,
-                "cust_address":     cust_address,
-                "order_date":       o.get("order_date", ""),
-                "delivery_date":    o.get("delivery_date", ""),
-                "remaining":        o.get("remaining", 0),
-                "total":            o.get("total_amount", 0),
-                "advance":          o.get("advance_paid", 0),
-                "stage":            stage,
-                "stitch_note":      stage_row["note"] if stage_row else "",
-                "is_home_delivery": is_home_delivery,
-            }
-        })
+        # Only expose fields needed to track the order — no mobile/address (PII)
+        _is_admin = session.get("owner_logged_in")
+        _resp = {
+            "order_code":       o["order_code"],
+            "status":           status,
+            "garment":          garment,
+            "cust_name":        cust_name,
+            "order_date":       o.get("order_date", ""),
+            "delivery_date":    o.get("delivery_date", ""),
+            "remaining":        o.get("remaining", 0),
+            "total":            o.get("total_amount", 0),
+            "advance":          o.get("advance_paid", 0),
+            "stage":            stage,
+            "stitch_note":      stage_row["note"] if stage_row else "",
+            "is_home_delivery": is_home_delivery,
+        }
+        if _is_admin:
+            _resp["cust_mobile"]  = cust_mobile
+            _resp["cust_address"] = cust_address
+        return jsonify({"ok": True, "order": _resp})
     except Exception as exc:
         return jsonify({"ok": False, "error": str(exc)})
 
@@ -942,15 +944,22 @@ def create_order():
         is_urgent     = 1 if request.form.get("is_urgent") else 0
         measure_method= request.form.get("measure_method", "size")
 
-        # Garment types + prices from form checkboxes
+        # Garment types + prices — rates ALWAYS looked up from DB settings,
+        # never trusted from form POST (prevents price manipulation & fixes ₹0 orders)
         garment_types = request.form.getlist("garment_type[]")
         total_amount  = 0.0
         item_rows     = []
+        _all_settings = {r["key"]: r["value"] for r in db.execute("SELECT key,value FROM settings").fetchall()}
         for gt in garment_types:
-            qty_key  = "qty_" + gt
-            rate_key = "rate_" + gt
-            qty  = int(request.form.get(qty_key, 1) or 1)
-            rate = float(request.form.get(rate_key, 0) or 0)
+            qty_key = "qty_" + gt
+            qty  = max(1, int(request.form.get(qty_key, 1) or 1))
+            # Look up server-side rate — try customer_rate_X then rate_X
+            _rate_raw = (_all_settings.get("customer_rate_" + gt)
+                         or _all_settings.get("rate_" + gt) or "0")
+            try:
+                rate = float(str(_rate_raw).split("–")[0].split("-")[0].strip() or 0)
+            except (ValueError, TypeError):
+                rate = 0.0
             item_rows.append({"type": gt, "qty": qty, "rate": rate})
             total_amount += qty * rate
 
@@ -2096,6 +2105,9 @@ def auth_google_callback():
     state      = request.args.get("state", "")
     sess_state = session.pop("oauth_state", "")
     next_url   = session.pop("oauth_next", "/account")
+    # Validate next_url is a safe relative path (prevent open redirect)
+    if not next_url or not next_url.startswith("/") or next_url.startswith("//"):
+        next_url = "/account"
     error      = request.args.get("error", "")
 
     if error:

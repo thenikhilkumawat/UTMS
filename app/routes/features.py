@@ -222,7 +222,23 @@ def order_stage_get(order_code):
     ).fetchone()
     order_data = {}
     if order:
-        order_data = dict(order)
+        # Only expose non-PII fields publicly — strip mobile/address/measurements
+        _is_admin = session.get("owner_logged_in")
+        _ord = dict(order)
+        order_data = {
+            "order_code":    _ord.get("order_code", ""),
+            "status":        _ord.get("status", ""),
+            "is_urgent":     _ord.get("is_urgent", 0),
+            "delivery_date": _ord.get("delivery_date", ""),
+            "payable_amount":_ord.get("payable_amount", 0),
+            "advance_paid":  _ord.get("advance_paid", 0),
+            "remaining":     _ord.get("remaining", 0),
+            "cname":         _ord.get("cname", ""),
+        }
+        if _is_admin:
+            # Admin gets full details
+            order_data["mobile"]  = _ord.get("mobile", "")
+            order_data["address"] = _ord.get("address", "")
         # Get garments from order_items
         items = db.execute(
             """SELECT oi.garment_type, oi.quantity, oi.measurements, oi.notes
@@ -233,7 +249,9 @@ def order_stage_get(order_code):
         ).fetchall()
         order_data["garments"] = [
             {"name": it["garment_type"], "qty": it["quantity"],
-             "measurements": it["measurements"] or "", "notes": it["notes"] or ""}
+             # Only share measurements with admin
+             "measurements": (it["measurements"] or "") if _is_admin else "",
+             "notes": it["notes"] or ""}
             for it in items
         ]
     stage_val = row["stage"] if row else 1
