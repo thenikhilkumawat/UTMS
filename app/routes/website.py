@@ -446,29 +446,8 @@ def services():
 
 @website_bp.route("/our-services")
 def our_services():
-    db = get_db()
-    try:
-        cats = db.execute("SELECT * FROM web_service_categories ORDER BY sort_order, id").fetchall()
-        items = db.execute("SELECT * FROM web_service_items ORDER BY sort_order, id").fetchall()
-        items_by_cat = {}
-        for item in items:
-            cid = item["category_id"]
-            if cid not in items_by_cat: items_by_cat[cid] = []
-            items_by_cat[cid].append(item)
-        services_data = [(cat, items_by_cat.get(cat["id"], [])) for cat in cats]
-    except: services_data = []
-    prices = get_prices()
-    item_media = get_item_media()
-    try:
-        all_items = db.execute("SELECT * FROM web_service_items ORDER BY sort_order, id").fetchall()
-    except:
-        all_items = []
-    page_meta = get_page_seo("our_services",
-        "Our Services — Uttam Tailors Sikar | Custom Stitching",
-        "All tailoring services at Uttam Tailors Sikar — shirts, suits, ethnic wear, alterations & more.")
-    return render_template("website/our_services.html", active="our_services",
-        services=services_data, prices=prices, item_media=item_media, services_all=all_items,
-        page_meta=page_meta)
+    # Canonical page is /our-craft — permanent redirect for SEO
+    return redirect("/our-craft", 301)
 
 
 @website_bp.route("/garment/<int:item_id>")
@@ -1140,7 +1119,6 @@ def sitemap():
     static_pages = [
         ("", "1.0", "weekly"),
         ("/our-craft", "0.9", "weekly"),
-        ("/our-services", "0.9", "weekly"),
         ("/our-story", "0.7", "monthly"),
         ("/contact", "0.7", "monthly"),
         ("/commission", "0.9", "weekly"),
