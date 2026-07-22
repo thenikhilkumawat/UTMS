@@ -1,232 +1,456 @@
 {% extends "base.html" %}
-{% block title %}Pickup & Delivery — Uttam Tailors{% endblock %}
-{% block extra_css %}
-<style>
-@keyframes slideUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
-@keyframes spin { to { transform: rotate(360deg); } }
-.pickup-card { animation: slideUp 0.25s ease-out; }
-.pay-btn { transition: all 0.15s; }
-.pay-btn:active { transform: scale(0.97); }
-</style>
-{% endblock %}
 {% block content %}
 
-<!-- Search Header -->
-<div style="background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);padding:24px 28px 28px;position:relative;overflow:hidden;">
-  <div style="position:absolute;inset:0;background:radial-gradient(circle at 80% 50%,rgba(99,102,241,0.15),transparent 60%);pointer-events:none;"></div>
-  <div style="position:relative;max-width:900px;margin:0 auto;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
-      <div>
-        <h1 style="font-size:20px;font-weight:900;color:#fff;margin:0;">
-          🚚 <span class="lang-en">Pickup & Delivery</span><span class="lang-hi" style="display:none;">पिकअप व डिलीवरी</span>
-        </h1>
-        <div style="font-size:11px;color:rgba(255,255,255,0.45);margin-top:3px;">
-          ① Search &nbsp;→&nbsp; ② Collect &nbsp;→&nbsp; ③ Deliver
+<style>
+/* ── Reset & Base ─────────────────────────────── */
+.pu-wrap { max-width: 480px; margin: 0 auto; padding: 16px 14px 80px; }
+
+/* ── Search Bar ───────────────────────────────── */
+.pu-search-box {
+  position: relative;
+  margin-bottom: 12px;
+}
+.pu-search-input {
+  width: 100%;
+  padding: 13px 44px 13px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e293b;
+  background: #fff;
+  outline: none;
+  transition: border-color 0.2s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.pu-search-input:focus { border-color: #6366f1; }
+.pu-search-icon {
+  position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+  font-size: 18px; color: #94a3b8;
+}
+.pu-search-results {
+  background: #fff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  margin-bottom: 12px;
+}
+.pu-result-item {
+  padding: 11px 14px;
+  border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.pu-result-item:last-child { border-bottom: none; }
+.pu-result-item:hover { background: #f8fafc; }
+.pu-result-name { font-size: 14px; font-weight: 700; color: #1e293b; }
+.pu-result-meta { font-size: 11px; color: #64748b; margin-top: 2px; }
+.pu-result-code { font-size: 12px; font-weight: 800; color: #6366f1; }
+
+/* ── Empty State ──────────────────────────────── */
+.pu-empty {
+  text-align: center;
+  padding: 48px 20px;
+  color: #94a3b8;
+}
+.pu-empty-icon { font-size: 48px; margin-bottom: 12px; }
+.pu-empty-text { font-size: 14px; font-weight: 600; }
+.pu-empty-sub { font-size: 12px; margin-top: 4px; color: #cbd5e1; }
+
+/* ── Order Card ───────────────────────────────── */
+.pu-card {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+/* Card Header */
+.pu-card-header {
+  padding: 16px 18px 14px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.pu-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+.pu-order-code {
+  font-size: 13px;
+  font-weight: 900;
+  color: #6366f1;
+  letter-spacing: 0.3px;
+}
+.pu-status-badge {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.pu-customer-name {
+  font-size: 20px;
+  font-weight: 900;
+  color: #0f172a;
+  margin-bottom: 4px;
+  line-height: 1.2;
+}
+.pu-customer-meta {
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.6;
+}
+.pu-customer-meta span { margin-right: 10px; }
+
+/* Garments */
+.pu-garments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 12px 18px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.pu-garment-chip {
+  background: #f0f0fe;
+  border: 1.5px solid #c7d2fe;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #4338ca;
+}
+
+/* Payment Summary */
+.pu-payment {
+  padding: 14px 18px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.pu-payment-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+}
+.pu-payment-label { font-size: 12px; color: #64748b; font-weight: 500; }
+.pu-payment-value { font-size: 13px; font-weight: 700; color: #1e293b; }
+.pu-payment-due   { font-size: 16px; font-weight: 900; color: #dc2626; }
+.pu-payment-paid  { font-size: 16px; font-weight: 900; color: #16a34a; }
+.pu-divider { border: none; border-top: 1px dashed #e2e8f0; margin: 6px 0; }
+.pu-mode-row { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; }
+
+/* Photos strip */
+.pu-photos {
+  padding: 10px 18px;
+  border-bottom: 1px solid #f1f5f9;
+  display: none;
+}
+.pu-photos-label { font-size: 10px; font-weight: 800; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.8px; margin-bottom: 8px; }
+.pu-photos-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Force Ready Section */
+.pu-force-section {
+  padding: 14px 18px;
+  border-bottom: 1px solid #f1f5f9;
+  background: #fffbeb;
+}
+.pu-force-label { font-size: 11px; color: #92400e; font-weight: 700; margin-bottom: 8px; }
+.pu-force-btn {
+  width: 100%;
+  padding: 11px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  letter-spacing: 0.3px;
+}
+.pu-force-btn:active { transform: scale(0.98); }
+
+/* Payment Section */
+.pu-pay-section {
+  padding: 14px 18px;
+}
+.pu-pay-title { font-size: 11px; font-weight: 800; text-transform: uppercase; color: #64748b; letter-spacing: 0.8px; margin-bottom: 10px; }
+
+/* Mode Toggle */
+.pu-mode-toggle {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.pu-mode-btn {
+  flex: 1;
+  padding: 8px;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s;
+}
+.pu-mode-btn.active {
+  border-color: #6366f1;
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+/* Amount input */
+.pu-amount-wrap {
+  position: relative;
+  margin-bottom: 10px;
+}
+.pu-amount-prefix {
+  position: absolute;
+  left: 12px; top: 50%; transform: translateY(-50%);
+  font-size: 15px; font-weight: 800; color: #6366f1;
+}
+.pu-amount-input {
+  width: 100%;
+  padding: 11px 14px 11px 28px;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 18px;
+  font-weight: 900;
+  color: #1e293b;
+  outline: none;
+}
+.pu-amount-input:focus { border-color: #6366f1; }
+
+/* UPI panel */
+.pu-upi-panel {
+  background: #f0f0fe;
+  border: 1.5px solid #c7d2fe;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  display: none;
+}
+.pu-upi-label { font-size: 10px; font-weight: 800; text-transform: uppercase; color: #4338ca; margin-bottom: 2px; }
+.pu-upi-amt { font-size: 18px; font-weight: 900; color: #4338ca; }
+
+/* Receiver fields */
+.pu-receiver-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.pu-input-field {
+  padding: 9px 12px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+  outline: none;
+  width: 100%;
+}
+.pu-input-field:focus { border-color: #6366f1; }
+
+/* Collect Button */
+.pu-collect-btn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #16a34a, #15803d);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 900;
+  cursor: pointer;
+  letter-spacing: 0.3px;
+  box-shadow: 0 4px 14px rgba(22,163,74,0.25);
+}
+.pu-collect-btn:active { transform: scale(0.98); }
+
+/* WhatsApp + Back row */
+.pu-action-row {
+  display: flex;
+  gap: 8px;
+  padding: 12px 18px;
+  border-top: 1px solid #f1f5f9;
+}
+.pu-wa-btn {
+  flex: 1;
+  padding: 9px;
+  background: #f0fdf4;
+  border: 1.5px solid #bbf7d0;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #15803d;
+  cursor: pointer;
+  text-align: center;
+}
+.pu-back-btn {
+  padding: 9px 14px;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  cursor: pointer;
+}
+
+/* Delivered banner */
+.pu-delivered-banner {
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  border: 1.5px solid #86efac;
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  margin: 14px 18px;
+}
+.pu-delivered-icon { font-size: 32px; margin-bottom: 6px; }
+.pu-delivered-text { font-size: 15px; font-weight: 800; color: #166534; }
+.pu-delivered-sub  { font-size: 12px; color: #16a34a; margin-top: 3px; }
+
+/* Image overlay */
+#img-overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,0.88); z-index:9999;
+  justify-content:center; align-items:center;
+}
+#img-overlay img { max-width:92vw; max-height:88vh; border-radius:12px; }
+</style>
+
+<div class="pu-wrap">
+
+  <!-- Search -->
+  <div class="pu-search-box">
+    <input type="text" id="pickup-search" class="pu-search-input"
+      placeholder="Name, mobile, order code..."
+      oninput="debounceSearch()"
+      onkeydown="if(event.key==='Enter'){doSearch();}">
+    <span class="pu-search-icon">🔍</span>
+  </div>
+  <div id="search-results"></div>
+
+  <!-- Empty State -->
+  <div id="empty-state" class="pu-empty">
+    <div class="pu-empty-icon">🚚</div>
+    <div class="pu-empty-text">Pickup & Delivery</div>
+    <div class="pu-empty-sub">Customer ka naam, mobile ya order code search karo</div>
+  </div>
+
+  <!-- Delivery Card -->
+  <div id="delivery-card" style="display:none;">
+
+    <!-- Header -->
+    <div class="pu-card">
+      <div class="pu-card-header">
+        <div class="pu-header-top">
+          <span class="pu-order-code" id="dc-code">#—</span>
+          <span class="pu-status-badge" id="dc-status-badge">—</span>
+        </div>
+        <div class="pu-customer-name" id="dc-customer">—</div>
+        <div class="pu-customer-meta" id="dc-meta"></div>
+      </div>
+
+      <!-- Garments -->
+      <div class="pu-garments" id="dc-garments"></div>
+
+      <!-- Payment Summary -->
+      <div class="pu-payment">
+        <div class="pu-payment-row">
+          <span class="pu-payment-label">Total Amount</span>
+          <span class="pu-payment-value" id="dc-total">—</span>
+        </div>
+        <div class="pu-payment-row">
+          <span class="pu-payment-label">Advance Paid</span>
+          <span class="pu-payment-value" style="color:#16a34a;" id="dc-advance">—</span>
+        </div>
+        <hr class="pu-divider">
+        <div class="pu-payment-row">
+          <span class="pu-payment-label" style="font-weight:700;color:#1e293b;">Due Amount</span>
+          <span id="dc-remaining" class="pu-payment-due">—</span>
+        </div>
+        <div class="pu-mode-row" id="dc-mode-row" style="display:none;">
+          <span class="pu-payment-label">Payment Mode</span>
+          <span style="font-size:12px;font-weight:700;color:#4338ca;" id="dc-mode">—</span>
+        </div>
+        <div class="pu-mode-row" id="dc-deldate-row" style="display:none;">
+          <span class="pu-payment-label">Delivered On</span>
+          <span style="font-size:12px;font-weight:700;color:#16a34a;" id="dc-deldate">—</span>
         </div>
       </div>
-      <div style="display:flex;gap:8px;">
-        <a href="/" style="background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:10px;padding:7px 14px;font-size:13px;font-weight:700;text-decoration:none;">← Back</a>
-        <button class="menu-toggle" onclick="openSidebar()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;border-radius:10px;padding:7px 12px;cursor:pointer;">☰</button>
+
+      <!-- Photos -->
+      <div class="pu-photos" id="photos-strip">
+        <div class="pu-photos-label">📷 Order Photos</div>
+        <div class="pu-photos-row" id="dc-images"></div>
+      </div>
+
+      <!-- Delivered Banner -->
+      <div id="pu-delivered-banner" style="display:none;" class="pu-delivered-banner">
+        <div class="pu-delivered-icon">✅</div>
+        <div class="pu-delivered-text">Deliver Ho Gaya!</div>
+        <div class="pu-delivered-sub" id="dc-deldate-banner"></div>
+      </div>
+
+      <!-- Force Ready (pending orders) -->
+      <div class="pu-force-section" id="pending-section" style="display:none;">
+        <div class="pu-force-label">⚠️ Order abhi ready nahi hai</div>
+        <button class="pu-force-btn" id="force-ready-btn" onclick="forceMarkReady()">
+          ⚡ Force Mark as Ready
+        </button>
+      </div>
+
+      <!-- Payment Section (ready orders) -->
+      <div class="pu-pay-section" id="payment-section" style="display:none;">
+        <div class="pu-pay-title">💳 Payment Collect Karo</div>
+
+        <div class="pu-mode-toggle">
+          <button class="pu-mode-btn active" id="mode-cash" onclick="setPayMode('cash')">💵 Cash</button>
+          <button class="pu-mode-btn" id="mode-upi" onclick="setPayMode('upi')">📱 UPI</button>
+        </div>
+
+        <div class="pu-upi-panel" id="upi-panel">
+          <div class="pu-upi-label">UPI Amount</div>
+          <div class="pu-upi-amt">₹<span id="upi-amt">0</span></div>
+        </div>
+
+        <div class="pu-amount-wrap">
+          <span class="pu-amount-prefix">₹</span>
+          <input type="number" id="dc-amount" class="pu-amount-input" placeholder="0">
+        </div>
+
+        <div class="pu-receiver-grid">
+          <input type="text" id="receiver-name" class="pu-input-field" placeholder="Receiver Name">
+          <input type="tel" id="receiver-mobile" class="pu-input-field" placeholder="Mobile">
+        </div>
+
+        <button class="pu-collect-btn" id="collect-btn" onclick="collectAndDeliver(false)">
+          ✅ Collect & Mark Delivered
+        </button>
+      </div>
+
+      <!-- Action Row -->
+      <div class="pu-action-row">
+        <button class="pu-wa-btn" onclick="sendDeliveryWA('hi')">🟢 WhatsApp (हिंदी)</button>
+        <button class="pu-wa-btn" onclick="sendDeliveryWA('en')">🟢 WhatsApp (EN)</button>
+        <button class="pu-back-btn" onclick="searchAnother()">🔍 New</button>
       </div>
     </div>
-    <div style="display:flex;gap:10px;">
-      <div style="flex:1;position:relative;">
-        <span style="position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:16px;pointer-events:none;">🔍</span>
-        <input type="text" id="pickup-search"
-          placeholder="Code, naam, mobile ya address..."
-          oninput="debounceSearch()" onkeydown="if(event.key==='Enter')doSearch()"
-          style="width:100%;font-size:16px;font-weight:700;padding:13px 16px 13px 46px;border:none;border-radius:14px;outline:none;box-shadow:0 6px 24px rgba(0,0,0,0.25);background:#fff;box-sizing:border-box;"
-          autofocus>
-      </div>
-      <button onclick="doSearch()" style="padding:0 22px;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;border-radius:14px;font-size:18px;cursor:pointer;box-shadow:0 6px 20px rgba(99,102,241,0.4);">→</button>
-    </div>
-    <div id="search-results" style="margin-top:8px;"></div>
-  </div>
+
+  </div><!-- /delivery-card -->
 </div>
 
-<!-- Main -->
-<div style="padding:20px 24px;max-width:1000px;margin:0 auto;">
-
-  <!-- Empty state -->
-  <div id="empty-state" style="text-align:center;padding:50px 20px;">
-    <div style="font-size:64px;opacity:0.25;margin-bottom:12px;">📦</div>
-    <div style="font-size:16px;font-weight:700;color:var(--text-muted);">Enter order code or customer name</div>
-  </div>
-
-  <!-- Result card — 2 column layout -->
-  <div id="delivery-card" style="display:none;" class="pickup-card">
-
-    <!-- TOP: order header strip -->
-    <div style="background:linear-gradient(135deg,#1e1b4b,#4338ca);border-radius:18px;padding:18px 22px;margin-bottom:14px;box-shadow:0 6px 24px rgba(67,56,202,0.3);position:relative;overflow:hidden;">
-      <div style="position:absolute;right:-10px;top:-10px;width:100px;height:100px;background:rgba(255,255,255,0.04);border-radius:50%;"></div>
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
-        <div style="display:flex;align-items:center;gap:16px;">
-          <div style="font-size:36px;font-weight:900;color:#fff;letter-spacing:2px;" id="dc-code">—</div>
-          <div>
-            <div style="font-size:17px;font-weight:800;color:#fff;" id="dc-customer">—</div>
-            <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:2px;" id="dc-meta">—</div>
-          </div>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <div id="dc-status-badge" style="border-radius:10px;padding:6px 16px;font-size:12px;font-weight:900;color:#fff;background:rgba(255,255,255,0.15);border:2px solid rgba(255,255,255,0.25);">—</div>
-          <button onclick="searchAnother()" style="background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:10px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;">← New Search</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- TWO COLUMNS -->
-    <div id="two-col-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start;">
-
-      <!-- ══ LEFT COLUMN: Order info ══ -->
-      <div style="display:flex;flex-direction:column;gap:12px;">
-
-        <!-- Garments + Payment summary row -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          <!-- Garments -->
-          <div style="background:#fff;border-radius:14px;padding:14px;border:1.5px solid #e0e7ff;">
-            <div style="font-size:9px;font-weight:800;text-transform:uppercase;color:#6366f1;margin-bottom:8px;letter-spacing:0.8px;">👕 Garments</div>
-            <div id="dc-garments" style="display:flex;flex-wrap:wrap;gap:5px;"></div>
-          </div>
-          <!-- Payment summary -->
-          <div style="background:#fff;border-radius:14px;padding:14px;border:1.5px solid #e0e7ff;">
-            <div style="font-size:9px;font-weight:800;text-transform:uppercase;color:#6366f1;margin-bottom:8px;letter-spacing:0.8px;">💰 Payment</div>
-            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-              <span style="font-size:11px;color:var(--text-muted);">Total</span>
-              <span style="font-size:13px;font-weight:800;" id="dc-total">—</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-              <span style="font-size:11px;color:var(--text-muted);">Advance</span>
-              <span style="font-size:13px;font-weight:700;color:#16a34a;" id="dc-advance">—</span>
-            </div>
-            <div style="border-top:1px dashed #e5e7eb;margin:6px 0;"></div>
-            <div style="display:flex;justify-content:space-between;">
-              <span style="font-size:12px;font-weight:800;color:#dc2626;">Due</span>
-              <span style="font-size:16px;font-weight:900;color:#dc2626;" id="dc-remaining">—</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;margin-top:6px;" id="dc-mode-row" style="display:none;">
-              <span style="font-size:11px;color:var(--text-muted);">Payment Mode</span>
-              <span style="font-size:12px;font-weight:800;" id="dc-mode">—</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;margin-top:4px;" id="dc-deldate-row" style="display:none;">
-              <span style="font-size:11px;color:var(--text-muted);">Delivered On</span>
-              <span style="font-size:12px;font-weight:800;color:#16a34a;" id="dc-deldate">—</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Photos -->
-        <div id="photos-strip" style="display:none;background:#fffbeb;border-radius:14px;padding:12px 14px;border:1.5px solid #fde68a;">
-          <div style="font-size:9px;font-weight:800;text-transform:uppercase;color:#92400e;margin-bottom:8px;">📷 Cloth Photos</div>
-          <div id="dc-images" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
-        </div>
-
-        <!-- Pending (not ready) -->
-        <div id="pending-section" style="display:none;background:#fffbeb;border:2px solid #fde68a;border-radius:16px;padding:18px;text-align:center;">
-          <div style="font-size:40px;margin-bottom:6px;">⏳</div>
-          <div style="font-size:15px;font-weight:900;color:#92400e;">Order Not Ready Yet</div>
-          <div style="font-size:12px;color:#b45309;margin-top:4px;margin-bottom:14px;">Status must be "Ready" to deliver.</div>
-
-          <!-- 🔓 OWNER BYPASS BUTTON -->
-          <button onclick="forceMarkReady()" id="force-ready-btn"
-            style="width:100%;padding:13px;background:linear-gradient(135deg,#dc2626,#991b1b);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(220,38,38,0.35);">
-            ⚡ Force Mark Ready (Bypass Work Log)
-          </button>
-          <div style="font-size:10px;color:#7f1d1d;margin-top:8px;font-weight:600;">
-            ⚠️ Sirf owner use — work log auto-fill ho jayega
-          </div>
-        </div>
-      </div>
-
-      <!-- ══ RIGHT COLUMN: Collect Payment ══ -->
-      <div id="payment-section" style="display:none;">
-        <div style="background:#fff;border-radius:18px;padding:18px;border:1.5px solid var(--border);box-shadow:0 2px 12px rgba(0,0,0,0.06);">
-          <div style="font-size:13px;font-weight:900;color:var(--text-primary);margin-bottom:14px;">💵 Collect Payment</div>
-
-          <!-- Amount -->
-          <div style="margin-bottom:12px;">
-            <label style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:5px;">Amount (₹)</label>
-            <input type="number" id="dc-amount" min="0" placeholder="0"
-              style="width:100%;font-size:32px;font-weight:900;padding:10px 14px;border:2px solid var(--border);border-radius:12px;text-align:center;background:#f8fafc;outline:none;box-sizing:border-box;"
-              oninput="if(payMode==='upi') document.getElementById('upi-amt').textContent=this.value||0;">
-          </div>
-
-          <!-- Mode -->
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
-            <button id="mode-cash" onclick="setPayMode('cash')" class="pay-btn"
-              style="padding:10px;border-radius:10px;border:2px solid #16a34a;background:#16a34a;color:#fff;font-size:14px;font-weight:800;cursor:pointer;">
-              💵 Cash
-            </button>
-            <button id="mode-upi" onclick="setPayMode('upi')" class="pay-btn"
-              style="padding:10px;border-radius:10px;border:2px solid var(--border);background:#fff;color:var(--text-muted);font-size:14px;font-weight:800;cursor:pointer;">
-              📱 UPI
-            </button>
-          </div>
-
-          <!-- UPI panel -->
-          <div id="upi-panel" style="display:none;background:#eef2ff;border-radius:12px;padding:14px;margin-bottom:12px;text-align:center;border:1.5px solid #c7d2fe;">
-            <div style="font-size:12px;font-weight:800;color:#4338ca;margin-bottom:8px;">📱 UPI से भुगतान लें</div>
-            <img src="{{ upi_qr }}" style="max-width:150px;border-radius:10px;border:2px solid #a5b4fc;" alt="UPI QR"
-              onerror="this.onerror=null;this.style.display='none';this.parentElement.insertAdjacentHTML('beforeend','<div style=&quot;padding:12px;background:#fee2e2;border-radius:8px;font-size:12px;color:#991b1b;font-weight:700;&quot;>QR image not loading.<br>Go to Settings → set UPI QR URL</div>');"
-            >
-            <div style="font-size:24px;font-weight:900;color:#4338ca;margin-top:8px;">₹<span id="upi-amt">0</span></div>
-          </div>
-
-          <!-- Receiver -->
-          <div style="background:#f8fafc;border:1.5px solid var(--border);border-radius:10px;padding:10px;margin-bottom:12px;">
-            <div style="font-size:10px;font-weight:700;color:var(--text-muted);margin-bottom:6px;">👤 Receiver (optional)</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-              <input type="text" id="receiver-name" placeholder="Name..."
-                style="padding:8px 10px;font-size:13px;border:1.5px solid var(--border);border-radius:8px;background:#fff;">
-              <input type="text" id="receiver-mobile" maxlength="10" placeholder="Mobile..."
-                style="padding:8px 10px;font-size:13px;border:1.5px solid var(--border);border-radius:8px;background:#fff;">
-            </div>
-          </div>
-
-          <!-- Collect button -->
-          <button onclick="collectAndDeliver(false)" id="collect-btn"
-            style="width:100%;padding:16px;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;border-radius:14px;font-size:16px;font-weight:900;cursor:pointer;box-shadow:0 4px 16px rgba(22,163,74,0.3);margin-bottom:8px;">
-            ✅ Collect & Mark Delivered
-          </button>
-
-          <!-- Discount button -->
-          <button onclick="collectAndDeliver(true)" id="discount-btn"
-            style="width:100%;padding:12px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:8px;">
-            🏷️ Accept Amount &amp; Close (Discount/Waive Remaining)
-          </button>
-
-          <!-- WhatsApp -->
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-            <button onclick="sendDeliveryWA('hi')" style="padding:9px;background:#d1fae5;color:#065f46;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">📲 WA हिंदी</button>
-            <button onclick="sendDeliveryWA('en')" style="padding:9px;background:#d1fae5;color:#065f46;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">📲 WA English</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ══ FULL WIDTH: Already Delivered ══ -->
-    <div id="delivered-section" style="display:none;margin-top:14px;">
-      <div style="background:linear-gradient(135deg,#d1fae5,#a7f3d0);border:2px solid #6ee7b7;border-radius:20px;padding:40px 24px;text-align:center;">
-        <div style="font-size:64px;margin-bottom:12px;">✅</div>
-        <div style="font-size:24px;font-weight:900;color:#065f46;margin-bottom:6px;">Already Delivered</div>
-        <div style="font-size:14px;color:#047857;margin-bottom:24px;" id="delivered-date-text"></div>
-        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
-          <button onclick="sendDeliveryWA('hi')" style="background:#059669;color:#fff;border:none;border-radius:12px;padding:14px 32px;font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 4px 16px rgba(5,150,105,0.35);">📲 WhatsApp हिंदी</button>
-          <button onclick="sendDeliveryWA('en')" style="background:#059669;color:#fff;border:none;border-radius:12px;padding:14px 32px;font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 4px 16px rgba(5,150,105,0.35);">📲 WhatsApp English</button>
-        </div>
-      </div>
-    </div>
-
-  </div>
+<!-- Image overlay -->
+<div id="img-overlay" onclick="this.style.display='none'">
+  <img id="overlay-img" src="">
 </div>
 
-<!-- Fullscreen image overlay -->
-<div id="img-overlay" onclick="this.style.display='none'" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.94);z-index:9999;align-items:center;justify-content:center;">
-  <button onclick="document.getElementById('img-overlay').style.display='none'" style="position:absolute;top:20px;right:22px;background:rgba(255,255,255,0.15);border:none;color:#fff;width:44px;height:44px;border-radius:50%;font-size:22px;cursor:pointer;">✕</button>
-  <img id="overlay-img" style="max-width:92%;max-height:88%;border-radius:12px;object-fit:contain;">
-</div>
-
-{% endblock %}
-{% block extra_js %}
 <script>
 var currentCode = "", currentOrder = {}, payMode = "cash", searchTimer = null;
 
@@ -245,90 +469,94 @@ function doSearch() {
   var q = document.getElementById("pickup-search").value.trim();
   if (!q) return;
   var res = document.getElementById("search-results");
-  res.innerHTML = '<div style="color:rgba(255,255,255,0.6);font-size:13px;padding:6px;">खोज रहे हैं...</div>';
+  res.innerHTML = '<div style="padding:12px 16px;color:#94a3b8;font-size:13px;">Dhoondh raha hai...</div>';
   fetch("/api/pickup/search?q=" + encodeURIComponent(q))
     .then(function(r){ return r.json(); })
     .then(function(data) {
-      if (!data.length) { res.innerHTML = '<div style="color:rgba(255,255,255,0.5);font-size:13px;padding:8px;">⚠️ कोई ऑर्डर नहीं मिला</div>'; return; }
-      if (data.length === 1) { res.innerHTML = ""; loadOrder(data[0].order_code); return; }
-      var sc = {pending:"#fbbf24",ready:"#34d399",delivered:"#9ca3af",cancelled:"#f87171"};
-      res.innerHTML = data.map(function(o) {
-        var codeLine = '#' + (o.display_code||o.order_code);
-        if (o.entry_code) codeLine += ' <span style="background:rgba(99,102,241,0.3);padding:1px 7px;border-radius:6px;font-size:10px;font-weight:800;">Entry: ' + o.entry_code + '</span>';
-        var statusBg = sc[o.status]||"#9ca3af";
-        return '<button onclick="doPickup(\''+o.order_code+'\')"'
-          +' style="display:flex;align-items:center;justify-content:space-between;width:100%;padding:12px 14px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:12px;color:#fff;cursor:pointer;margin-bottom:6px;font-size:13px;font-weight:700;text-align:left;">'
-          +'<div style="flex:1;min-width:0;">'
-          +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">'
-          +'<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+statusBg+';flex-shrink:0;"></span>'
-          +codeLine+' — '+o.customer_name
-          +'</div>'
-          +(o.address?'<div style="font-size:11px;opacity:0.65;margin-top:2px;">📍 '+o.address+'</div>':'')
-          +'<div style="font-size:11px;opacity:0.55;margin-top:3px;">📅 '+o.order_date_fmt
-          +(o.status==="delivered" && o.delivered_at_fmt
-              ? ' · <span style="color:#34d399;font-weight:800;">✅ Delivered: '+o.delivered_at_fmt+'</span>'
-              : ' → '+(o.delivery_date_fmt||"—"))
-          +' · <span style="color:'+statusBg+';font-weight:800;text-transform:uppercase;">'+o.status+'</span>'
-          +(o.remaining>0?' · ₹'+o.remaining+' due':'')
-          +'</div>'
-          +'</div>'
-          +'<span style="opacity:0.45;font-size:11px;flex-shrink:0;margin-left:8px;">'+o.mobile+'</span></button>';
-      }).join("");
-    });
+      if (!data.length) {
+        res.innerHTML = '<div style="padding:12px 16px;color:#dc2626;font-size:13px;">Koi order nahi mila</div>';
+        return;
+      }
+      var html = '<div class="pu-search-results">';
+      data.forEach(function(o) {
+        var statusColor = o.status==='ready'?'#16a34a':o.status==='delivered'?'#6366f1':'#d97706';
+        html += '<div class="pu-result-item" onclick="doPickup(\''+o.order_code+'\')">'
+          + '<div style="display:flex;justify-content:space-between;align-items:center;">'
+          + '<span class="pu-result-code">#'+o.order_code+'</span>'
+          + '<span style="font-size:10px;font-weight:800;color:'+statusColor+';text-transform:uppercase;">'+o.status+'</span>'
+          + '</div>'
+          + '<div class="pu-result-name">'+o.customer_name+'</div>'
+          + '<div class="pu-result-meta">📱 '+(o.mobile||'—')+(o.garments?' · '+o.garments:'')+'</div>'
+          + '</div>';
+      });
+      html += '</div>';
+      res.innerHTML = html;
+    }).catch(function(){ res.innerHTML = ''; });
 }
 
 function loadOrder(code) {
   currentCode = code;
   document.getElementById("empty-state").style.display = "none";
+  document.getElementById("search-results").innerHTML = "";
   fetch("/api/pickup/order?code=" + code)
-    .then(function(r){ return r.json(); }).then(function(o) {
+    .then(function(r){ return r.json(); })
+    .then(function(o) {
       if (o.error) { showToast("Order not found","error"); return; }
       currentOrder = o;
-      document.getElementById("dc-code").textContent     = "#" + (o.display_code||o.order_code);
-      if (o.entry_code) {
-        document.getElementById("dc-code").textContent += "  (Entry #" + o.entry_code + ")";
-      }
+
+      document.getElementById("dc-code").textContent     = "#" + (o.display_code||o.order_code) + (o.entry_code ? "  (Entry #"+o.entry_code+")" : "");
       document.getElementById("dc-customer").textContent = o.customer_name;
-      document.getElementById("dc-meta").textContent     = "📱 " + (o.mobile||"—") + (o.address ? "  ·  📍 " + o.address : "") + "  ·  Order: " + (o.order_date_fmt||"") + " → " + (o.delivery_date_fmt||"");
-      document.getElementById("dc-total").textContent    = "₹" + (o.payable_amount||o.total||0);
+
+      var meta = [];
+      if (o.mobile)  meta.push("📱 " + o.mobile);
+      if (o.address) meta.push("📍 " + o.address);
+      if (o.order_date_fmt) meta.push("📅 " + o.order_date_fmt + " → " + (o.delivery_date_fmt||"—"));
+      document.getElementById("dc-meta").innerHTML = meta.join("  ·  ");
+
+      document.getElementById("dc-total").textContent    = "₹" + (o.payable_amount||0);
       document.getElementById("dc-advance").textContent  = "₹" + (o.advance_paid||0);
       document.getElementById("dc-remaining").textContent= "₹" + (o.remaining||0);
 
       // Payment mode
       var modeEl = document.getElementById("dc-mode");
       var modeRow = document.getElementById("dc-mode-row");
-      if (modeEl && o.payment_mode) {
-        var modeIcon = o.payment_mode === "cash" ? "💵 नकद (Cash)"
-                     : o.payment_mode === "upi"  ? "📱 UPI"
-                     : o.payment_mode === "bank" ? "🏦 Bank"
-                     : o.payment_mode.toUpperCase();
-        modeEl.textContent = modeIcon;
-        if (modeRow) modeRow.style.display = "flex";
-      }
+      if (o.payment_mode) {
+        modeEl.textContent = o.payment_mode==="cash"?"💵 Cash":o.payment_mode==="upi"?"📱 UPI":"🏦 Bank";
+        modeRow.style.display = "flex";
+      } else { modeRow.style.display = "none"; }
 
       // Delivered date
       var delEl  = document.getElementById("dc-deldate");
       var delRow = document.getElementById("dc-deldate-row");
-      if (delEl && o.delivered_at_fmt) {
+      var delBanner = document.getElementById("pu-delivered-banner");
+      var delBannerSub = document.getElementById("dc-deldate-banner");
+      if (o.delivered_at_fmt) {
         delEl.textContent = "✅ " + o.delivered_at_fmt;
-        if (delRow) delRow.style.display = "flex";
-      } else if (delRow) {
-        delRow.style.display = "none";
-      }
+        delRow.style.display = "flex";
+        if (delBannerSub) delBannerSub.textContent = o.delivered_at_fmt + " ko deliver hua";
+      } else { delRow.style.display = "none"; }
+
+      // Status badge
+      var sb = document.getElementById("dc-status-badge");
+      var colors = {pending:"background:#fef3c7;color:#92400e;",ready:"background:#dcfce7;color:#166534;",delivered:"background:#ede9fe;color:#5b21b6;",cancelled:"background:#fee2e2;color:#991b1b;"};
+      sb.style.cssText = (colors[o.status]||colors.pending) + "border-radius:20px;padding:3px 10px;font-size:11px;font-weight:800;";
+      sb.textContent = o.status.toUpperCase();
+
+      // Garments
+      document.getElementById("dc-garments").innerHTML = (o.garments||o.items||[]).map(function(it){
+        return '<span class="pu-garment-chip">'+it.garment_type+' ×'+it.quantity+'</span>';
+      }).join("") || '<span style="color:#94a3b8;font-size:12px;">—</span>';
 
       var rem = parseFloat(o.remaining||0);
       document.getElementById("dc-amount").value = rem > 0 ? rem : "";
       document.getElementById("upi-amt").textContent = rem > 0 ? rem : 0;
 
-      var sb = document.getElementById("dc-status-badge");
-      var ss = {pending:"background:rgba(251,191,36,0.2);border-color:rgba(251,191,36,0.5);",ready:"background:#16a34a;border-color:#15803d;",delivered:"background:rgba(55,65,81,0.5);border-color:rgba(255,255,255,0.15);",cancelled:"background:rgba(239,68,68,0.3);border-color:rgba(239,68,68,0.5);"};
-      sb.style.cssText = (ss[o.status]||ss.pending) + "border-radius:10px;padding:6px 16px;font-size:12px;font-weight:900;color:#fff;border:2px solid;";
-      sb.textContent = o.status.toUpperCase();
+      // Show/hide sections based on status
+      document.getElementById("pending-section").style.display  = o.status==="pending"  ? "block" : "none";
+      document.getElementById("payment-section").style.display  = o.status==="ready"    ? "block" : "none";
+      document.getElementById("pu-delivered-banner").style.display = o.status==="delivered" ? "block" : "none";
 
-      document.getElementById("dc-garments").innerHTML = (o.garments||o.items||[]).map(function(it){
-        return '<span style="background:#eef2ff;border:1.5px solid #a5b4fc;border-radius:8px;padding:4px 12px;font-size:12px;font-weight:800;color:#4338ca;">'+it.garment_type+' ×'+it.quantity+'</span>';
-      }).join("") || '<span style="color:var(--text-muted);font-size:12px;">—</span>';
-
+      // Photos
       fetch("/images/" + o.order_code + "?ts=" + Date.now()).then(function(r){return r.text();}).then(function(html){
         var imgBox = document.getElementById("dc-images");
         var strip  = document.getElementById("photos-strip");
@@ -337,157 +565,73 @@ function loadOrder(code) {
           tmp.querySelectorAll("img").forEach(function(img){
             var src = img.getAttribute("src");
             var el = document.createElement("img");
-            el.src = src; el.style.cssText = "width:64px;height:64px;object-fit:cover;border-radius:10px;border:2px solid #fde68a;cursor:zoom-in;"; el.onclick=function(){openZoomModal(this.src,"Order Image");};
+            el.src = src;
+            el.style.cssText = "width:60px;height:60px;object-fit:cover;border-radius:8px;border:2px solid #fde68a;cursor:zoom-in;";
+            el.loading = "lazy";
+            el.onerror = function(){ this.style.display="none"; };
             el.onclick = function(){ document.getElementById("overlay-img").src=src; document.getElementById("img-overlay").style.display="flex"; };
             imgBox.appendChild(el);
           });
-          strip.style.display = "block";
+          strip.style.display = imgBox.children.length ? "block" : "none";
         } else { strip.style.display = "none"; }
-      });
-
-      var isDelivered = o.status === "delivered";
-      var isActive = (o.status==="pending"||o.status==="ready");
-      document.getElementById("payment-section").style.display  = isActive ? "block" : "none";
-      document.getElementById("delivered-section").style.display = isDelivered ? "block" : "none";
-      document.getElementById("pending-section").style.display   = o.status==="pending" ? "block" : "none";
-      // When delivered: make left column full width, hide right column gap
-      var grid = document.getElementById("two-col-grid");
-      if(grid) grid.style.gridTemplateColumns = isDelivered ? "1fr" : "1fr 1fr";
-      if (o.status==="delivered") document.getElementById("delivered-date-text").textContent = "Delivered on " + (o.delivered_at_fmt||"");
+      }).catch(function(){ document.getElementById("photos-strip").style.display="none"; });
 
       document.getElementById("delivery-card").style.display = "block";
-      document.getElementById("delivery-card").scrollIntoView({behavior:"smooth",block:"start"});
-      document.getElementById("receiver-name").value = "";
-      document.getElementById("receiver-mobile").value = "";
-    });
+    }).catch(function(){ showToast("Error loading order","error"); });
 }
 
-function setPayMode(m) {
-  payMode = m;
-  var bc = document.getElementById("mode-cash"), bu = document.getElementById("mode-upi");
-  bc.style.background = m==="cash" ? "#16a34a" : "#fff"; bc.style.color = m==="cash" ? "#fff" : "var(--text-muted)"; bc.style.borderColor = m==="cash" ? "#16a34a" : "var(--border)";
-  bu.style.background = m==="upi"  ? "#6366f1" : "#fff"; bu.style.color = m==="upi"  ? "#fff" : "var(--text-muted)"; bu.style.borderColor = m==="upi"  ? "#6366f1" : "var(--border)";
-  document.getElementById("upi-panel").style.display = m==="upi" ? "block" : "none";
-  if (m==="upi") document.getElementById("upi-amt").textContent = document.getElementById("dc-amount").value||0;
+function setPayMode(mode) {
+  payMode = mode;
+  document.getElementById("mode-cash").className = "pu-mode-btn" + (mode==="cash"?" active":"");
+  document.getElementById("mode-upi").className  = "pu-mode-btn" + (mode==="upi" ?" active":"");
+  document.getElementById("upi-panel").style.display = mode==="upi" ? "block" : "none";
 }
 
 function forceMarkReady() {
-  if (!currentCode) { showToast("Pehle order select karo","error"); return; }
-  if (!confirm("⚠️ Yeh order ko bina kapde check kiye 'Ready' mark kar dega.\n\nWork log mein Naap+Kataai+Silai auto-fill ho jayegi.\n\nProceed?")) return;
-
   var btn = document.getElementById("force-ready-btn");
-  btn.disabled = true;
-  btn.innerHTML = "Processing...";
-
-  // Timeout safety — reset button after 10s if no response
-  var _btnTimeout = setTimeout(function() {
-    btn.disabled = false;
-    btn.innerHTML = "⚡ Force Complete";
-    showToast("⚠️ Timeout — dobara try karo","error");
-  }, 10000);
-
-  fetch("/api/pickup/force-complete",{
-    method:"POST", headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({order_code: currentCode})
-  })
-  .then(function(r){ return r.json(); })
-  .then(function(d){
-    clearTimeout(_btnTimeout);
-    if (d.ok) {
-      showToast("✅ Order marked Ready — ab deliver kar sakte ho","success");
-      setTimeout(function(){ doPickup(currentCode); }, 400);
-    } else {
-      showToast("❌ " + (d.error||"Failed"),"error");
-      btn.disabled = false;
-      btn.innerHTML = "⚡ Force Mark Ready (Bypass Work Log)";
-    }
-  })
-  .catch(function(){
-    showToast("Network error","error");
-    btn.disabled = false;
-    btn.innerHTML = "⚡ Force Mark Ready (Bypass Work Log)";
-  });
+  btn.disabled = true; btn.textContent = "Processing...";
+  var _t = setTimeout(function(){ btn.disabled=false; btn.textContent="⚡ Force Mark as Ready"; showToast("Timeout — dobara try karo","error"); }, 10000);
+  fetch("/api/pickup/force-complete", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({order_code:currentCode})})
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      clearTimeout(_t);
+      if (d.ok) { showToast("✅ Order Ready mark ho gaya","success"); setTimeout(function(){ loadOrder(currentCode); }, 400); }
+      else { showToast("❌ "+(d.error||"Failed"),"error"); btn.disabled=false; btn.textContent="⚡ Force Mark as Ready"; }
+    }).catch(function(){ clearTimeout(_t); btn.disabled=false; btn.textContent="⚡ Force Mark as Ready"; showToast("❌ Network error","error"); });
 }
 
 function collectAndDeliver(isDiscount) {
   var amt = parseFloat(document.getElementById("dc-amount").value)||0;
-  var rem = parseFloat(document.getElementById("dc-remaining").textContent.replace("₹",""))||0;
+  var rem = parseFloat((document.getElementById("dc-remaining").textContent||"0").replace("₹",""))||0;
   var rn  = (document.getElementById("receiver-name").value||"").trim();
   var rm  = (document.getElementById("receiver-mobile").value||"").trim();
-
-  if (isDiscount) {
-    var msg = amt > 0
-      ? "Accept ₹"+amt+" and waive remaining ₹"+(rem-amt)+"? Order will be marked delivered."
-      : "Waive full remaining ₹"+rem+"? Order will be marked delivered with no payment.";
-    if (!confirm(msg)) return;
-  }
-
-  var btn = isDiscount ? document.getElementById("discount-btn") : document.getElementById("collect-btn");
-  btn.disabled = true;
-  btn.innerHTML = "Processing...";
-
-  fetch("/api/pickup/collect-and-deliver",{
+  var btn = document.getElementById("collect-btn");
+  btn.disabled = true; btn.textContent = "Processing...";
+  fetch("/api/pickup/collect-and-deliver", {
     method:"POST", headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({order_code:currentCode, amount:amt, mode:payMode,
-                          receiver_name:rn, receiver_mobile:rm, discount:isDiscount})
-  }).then(function(r){return r.json();}).then(function(d){
-    btn.disabled = false;
-    btn.innerHTML = isDiscount ? "🏷️ Accept Amount & Close (Discount/Waive Remaining)" : "✅ Collect & Mark Delivered";
-    if (d.ok) {
-      var msg = isDiscount ? "✅ Order closed! ₹"+amt+" collected, remaining waived." : "✅ Delivered! ₹"+amt+" collected";
-      showToast(msg,"success");
-      loadOrder(currentCode);
-    } else showToast("Error: "+d.error,"error");
-  });
+    body: JSON.stringify({order_code:currentCode, amount:amt, payment_mode:payMode, receiver_name:rn, receiver_mobile:rm})
+  }).then(function(r){ return r.json(); })
+    .then(function(d){
+      if (d.ok) { showToast("✅ Delivered & Payment recorded!","success"); setTimeout(function(){ loadOrder(currentCode); }, 500); }
+      else { showToast("❌ "+(d.error||"Failed"),"error"); btn.disabled=false; btn.textContent="✅ Collect & Mark Delivered"; }
+    }).catch(function(){ btn.disabled=false; btn.textContent="✅ Collect & Mark Delivered"; showToast("❌ Network error","error"); });
 }
 
 function sendDeliveryWA(lang) {
   var o = currentOrder;
   var items = (o.garments||o.items||[]).map(function(i){return i.garment_type+" ×"+i.quantity;}).join(", ");
-  var mode = o.payment_mode === "cash" ? (lang==="hi"?"नकद":"Cash") : "UPI";
-  var odate = o.order_date_fmt || "";
-  var ddate = o.delivery_date_fmt || "";
-  var total = Math.round(o.payable_amount || 0);
+  var mode = o.payment_mode==="cash"?(lang==="hi"?"नकद":"Cash"):"UPI";
+  var total = Math.round(o.payable_amount||0);
   var msg = "";
-
-  if (lang === "hi") {
-    msg = "*उत्तम टेलर्स*\n"
-      + "नमस्ते *" + o.customer_name + "* जी,\n"
-      + "आपके कपड़े सफलतापूर्वक डिलीवर कर दिए गए हैं।\n"
-      + "------------------------------------------\n\n"
-      + "• ऑर्डर नंबर: *#" + (o.display_code||o.order_code) + "*\n\n"
-      + (odate ? "• ऑर्डर तारीख: " + odate + "\n\n" : "")
-      + (ddate ? "• डिलीवरी तारीख: " + ddate + "\n\n" : "")
-      + "• कपड़े: " + items + "\n\n"
-      + "• कुल भुगतान: *₹" + total + "*\n\n"
-      + "• भुगतान माध्यम: " + mode + "\n"
-      + "-----------------------------------------------\n"
-      + "आपके विश्वास के लिए धन्यवाद। 🙏🏻\n"
-      + "आगे भी सेवा का अवसर दें, यही हमारी शुभकामना है।\n"
-      + "धन्यवाद!\n"
-      + "उत्तम टेलर्स";
+  if (lang==="hi") {
+    msg = "*उत्तम टेलर्स*\nनमस्ते *"+o.customer_name+"* जी,\nआपके कपड़े सफलतापूर्वक डिलीवर कर दिए गए हैं।\n--------------------------\n📦 Order: #"+o.order_code+"\n👗 Items: "+items+"\n💰 Total: ₹"+total+"\n💳 Mode: "+mode+"\n\nधन्यवाद! 🙏";
   } else {
-    msg = "*Uttam Tailors*\n"
-      + "Hello *" + o.customer_name + "*,\n"
-      + "Your garments have been delivered successfully.\n"
-      + "------------------------------------------\n\n"
-      + "• Order No: *#" + (o.display_code||o.order_code) + "*\n\n"
-      + (odate ? "• Order Date: " + odate + "\n\n" : "")
-      + (ddate ? "• Delivery Date: " + ddate + "\n\n" : "")
-      + "• Garments: " + items + "\n\n"
-      + "• Total Paid: *₹" + total + "*\n\n"
-      + "• Payment Mode: " + mode + "\n"
-      + "-----------------------------------------------\n"
-      + "Thank you for your trust. 🙏🏻\n"
-      + "We look forward to serving you again.\n"
-      + "Thank you!\n"
-      + "Uttam Tailors";
+    msg = "*Uttam Tailors*\nHello *"+o.customer_name+"*,\nYour order has been delivered successfully.\n--------------------------\n📦 Order: #"+o.order_code+"\n👗 Items: "+items+"\n💰 Total: ₹"+total+"\n💳 Mode: "+mode+"\n\nThank you! 🙏";
   }
-
   if (o.mobile) {
-    var phone = o.mobile.replace(/\D/g, "");
-    if (phone.length === 10) phone = "91" + phone;
-    window.open("https://wa.me/" + phone + "?text=" + encodeURIComponent(msg), "_blank");
+    var phone = o.mobile.replace(/\D/g,"");
+    if (phone.length===10) phone = "91"+phone;
+    window.open("https://wa.me/"+phone+"?text="+encodeURIComponent(msg),"_blank");
   }
 }
 
@@ -499,4 +643,5 @@ function searchAnother() {
   document.getElementById("pickup-search").focus();
 }
 </script>
+
 {% endblock %}
