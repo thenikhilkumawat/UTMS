@@ -1431,6 +1431,28 @@ def api_order_ledger():
         "other_orders": [dict(o) for o in other_orders],
     })
 
+
+@bp.route("/api/fix-finance-mode/<order_code>", methods=["POST","GET"])
+@owner_required
+def fix_finance_mode(order_code):
+    """Fix payment mode in finance entries for an order."""
+    mode = request.args.get("mode", "").strip() or (request.get_json(silent=True) or {}).get("mode","")
+    if not mode:
+        return jsonify({"ok": False, "error": "mode param required (cash/upi/bank)"})
+    conn = get_db()
+    order = conn.execute("SELECT id FROM orders WHERE order_code=?", (order_code,)).fetchone()
+    if not order:
+        conn.close()
+        return jsonify({"ok": False, "error": f"Order #{order_code} not found"})
+    rows = conn.execute(
+        "UPDATE finance SET mode=? WHERE order_id=? AND tx_type='income' RETURNING id",
+        (mode, order["id"])
+    ).fetchall()
+    conn.execute("UPDATE orders SET payment_mode=? WHERE id=?", (mode, order["id"]))
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True, "updated": len(rows), "message": f"✅ {len(rows)} finance entries updated to {mode}"})
+
 @bp.route("/api/fix-order-code")
 @owner_required
 def fix_order_code():
