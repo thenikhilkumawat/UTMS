@@ -2815,6 +2815,115 @@ def api_mobile_audit_count():
         "top_conflicts": [{"mobile": r["mobile"], "names": r["all_names"],
                            "orders": r["order_count"]} for r in conflicts[:10]]
     })
+
+@bp.route("/api/smart-fix-mobile-conflicts")
+@owner_required
+def api_smart_fix_mobile_conflicts():
+    """Smart fix: auto-merge typo names (same person), flag truly different people."""
+    from datetime import datetime as _dt
+    conn = get_db()
+
+    def name_similarity(a, b):
+        """Check if two names are likely the same person (typo/abbreviation)."""
+        a = a.lower().strip()
+        b = b.lower().strip()
+        if a == b: return True
+        # Remove common suffixes
+        for suf in [' ji', ' kumar', ' lal', ' ram', ' singh']:
+            a = a.replace(suf, '')
+            b = b.replace(suf, '')
+        a = a.strip(); b = b.strip()
+        if a == b: return True
+        # One contains the other
+        if a in b or b in a: return True
+        # First word matches
+        if a.split()[0] == b.split()[0] and len(a.split()[0]) > 3: return True
+        # Very similar (edit distance <= 2)
+        if abs(len(a)-len(b)) <= 2:
+            diff = sum(1 for x,y in zip(a,b) if x!=y) + abs(len(a)-len(b))
+            if diff <= 2: return True
+        return False
+
+    # Get all conflicts
+    rows = conn.execute("""
+        SELECT c.mobile, c.id as cust_id, TRIM(c.name) as cname,
+               COUNT(o.id) as ord_count
+        FROM customers c
+        JOIN orders o ON o.customer_id=c.id
+        WHERE c.mobile IS NOT NULL AND LENGTH(c.mobile) >= 8
+        GROUP BY c.mobile, c.id, c.name
+        HAVING COUNT(o.id) >= 1
+        ORDER BY c.mobile, c.id
+    """).fetchall()
+
+    # Group by mobile
+    from collections import defaultdict
+    mobile_groups = defaultdict(list)
+    for r in rows:
+        mobile_groups[r["mobile"]].append({
+            "cust_id": r["cust_id"],
+            "name": r["cname"],
+            "orders": r["ord_count"]
+        })
+
+    merged = 0
+    needs_review = []
+    now_str = _dt.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    for mobile, customers in mobile_groups.items():
+        if len(customers) <= 1:
+            continue
+
+        # Group customers by similarity
+        groups = []
+        used = set()
+        for i, c in enumerate(customers):
+            if i in used: continue
+            group = [c]
+            used.add(i)
+            for j, c2 in enumerate(customers):
+                if j in used: continue
+                if name_similarity(c["name"], c2["name"]):
+                    group.append(c2)
+                    used.add(j)
+            groups.append(group)
+
+        for group in groups:
+            if len(group) <= 1:
+                continue
+            # All in this group are likely same person — merge into oldest record
+            group.sort(key=lambda x: x["cust_id"])
+            keep_id = group[0]["cust_id"]
+            # Use longest name as canonical
+            best_name = max([g["name"] for g in group], key=len)
+            conn.execute("UPDATE customers SET name=? WHERE id=?", (best_name, keep_id))
+            for dup in group[1:]:
+                # Move all orders to canonical customer
+                conn.execute("UPDATE orders SET customer_id=? WHERE customer_id=?",
+                             (keep_id, dup["cust_id"]))
+                merged += 1
+
+        # Check for truly different people (groups that didn't merge)
+        if len(groups) > 1:
+            group_names = [max([g["name"] for g in grp], key=len) for grp in groups]
+            total_orders = sum(c["orders"] for c in customers)
+            needs_review.append({
+                "mobile": mobile,
+                "different_people": group_names,
+                "orders": total_orders
+            })
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({
+        "ok": True,
+        "typo_merges_done": merged,
+        "truly_different_people": len(needs_review),
+        "review_list": needs_review[:50],
+        "message": f"✅ {merged} typo duplicates merged. {len(needs_review)} mobiles need manual review (genuinely different people)."
+    })
+
 @bp.route("/finance")
 @owner_required
 def owner_finance():
