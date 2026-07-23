@@ -477,19 +477,30 @@ function doSearch() {
         res.innerHTML = '<div style="padding:12px 16px;color:#dc2626;font-size:13px;">Koi order nahi mila</div>';
         return;
       }
-      var html = '<div class="pu-search-results">';
-      data.forEach(function(o) {
-        var statusColor = o.status==='ready'?'#16a34a':o.status==='delivered'?'#6366f1':'#d97706';
-        html += '<div class="pu-result-item" onclick="doPickup(\''+o.order_code+'\')">'
-          + '<div style="display:flex;justify-content:space-between;align-items:center;">'
-          + '<span class="pu-result-code">#'+o.order_code+'</span>'
-          + '<span style="font-size:10px;font-weight:800;color:'+statusColor+';text-transform:uppercase;">'+o.status+'</span>'
-          + '</div>'
-          + '<div class="pu-result-name">'+o.customer_name+'</div>'
-          + '<div class="pu-result-meta">📱 '+(o.mobile||'—')+(o.garments?' · '+o.garments:'')+'</div>'
-          + '</div>';
+      // Group by name — same mobile = different people shown clearly
+      var groups={}, gOrder=[];
+      data.forEach(function(o){
+        var k=(o.customer_name||'—').trim();
+        if(!groups[k]){groups[k]=[];gOrder.push(k);}
+        groups[k].push(o);
       });
-      html += '</div>';
+      var multi=gOrder.length>1;
+      var html='<div class="pu-search-results">';
+      gOrder.forEach(function(name){
+        if(multi) html+='<div style="padding:5px 14px 3px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:#4338ca;background:#f0f0fe;border-bottom:1px solid #ddd;">👤 '+name+'</div>';
+        groups[name].forEach(function(o){
+          var sc=o.status==='ready'?'#16a34a':o.status==='delivered'?'#6366f1':'#d97706';
+          html+='<div class="pu-result-item" onclick="doPickup(''+o.order_code+'')">'
+            +'<div style="display:flex;justify-content:space-between;">'
+            +'<span class="pu-result-code">#'+o.order_code+'</span>'
+            +'<span style="font-size:10px;font-weight:800;color:'+sc+';text-transform:uppercase;">'+o.status+'</span>'
+            +'</div>'
+            +(multi?'':'<div class="pu-result-name">'+o.customer_name+'</div>')
+            +'<div class="pu-result-meta">📱 '+(o.mobile||'—')+(o.garments?' · '+o.garments:'')+'</div>'
+            +'</div>';
+        });
+      });
+      html+='</div>';
       res.innerHTML = html;
     }).catch(function(){ res.innerHTML = ''; });
 }
