@@ -90,7 +90,7 @@
         style="width:100%;padding:9px 12px;border:2px solid #6366f1;border-radius:8px;font-size:16px;font-weight:800;outline:none;color:#4338ca;">
     </div>
     <div style="display:flex;gap:8px;">
-      <button onclick="doFix()"
+      <button id="fix-btn" onclick="doFix()"
         style="flex:1;padding:12px;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;">
         ✅ Fix Karo
       </button>
@@ -110,34 +110,47 @@ function openFix(code, name, mobile) {
   document.getElementById('fix-code').textContent = code;
   document.getElementById('fix-name').value = name;
   document.getElementById('fix-mobile').value = '';
-  document.getElementById('fix-modal').style.display = 'flex';
-  setTimeout(function(){ document.getElementById('fix-mobile').focus(); }, 100);
+  var modal = document.getElementById('fix-modal');
+  modal.style.display = 'flex';
+  setTimeout(function(){ document.getElementById('fix-mobile').focus(); }, 150);
 }
 
 function closeModal() {
   document.getElementById('fix-modal').style.display = 'none';
 }
 
-async function doFix() {
+function doFix() {
   var name   = document.getElementById('fix-name').value.trim();
   var mobile = document.getElementById('fix-mobile').value.trim();
-  if (!mobile || mobile.length < 10) {
-    alert('10 digit mobile number daalo');
-    return;
-  }
-  var r = await fetch('/owner/api/split-customer', {
+  if (!name) { alert('Naam daalo'); return; }
+  if (!mobile || mobile.length < 10) { alert('Sahi 10 digit mobile daalo'); return; }
+
+  var btn = document.getElementById('fix-btn');
+  btn.disabled = true;
+  btn.textContent = 'Fix ho raha hai...';
+
+  fetch('/owner/api/split-customer', {
     method: 'POST',
-    headers: {'Content-Type':'application/json'},
+    headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({order_code: currentCode, name: name, mobile: mobile})
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.ok) {
+      closeModal();
+      alert('✅ Fixed! Order #' + currentCode + ' → mobile ' + mobile);
+      location.reload();
+    } else {
+      alert('❌ ' + (d.error || 'Error'));
+      btn.disabled = false;
+      btn.textContent = '✅ Fix Karo';
+    }
+  })
+  .catch(function(e) {
+    alert('❌ Network error: ' + e);
+    btn.disabled = false;
+    btn.textContent = '✅ Fix Karo';
   });
-  var d = await r.json();
-  if (d.ok) {
-    closeModal();
-    showToast('✅ Fixed! Order #' + currentCode + ' → ' + mobile, 'success');
-    setTimeout(function(){ location.reload(); }, 1500);
-  } else {
-    alert('❌ ' + (d.error || 'Error'));
-  }
 }
 </script>
 {% endblock %}
