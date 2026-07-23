@@ -5000,39 +5000,35 @@ def order_edit_save(order_code):
             # Get existing customer's mobile
             ex_cust = conn.execute("SELECT mobile, name FROM customers WHERE id=?",
                                    (customer_id,)).fetchone()
-            ex_mobile = (ex_cust["mobile"] if ex_cust else "") or ""
-            ex_name   = (ex_cust["name"]   if ex_cust else "") or ""
+            ex_mobile = ((ex_cust["mobile"] if ex_cust else "") or "").strip()
 
             if mobile and ex_mobile and mobile != ex_mobile:
-                # DIFFERENT mobile = different person with same name
-                # Create new customer, update THIS order's customer_id
+                # DIFFERENT mobile provided = different person
+                # Find or create customer with new mobile
                 from datetime import datetime as _dt
                 now_str = _dt.now().strftime("%Y-%m-%d %H:%M:%S")
-                # Check if correct customer already exists
                 right = conn.execute(
-                    "SELECT id FROM customers WHERE mobile=? AND LOWER(TRIM(name))=LOWER(TRIM(?))",
-                    (mobile, name)).fetchone()
+                    "SELECT id FROM customers WHERE mobile=?", (mobile,)).fetchone()
                 if right:
                     new_cust_id = right["id"]
-                    conn.execute("UPDATE customers SET name=?, address=? WHERE id=?",
-                                 (name, address, new_cust_id))
                 else:
                     row = conn.execute(
                         "INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?) RETURNING id",
                         (name, mobile, address, now_str)).fetchone()
                     new_cust_id = row["id"]
-                # Update THIS order to point to new customer
+                conn.execute("UPDATE customers SET name=?,address=? WHERE id=?",
+                             (name, address, new_cust_id))
                 conn.execute("UPDATE orders SET customer_id=? WHERE id=?",
                              (new_cust_id, order_id))
                 customer_id = new_cust_id
+            elif not mobile and ex_mobile:
+                # Mobile explicitly CLEARED → set to NULL for this customer
+                conn.execute("UPDATE customers SET name=?,mobile=NULL,address=? WHERE id=?",
+                             (name, address, customer_id))
             else:
-                # Same mobile or no mobile change — update name/address only, keep mobile safe
-                if mobile:
-                    conn.execute("UPDATE customers SET name=?, address=? WHERE id=?",
-                                 (name, address, customer_id))
-                else:
-                    conn.execute("UPDATE customers SET name=?, address=? WHERE id=?",
-                                 (name, address, customer_id))
+                # Same mobile or both blank → update name/address only
+                conn.execute("UPDATE customers SET name=?,address=? WHERE id=?",
+                             (name, address, customer_id))
 
         # Update order
         new_payable = float(data.get("payable_amount",0))
