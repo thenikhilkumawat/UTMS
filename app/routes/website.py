@@ -1032,13 +1032,13 @@ def create_order():
             item_rows.append({"type": gt, "qty": qty, "rate": rate})
             total_amount += qty * rate
 
-        # Fabric cost
+        # Fabric cost — stored separately so it shows on confirmation page
         fabric_cost = float(request.form.get("fabric_cost", 0) or 0)
-        total_amount += fabric_cost
+        # total_amount = stitching charges only
 
-        # Urgent surcharge 10%
+        # Urgent surcharge 10% (on stitching amount only)
         extra_charges = round(total_amount * 0.10, 2) if is_urgent else 0.0
-        payable_amount = round(total_amount + extra_charges, 2)
+        payable_amount = round(total_amount + fabric_cost + extra_charges, 2)
 
         # ── Coupon discount (server-side re-validation) ──
         coupon_code = (request.form.get("coupon_code") or "").strip().upper()
@@ -1106,15 +1106,15 @@ def create_order():
         _web_acc_id_order = session.get("web_account_id")
         db.execute(
             """INSERT INTO orders(order_code,customer_id,order_date,delivery_date,
-               total_amount,extra_charges,payable_amount,advance_paid,remaining,
+               total_amount,fabric_cost,extra_charges,payable_amount,advance_paid,remaining,
                payment_mode,status,is_urgent,note,web_account_id,created_at)
-               VALUES(?,?,?,?,?,?,?,?,?,'pending','pending',?,?,?,?)""",
+               VALUES(?,?,?,?,?,?,?,?,?,?,'pending','pending',?,?,?,?)""",
             (order_code, customer_id, today, delivery_date,
-             total_amount, extra_charges, payable_amount,
+             total_amount, fabric_cost, extra_charges, payable_amount,
              advance_paid, remaining, is_urgent, note, _web_acc_id_order, now)
+        )
         if rz_pay_id:
             db.execute("UPDATE orders SET payment_mode='online' WHERE order_code=?", (order_code,))
-        )
         order_row = db.execute(
             "SELECT id FROM orders WHERE order_code=?", (order_code,)
         ).fetchone()

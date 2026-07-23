@@ -391,6 +391,12 @@
           <span style="color:var(--muted)">Stitching charge</span>
           <span>₹{{ order.total_amount|int }}</span>
         </div>
+        {% if order.fabric_cost and order.fabric_cost > 0 %}
+        <div class="oc-pay-row">
+          <span style="color:var(--muted)">Fabric cost</span>
+          <span>₹{{ order.fabric_cost|int }}</span>
+        </div>
+        {% endif %}
         {% if order.extra_charges and order.extra_charges > 0 %}
         <div class="oc-pay-row">
           <span style="color:var(--muted)">Urgent surcharge (10%)</span>
