@@ -1,91 +1,162 @@
 {% extends "base.html" %}
 {% block title %}Diary — Order Search</div>
 
-<!-- Custom image viewer with Prev/Next for diary -->
+<!-- Diary image viewer: zoom + pinch + drag + Prev/Next -->
 <div id="diary-img-modal"
-  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;
-  flex-direction:column;align-items:center;justify-content:center;"
-  onclick="closeDiaryImg()">
+  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.93);z-index:99999;
+         flex-direction:column;align-items:center;justify-content:center;gap:8px;">
 
-  <!-- Image -->
-  <img id="diary-img-src" src="" alt=""
-    style="max-width:90vw;max-height:75vh;border-radius:12px;object-fit:contain;"
-    onclick="event.stopPropagation()">
+  <!-- Label -->
+  <div id="diary-img-label" style="font-size:13px;font-weight:700;color:#a5b4fc;"></div>
 
-  <!-- Order label -->
-  <div id="diary-img-label"
-    style="color:#fff;font-size:14px;font-weight:700;margin-top:12px;opacity:0.85;"></div>
+  <!-- Zoomable Image -->
+  <img id="diary-img-src" src="" alt="" draggable="false"
+    style="max-width:92vw;max-height:68vh;border-radius:10px;object-fit:contain;
+           transition:transform 0.1s;transform-origin:center center;user-select:none;touch-action:none;">
 
-  <!-- Prev / Next buttons -->
-  <div style="display:flex;gap:16px;margin-top:16px;" onclick="event.stopPropagation()">
-    <button onclick="diaryNavStep(-1)"
-      style="padding:10px 24px;background:rgba(255,255,255,0.15);border:2px solid rgba(255,255,255,0.3);
-      border-radius:12px;color:#fff;font-size:15px;font-weight:800;cursor:pointer;">
-      ← Prev
-    </button>
+  <!-- Zoom controls -->
+  <div style="display:flex;gap:8px;align-items:center;" onclick="event.stopPropagation()">
+    <button onclick="dZoom(-0.25)"
+      style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.15);
+             color:#fff;border:2px solid rgba(255,255,255,0.3);font-size:20px;font-weight:700;cursor:pointer;
+             display:flex;align-items:center;justify-content:center;">−</button>
+    <span id="diary-zoom-label"
+      style="font-size:12px;font-weight:700;color:#a5b4fc;min-width:42px;text-align:center;">100%</span>
+    <button onclick="dZoom(0.25)"
+      style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.15);
+             color:#fff;border:2px solid rgba(255,255,255,0.3);font-size:20px;font-weight:700;cursor:pointer;
+             display:flex;align-items:center;justify-content:center;">+</button>
+    <button onclick="dReset()"
+      style="padding:7px 12px;border-radius:20px;background:rgba(255,255,255,0.1);
+             color:#94a3b8;border:1.5px solid rgba(255,255,255,0.2);font-size:11px;font-weight:700;cursor:pointer;">Reset</button>
     <button onclick="closeDiaryImg()"
-      style="padding:10px 16px;background:rgba(255,255,255,0.1);border:1.5px solid rgba(255,255,255,0.2);
-      border-radius:12px;color:rgba(255,255,255,0.7);font-size:13px;cursor:pointer;">
-      ✕ Close
-    </button>
+      style="padding:7px 12px;border-radius:20px;background:rgba(239,68,68,0.3);
+             color:#fca5a5;border:1.5px solid rgba(239,68,68,0.4);font-size:11px;font-weight:700;cursor:pointer;">✕ Close</button>
+  </div>
+
+  <!-- Prev / Next navigation -->
+  <div style="display:flex;gap:12px;align-items:center;" onclick="event.stopPropagation()">
+    <button onclick="diaryNavStep(-1)"
+      style="padding:9px 22px;background:rgba(255,255,255,0.12);border:2px solid rgba(255,255,255,0.25);
+             border-radius:12px;color:#fff;font-size:14px;font-weight:800;cursor:pointer;">← Prev</button>
+    <span style="font-size:11px;color:#475569;">Scroll to zoom · Drag to pan</span>
     <button onclick="diaryNavStep(1)"
-      style="padding:10px 24px;background:#4338ca;border:none;
-      border-radius:12px;color:#fff;font-size:15px;font-weight:800;cursor:pointer;">
-      Next →
-    </button>
+      style="padding:9px 22px;background:#4338ca;border:none;
+             border-radius:12px;color:#fff;font-size:14px;font-weight:800;cursor:pointer;">Next →</button>
   </div>
 </div>
 
 <script>
-var _diaryNavCode = 0;
+(function(){
+  var dz=1, dpx=0, dpy=0, ddr=false, ddx=0, ddy=0, dpx0=0, dpy0=0;
+  var _diaryNavCode = 0;
 
-function openDiaryImg(code, imgSrc) {
-  _diaryNavCode = parseInt(code) || 0;
-  document.getElementById("diary-img-src").src = imgSrc;
-  document.getElementById("diary-img-label").textContent = "Order #" + code;
-  document.getElementById("diary-img-modal").style.display = "flex";
-}
+  function dApplyT(){
+    var img = document.getElementById("diary-img-src");
+    img.style.transform = "scale("+dz+") translate("+(dpx/dz)+"px,"+(dpy/dz)+"px)";
+    document.getElementById("diary-zoom-label").textContent = Math.round(dz*100)+"%";
+    img.style.cursor = dz>1 ? "grab" : "default";
+  }
 
-function closeDiaryImg() {
-  document.getElementById("diary-img-modal").style.display = "none";
-  document.getElementById("diary-img-src").src = "";
-}
+  window.dZoom = function(d){ dz=Math.max(0.25,Math.min(6,dz+d)); dApplyT(); };
+  window.dReset = function(){ dz=1;dpx=0;dpy=0; dApplyT(); };
 
-function diaryNavStep(dir) {
-  if (!_diaryNavCode) return;
-  var next = _diaryNavCode + dir;
-  if (next < 1) return;
-  // Search for next code
-  var inp = document.getElementById("mb-search");
-  inp.value = String(next);
-  doSearch().then(function() {
-    // After search, open image if found
-    setTimeout(function() {
-      var card = document.querySelector(".mb-card");
-      if (card) {
-        var img = card.querySelector("img");
-        if (img) {
-          _diaryNavCode = next;
-          document.getElementById("diary-img-src").src = img.src;
-          document.getElementById("diary-img-label").textContent = "Order #" + next;
+  window.openDiaryImg = function(code, src){
+    _diaryNavCode = parseInt(code)||0;
+    dz=1;dpx=0;dpy=0;
+    document.getElementById("diary-img-src").src = src;
+    document.getElementById("diary-img-label").textContent = "Order #"+code;
+    document.getElementById("diary-img-modal").style.display = "flex";
+    document.body.style.overflow = "hidden";
+    dApplyT();
+  };
+
+  window.closeDiaryImg = function(){
+    document.getElementById("diary-img-modal").style.display = "none";
+    document.getElementById("diary-img-src").src = "";
+    document.body.style.overflow = "";
+    dz=1;dpx=0;dpy=0;
+  };
+
+  window.diaryNavStep = function(dir){
+    if(!_diaryNavCode) return;
+    var next = _diaryNavCode + dir;
+    if(next<1) return;
+    var inp = document.getElementById("mb-search");
+    inp.value = String(next);
+    doSearch().then(function(){
+      setTimeout(function(){
+        var card = document.querySelector(".mb-card");
+        var img  = card && card.querySelector("img");
+        if(img && img.src){
+          openDiaryImg(next, img.src);
         } else {
           closeDiaryImg();
+          showToast && showToast("Order #"+next+" ka image nahi mila","error");
         }
-      } else {
-        closeDiaryImg();
-      }
-    }, 800);
-  });
-}
+      }, 700);
+    });
+  };
 
-// Keyboard navigation
-document.addEventListener("keydown", function(e) {
-  if (document.getElementById("diary-img-modal").style.display === "flex") {
-    if (e.key === "ArrowRight" || e.key === "ArrowDown") diaryNavStep(1);
-    if (e.key === "ArrowLeft"  || e.key === "ArrowUp")   diaryNavStep(-1);
-    if (e.key === "Escape") closeDiaryImg();
-  }
-});
+  // Click outside to close
+  document.getElementById("diary-img-modal").addEventListener("click", function(e){
+    if(e.target===this) closeDiaryImg();
+  });
+
+  var img = document.getElementById("diary-img-src");
+
+  // Scroll to zoom
+  img.addEventListener("wheel",function(e){
+    e.preventDefault(); dZoom(e.deltaY<0?0.2:-0.2);
+  },{passive:false});
+
+  // Mouse drag
+  img.addEventListener("mousedown",function(e){
+    if(dz<=1)return; ddr=true;ddx=e.clientX;ddy=e.clientY;dpx0=dpx;dpy0=dpy;
+    img.style.cursor="grabbing"; e.preventDefault();
+  });
+  document.addEventListener("mousemove",function(e){
+    if(!ddr)return; dpx=dpx0+(e.clientX-ddx); dpy=dpy0+(e.clientY-ddy); dApplyT();
+  });
+  document.addEventListener("mouseup",function(){
+    if(ddr){ddr=false; img.style.cursor=dz>1?"grab":"default";}
+  });
+
+  // Touch drag
+  img.addEventListener("touchstart",function(e){
+    if(e.touches.length===1&&dz>1){ddr=true;ddx=e.touches[0].clientX;ddy=e.touches[0].clientY;dpx0=dpx;dpy0=dpy;}
+  },{passive:true});
+  img.addEventListener("touchmove",function(e){
+    if(!ddr||e.touches.length!==1)return;
+    dpx=dpx0+(e.touches[0].clientX-ddx); dpy=dpy0+(e.touches[0].clientY-ddy); dApplyT();
+    e.preventDefault();
+  },{passive:false});
+  img.addEventListener("touchend",function(){ddr=false;});
+
+  // Pinch to zoom (mobile)
+  var pt1=null,pt2=null,pzInit=1;
+  img.addEventListener("touchstart",function(e){
+    if(e.touches.length===2){pt1=e.touches[0];pt2=e.touches[1];pzInit=dz;}
+  },{passive:true});
+  img.addEventListener("touchmove",function(e){
+    if(e.touches.length===2&&pt1&&pt2){
+      var d0=Math.hypot(pt1.clientX-pt2.clientX,pt1.clientY-pt2.clientY);
+      var d1=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+      dz=Math.max(0.25,Math.min(6,pzInit*(d1/d0)));
+      dApplyT();
+    }
+  },{passive:true});
+
+  // Keyboard
+  document.addEventListener("keydown",function(e){
+    if(document.getElementById("diary-img-modal").style.display!=="flex") return;
+    if(e.key==="ArrowRight"||e.key==="ArrowDown") diaryNavStep(1);
+    if(e.key==="ArrowLeft" ||e.key==="ArrowUp")   diaryNavStep(-1);
+    if(e.key==="Escape") closeDiaryImg();
+    if(e.key==="+"||e.key==="=") dZoom(0.25);
+    if(e.key==="-") dZoom(-0.25);
+  });
+})();
 </script>
 
 {% endblock %}
@@ -185,91 +256,162 @@ document.addEventListener("keydown", function(e) {
 
 </div>
 
-<!-- Custom image viewer with Prev/Next for diary -->
+<!-- Diary image viewer: zoom + pinch + drag + Prev/Next -->
 <div id="diary-img-modal"
-  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;
-  flex-direction:column;align-items:center;justify-content:center;"
-  onclick="closeDiaryImg()">
+  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.93);z-index:99999;
+         flex-direction:column;align-items:center;justify-content:center;gap:8px;">
 
-  <!-- Image -->
-  <img id="diary-img-src" src="" alt=""
-    style="max-width:90vw;max-height:75vh;border-radius:12px;object-fit:contain;"
-    onclick="event.stopPropagation()">
+  <!-- Label -->
+  <div id="diary-img-label" style="font-size:13px;font-weight:700;color:#a5b4fc;"></div>
 
-  <!-- Order label -->
-  <div id="diary-img-label"
-    style="color:#fff;font-size:14px;font-weight:700;margin-top:12px;opacity:0.85;"></div>
+  <!-- Zoomable Image -->
+  <img id="diary-img-src" src="" alt="" draggable="false"
+    style="max-width:92vw;max-height:68vh;border-radius:10px;object-fit:contain;
+           transition:transform 0.1s;transform-origin:center center;user-select:none;touch-action:none;">
 
-  <!-- Prev / Next buttons -->
-  <div style="display:flex;gap:16px;margin-top:16px;" onclick="event.stopPropagation()">
-    <button onclick="diaryNavStep(-1)"
-      style="padding:10px 24px;background:rgba(255,255,255,0.15);border:2px solid rgba(255,255,255,0.3);
-      border-radius:12px;color:#fff;font-size:15px;font-weight:800;cursor:pointer;">
-      ← Prev
-    </button>
+  <!-- Zoom controls -->
+  <div style="display:flex;gap:8px;align-items:center;" onclick="event.stopPropagation()">
+    <button onclick="dZoom(-0.25)"
+      style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.15);
+             color:#fff;border:2px solid rgba(255,255,255,0.3);font-size:20px;font-weight:700;cursor:pointer;
+             display:flex;align-items:center;justify-content:center;">−</button>
+    <span id="diary-zoom-label"
+      style="font-size:12px;font-weight:700;color:#a5b4fc;min-width:42px;text-align:center;">100%</span>
+    <button onclick="dZoom(0.25)"
+      style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.15);
+             color:#fff;border:2px solid rgba(255,255,255,0.3);font-size:20px;font-weight:700;cursor:pointer;
+             display:flex;align-items:center;justify-content:center;">+</button>
+    <button onclick="dReset()"
+      style="padding:7px 12px;border-radius:20px;background:rgba(255,255,255,0.1);
+             color:#94a3b8;border:1.5px solid rgba(255,255,255,0.2);font-size:11px;font-weight:700;cursor:pointer;">Reset</button>
     <button onclick="closeDiaryImg()"
-      style="padding:10px 16px;background:rgba(255,255,255,0.1);border:1.5px solid rgba(255,255,255,0.2);
-      border-radius:12px;color:rgba(255,255,255,0.7);font-size:13px;cursor:pointer;">
-      ✕ Close
-    </button>
+      style="padding:7px 12px;border-radius:20px;background:rgba(239,68,68,0.3);
+             color:#fca5a5;border:1.5px solid rgba(239,68,68,0.4);font-size:11px;font-weight:700;cursor:pointer;">✕ Close</button>
+  </div>
+
+  <!-- Prev / Next navigation -->
+  <div style="display:flex;gap:12px;align-items:center;" onclick="event.stopPropagation()">
+    <button onclick="diaryNavStep(-1)"
+      style="padding:9px 22px;background:rgba(255,255,255,0.12);border:2px solid rgba(255,255,255,0.25);
+             border-radius:12px;color:#fff;font-size:14px;font-weight:800;cursor:pointer;">← Prev</button>
+    <span style="font-size:11px;color:#475569;">Scroll to zoom · Drag to pan</span>
     <button onclick="diaryNavStep(1)"
-      style="padding:10px 24px;background:#4338ca;border:none;
-      border-radius:12px;color:#fff;font-size:15px;font-weight:800;cursor:pointer;">
-      Next →
-    </button>
+      style="padding:9px 22px;background:#4338ca;border:none;
+             border-radius:12px;color:#fff;font-size:14px;font-weight:800;cursor:pointer;">Next →</button>
   </div>
 </div>
 
 <script>
-var _diaryNavCode = 0;
+(function(){
+  var dz=1, dpx=0, dpy=0, ddr=false, ddx=0, ddy=0, dpx0=0, dpy0=0;
+  var _diaryNavCode = 0;
 
-function openDiaryImg(code, imgSrc) {
-  _diaryNavCode = parseInt(code) || 0;
-  document.getElementById("diary-img-src").src = imgSrc;
-  document.getElementById("diary-img-label").textContent = "Order #" + code;
-  document.getElementById("diary-img-modal").style.display = "flex";
-}
+  function dApplyT(){
+    var img = document.getElementById("diary-img-src");
+    img.style.transform = "scale("+dz+") translate("+(dpx/dz)+"px,"+(dpy/dz)+"px)";
+    document.getElementById("diary-zoom-label").textContent = Math.round(dz*100)+"%";
+    img.style.cursor = dz>1 ? "grab" : "default";
+  }
 
-function closeDiaryImg() {
-  document.getElementById("diary-img-modal").style.display = "none";
-  document.getElementById("diary-img-src").src = "";
-}
+  window.dZoom = function(d){ dz=Math.max(0.25,Math.min(6,dz+d)); dApplyT(); };
+  window.dReset = function(){ dz=1;dpx=0;dpy=0; dApplyT(); };
 
-function diaryNavStep(dir) {
-  if (!_diaryNavCode) return;
-  var next = _diaryNavCode + dir;
-  if (next < 1) return;
-  // Search for next code
-  var inp = document.getElementById("mb-search");
-  inp.value = String(next);
-  doSearch().then(function() {
-    // After search, open image if found
-    setTimeout(function() {
-      var card = document.querySelector(".mb-card");
-      if (card) {
-        var img = card.querySelector("img");
-        if (img) {
-          _diaryNavCode = next;
-          document.getElementById("diary-img-src").src = img.src;
-          document.getElementById("diary-img-label").textContent = "Order #" + next;
+  window.openDiaryImg = function(code, src){
+    _diaryNavCode = parseInt(code)||0;
+    dz=1;dpx=0;dpy=0;
+    document.getElementById("diary-img-src").src = src;
+    document.getElementById("diary-img-label").textContent = "Order #"+code;
+    document.getElementById("diary-img-modal").style.display = "flex";
+    document.body.style.overflow = "hidden";
+    dApplyT();
+  };
+
+  window.closeDiaryImg = function(){
+    document.getElementById("diary-img-modal").style.display = "none";
+    document.getElementById("diary-img-src").src = "";
+    document.body.style.overflow = "";
+    dz=1;dpx=0;dpy=0;
+  };
+
+  window.diaryNavStep = function(dir){
+    if(!_diaryNavCode) return;
+    var next = _diaryNavCode + dir;
+    if(next<1) return;
+    var inp = document.getElementById("mb-search");
+    inp.value = String(next);
+    doSearch().then(function(){
+      setTimeout(function(){
+        var card = document.querySelector(".mb-card");
+        var img  = card && card.querySelector("img");
+        if(img && img.src){
+          openDiaryImg(next, img.src);
         } else {
           closeDiaryImg();
+          showToast && showToast("Order #"+next+" ka image nahi mila","error");
         }
-      } else {
-        closeDiaryImg();
-      }
-    }, 800);
-  });
-}
+      }, 700);
+    });
+  };
 
-// Keyboard navigation
-document.addEventListener("keydown", function(e) {
-  if (document.getElementById("diary-img-modal").style.display === "flex") {
-    if (e.key === "ArrowRight" || e.key === "ArrowDown") diaryNavStep(1);
-    if (e.key === "ArrowLeft"  || e.key === "ArrowUp")   diaryNavStep(-1);
-    if (e.key === "Escape") closeDiaryImg();
-  }
-});
+  // Click outside to close
+  document.getElementById("diary-img-modal").addEventListener("click", function(e){
+    if(e.target===this) closeDiaryImg();
+  });
+
+  var img = document.getElementById("diary-img-src");
+
+  // Scroll to zoom
+  img.addEventListener("wheel",function(e){
+    e.preventDefault(); dZoom(e.deltaY<0?0.2:-0.2);
+  },{passive:false});
+
+  // Mouse drag
+  img.addEventListener("mousedown",function(e){
+    if(dz<=1)return; ddr=true;ddx=e.clientX;ddy=e.clientY;dpx0=dpx;dpy0=dpy;
+    img.style.cursor="grabbing"; e.preventDefault();
+  });
+  document.addEventListener("mousemove",function(e){
+    if(!ddr)return; dpx=dpx0+(e.clientX-ddx); dpy=dpy0+(e.clientY-ddy); dApplyT();
+  });
+  document.addEventListener("mouseup",function(){
+    if(ddr){ddr=false; img.style.cursor=dz>1?"grab":"default";}
+  });
+
+  // Touch drag
+  img.addEventListener("touchstart",function(e){
+    if(e.touches.length===1&&dz>1){ddr=true;ddx=e.touches[0].clientX;ddy=e.touches[0].clientY;dpx0=dpx;dpy0=dpy;}
+  },{passive:true});
+  img.addEventListener("touchmove",function(e){
+    if(!ddr||e.touches.length!==1)return;
+    dpx=dpx0+(e.touches[0].clientX-ddx); dpy=dpy0+(e.touches[0].clientY-ddy); dApplyT();
+    e.preventDefault();
+  },{passive:false});
+  img.addEventListener("touchend",function(){ddr=false;});
+
+  // Pinch to zoom (mobile)
+  var pt1=null,pt2=null,pzInit=1;
+  img.addEventListener("touchstart",function(e){
+    if(e.touches.length===2){pt1=e.touches[0];pt2=e.touches[1];pzInit=dz;}
+  },{passive:true});
+  img.addEventListener("touchmove",function(e){
+    if(e.touches.length===2&&pt1&&pt2){
+      var d0=Math.hypot(pt1.clientX-pt2.clientX,pt1.clientY-pt2.clientY);
+      var d1=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+      dz=Math.max(0.25,Math.min(6,pzInit*(d1/d0)));
+      dApplyT();
+    }
+  },{passive:true});
+
+  // Keyboard
+  document.addEventListener("keydown",function(e){
+    if(document.getElementById("diary-img-modal").style.display!=="flex") return;
+    if(e.key==="ArrowRight"||e.key==="ArrowDown") diaryNavStep(1);
+    if(e.key==="ArrowLeft" ||e.key==="ArrowUp")   diaryNavStep(-1);
+    if(e.key==="Escape") closeDiaryImg();
+    if(e.key==="+"||e.key==="=") dZoom(0.25);
+    if(e.key==="-") dZoom(-0.25);
+  });
+})();
 </script>
 
 {% endblock %}
@@ -360,91 +502,162 @@ setInterval(() => {
 </script>
 </div>
 
-<!-- Custom image viewer with Prev/Next for diary -->
+<!-- Diary image viewer: zoom + pinch + drag + Prev/Next -->
 <div id="diary-img-modal"
-  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;
-  flex-direction:column;align-items:center;justify-content:center;"
-  onclick="closeDiaryImg()">
+  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.93);z-index:99999;
+         flex-direction:column;align-items:center;justify-content:center;gap:8px;">
 
-  <!-- Image -->
-  <img id="diary-img-src" src="" alt=""
-    style="max-width:90vw;max-height:75vh;border-radius:12px;object-fit:contain;"
-    onclick="event.stopPropagation()">
+  <!-- Label -->
+  <div id="diary-img-label" style="font-size:13px;font-weight:700;color:#a5b4fc;"></div>
 
-  <!-- Order label -->
-  <div id="diary-img-label"
-    style="color:#fff;font-size:14px;font-weight:700;margin-top:12px;opacity:0.85;"></div>
+  <!-- Zoomable Image -->
+  <img id="diary-img-src" src="" alt="" draggable="false"
+    style="max-width:92vw;max-height:68vh;border-radius:10px;object-fit:contain;
+           transition:transform 0.1s;transform-origin:center center;user-select:none;touch-action:none;">
 
-  <!-- Prev / Next buttons -->
-  <div style="display:flex;gap:16px;margin-top:16px;" onclick="event.stopPropagation()">
-    <button onclick="diaryNavStep(-1)"
-      style="padding:10px 24px;background:rgba(255,255,255,0.15);border:2px solid rgba(255,255,255,0.3);
-      border-radius:12px;color:#fff;font-size:15px;font-weight:800;cursor:pointer;">
-      ← Prev
-    </button>
+  <!-- Zoom controls -->
+  <div style="display:flex;gap:8px;align-items:center;" onclick="event.stopPropagation()">
+    <button onclick="dZoom(-0.25)"
+      style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.15);
+             color:#fff;border:2px solid rgba(255,255,255,0.3);font-size:20px;font-weight:700;cursor:pointer;
+             display:flex;align-items:center;justify-content:center;">−</button>
+    <span id="diary-zoom-label"
+      style="font-size:12px;font-weight:700;color:#a5b4fc;min-width:42px;text-align:center;">100%</span>
+    <button onclick="dZoom(0.25)"
+      style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.15);
+             color:#fff;border:2px solid rgba(255,255,255,0.3);font-size:20px;font-weight:700;cursor:pointer;
+             display:flex;align-items:center;justify-content:center;">+</button>
+    <button onclick="dReset()"
+      style="padding:7px 12px;border-radius:20px;background:rgba(255,255,255,0.1);
+             color:#94a3b8;border:1.5px solid rgba(255,255,255,0.2);font-size:11px;font-weight:700;cursor:pointer;">Reset</button>
     <button onclick="closeDiaryImg()"
-      style="padding:10px 16px;background:rgba(255,255,255,0.1);border:1.5px solid rgba(255,255,255,0.2);
-      border-radius:12px;color:rgba(255,255,255,0.7);font-size:13px;cursor:pointer;">
-      ✕ Close
-    </button>
+      style="padding:7px 12px;border-radius:20px;background:rgba(239,68,68,0.3);
+             color:#fca5a5;border:1.5px solid rgba(239,68,68,0.4);font-size:11px;font-weight:700;cursor:pointer;">✕ Close</button>
+  </div>
+
+  <!-- Prev / Next navigation -->
+  <div style="display:flex;gap:12px;align-items:center;" onclick="event.stopPropagation()">
+    <button onclick="diaryNavStep(-1)"
+      style="padding:9px 22px;background:rgba(255,255,255,0.12);border:2px solid rgba(255,255,255,0.25);
+             border-radius:12px;color:#fff;font-size:14px;font-weight:800;cursor:pointer;">← Prev</button>
+    <span style="font-size:11px;color:#475569;">Scroll to zoom · Drag to pan</span>
     <button onclick="diaryNavStep(1)"
-      style="padding:10px 24px;background:#4338ca;border:none;
-      border-radius:12px;color:#fff;font-size:15px;font-weight:800;cursor:pointer;">
-      Next →
-    </button>
+      style="padding:9px 22px;background:#4338ca;border:none;
+             border-radius:12px;color:#fff;font-size:14px;font-weight:800;cursor:pointer;">Next →</button>
   </div>
 </div>
 
 <script>
-var _diaryNavCode = 0;
+(function(){
+  var dz=1, dpx=0, dpy=0, ddr=false, ddx=0, ddy=0, dpx0=0, dpy0=0;
+  var _diaryNavCode = 0;
 
-function openDiaryImg(code, imgSrc) {
-  _diaryNavCode = parseInt(code) || 0;
-  document.getElementById("diary-img-src").src = imgSrc;
-  document.getElementById("diary-img-label").textContent = "Order #" + code;
-  document.getElementById("diary-img-modal").style.display = "flex";
-}
+  function dApplyT(){
+    var img = document.getElementById("diary-img-src");
+    img.style.transform = "scale("+dz+") translate("+(dpx/dz)+"px,"+(dpy/dz)+"px)";
+    document.getElementById("diary-zoom-label").textContent = Math.round(dz*100)+"%";
+    img.style.cursor = dz>1 ? "grab" : "default";
+  }
 
-function closeDiaryImg() {
-  document.getElementById("diary-img-modal").style.display = "none";
-  document.getElementById("diary-img-src").src = "";
-}
+  window.dZoom = function(d){ dz=Math.max(0.25,Math.min(6,dz+d)); dApplyT(); };
+  window.dReset = function(){ dz=1;dpx=0;dpy=0; dApplyT(); };
 
-function diaryNavStep(dir) {
-  if (!_diaryNavCode) return;
-  var next = _diaryNavCode + dir;
-  if (next < 1) return;
-  // Search for next code
-  var inp = document.getElementById("mb-search");
-  inp.value = String(next);
-  doSearch().then(function() {
-    // After search, open image if found
-    setTimeout(function() {
-      var card = document.querySelector(".mb-card");
-      if (card) {
-        var img = card.querySelector("img");
-        if (img) {
-          _diaryNavCode = next;
-          document.getElementById("diary-img-src").src = img.src;
-          document.getElementById("diary-img-label").textContent = "Order #" + next;
+  window.openDiaryImg = function(code, src){
+    _diaryNavCode = parseInt(code)||0;
+    dz=1;dpx=0;dpy=0;
+    document.getElementById("diary-img-src").src = src;
+    document.getElementById("diary-img-label").textContent = "Order #"+code;
+    document.getElementById("diary-img-modal").style.display = "flex";
+    document.body.style.overflow = "hidden";
+    dApplyT();
+  };
+
+  window.closeDiaryImg = function(){
+    document.getElementById("diary-img-modal").style.display = "none";
+    document.getElementById("diary-img-src").src = "";
+    document.body.style.overflow = "";
+    dz=1;dpx=0;dpy=0;
+  };
+
+  window.diaryNavStep = function(dir){
+    if(!_diaryNavCode) return;
+    var next = _diaryNavCode + dir;
+    if(next<1) return;
+    var inp = document.getElementById("mb-search");
+    inp.value = String(next);
+    doSearch().then(function(){
+      setTimeout(function(){
+        var card = document.querySelector(".mb-card");
+        var img  = card && card.querySelector("img");
+        if(img && img.src){
+          openDiaryImg(next, img.src);
         } else {
           closeDiaryImg();
+          showToast && showToast("Order #"+next+" ka image nahi mila","error");
         }
-      } else {
-        closeDiaryImg();
-      }
-    }, 800);
-  });
-}
+      }, 700);
+    });
+  };
 
-// Keyboard navigation
-document.addEventListener("keydown", function(e) {
-  if (document.getElementById("diary-img-modal").style.display === "flex") {
-    if (e.key === "ArrowRight" || e.key === "ArrowDown") diaryNavStep(1);
-    if (e.key === "ArrowLeft"  || e.key === "ArrowUp")   diaryNavStep(-1);
-    if (e.key === "Escape") closeDiaryImg();
-  }
-});
+  // Click outside to close
+  document.getElementById("diary-img-modal").addEventListener("click", function(e){
+    if(e.target===this) closeDiaryImg();
+  });
+
+  var img = document.getElementById("diary-img-src");
+
+  // Scroll to zoom
+  img.addEventListener("wheel",function(e){
+    e.preventDefault(); dZoom(e.deltaY<0?0.2:-0.2);
+  },{passive:false});
+
+  // Mouse drag
+  img.addEventListener("mousedown",function(e){
+    if(dz<=1)return; ddr=true;ddx=e.clientX;ddy=e.clientY;dpx0=dpx;dpy0=dpy;
+    img.style.cursor="grabbing"; e.preventDefault();
+  });
+  document.addEventListener("mousemove",function(e){
+    if(!ddr)return; dpx=dpx0+(e.clientX-ddx); dpy=dpy0+(e.clientY-ddy); dApplyT();
+  });
+  document.addEventListener("mouseup",function(){
+    if(ddr){ddr=false; img.style.cursor=dz>1?"grab":"default";}
+  });
+
+  // Touch drag
+  img.addEventListener("touchstart",function(e){
+    if(e.touches.length===1&&dz>1){ddr=true;ddx=e.touches[0].clientX;ddy=e.touches[0].clientY;dpx0=dpx;dpy0=dpy;}
+  },{passive:true});
+  img.addEventListener("touchmove",function(e){
+    if(!ddr||e.touches.length!==1)return;
+    dpx=dpx0+(e.touches[0].clientX-ddx); dpy=dpy0+(e.touches[0].clientY-ddy); dApplyT();
+    e.preventDefault();
+  },{passive:false});
+  img.addEventListener("touchend",function(){ddr=false;});
+
+  // Pinch to zoom (mobile)
+  var pt1=null,pt2=null,pzInit=1;
+  img.addEventListener("touchstart",function(e){
+    if(e.touches.length===2){pt1=e.touches[0];pt2=e.touches[1];pzInit=dz;}
+  },{passive:true});
+  img.addEventListener("touchmove",function(e){
+    if(e.touches.length===2&&pt1&&pt2){
+      var d0=Math.hypot(pt1.clientX-pt2.clientX,pt1.clientY-pt2.clientY);
+      var d1=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+      dz=Math.max(0.25,Math.min(6,pzInit*(d1/d0)));
+      dApplyT();
+    }
+  },{passive:true});
+
+  // Keyboard
+  document.addEventListener("keydown",function(e){
+    if(document.getElementById("diary-img-modal").style.display!=="flex") return;
+    if(e.key==="ArrowRight"||e.key==="ArrowDown") diaryNavStep(1);
+    if(e.key==="ArrowLeft" ||e.key==="ArrowUp")   diaryNavStep(-1);
+    if(e.key==="Escape") closeDiaryImg();
+    if(e.key==="+"||e.key==="=") dZoom(0.25);
+    if(e.key==="-") dZoom(-0.25);
+  });
+})();
 </script>
 
 {% endblock %}
