@@ -2595,6 +2595,96 @@ def same_mobile_page():
         problem_count=len(problems))
 
 
+
+@bp.route("/api/bulk-split-customers")
+@owner_required
+def api_bulk_split_customers():
+    """BULK FIX: For every mobile that has 2+ different-named customers,
+    ensure each (name, mobile) pair has its OWN customer record.
+    Orders stay linked to correct customers. Fixes all merged records at once."""
+    from datetime import datetime as _dt
+    conn = get_db()
+    now_str = _dt.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    # Find all orders where customer mobile is shared by different names
+    # We get each order's code + customer name + mobile
+    rows = conn.execute("""
+        SELECT o.id as order_id, o.order_code,
+               c.id as cust_id, TRIM(c.name) as cname,
+               c.mobile, c.address
+        FROM orders o
+        JOIN customers c ON c.id = o.customer_id
+        WHERE c.mobile IS NOT NULL
+          AND LENGTH(c.mobile) >= 8
+          AND c.mobile NOT IN ('', '-', 'None', '0')
+        ORDER BY c.mobile, TRIM(c.name), o.id
+    """).fetchall()
+
+    # Group by mobile
+    from collections import defaultdict
+    mobile_map = defaultdict(lambda: defaultdict(list))
+    for r in rows:
+        mobile_map[r["mobile"]][r["cname"].lower()].append({
+            "order_id":  r["order_id"],
+            "order_code": r["order_code"],
+            "cust_id":   r["cust_id"],
+            "name":      r["cname"],
+            "address":   r["address"] or ""
+        })
+
+    fixed_orders = 0
+    fixed_customers = 0
+
+    for mobile, name_groups in mobile_map.items():
+        if len(name_groups) <= 1:
+            continue  # Only one name for this mobile — no problem
+
+        # Multiple names share same mobile
+        # Sort names — first one keeps the original customer record
+        sorted_names = sorted(name_groups.keys())
+        first_name = sorted_names[0]
+
+        # For each name group after the first → ensure they have their own customer
+        for name_key in sorted_names[1:]:
+            orders_in_group = name_groups[name_key]
+            actual_name = orders_in_group[0]["name"]
+
+            # Check if a separate customer exists for this name+mobile
+            existing = conn.execute(
+                "SELECT id FROM customers WHERE LOWER(TRIM(name))=LOWER(?) AND mobile=?",
+                (actual_name, mobile)
+            ).fetchone()
+
+            if existing:
+                correct_cust_id = existing["id"]
+            else:
+                # Create new customer for this name
+                row = conn.execute(
+                    "INSERT INTO customers(name, mobile, address, created_at) VALUES(?,?,?,?) RETURNING id",
+                    (actual_name, mobile, orders_in_group[0]["address"], now_str)
+                ).fetchone()
+                correct_cust_id = row["id"]
+                fixed_customers += 1
+
+            # Update all orders in this name group to point to correct customer
+            for o in orders_in_group:
+                if o["cust_id"] != correct_cust_id:
+                    conn.execute(
+                        "UPDATE orders SET customer_id=? WHERE id=?",
+                        (correct_cust_id, o["order_id"])
+                    )
+                    fixed_orders += 1
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({
+        "ok": True,
+        "fixed_orders": fixed_orders,
+        "new_customers_created": fixed_customers,
+        "message": f"✅ {fixed_orders} orders alag ho gaye! {fixed_customers} naye customer records bane."
+    })
+
 @bp.route("/finance")
 @owner_required
 def owner_finance():
