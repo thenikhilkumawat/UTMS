@@ -666,7 +666,19 @@ body{overflow-x:clip!important}
         </div>
       </div>
     </div>
-    <div id="cmCreditsBar" style="padding:6px 20px 0;font-size:12px;text-align:center;color:#7a6a58;display:none;"></div>
+    {% if init_tokens is not none %}
+    <div id="cmCreditsBar" style="padding:8px 20px 4px;font-size:12.5px;text-align:center;font-weight:600;color:{% if init_tokens == 0 %}#c2410c{% else %}#5a3e1b{% endif %};">
+      {% if init_tokens == 0 %}⚠️ No credits left — <a href="/customize" style="color:#b8892a;">Buy credits →</a>
+      {% else %}🪙 {{ init_tokens }} credit{{ 's' if init_tokens != 1 else '' }} remaining{% endif %}
+    </div>
+    {% elif init_previews is not none %}
+    <div id="cmCreditsBar" style="padding:8px 20px 4px;font-size:12.5px;text-align:center;font-weight:600;color:{% if init_previews == 0 %}#c2410c{% else %}#5a3e1b{% endif %};">
+      {% if init_previews == 0 %}⚠️ Free previews used — <a href="/customize" style="color:#b8892a;">Buy credits →</a>
+      {% else %}🎁 {{ init_previews }} free preview{{ 's' if init_previews != 1 else '' }} left (guest){% endif %}
+    </div>
+    {% else %}
+    <div id="cmCreditsBar" style="display:none;padding:8px 20px 4px;font-size:12.5px;text-align:center;"></div>
+    {% endif %}
     <div class="sm-foot">
       <button id="genPreviewBtn" onclick="generateAIPreview()" style="flex:1;padding:12px;background:#f7f0e6;color:#2e1a0e;border:2px dashed #C8903A;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">&#127912; Generate AI Preview</button>
       <button onclick="confirmStyle()" style="flex:1;padding:12px;background:#2e1a0e;color:#f7f0e6;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">&#10003; Add to Order</button>
