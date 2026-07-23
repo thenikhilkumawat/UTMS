@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="max-width:900px;margin:0 auto;padding:20px;">
+
+  <div style="background:linear-gradient(135deg,#dc2626,#ef4444);border-radius:16px;padding:20px;color:#fff;margin-bottom:20px;">
+    <div style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;opacity:0.8;margin-bottom:4px;">DATA FIX</div>
+    <h1 style="font-size:22px;font-weight:900;margin-bottom:4px;">📱 Same Mobile — Alag Naam</h1>
+    <div style="font-size:13px;opacity:0.9;">
+      Yahan woh mobile numbers hain jahan <b>ek hi number se alag-alag naam ke orders</b> save hue hain.<br>
+      Inhe fix karo — har order ka sahi mobile number assign karo.
+    </div>
+  </div>
+
+  <!-- Problem count -->
+  <div style="background:#fff1f2;border:2px solid #fecaca;border-radius:12px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;">
+    <span style="font-size:28px;">🚨</span>
+    <div>
+      <div style="font-size:18px;font-weight:900;color:#dc2626;">{{ problem_count }} Mobile Numbers mein problem hai</div>
+      <div style="font-size:12px;color:#9f1239;margin-top:2px;">In sab mein same mobile se alag naam ke orders hain — fix karna zaroori hai</div>
+    </div>
+  </div>
+
+  {% if problems %}
+  <div style="background:#fff;border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:16px;">
+    <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#dc2626;margin-bottom:14px;">
+      ❌ Problems — Fix Karo
+    </div>
+
+    {% for p in problems %}
+    <div style="border:2px solid #fecaca;border-radius:12px;padding:14px;margin-bottom:10px;background:#fffafa;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div>
+          <span style="font-size:16px;font-weight:900;color:#dc2626;">📱 {{ p.mobile }}</span>
+          <span style="background:#fee2e2;color:#991b1b;font-size:11px;font-weight:800;padding:2px 8px;border-radius:10px;margin-left:8px;">{{ p.order_count }} orders · {{ p.name_count }} alag naam</span>
+        </div>
+      </div>
+
+      <!-- Names involved -->
+      <div style="font-size:12px;color:#64748b;margin-bottom:10px;">
+        👤 Naam: <b style="color:#1e293b;">{{ p.names }}</b>
+      </div>
+
+      <!-- Orders table -->
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <tr style="background:#f8fafc;">
+          <th style="padding:6px 10px;text-align:left;color:#64748b;font-weight:700;">Order #</th>
+          <th style="padding:6px 10px;text-align:left;color:#64748b;font-weight:700;">Naam</th>
+          <th style="padding:6px 10px;text-align:left;color:#64748b;font-weight:700;">Action</th>
+        </tr>
+        {% for o in p.orders %}
+        <tr style="border-bottom:1px solid #f1f5f9;">
+          <td style="padding:8px 10px;font-weight:800;color:#4338ca;">#{{ o.code }}</td>
+          <td style="padding:8px 10px;font-weight:600;color:#1e293b;">{{ o.name }}</td>
+          <td style="padding:8px 10px;">
+            <button onclick="openFix('{{ o.code }}','{{ o.name }}','{{ p.mobile }}')"
+              style="background:#eef2ff;border:1.5px solid #c7d2fe;border-radius:7px;padding:4px 10px;font-size:11px;font-weight:800;color:#4338ca;cursor:pointer;">
+              ✏️ Mobile Fix Karo
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </table>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if not problems %}
+  <div style="background:#f0fdf4;border:2px solid #86efac;border-radius:12px;padding:20px;text-align:center;margin-bottom:16px;">
+    <div style="font-size:32px;margin-bottom:8px;">✅</div>
+    <div style="font-size:16px;font-weight:800;color:#166534;">Koi problem nahi!</div>
+    <div style="font-size:13px;color:#16a34a;margin-top:4px;">Sabhi mobile numbers unique hain</div>
+  </div>
+  {% endif %}
+
+</div>
+
+<!-- Fix Modal -->
+<div id="fix-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:999;display:none;padding:20px;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:24px;width:100%;max-width:380px;">
+    <div style="font-size:16px;font-weight:900;color:#1e293b;margin-bottom:4px;">✏️ Order #<span id="fix-code">—</span> Fix Karo</div>
+    <div style="font-size:12px;color:#64748b;margin-bottom:16px;">Is order ka sahi mobile number daalo</div>
+    <div style="margin-bottom:10px;">
+      <label style="font-size:11px;font-weight:700;color:#64748b;display:block;margin-bottom:4px;">CUSTOMER NAAM</label>
+      <input type="text" id="fix-name" style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none;">
+    </div>
+    <div style="margin-bottom:16px;">
+      <label style="font-size:11px;font-weight:700;color:#64748b;display:block;margin-bottom:4px;">SAHI MOBILE NUMBER</label>
+      <input type="tel" id="fix-mobile" placeholder="10 digit mobile number"
+        style="width:100%;padding:9px 12px;border:2px solid #6366f1;border-radius:8px;font-size:16px;font-weight:800;outline:none;color:#4338ca;">
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="doFix()"
+        style="flex:1;padding:12px;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;">
+        ✅ Fix Karo
+      </button>
+      <button onclick="closeModal()"
+        style="padding:12px 16px;background:#f1f5f9;border:none;border-radius:10px;font-size:14px;cursor:pointer;">
+        Cancel
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+var currentCode = '';
+
+function openFix(code, name, mobile) {
+  currentCode = code;
+  document.getElementById('fix-code').textContent = code;
+  document.getElementById('fix-name').value = name;
+  document.getElementById('fix-mobile').value = '';
+  document.getElementById('fix-modal').style.display = 'flex';
+  setTimeout(function(){ document.getElementById('fix-mobile').focus(); }, 100);
+}
+
+function closeModal() {
+  document.getElementById('fix-modal').style.display = 'none';
+}
+
+async function doFix() {
+  var name   = document.getElementById('fix-name').value.trim();
+  var mobile = document.getElementById('fix-mobile').value.trim();
+  if (!mobile || mobile.length < 10) {
+    alert('10 digit mobile number daalo');
+    return;
+  }
+  var r = await fetch('/owner/api/split-customer', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({order_code: currentCode, name: name, mobile: mobile})
+  });
+  var d = await r.json();
+  if (d.ok) {
+    closeModal();
+    showToast('✅ Fixed! Order #' + currentCode + ' → ' + mobile, 'success');
+    setTimeout(function(){ location.reload(); }, 1500);
+  } else {
+    alert('❌ ' + (d.error || 'Error'));
+  }
+}
+</script>
+{% endblock %}
