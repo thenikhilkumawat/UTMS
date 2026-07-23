@@ -2302,13 +2302,31 @@ def auth_google_callback():
             db.commit()
         session["web_account_id"] = acc["id"]
         session.permanent = True
+        # Deduct any previews used as a guest before Google login
+        _g_used_gl = min(int(session.get("preview_count", 0)), int(acc["token_balance"] or 0))
+        if _g_used_gl > 0:
+            try:
+                db.execute(
+                    "UPDATE web_accounts SET token_balance = MAX(0, token_balance - ?) WHERE id=?",
+                    (_g_used_gl, acc["id"])
+                )
+                db.execute(
+                    "INSERT INTO token_transactions(account_id, tokens, type) VALUES(?,?,'guest_deduct')",
+                    (acc["id"], -_g_used_gl)
+                )
+                db.commit()
+            except Exception:
+                pass
+        session["preview_count"] = 0  # reset
         return redirect(next_url)
     else:
-        # New user — create account with free tokens
+        # New user — create account with free tokens (deduct any guest previews used)
         try:
-            free_tokens = NEW_ACCOUNT_FREE_TOKENS
+            _base_tokens = NEW_ACCOUNT_FREE_TOKENS
         except NameError:
-            free_tokens = 3
+            _base_tokens = 3
+        _g_used = min(int(session.get("preview_count", 0)), _base_tokens)
+        free_tokens = max(0, _base_tokens - _g_used)
         # mobile must be unique+NOT NULL — Google users get a unique placeholder
         _g_mobile = f"g:{google_id}"
         try:
@@ -2327,15 +2345,17 @@ def auth_google_callback():
         ).fetchone()
         if new_acc:
             session["web_account_id"] = new_acc["id"]
+            session["preview_count"] = 0  # reset — now tracked via token_balance
             session.permanent = True
-            try:
-                db.execute(
-                    "INSERT INTO token_transactions(account_id, tokens, type) VALUES(?,?,'signup_bonus')",
-                    (new_acc["id"], free_tokens)
-                )
-                db.commit()
-            except Exception:
-                pass  # non-critical
+            if free_tokens > 0:
+                try:
+                    db.execute(
+                        "INSERT INTO token_transactions(account_id, tokens, type) VALUES(?,?,'signup_bonus')",
+                        (new_acc["id"], free_tokens)
+                    )
+                    db.commit()
+                except Exception:
+                    pass  # non-critical
         return redirect(next_url)
 
 
@@ -2481,10 +2501,13 @@ def api_verify_email_otp():
     from werkzeug.security import generate_password_hash as _gph
     pw_hash = _gph(password)
     try:
+        # Deduct any previews already used as a guest (total free = 3 lifetime)
+        _guest_used = min(int(session.get("preview_count", 0)), NEW_ACCOUNT_FREE_TOKENS)
+        _free = max(0, NEW_ACCOUNT_FREE_TOKENS - _guest_used)
         db.execute(
             "INSERT INTO web_accounts(name, email, mobile, password_hash, token_balance, is_active, created_at) "
             "VALUES(?,?,?,?,?,1,datetime('now','localtime'))",
-            (name or email.split("@")[0], email, '', pw_hash, NEW_ACCOUNT_FREE_TOKENS)
+            (name or email.split("@")[0], email, '', pw_hash, _free)
         )
         db.commit()
     except Exception as e:
@@ -2494,21 +2517,23 @@ def api_verify_email_otp():
     if not acc:
         return jsonify({"ok": False, "error": "Account creation failed"})
 
-    # Log the 3 free tokens as a transaction
-    try:
-        db.execute(
-            "INSERT INTO token_transactions(account_id, tokens, type) VALUES(?,?,'signup_bonus')",
-            (acc["id"], NEW_ACCOUNT_FREE_TOKENS)
-        )
-        db.commit()
-    except Exception:
-        pass
+    # Log free tokens as a transaction
+    if _free > 0:
+        try:
+            db.execute(
+                "INSERT INTO token_transactions(account_id, tokens, type) VALUES(?,?,'signup_bonus')",
+                (acc["id"], _free)
+            )
+            db.commit()
+        except Exception:
+            pass
 
     session["web_account_id"] = acc["id"]
+    session["preview_count"] = 0  # reset — now tracked via token_balance
     session.permanent = True
     return jsonify({
         "ok": True,
-        "token_balance": NEW_ACCOUNT_FREE_TOKENS,
+        "token_balance": _free,
         "account": {"id": acc["id"], "name": acc["name"] or "", "email": email}
     })
 
@@ -2539,9 +2564,27 @@ def api_email_login():
     session["web_account_id"] = acc["id"]
     session.permanent = True
     tok = acc["token_balance"] if "token_balance" in acc.keys() else 0
+    tok = tok or 0
+    # Deduct any previews used as a guest before logging in
+    _g_used_login = min(int(session.get("preview_count", 0)), tok)
+    if _g_used_login > 0:
+        try:
+            db.execute(
+                "UPDATE web_accounts SET token_balance = MAX(0, token_balance - ?) WHERE id=?",
+                (_g_used_login, acc["id"])
+            )
+            db.execute(
+                "INSERT INTO token_transactions(account_id, tokens, type) VALUES(?,?,'guest_deduct')",
+                (acc["id"], -_g_used_login)
+            )
+            db.commit()
+            tok = max(0, tok - _g_used_login)
+        except Exception:
+            pass
+    session["preview_count"] = 0  # reset — now tracked via token_balance
     return jsonify({
         "ok": True,
-        "token_balance": tok or 0,
+        "token_balance": tok,
         "account": {"id": acc["id"], "name": acc["name"] or "", "email": email}
     })
 
