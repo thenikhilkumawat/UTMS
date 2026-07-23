@@ -2640,7 +2640,7 @@ function renderAiStyleRules(filterItemId){
       html+='<div class="ai-opt-group">'+esc(opt.option_group)+'</div>';
       html+='<div class="ai-val-tags">';
       (opt.values||[]).forEach(function(v){
-        html+='<span class="ai-val-tag" title="'+(v.ai_prompt?'AI: '+v.ai_prompt:'No custom AI prompt')+'">'+v.label+(v.ai_prompt?' ✦':'')+'</span>';
+        html+='<span class="ai-val-tag" title="'+(v.ai_prompt?'AI: '+v.ai_prompt:'No custom AI prompt')+'">'+esc(v.value_label||'')+(v.ai_prompt?' ✦':'')+'</span>';
       });
       html+='</div></div>';
       html+='<button onclick="deleteAiOption('+opt.id+')" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:16px;padding:4px;" title="Delete">🗑</button>';
