@@ -2553,6 +2553,48 @@ def owner_customers():
 #  OWNER FINANCE MODULE
 # ══════════════════════════════════════════════
 
+
+@bp.route("/same-mobile")
+@owner_required
+def same_mobile_page():
+    """Find mobile numbers shared by different-named customers."""
+    conn = get_db()
+    rows = conn.execute("""
+        SELECT c.mobile,
+               COUNT(o.id) as total_orders,
+               COUNT(DISTINCT LOWER(TRIM(c.name))) as unique_names,
+               STRING_AGG(DISTINCT TRIM(c.name), ' | ' ORDER BY TRIM(c.name)) as all_names,
+               STRING_AGG(o.order_code || '~~' || TRIM(COALESCE(c.name,'')) || '~~' || CAST(c.id AS TEXT),
+                          '||' ORDER BY o.id DESC) as details
+        FROM orders o
+        JOIN customers c ON c.id = o.customer_id
+        WHERE c.mobile IS NOT NULL
+          AND LENGTH(c.mobile) >= 8
+          AND c.mobile NOT IN ('', '-', 'None', '0')
+        GROUP BY c.mobile
+        HAVING COUNT(DISTINCT LOWER(TRIM(c.name))) > 1
+        ORDER BY COUNT(DISTINCT LOWER(TRIM(c.name))) DESC, COUNT(o.id) DESC
+    """).fetchall()
+    problems = []
+    for row in rows:
+        orders = []
+        for part in (row["details"] or "").split("||"):
+            bits = part.split("~~")
+            if len(bits) == 3:
+                orders.append({"code": bits[0].strip(), "name": bits[1].strip()})
+        problems.append({
+            "mobile": row["mobile"],
+            "total": int(row["total_orders"] or 0),
+            "names": row["all_names"] or "",
+            "orders": orders[:15]
+        })
+    conn.close()
+    return render_template("owner/same_mobile_orders.html",
+        active_page="same_mobile",
+        problems=problems,
+        problem_count=len(problems))
+
+
 @bp.route("/finance")
 @owner_required
 def owner_finance():
