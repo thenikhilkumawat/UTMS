@@ -1058,16 +1058,15 @@ def save_order():
                     if not customer_id:
                         conn.close()
                         return jsonify({"status":"error","message":"Customer create failed"}), 500
-                else:
-                    row = conn.execute(
-                                "INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?) RETURNING id",
-                                (customer_name, mobile, address, now)).fetchone()
-                    customer_id = row["id"] if row else None
             else:
-                conn.execute("INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?)",
-                             (customer_name, mobile, address, now))
-                row = conn.execute("SELECT id FROM customers WHERE name=? AND (mobile=? OR mobile IS NULL) ORDER BY id DESC LIMIT 1", (customer_name, mobile)).fetchone()
+                # No mobile provided — create new customer
+                row = conn.execute(
+                    "INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?) RETURNING id",
+                    (customer_name, mobile, address, now)).fetchone()
                 customer_id = row["id"] if row else None
+                if not customer_id:
+                    conn.close()
+                    return jsonify({"status":"error","message":"Customer create failed"}), 500
 
         repeat_of = (data.get("repeat_of") or "").strip() or None
 
