@@ -132,7 +132,7 @@ def get_commission_settings():
             "trust_pill_4":    s.get("commission_trust_4", "Rs. 100 off your first order"),
             "urgent_title":    s.get("commission_urgent_title", "Urgent order"),
             "urgent_sub":      s.get("commission_urgent_sub", "+Rs. 99 extra \u2022 Delivered in 1\u20133 days (simple items only)"),
-            "advance_pct":     int(s.get("commission_advance_pct", "30") or 30),
+            "advance_pct":     int(s.get("commission_advance_pct", "50") or 50),
         }
     except Exception:
         return {}

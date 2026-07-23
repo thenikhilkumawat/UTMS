@@ -457,7 +457,7 @@ body{overflow-x:clip!important}
                 <span>🎟 Discount</span><span id="sp-coupon-amt">-Rs. 0</span>
               </div>
               <div class="sp-row" id="sp-total-row" style="font-weight:700;color:var(--dark);border-top:1px solid var(--border);padding-top:6px;margin-top:4px;display:none;" id="sp-grand-row"><span>Total</span><span id="sp-total-val">--</span></div>
-              <div class="sp-row sp-total"><span>Advance now (<span id="sp-adv-pct">30</span>%)</span><span id="sp-adv" class="sp-adv-val">--</span></div>
+              <div class="sp-row sp-total"><span>Advance now (<span id="sp-adv-pct">50</span>%)</span><span id="sp-adv" class="sp-adv-val">--</span></div>
             </div>
             <div id="summary-date" style="display:none;" class="summary-date">
               <span class="sd-label">Estimated ready by</span>
@@ -478,7 +478,7 @@ body{overflow-x:clip!important}
             <input type="hidden" name="coupon_discount" id="couponDiscount" value="0">
             <button type="submit" class="reserve-btn" id="reserveBtn" disabled>
               <span>Complete Your Order</span>
-              <span class="reserve-sub">Pay {{ cs.advance_pct|default(50) }}% advance — rest on delivery</span>
+              <span class="reserve-sub">Pay 50% advance — rest on delivery</span>
             </button>
             <ul class="trust-pills">
               {% if cs.trust_pill_1 %}<li>{{ cs.trust_pill_1 }}</li>{% endif %}
