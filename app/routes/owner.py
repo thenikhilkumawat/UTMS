@@ -2763,6 +2763,58 @@ def api_diagnose_orders():
         "reason": "Dono same customer_id share kar rahe hain!" if same_cust else "Alag customer_id hain"
     })
 
+
+@bp.route("/api/mobile-audit-count")
+@owner_required
+def api_mobile_audit_count():
+    """Count exactly how many orders are actually affected."""
+    conn = get_db()
+
+    # Total orders
+    total = conn.execute("SELECT COUNT(*) as c FROM orders").fetchone()["c"]
+
+    # Orders with unique mobile (safe - no conflict possible)
+    unique_mobile = conn.execute("""
+        SELECT COUNT(o.id) as c FROM orders o
+        JOIN customers c ON c.id=o.customer_id
+        WHERE c.mobile IS NOT NULL
+        GROUP BY c.mobile
+        HAVING COUNT(DISTINCT LOWER(TRIM(c.name))) = 1
+    """).fetchall()
+
+    # Mobile conflicts (same mobile, different names)
+    conflicts = conn.execute("""
+        SELECT c.mobile,
+               COUNT(DISTINCT LOWER(TRIM(c.name))) as names,
+               COUNT(o.id) as order_count,
+               STRING_AGG(DISTINCT TRIM(c.name), ' | ' ORDER BY TRIM(c.name)) as all_names
+        FROM orders o
+        JOIN customers c ON c.id=o.customer_id
+        WHERE c.mobile IS NOT NULL AND LENGTH(c.mobile) >= 8
+        GROUP BY c.mobile
+        HAVING COUNT(DISTINCT LOWER(TRIM(c.name))) > 1
+        ORDER BY COUNT(o.id) DESC
+    """).fetchall()
+
+    conflict_orders = sum(int(r["order_count"]) for r in conflicts)
+
+    # Orders with no mobile
+    no_mobile = conn.execute("""
+        SELECT COUNT(o.id) as c FROM orders o
+        JOIN customers c ON c.id=o.customer_id
+        WHERE c.mobile IS NULL OR c.mobile=''
+    """).fetchone()["c"]
+
+    conn.close()
+    return jsonify({
+        "total_orders": total,
+        "no_mobile_orders": no_mobile,
+        "conflict_mobiles": len(conflicts),
+        "orders_in_conflict": conflict_orders,
+        "safe_orders": total - conflict_orders - no_mobile,
+        "top_conflicts": [{"mobile": r["mobile"], "names": r["all_names"],
+                           "orders": r["order_count"]} for r in conflicts[:10]]
+    })
 @bp.route("/finance")
 @owner_required
 def owner_finance():
