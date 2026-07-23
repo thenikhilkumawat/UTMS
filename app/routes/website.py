@@ -2547,7 +2547,9 @@ def api_tokens_verify_payment():
     db = get_db()
     try:
         _rz2b = db.execute("SELECT value FROM settings WHERE key='razorpay_key_secret'").fetchone()
-        rz_key_sec = (_rz2b["value"] if _rz2b else "").strip()
+        _raw_sec = (_rz2b["value"] if _rz2b else "")
+        # Strip env-var prefix if stored as "RAZORPAY_KEY_SECRET=actual_secret"
+        rz_key_sec = (_raw_sec.split("=",1)[-1] if _raw_sec and "=" in _raw_sec else _raw_sec or "").strip()
     except Exception:
         rz_key_sec = ""
     if not rz_key_sec:
