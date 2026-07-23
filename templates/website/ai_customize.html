@@ -369,7 +369,8 @@
   <div style="background:#fff;border-radius:16px;padding:28px 24px;max-width:380px;width:90%;position:relative">
     <button onclick="document.getElementById('asTokenModal').style.display='none'" style="position:absolute;top:14px;right:16px;background:none;border:none;font-size:20px;cursor:pointer;color:#888">✕</button>
     <div style="font-size:20px;font-weight:800;color:#2c1a00;margin-bottom:4px">🪙 Buy Credits</div>
-    <div style="font-size:13px;color:#888;margin-bottom:20px">Each credit = 1 AI preview. Credits never expire.</div>
+    <div style="font-size:13px;color:#888;margin-bottom:12px">Each credit = 1 AI preview. Credits never expire.</div>
+    <div id="asTokenCurrentBalance" style="background:#faf7f2;border:1px solid #e5d9c0;border-radius:8px;padding:9px 14px;font-size:13px;color:#5a3e1b;margin-bottom:16px;display:none">🪙 Current balance: <strong id="asTokenCurrentBalanceVal">0</strong> credits</div>
     <div id="asTokenPacks" style="display:flex;flex-direction:column;gap:10px"></div>
     <div id="asTokenMsg" style="margin-top:12px;font-size:13px;text-align:center;color:#888"></div>
   </div>
@@ -721,6 +722,7 @@ function asGenerate(){
 }
 
 function asUpdateCreditsBar(remaining, tokens){
+  window._asTokenBalance = (tokens != null ? tokens : (window._asTokenBalance || 0));
   var bar    = document.getElementById('asCreditsBar');
   var info   = document.getElementById('asCreditsInfo');
   var buyBtn = document.getElementById('asBuyTokensBtn');
@@ -756,6 +758,10 @@ function asShowTokenModal(){
   var packs = document.getElementById('asTokenPacks');
   var msg   = document.getElementById('asTokenMsg');
   if(msg) msg.textContent = '';
+  var balDiv = document.getElementById('asTokenCurrentBalance');
+  var balVal = document.getElementById('asTokenCurrentBalanceVal');
+  var bal = window._asTokenBalance || 0;
+  if(balDiv && balVal){ balVal.textContent = bal; balDiv.style.display = bal > 0 ? '' : 'none'; }
   packs.innerHTML = AS_TOKEN_PACKS.map(function(p){
     return '<button onclick="asBuyPack('+p.tokens+','+p.price+')" style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-radius:10px;border:1.5px solid #e5d9c0;background:#faf7f2;cursor:pointer;font-size:14px;width:100%;margin-bottom:2px">'
       +'<span><strong>'+p.tokens+' Credits</strong>&nbsp;<span style="color:#999;font-size:12px">'+p.label+'</span></span>'
