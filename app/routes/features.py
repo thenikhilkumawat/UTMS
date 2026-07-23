@@ -1097,7 +1097,8 @@ def account_login():
     from werkzeug.security import check_password_hash
     _ensure_auth_tables()
     d          = request.get_json(force=True, silent=True) or {}
-    identifier = (d.get("identifier") or "").strip().lstrip("0")
+    # Accept 'identifier' (old) or 'mobile' (commission page)
+    identifier = (d.get("identifier") or d.get("mobile") or "").strip().lstrip("0")
     password   = (d.get("password")   or "").strip()
 
     if not identifier or not password:
@@ -1118,8 +1119,30 @@ def account_login():
 
     session["web_account_id"] = acc["id"]
     session.permanent = True
+
+    tok = int(acc["token_balance"] or 0) if "token_balance" in acc.keys() else 0
+    # Deduct previews used as guest before login (lifetime 3 free total)
+    _g_used = min(int(session.get("preview_count", 0)), tok)
+    if _g_used > 0:
+        try:
+            db.execute(
+                "UPDATE web_accounts SET token_balance = MAX(0, token_balance - ?) WHERE id=?",
+                (_g_used, acc["id"])
+            )
+            db.execute(
+                "INSERT INTO token_transactions(account_id, tokens, type) VALUES(?,?,'guest_deduct')",
+                (acc["id"], -_g_used)
+            )
+            db.commit()
+            tok = max(0, tok - _g_used)
+        except Exception:
+            pass
+    session["preview_count"] = 0  # reset — now tracked via token_balance
+
     return jsonify({
         "ok": True,
+        "token_balance": tok,
+        "name": acc["name"] or "",
         "account": {
             "id":     acc["id"],
             "name":   acc["name"]  or "",

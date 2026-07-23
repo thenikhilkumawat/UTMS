@@ -1927,7 +1927,24 @@ function submitAccountForm() {
     .then(function(d){
       if(btn) btn.disabled = false;
       if (d.ok) {
-        if(msg){msg.style.color='#2D6A3F';msg.textContent='Welcome, ' + (d.name||'') + '! You can keep generating previews now.';}
+        // Update credits bar with server-returned balance after login/signup
+        if (d.token_balance != null) {
+          _cmBal = d.token_balance; _cmPrev = null;
+          cmShowCreditsBar();
+          // Also update the static server-rendered bar text
+          var bar = document.getElementById('cmCreditsBar');
+          if (bar) {
+            if (_cmBal === 0) {
+              bar.innerHTML = '\u26a0\ufe0f No credits left \u2014 <a href="/customize" style="color:#b8892a;">Buy credits \u2192</a>';
+              bar.style.color = '#c2410c';
+            } else {
+              bar.textContent = '\ud83e\ude99 ' + _cmBal + ' credit' + (_cmBal===1?'':'s') + ' remaining';
+              bar.style.color = '#5a3e1b';
+            }
+            bar.style.display = '';
+          }
+        }
+        if(msg){msg.style.color='#2D6A3F';msg.textContent='Welcome, ' + (d.name||d.account&&d.account.name||'') + '! You can keep generating previews now.';}
         try{
           var wl = JSON.parse(localStorage.getItem('ut_wishlist')||'[]');
           if (wl && wl.length) fetch('/api/account/wishlist/merge',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({item_ids:wl.map(function(i){return i&&i.id;}).filter(function(id){return id;})})}).catch(function(){});
