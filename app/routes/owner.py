@@ -4693,39 +4693,34 @@ def past_orders_save():
     try:
         conn = get_db()
 
-        # 1. Customer — find or create
-        # IMPORTANT: Same mobile + DIFFERENT name = two different people sharing a phone.
-        # Never overwrite existing customer's name. Create a new customer record instead.
+        # 1. Customer — MOBILE IS THE ONLY KEY
+        # Same mobile = same person (update name/address)
+        # New/no mobile = new customer
         customer_id = None
         if customer_mobile:
-            r = conn.execute("SELECT id, name FROM customers WHERE mobile=?", (customer_mobile,)).fetchone()
+            r = conn.execute("SELECT id FROM customers WHERE mobile=?", (customer_mobile,)).fetchone()
             if r:
-                same_name = r["name"].strip().lower() == customer_name.strip().lower()
-                if same_name:
-                    # Same person — reuse, just update address
-                    customer_id = r["id"]
-                    conn.execute("UPDATE customers SET address=? WHERE id=?",
-                                 (customer_address, customer_id))
-                else:
-                    # Different person sharing same phone — create NEW customer
-                    conn.execute("INSERT INTO customers(name, mobile, address) VALUES(?,?,?)",
-                                 (customer_name, customer_mobile, customer_address))
-                    new_r = conn.execute(
-                        "SELECT id FROM customers WHERE name=? AND mobile=? ORDER BY id DESC LIMIT 1",
-                        (customer_name, customer_mobile)).fetchone()
-                    customer_id = new_r["id"] if new_r else r["id"]
-        if not customer_id:
-            r = conn.execute("SELECT id FROM customers WHERE name=? ORDER BY id DESC LIMIT 1", (customer_name,)).fetchone()
-            if r:
+                # Same mobile → same person, update name and address
                 customer_id = r["id"]
-                if customer_address:
-                    conn.execute("UPDATE customers SET address=? WHERE id=?", (customer_address, customer_id))
+                conn.execute("UPDATE customers SET name=?,address=? WHERE id=?",
+                             (customer_name, customer_address, customer_id))
+            else:
+                # New mobile → new customer
+                row = conn.execute(
+                    "INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?) RETURNING id",
+                    (customer_name, customer_mobile, customer_address, now_str)).fetchone()
+                customer_id = row["id"] if row else None
+        else:
+            # No mobile → always new customer with NULL mobile
+            row = conn.execute(
+                "INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?) RETURNING id",
+                (customer_name, None, customer_address, now_str)).fetchone()
+            customer_id = row["id"] if row else None
+
         if not customer_id:
-            conn.execute("INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?)",
-                         (customer_name, customer_mobile or "", customer_address, now_str))
-            conn.commit()
-            r = conn.execute("SELECT id FROM customers ORDER BY id DESC LIMIT 1").fetchone()
-            customer_id = r["id"] if r else 1
+            conn.close()
+            return jsonify({"ok": False, "error": "Customer create failed"})
+
 
         # 2. Order code — ONLY use the user-provided code, NEVER auto-generate
         # Past orders must NEVER touch the last_order_code counter — that is
