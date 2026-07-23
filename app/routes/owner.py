@@ -5003,8 +5003,7 @@ def order_edit_save(order_code):
             ex_mobile = ((ex_cust["mobile"] if ex_cust else "") or "").strip()
 
             if mobile and ex_mobile and mobile != ex_mobile:
-                # DIFFERENT mobile provided = different person
-                # Find or create customer with new mobile
+                # DIFFERENT mobile = different person → find or create new customer
                 from datetime import datetime as _dt
                 now_str = _dt.now().strftime("%Y-%m-%d %H:%M:%S")
                 right = conn.execute(
@@ -5021,8 +5020,12 @@ def order_edit_save(order_code):
                 conn.execute("UPDATE orders SET customer_id=? WHERE id=?",
                              (new_cust_id, order_id))
                 customer_id = new_cust_id
+            elif mobile and not ex_mobile:
+                # Mobile was NULL/empty, now ADDING one → just update this customer
+                conn.execute("UPDATE customers SET name=?,mobile=?,address=? WHERE id=?",
+                             (name, mobile, address, customer_id))
             elif not mobile and ex_mobile:
-                # Mobile explicitly CLEARED → set to NULL for this customer
+                # Mobile explicitly CLEARED → set to NULL
                 conn.execute("UPDATE customers SET name=?,mobile=NULL,address=? WHERE id=?",
                              (name, address, customer_id))
             else:
