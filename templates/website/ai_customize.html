@@ -261,9 +261,9 @@
       'Straight cut':'👖','Slim Fit':'👖','Skinny Fit':'👖','Tapered Fit':'👖','Pajama (only)':'👘'
     } %}
     {% set garment_cats = {
-      'Formal Shirt':'shirt','Suit Shirt':'shirt','Denim Shirt':'shirt','Safari Suit':'shirt',
+      'Formal Shirt':'shirt','Suit Shirt':'shirt','Denim Shirt':'shirt',
       'Kurta (only)':'kurta','Kurta + Pajama set':'kurta','Pathani Suit':'kurta','Sherwani':'kurta','Pajama (only)':'kurta',
-      'Blazer':'suit','Suit 2-Piece':'suit','Suit 3-Piece':'suit','Waistcoat':'suit',
+      'Safari Suit':'suit','Blazer':'suit','Suit 2-Piece':'suit','Suit 3-Piece':'suit','Waistcoat':'suit',
       'Jeans':'pant','Baggy Fit':'pant','Boot Cut':'pant','Straight cut':'pant','Slim Fit':'pant','Skinny Fit':'pant','Tapered Fit':'pant'
     } %}
     {% set garment_subs = {
@@ -295,7 +295,7 @@
         {% for item in items %}
           {% if not garment_cats.get(item.name) %}
             {% set nm = item.name|lower %}
-            {% set ik = 'shirt' if ('shirt' in nm or 'safari' in nm or 'linen' in nm or 'cotton shirt' in nm or 'casual shirt' in nm) else ('kurta' if ('kurta' in nm or 'sherwani' in nm or 'pathani' in nm or 'pajama' in nm or 'pyjama' in nm or 'ethnic' in nm) else ('suit' if ('suit' in nm or 'blazer' in nm or 'waistcoat' in nm or 'vest' in nm or 'jacket' in nm) else ('pant' if ('pant' in nm or 'jean' in nm or 'trouser' in nm or 'chino' in nm or 'slim' in nm or 'skinny' in nm or 'baggy' in nm or 'tapered' in nm or 'boot cut' in nm) else ''))) %}
+            {% set ik = 'suit' if ('safari' in nm or 'suit' in nm or 'blazer' in nm or 'waistcoat' in nm or 'vest' in nm or 'jacket' in nm) else ('shirt' if ('shirt' in nm or 'linen' in nm or 'cotton shirt' in nm or 'casual shirt' in nm) else ('kurta' if ('kurta' in nm or 'sherwani' in nm or 'pathani' in nm or 'pajama' in nm or 'pyjama' in nm or 'ethnic' in nm) else ('pant' if ('pant' in nm or 'jean' in nm or 'trouser' in nm or 'chino' in nm or 'slim' in nm or 'skinny' in nm or 'baggy' in nm or 'tapered' in nm or 'boot cut' in nm) else ''))) %}
             {% if ik == cat %}
               {% if rendered.append(item.name) %}{% endif %}
               <div class="as-g-card" data-garment="{{ item.name }}" data-cat="{{ cat }}" data-iid="{{ item.id }}" onclick="asSelectGarment(this)">
@@ -308,9 +308,9 @@
         {# Fallback hardcoded only if truly no DB items matched this category #}
         {% if not rendered %}
           {% set fallbacks = {
-            'shirt': [('Formal Shirt','👔','Office & occasions'),('Denim Shirt','👕','Casual denim'),('Safari Suit','🌿','Casual formal')],
+            'shirt': [('Formal Shirt','👔','Office & occasions'),('Denim Shirt','👕','Casual denim')],
             'kurta': [('Kurta','🥻','Traditional & festive'),('Kurta + Pajama','🎎','Full ethnic set'),('Pathani Suit','🧥','Classic look'),('Sherwani','✨','Wedding')],
-            'suit':  [('Blazer','🎩','Smart casual'),('Suit 2-Piece','💼','Jacket + Trouser'),('Suit 3-Piece','🏆','With vest'),('Waistcoat','🎭','Vest style')],
+            'suit':  [('Safari Suit','🌿','Casual formal'),('Blazer','🎩','Smart casual'),('Suit 2-Piece','💼','Jacket + Trouser'),('Suit 3-Piece','🏆','With vest'),('Waistcoat','🎭','Vest style')],
             'pant':  [('Jeans','🔵','Custom denim'),('Trouser','👖','Tailored'),('Slim Fit','👖','Slim cut'),('Baggy Fit','👖','Relaxed')]
           } %}
           {% for g,icon,sub in fallbacks.get(cat,[]) %}
