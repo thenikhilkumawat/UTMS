@@ -1022,9 +1022,14 @@ def create_order():
         for gt in garment_types:
             qty_key = "qty_" + gt
             qty  = max(1, int(request.form.get(qty_key, 1) or 1))
-            # Look up server-side rate — try customer_rate_X then rate_X
+            # Look up server-side rate — try customer_rate_X then rate_X then service item price
             _rate_raw = (_all_settings.get("customer_rate_" + gt)
-                         or _all_settings.get("rate_" + gt) or "0")
+                         or _all_settings.get("rate_" + gt))
+            if not _rate_raw:
+                _item_price_row = db.execute(
+                    "SELECT price FROM web_service_items WHERE name=? LIMIT 1", (gt,)
+                ).fetchone()
+                _rate_raw = str(_item_price_row["price"]) if _item_price_row else "0"
             try:
                 rate = float(str(_rate_raw).split("–")[0].split("-")[0].strip() or 0)
             except (ValueError, TypeError):
