@@ -38,6 +38,22 @@
 
 <!-- Results area -->
 <div style="background:#f1f5f9;min-height:100vh;padding:20px 20px 40px;">
+
+  <!-- Next / Prev navigation -->
+  <div id="nav-bar" style="display:none;background:#fff;border-radius:12px;padding:10px 14px;
+    margin-bottom:14px;box-shadow:0 2px 6px rgba(0,0,0,0.06);
+    display:flex;align-items:center;gap:10px;">
+    <button onclick="navStep(-1)"
+      style="padding:7px 14px;background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:9px;
+      font-size:13px;font-weight:800;cursor:pointer;color:#374151;">← Prev</button>
+    <div style="flex:1;text-align:center;font-size:13px;color:#64748b;">
+      Order <b id="nav-current" style="color:#4338ca;">#—</b>
+    </div>
+    <button onclick="navStep(1)"
+      style="padding:7px 14px;background:#4338ca;border:none;border-radius:9px;
+      font-size:13px;font-weight:800;cursor:pointer;color:#fff;">Next →</button>
+  </div>
+
   <div id="mb-count" style="font-size:12px;font-weight:700;color:#6b7280;margin-bottom:16px;"></div>
 
   <!-- Default: Search prompt -->
@@ -127,10 +143,29 @@ async function doSearch() {
     const n = grid.querySelectorAll(".mb-card").length;
     document.getElementById("mb-count").textContent = n + " order" + (n !== 1 ? "s" : "") + " found" + (n >= 60 ? " (first 60 — narrow your search)" : "");
     document.getElementById("mb-empty").style.display = n === 0 ? "block" : "none";
+    // Show next/prev nav if searching by order code number
+    if (/^\d+$/.test(q)) {
+      document.getElementById("nav-current").textContent = "#" + q;
+      document.getElementById("nav-bar").style.display = "flex";
+      window._navCode = parseInt(q);
+    } else {
+      document.getElementById("nav-bar").style.display = "none";
+    }
   } catch (e) {
     if (myToken !== searchToken) return;
     document.getElementById("mb-count").textContent = "Search failed — try again";
   }
+}
+
+function navStep(dir) {
+  var cur = window._navCode || 0;
+  var next = cur + dir;
+  if (next < 1) return;
+  var inp = document.getElementById("mb-search");
+  inp.value = String(next);
+  window._navCode = next;
+  document.getElementById("nav-current").textContent = "#" + next;
+  doSearch();
 }
 
 
