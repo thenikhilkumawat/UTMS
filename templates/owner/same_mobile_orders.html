@@ -129,7 +129,7 @@ function doFix() {
   btn.disabled = true;
   btn.textContent = 'Fix ho raha hai...';
 
-  fetch('/owner/api/split-customer', {
+  fetch('/owner/api/fix-order-mobile', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({order_code: currentCode, name: name, mobile: mobile})
