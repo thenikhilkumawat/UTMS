@@ -2636,8 +2636,8 @@ function renderAiStyleRules(filterItemId){
     item.options.forEach(function(opt){
       html+='<div class="ai-opt-row">';
       html+='<div class="ai-opt-body">';
-      html+='<div class="ai-opt-label">'+opt.label+'</div>';
-      html+='<div class="ai-opt-group">'+opt.group+'</div>';
+      html+='<div class="ai-opt-label">'+esc(opt.option_label||opt.option_group)+'</div>';
+      html+='<div class="ai-opt-group">'+esc(opt.option_group)+'</div>';
       html+='<div class="ai-val-tags">';
       (opt.values||[]).forEach(function(v){
         html+='<span class="ai-val-tag" title="'+(v.ai_prompt?'AI: '+v.ai_prompt:'No custom AI prompt')+'">'+v.label+(v.ai_prompt?' ✦':'')+'</span>';

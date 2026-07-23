@@ -622,6 +622,8 @@ def run_account_migrations():
                 "ALTER TABLE web_accounts ADD COLUMN IF NOT EXISTS tryon_count INTEGER DEFAULT 0",
                 "ALTER TABLE orders ADD COLUMN IF NOT EXISTS web_account_id INTEGER",
                 "ALTER TABLE orders ADD COLUMN IF NOT EXISTS fabric_cost REAL DEFAULT 0",
+                "ALTER TABLE garment_style_values ADD COLUMN IF NOT EXISTS value_key TEXT DEFAULT ''",
+                "ALTER TABLE garment_style_values ADD COLUMN IF NOT EXISTS ai_prompt TEXT DEFAULT ''",
             ]
         else:
             alters = [
@@ -637,6 +639,8 @@ def run_account_migrations():
                 "ALTER TABLE web_accounts ADD COLUMN tryon_count INTEGER DEFAULT 0",
                 "ALTER TABLE orders ADD COLUMN web_account_id INTEGER",
                 "ALTER TABLE orders ADD COLUMN fabric_cost REAL DEFAULT 0",
+                "ALTER TABLE garment_style_values ADD COLUMN value_key TEXT DEFAULT ''",
+                "ALTER TABLE garment_style_values ADD COLUMN ai_prompt TEXT DEFAULT ''",
             ]
         for stmt in alters:
             try:

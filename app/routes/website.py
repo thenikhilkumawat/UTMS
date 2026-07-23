@@ -1448,6 +1448,36 @@ def api_style_options(item_id):
     except:
         return jsonify({"ok": True, "options": []})
 
+@website_bp.route("/api/style-options-by-name/<path:garment_name>")
+def api_style_options_by_name(garment_name):
+    """Lookup style options by garment name — used when data-iid is missing."""
+    db = get_db()
+    try:
+        item = db.execute(
+            "SELECT id FROM web_service_items WHERE LOWER(name)=LOWER(?) LIMIT 1",
+            (garment_name.strip(),)
+        ).fetchone()
+        if not item:
+            return jsonify({"ok": True, "options": [], "item_id": None})
+        item_id = item["id"]
+        rows = db.execute(
+            "SELECT * FROM garment_style_options WHERE item_id=? ORDER BY sort_order,id",
+            (item_id,)
+        ).fetchall()
+        result = []
+        for r in rows:
+            vals = db.execute(
+                "SELECT * FROM garment_style_values WHERE option_id=? ORDER BY sort_order,id",
+                (r["id"],)
+            ).fetchall()
+            opt = dict(r)
+            opt["values"] = [dict(v) for v in vals]
+            result.append(opt)
+        return jsonify({"ok": True, "options": result, "item_id": item_id})
+    except Exception as e:
+        return jsonify({"ok": True, "options": [], "item_id": None})
+
+
 
 def _resolve_style_ai_prompts(item_id):
     """Look up admin-authored explicit AI instructions for an item's style

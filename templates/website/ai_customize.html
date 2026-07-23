@@ -284,7 +284,21 @@
             </div>
           {% endif %}
         {% endfor %}
-        {# Fallback hardcoded if no DB items for this category #}
+        {# Also render DB items whose names aren't in garment_cats -- guess category from keywords #}
+        {% for item in items %}
+          {% if not garment_cats.get(item.name) %}
+            {% set nm = item.name|lower %}
+            {% set ik = 'shirt' if ('shirt' in nm or 'safari' in nm or 'linen' in nm or 'cotton shirt' in nm or 'casual shirt' in nm) else ('kurta' if ('kurta' in nm or 'sherwani' in nm or 'pathani' in nm or 'pajama' in nm or 'pyjama' in nm or 'ethnic' in nm) else ('suit' if ('suit' in nm or 'blazer' in nm or 'waistcoat' in nm or 'vest' in nm or 'jacket' in nm) else ('pant' if ('pant' in nm or 'jean' in nm or 'trouser' in nm or 'chino' in nm or 'slim' in nm or 'skinny' in nm or 'baggy' in nm or 'tapered' in nm or 'boot cut' in nm) else ''))) %}
+            {% if ik == cat %}
+              {% if rendered.append(item.name) %}{% endif %}
+              <div class="as-g-card" data-garment="{{ item.name }}" data-cat="{{ cat }}" data-iid="{{ item.id }}" onclick="asSelectGarment(this)">
+                {% if item.image_url %}<img class="as-g-img" src="{{ item.image_url }}" alt="{{ item.name }}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="as-g-emoji" style="display:none">🧵</div>{% else %}<div class="as-g-emoji">🧵</div>{% endif %}
+                <div class="as-g-info"><div class="as-g-name">{{ item.name }}</div><div class="as-g-sub">Custom stitched</div></div>
+              </div>
+            {% endif %}
+          {% endif %}
+        {% endfor %}
+        {# Fallback hardcoded only if truly no DB items matched this category #}
         {% if not rendered %}
           {% set fallbacks = {
             'shirt': [('Formal Shirt','👔','Office & occasions'),('Denim Shirt','👕','Casual denim'),('Safari Suit','🌿','Casual formal')],
@@ -535,13 +549,31 @@ function asFilterFabrics(){
 var _pvCurrentImg = '';
 function asLoadStyleOptions(){
   var wrap = document.getElementById('asStyleWrap');
+  wrap.innerHTML = '<div style="color:var(--as-muted);font-size:13px;padding:20px 0">Loading style options…</div>';
   if(!AS.itemId || !parseInt(AS.itemId)){
-    // Use fallback
+    // No item_id on card — try name-based lookup so admin-configured options still show
+    if(AS.garment){
+      fetch('/api/style-options-by-name/'+encodeURIComponent(AS.garment))
+        .then(function(r){return r.json();})
+        .then(function(d){
+          if(d.ok && d.options && d.options.length){
+            if(d.item_id) AS.itemId = String(d.item_id);
+            AS.styleOptions = d.options;
+          } else {
+            AS.styleOptions = AS_FALLBACK[AS.garmentCat] || AS_FALLBACK.shirt;
+          }
+          asRenderStyleOptions();
+        })
+        .catch(function(){
+          AS.styleOptions = AS_FALLBACK[AS.garmentCat] || AS_FALLBACK.shirt;
+          asRenderStyleOptions();
+        });
+      return;
+    }
     AS.styleOptions = AS_FALLBACK[AS.garmentCat] || AS_FALLBACK.shirt;
     asRenderStyleOptions();
     return;
   }
-  wrap.innerHTML = '<div style="color:var(--as-muted);font-size:13px;padding:20px 0">Loading style options…</div>';
   fetch('/api/style-options/'+AS.itemId)
     .then(function(r){return r.json();})
     .then(function(d){
