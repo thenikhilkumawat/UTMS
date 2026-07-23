@@ -1501,6 +1501,88 @@ def api_diagnose_order(code):
         "fix_url": f"/owner/api/fix-order-customer?code={code}&name=SAHI_NAAM_YAHAN"
     })
 
+
+@bp.route("/api/fix-split-customer", methods=["GET","POST"])
+@owner_required
+def api_fix_split_customer():
+    """Fix two orders wrongly sharing a customer.
+    Usage: GET  ?code1=2408&code2=3279  → diagnose
+           POST ?code1=2408&mobile1=9876543210&code2=3279&mobile2=9999999999
+                → creates separate customers, fixes both orders
+    """
+    from datetime import datetime as _dt
+    code1  = request.args.get("code1","").strip()
+    code2  = request.args.get("code2","").strip()
+    conn   = get_db()
+
+    def get_order(code):
+        return conn.execute("""
+            SELECT o.id, o.order_code, o.customer_id,
+                   c.name as cname, c.mobile, c.address
+            FROM orders o
+            LEFT JOIN customers c ON c.id=o.customer_id
+            WHERE o.order_code=?
+        """, (code,)).fetchone()
+
+    o1 = get_order(code1)
+    o2 = get_order(code2) if code2 else None
+
+    # GET → diagnose only
+    if request.method == "GET":
+        conn.close()
+        return jsonify({
+            "order1": dict(o1) if o1 else None,
+            "order2": dict(o2) if o2 else None,
+            "same_customer": o1 and o2 and o1["customer_id"]==o2["customer_id"],
+            "fix_instructions": {
+                "method": "POST",
+                "params": f"code1={code1}&mobile1=CORRECT_MOBILE_FOR_{code1}&code2={code2}&mobile2=CORRECT_MOBILE_FOR_{code2}"
+            }
+        })
+
+    # POST → actually fix
+    mobile1 = request.args.get("mobile1","").strip()
+    mobile2 = request.args.get("mobile2","").strip()
+    now_str = _dt.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    fixed = []
+
+    if o1 and mobile1:
+        # Check if customer with this name+mobile already exists
+        existing = conn.execute(
+            "SELECT id FROM customers WHERE mobile=? AND name=?",
+            (mobile1, o1["cname"])
+        ).fetchone()
+        if existing:
+            cust_id = existing["id"]
+        else:
+            cust_id = conn.execute(
+                "INSERT INTO customers(name, mobile, address, created_at) VALUES(?,?,?,?) RETURNING id",
+                (o1["cname"], mobile1, o1["address"] or "", now_str)
+            ).fetchone()["id"]
+        conn.execute("UPDATE orders SET customer_id=? WHERE order_code=?", (cust_id, code1))
+        fixed.append(f"Order #{code1} → customer_id={cust_id} (mobile={mobile1})")
+
+    if o2 and mobile2:
+        existing = conn.execute(
+            "SELECT id FROM customers WHERE mobile=? AND name=?",
+            (mobile2, o2["cname"])
+        ).fetchone()
+        if existing:
+            cust_id2 = existing["id"]
+        else:
+            cust_id2 = conn.execute(
+                "INSERT INTO customers(name, mobile, address, created_at) VALUES(?,?,?,?) RETURNING id",
+                (o2["cname"], mobile2, o2["address"] or "", now_str)
+            ).fetchone()["id"]
+        conn.execute("UPDATE orders SET customer_id=? WHERE order_code=?", (cust_id2, code2))
+        fixed.append(f"Order #{code2} → customer_id={cust_id2} (mobile={mobile2})")
+
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True, "fixed": fixed,
+                    "message": "✅ Dono orders ke alag alag customers ban gaye!"})
+
 @bp.route("/api/fix-order-code")
 @owner_required
 def fix_order_code():
