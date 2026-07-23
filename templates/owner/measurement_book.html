@@ -1,48 +1,72 @@
 {% extends "base.html" %}
 {% block title %}Diary — Order Search</div>
 
-<!-- Diary image viewer: zoom + pinch + drag + Prev/Next -->
+<!-- Diary image viewer: zoom + pinch + drag + Prev/Next overlay -->
 <div id="diary-img-modal"
-  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.93);z-index:99999;
-         flex-direction:column;align-items:center;justify-content:center;gap:8px;">
+  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.93);z-index:99999;">
 
-  <!-- Label -->
-  <div id="diary-img-label" style="font-size:13px;font-weight:700;color:#a5b4fc;"></div>
+  <!-- ← PREV button — left side overlay -->
+  <button onclick="diaryNavStep(-1)"
+    style="position:absolute;left:0;top:50%;transform:translateY(-50%);
+           width:52px;height:80px;background:rgba(0,0,0,0.45);border:none;
+           color:#fff;font-size:26px;font-weight:900;cursor:pointer;z-index:10;
+           border-radius:0 12px 12px 0;backdrop-filter:blur(4px);
+           display:flex;align-items:center;justify-content:center;">‹</button>
 
-  <!-- Zoomable Image -->
-  <img id="diary-img-src" src="" alt="" draggable="false"
-    style="max-width:92vw;max-height:68vh;border-radius:10px;object-fit:contain;
-           transition:transform 0.1s;transform-origin:center center;user-select:none;touch-action:none;">
+  <!-- NEXT → button — right side overlay -->
+  <button onclick="diaryNavStep(1)"
+    style="position:absolute;right:0;top:50%;transform:translateY(-50%);
+           width:52px;height:80px;background:rgba(0,0,0,0.45);border:none;
+           color:#fff;font-size:26px;font-weight:900;cursor:pointer;z-index:10;
+           border-radius:12px 0 0 12px;backdrop-filter:blur(4px);
+           display:flex;align-items:center;justify-content:center;">›</button>
 
-  <!-- Zoom controls -->
-  <div style="display:flex;gap:8px;align-items:center;" onclick="event.stopPropagation()">
+  <!-- ✕ CLOSE — top right overlay -->
+  <button onclick="closeDiaryImg()"
+    style="position:absolute;top:14px;right:14px;
+           width:38px;height:38px;background:rgba(0,0,0,0.5);border:none;
+           color:#fff;font-size:18px;font-weight:900;cursor:pointer;z-index:10;
+           border-radius:50%;backdrop-filter:blur(4px);
+           display:flex;align-items:center;justify-content:center;">✕</button>
+
+  <!-- Order label — top left overlay -->
+  <div id="diary-img-label"
+    style="position:absolute;top:14px;left:14px;z-index:10;
+           background:rgba(0,0,0,0.5);color:#a5b4fc;
+           font-size:13px;font-weight:700;padding:6px 12px;border-radius:20px;
+           backdrop-filter:blur(4px);"></div>
+
+  <!-- Zoom controls — bottom overlay -->
+  <div style="position:absolute;bottom:16px;left:50%;transform:translateX(-50%);
+              z-index:10;display:flex;gap:8px;align-items:center;"
+    onclick="event.stopPropagation()">
     <button onclick="dZoom(-0.25)"
-      style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.15);
-             color:#fff;border:2px solid rgba(255,255,255,0.3);font-size:20px;font-weight:700;cursor:pointer;
-             display:flex;align-items:center;justify-content:center;">−</button>
+      style="width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,0.5);
+             color:#fff;border:1.5px solid rgba(255,255,255,0.3);font-size:18px;font-weight:700;
+             cursor:pointer;display:flex;align-items:center;justify-content:center;
+             backdrop-filter:blur(4px);">−</button>
     <span id="diary-zoom-label"
-      style="font-size:12px;font-weight:700;color:#a5b4fc;min-width:42px;text-align:center;">100%</span>
+      style="font-size:12px;font-weight:700;color:#a5b4fc;min-width:40px;text-align:center;
+             background:rgba(0,0,0,0.5);padding:4px 8px;border-radius:12px;">100%</span>
     <button onclick="dZoom(0.25)"
-      style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.15);
-             color:#fff;border:2px solid rgba(255,255,255,0.3);font-size:20px;font-weight:700;cursor:pointer;
-             display:flex;align-items:center;justify-content:center;">+</button>
+      style="width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,0.5);
+             color:#fff;border:1.5px solid rgba(255,255,255,0.3);font-size:18px;font-weight:700;
+             cursor:pointer;display:flex;align-items:center;justify-content:center;
+             backdrop-filter:blur(4px);">+</button>
     <button onclick="dReset()"
-      style="padding:7px 12px;border-radius:20px;background:rgba(255,255,255,0.1);
-             color:#94a3b8;border:1.5px solid rgba(255,255,255,0.2);font-size:11px;font-weight:700;cursor:pointer;">Reset</button>
-    <button onclick="closeDiaryImg()"
-      style="padding:7px 12px;border-radius:20px;background:rgba(239,68,68,0.3);
-             color:#fca5a5;border:1.5px solid rgba(239,68,68,0.4);font-size:11px;font-weight:700;cursor:pointer;">✕ Close</button>
+      style="padding:6px 12px;border-radius:20px;background:rgba(0,0,0,0.5);
+             color:#94a3b8;border:1.5px solid rgba(255,255,255,0.2);font-size:11px;font-weight:700;
+             cursor:pointer;backdrop-filter:blur(4px);">Reset</button>
   </div>
 
-  <!-- Prev / Next navigation -->
-  <div style="display:flex;gap:12px;align-items:center;" onclick="event.stopPropagation()">
-    <button onclick="diaryNavStep(-1)"
-      style="padding:9px 22px;background:rgba(255,255,255,0.12);border:2px solid rgba(255,255,255,0.25);
-             border-radius:12px;color:#fff;font-size:14px;font-weight:800;cursor:pointer;">← Prev</button>
-    <span style="font-size:11px;color:#475569;">Scroll to zoom · Drag to pan</span>
-    <button onclick="diaryNavStep(1)"
-      style="padding:9px 22px;background:#4338ca;border:none;
-             border-radius:12px;color:#fff;font-size:14px;font-weight:800;cursor:pointer;">Next →</button>
+  <!-- Image — centered, fills screen -->
+  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+              overflow:hidden;" onclick="closeDiaryImg()">
+    <img id="diary-img-src" src="" alt="" draggable="false"
+      style="max-width:88vw;max-height:88vh;border-radius:8px;object-fit:contain;
+             transition:transform 0.1s;transform-origin:center center;
+             user-select:none;touch-action:none;"
+      onclick="event.stopPropagation()">
   </div>
 </div>
 
@@ -66,7 +90,7 @@
     dz=1;dpx=0;dpy=0;
     document.getElementById("diary-img-src").src = src;
     document.getElementById("diary-img-label").textContent = "Order #"+code;
-    document.getElementById("diary-img-modal").style.display = "flex";
+    document.getElementById("diary-img-modal").style.display = "block";
     document.body.style.overflow = "hidden";
     dApplyT();
   };
@@ -88,20 +112,14 @@
       setTimeout(function(){
         var card = document.querySelector(".mb-card");
         var img  = card && card.querySelector("img");
-        if(img && img.src){
+        if(img && img.src && !img.src.endsWith("/")){
           openDiaryImg(next, img.src);
         } else {
-          closeDiaryImg();
-          showToast && showToast("Order #"+next+" ka image nahi mila","error");
+          document.getElementById("diary-img-label").textContent = "Order #"+next+" — image nahi mila";
         }
       }, 700);
     });
   };
-
-  // Click outside to close
-  document.getElementById("diary-img-modal").addEventListener("click", function(e){
-    if(e.target===this) closeDiaryImg();
-  });
 
   var img = document.getElementById("diary-img-src");
 
@@ -133,7 +151,7 @@
   },{passive:false});
   img.addEventListener("touchend",function(){ddr=false;});
 
-  // Pinch to zoom (mobile)
+  // Pinch to zoom
   var pt1=null,pt2=null,pzInit=1;
   img.addEventListener("touchstart",function(e){
     if(e.touches.length===2){pt1=e.touches[0];pt2=e.touches[1];pzInit=dz;}
@@ -142,16 +160,15 @@
     if(e.touches.length===2&&pt1&&pt2){
       var d0=Math.hypot(pt1.clientX-pt2.clientX,pt1.clientY-pt2.clientY);
       var d1=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
-      dz=Math.max(0.25,Math.min(6,pzInit*(d1/d0)));
-      dApplyT();
+      dz=Math.max(0.25,Math.min(6,pzInit*(d1/d0))); dApplyT();
     }
   },{passive:true});
 
   // Keyboard
   document.addEventListener("keydown",function(e){
-    if(document.getElementById("diary-img-modal").style.display!=="flex") return;
-    if(e.key==="ArrowRight"||e.key==="ArrowDown") diaryNavStep(1);
-    if(e.key==="ArrowLeft" ||e.key==="ArrowUp")   diaryNavStep(-1);
+    if(document.getElementById("diary-img-modal").style.display!=="block") return;
+    if(e.key==="ArrowRight") diaryNavStep(1);
+    if(e.key==="ArrowLeft")  diaryNavStep(-1);
     if(e.key==="Escape") closeDiaryImg();
     if(e.key==="+"||e.key==="=") dZoom(0.25);
     if(e.key==="-") dZoom(-0.25);
@@ -256,48 +273,72 @@
 
 </div>
 
-<!-- Diary image viewer: zoom + pinch + drag + Prev/Next -->
+<!-- Diary image viewer: zoom + pinch + drag + Prev/Next overlay -->
 <div id="diary-img-modal"
-  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.93);z-index:99999;
-         flex-direction:column;align-items:center;justify-content:center;gap:8px;">
+  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.93);z-index:99999;">
 
-  <!-- Label -->
-  <div id="diary-img-label" style="font-size:13px;font-weight:700;color:#a5b4fc;"></div>
+  <!-- ← PREV button — left side overlay -->
+  <button onclick="diaryNavStep(-1)"
+    style="position:absolute;left:0;top:50%;transform:translateY(-50%);
+           width:52px;height:80px;background:rgba(0,0,0,0.45);border:none;
+           color:#fff;font-size:26px;font-weight:900;cursor:pointer;z-index:10;
+           border-radius:0 12px 12px 0;backdrop-filter:blur(4px);
+           display:flex;align-items:center;justify-content:center;">‹</button>
 
-  <!-- Zoomable Image -->
-  <img id="diary-img-src" src="" alt="" draggable="false"
-    style="max-width:92vw;max-height:68vh;border-radius:10px;object-fit:contain;
-           transition:transform 0.1s;transform-origin:center center;user-select:none;touch-action:none;">
+  <!-- NEXT → button — right side overlay -->
+  <button onclick="diaryNavStep(1)"
+    style="position:absolute;right:0;top:50%;transform:translateY(-50%);
+           width:52px;height:80px;background:rgba(0,0,0,0.45);border:none;
+           color:#fff;font-size:26px;font-weight:900;cursor:pointer;z-index:10;
+           border-radius:12px 0 0 12px;backdrop-filter:blur(4px);
+           display:flex;align-items:center;justify-content:center;">›</button>
 
-  <!-- Zoom controls -->
-  <div style="display:flex;gap:8px;align-items:center;" onclick="event.stopPropagation()">
+  <!-- ✕ CLOSE — top right overlay -->
+  <button onclick="closeDiaryImg()"
+    style="position:absolute;top:14px;right:14px;
+           width:38px;height:38px;background:rgba(0,0,0,0.5);border:none;
+           color:#fff;font-size:18px;font-weight:900;cursor:pointer;z-index:10;
+           border-radius:50%;backdrop-filter:blur(4px);
+           display:flex;align-items:center;justify-content:center;">✕</button>
+
+  <!-- Order label — top left overlay -->
+  <div id="diary-img-label"
+    style="position:absolute;top:14px;left:14px;z-index:10;
+           background:rgba(0,0,0,0.5);color:#a5b4fc;
+           font-size:13px;font-weight:700;padding:6px 12px;border-radius:20px;
+           backdrop-filter:blur(4px);"></div>
+
+  <!-- Zoom controls — bottom overlay -->
+  <div style="position:absolute;bottom:16px;left:50%;transform:translateX(-50%);
+              z-index:10;display:flex;gap:8px;align-items:center;"
+    onclick="event.stopPropagation()">
     <button onclick="dZoom(-0.25)"
-      style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.15);
-             color:#fff;border:2px solid rgba(255,255,255,0.3);font-size:20px;font-weight:700;cursor:pointer;
-             display:flex;align-items:center;justify-content:center;">−</button>
+      style="width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,0.5);
+             color:#fff;border:1.5px solid rgba(255,255,255,0.3);font-size:18px;font-weight:700;
+             cursor:pointer;display:flex;align-items:center;justify-content:center;
+             backdrop-filter:blur(4px);">−</button>
     <span id="diary-zoom-label"
-      style="font-size:12px;font-weight:700;color:#a5b4fc;min-width:42px;text-align:center;">100%</span>
+      style="font-size:12px;font-weight:700;color:#a5b4fc;min-width:40px;text-align:center;
+             background:rgba(0,0,0,0.5);padding:4px 8px;border-radius:12px;">100%</span>
     <button onclick="dZoom(0.25)"
-      style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.15);
-             color:#fff;border:2px solid rgba(255,255,255,0.3);font-size:20px;font-weight:700;cursor:pointer;
-             display:flex;align-items:center;justify-content:center;">+</button>
+      style="width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,0.5);
+             color:#fff;border:1.5px solid rgba(255,255,255,0.3);font-size:18px;font-weight:700;
+             cursor:pointer;display:flex;align-items:center;justify-content:center;
+             backdrop-filter:blur(4px);">+</button>
     <button onclick="dReset()"
-      style="padding:7px 12px;border-radius:20px;background:rgba(255,255,255,0.1);
-             color:#94a3b8;border:1.5px solid rgba(255,255,255,0.2);font-size:11px;font-weight:700;cursor:pointer;">Reset</button>
-    <button onclick="closeDiaryImg()"
-      style="padding:7px 12px;border-radius:20px;background:rgba(239,68,68,0.3);
-             color:#fca5a5;border:1.5px solid rgba(239,68,68,0.4);font-size:11px;font-weight:700;cursor:pointer;">✕ Close</button>
+      style="padding:6px 12px;border-radius:20px;background:rgba(0,0,0,0.5);
+             color:#94a3b8;border:1.5px solid rgba(255,255,255,0.2);font-size:11px;font-weight:700;
+             cursor:pointer;backdrop-filter:blur(4px);">Reset</button>
   </div>
 
-  <!-- Prev / Next navigation -->
-  <div style="display:flex;gap:12px;align-items:center;" onclick="event.stopPropagation()">
-    <button onclick="diaryNavStep(-1)"
-      style="padding:9px 22px;background:rgba(255,255,255,0.12);border:2px solid rgba(255,255,255,0.25);
-             border-radius:12px;color:#fff;font-size:14px;font-weight:800;cursor:pointer;">← Prev</button>
-    <span style="font-size:11px;color:#475569;">Scroll to zoom · Drag to pan</span>
-    <button onclick="diaryNavStep(1)"
-      style="padding:9px 22px;background:#4338ca;border:none;
-             border-radius:12px;color:#fff;font-size:14px;font-weight:800;cursor:pointer;">Next →</button>
+  <!-- Image — centered, fills screen -->
+  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+              overflow:hidden;" onclick="closeDiaryImg()">
+    <img id="diary-img-src" src="" alt="" draggable="false"
+      style="max-width:88vw;max-height:88vh;border-radius:8px;object-fit:contain;
+             transition:transform 0.1s;transform-origin:center center;
+             user-select:none;touch-action:none;"
+      onclick="event.stopPropagation()">
   </div>
 </div>
 
@@ -321,7 +362,7 @@
     dz=1;dpx=0;dpy=0;
     document.getElementById("diary-img-src").src = src;
     document.getElementById("diary-img-label").textContent = "Order #"+code;
-    document.getElementById("diary-img-modal").style.display = "flex";
+    document.getElementById("diary-img-modal").style.display = "block";
     document.body.style.overflow = "hidden";
     dApplyT();
   };
@@ -343,20 +384,14 @@
       setTimeout(function(){
         var card = document.querySelector(".mb-card");
         var img  = card && card.querySelector("img");
-        if(img && img.src){
+        if(img && img.src && !img.src.endsWith("/")){
           openDiaryImg(next, img.src);
         } else {
-          closeDiaryImg();
-          showToast && showToast("Order #"+next+" ka image nahi mila","error");
+          document.getElementById("diary-img-label").textContent = "Order #"+next+" — image nahi mila";
         }
       }, 700);
     });
   };
-
-  // Click outside to close
-  document.getElementById("diary-img-modal").addEventListener("click", function(e){
-    if(e.target===this) closeDiaryImg();
-  });
 
   var img = document.getElementById("diary-img-src");
 
@@ -388,7 +423,7 @@
   },{passive:false});
   img.addEventListener("touchend",function(){ddr=false;});
 
-  // Pinch to zoom (mobile)
+  // Pinch to zoom
   var pt1=null,pt2=null,pzInit=1;
   img.addEventListener("touchstart",function(e){
     if(e.touches.length===2){pt1=e.touches[0];pt2=e.touches[1];pzInit=dz;}
@@ -397,16 +432,15 @@
     if(e.touches.length===2&&pt1&&pt2){
       var d0=Math.hypot(pt1.clientX-pt2.clientX,pt1.clientY-pt2.clientY);
       var d1=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
-      dz=Math.max(0.25,Math.min(6,pzInit*(d1/d0)));
-      dApplyT();
+      dz=Math.max(0.25,Math.min(6,pzInit*(d1/d0))); dApplyT();
     }
   },{passive:true});
 
   // Keyboard
   document.addEventListener("keydown",function(e){
-    if(document.getElementById("diary-img-modal").style.display!=="flex") return;
-    if(e.key==="ArrowRight"||e.key==="ArrowDown") diaryNavStep(1);
-    if(e.key==="ArrowLeft" ||e.key==="ArrowUp")   diaryNavStep(-1);
+    if(document.getElementById("diary-img-modal").style.display!=="block") return;
+    if(e.key==="ArrowRight") diaryNavStep(1);
+    if(e.key==="ArrowLeft")  diaryNavStep(-1);
     if(e.key==="Escape") closeDiaryImg();
     if(e.key==="+"||e.key==="=") dZoom(0.25);
     if(e.key==="-") dZoom(-0.25);
@@ -502,48 +536,72 @@ setInterval(() => {
 </script>
 </div>
 
-<!-- Diary image viewer: zoom + pinch + drag + Prev/Next -->
+<!-- Diary image viewer: zoom + pinch + drag + Prev/Next overlay -->
 <div id="diary-img-modal"
-  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.93);z-index:99999;
-         flex-direction:column;align-items:center;justify-content:center;gap:8px;">
+  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.93);z-index:99999;">
 
-  <!-- Label -->
-  <div id="diary-img-label" style="font-size:13px;font-weight:700;color:#a5b4fc;"></div>
+  <!-- ← PREV button — left side overlay -->
+  <button onclick="diaryNavStep(-1)"
+    style="position:absolute;left:0;top:50%;transform:translateY(-50%);
+           width:52px;height:80px;background:rgba(0,0,0,0.45);border:none;
+           color:#fff;font-size:26px;font-weight:900;cursor:pointer;z-index:10;
+           border-radius:0 12px 12px 0;backdrop-filter:blur(4px);
+           display:flex;align-items:center;justify-content:center;">‹</button>
 
-  <!-- Zoomable Image -->
-  <img id="diary-img-src" src="" alt="" draggable="false"
-    style="max-width:92vw;max-height:68vh;border-radius:10px;object-fit:contain;
-           transition:transform 0.1s;transform-origin:center center;user-select:none;touch-action:none;">
+  <!-- NEXT → button — right side overlay -->
+  <button onclick="diaryNavStep(1)"
+    style="position:absolute;right:0;top:50%;transform:translateY(-50%);
+           width:52px;height:80px;background:rgba(0,0,0,0.45);border:none;
+           color:#fff;font-size:26px;font-weight:900;cursor:pointer;z-index:10;
+           border-radius:12px 0 0 12px;backdrop-filter:blur(4px);
+           display:flex;align-items:center;justify-content:center;">›</button>
 
-  <!-- Zoom controls -->
-  <div style="display:flex;gap:8px;align-items:center;" onclick="event.stopPropagation()">
+  <!-- ✕ CLOSE — top right overlay -->
+  <button onclick="closeDiaryImg()"
+    style="position:absolute;top:14px;right:14px;
+           width:38px;height:38px;background:rgba(0,0,0,0.5);border:none;
+           color:#fff;font-size:18px;font-weight:900;cursor:pointer;z-index:10;
+           border-radius:50%;backdrop-filter:blur(4px);
+           display:flex;align-items:center;justify-content:center;">✕</button>
+
+  <!-- Order label — top left overlay -->
+  <div id="diary-img-label"
+    style="position:absolute;top:14px;left:14px;z-index:10;
+           background:rgba(0,0,0,0.5);color:#a5b4fc;
+           font-size:13px;font-weight:700;padding:6px 12px;border-radius:20px;
+           backdrop-filter:blur(4px);"></div>
+
+  <!-- Zoom controls — bottom overlay -->
+  <div style="position:absolute;bottom:16px;left:50%;transform:translateX(-50%);
+              z-index:10;display:flex;gap:8px;align-items:center;"
+    onclick="event.stopPropagation()">
     <button onclick="dZoom(-0.25)"
-      style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.15);
-             color:#fff;border:2px solid rgba(255,255,255,0.3);font-size:20px;font-weight:700;cursor:pointer;
-             display:flex;align-items:center;justify-content:center;">−</button>
+      style="width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,0.5);
+             color:#fff;border:1.5px solid rgba(255,255,255,0.3);font-size:18px;font-weight:700;
+             cursor:pointer;display:flex;align-items:center;justify-content:center;
+             backdrop-filter:blur(4px);">−</button>
     <span id="diary-zoom-label"
-      style="font-size:12px;font-weight:700;color:#a5b4fc;min-width:42px;text-align:center;">100%</span>
+      style="font-size:12px;font-weight:700;color:#a5b4fc;min-width:40px;text-align:center;
+             background:rgba(0,0,0,0.5);padding:4px 8px;border-radius:12px;">100%</span>
     <button onclick="dZoom(0.25)"
-      style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.15);
-             color:#fff;border:2px solid rgba(255,255,255,0.3);font-size:20px;font-weight:700;cursor:pointer;
-             display:flex;align-items:center;justify-content:center;">+</button>
+      style="width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,0.5);
+             color:#fff;border:1.5px solid rgba(255,255,255,0.3);font-size:18px;font-weight:700;
+             cursor:pointer;display:flex;align-items:center;justify-content:center;
+             backdrop-filter:blur(4px);">+</button>
     <button onclick="dReset()"
-      style="padding:7px 12px;border-radius:20px;background:rgba(255,255,255,0.1);
-             color:#94a3b8;border:1.5px solid rgba(255,255,255,0.2);font-size:11px;font-weight:700;cursor:pointer;">Reset</button>
-    <button onclick="closeDiaryImg()"
-      style="padding:7px 12px;border-radius:20px;background:rgba(239,68,68,0.3);
-             color:#fca5a5;border:1.5px solid rgba(239,68,68,0.4);font-size:11px;font-weight:700;cursor:pointer;">✕ Close</button>
+      style="padding:6px 12px;border-radius:20px;background:rgba(0,0,0,0.5);
+             color:#94a3b8;border:1.5px solid rgba(255,255,255,0.2);font-size:11px;font-weight:700;
+             cursor:pointer;backdrop-filter:blur(4px);">Reset</button>
   </div>
 
-  <!-- Prev / Next navigation -->
-  <div style="display:flex;gap:12px;align-items:center;" onclick="event.stopPropagation()">
-    <button onclick="diaryNavStep(-1)"
-      style="padding:9px 22px;background:rgba(255,255,255,0.12);border:2px solid rgba(255,255,255,0.25);
-             border-radius:12px;color:#fff;font-size:14px;font-weight:800;cursor:pointer;">← Prev</button>
-    <span style="font-size:11px;color:#475569;">Scroll to zoom · Drag to pan</span>
-    <button onclick="diaryNavStep(1)"
-      style="padding:9px 22px;background:#4338ca;border:none;
-             border-radius:12px;color:#fff;font-size:14px;font-weight:800;cursor:pointer;">Next →</button>
+  <!-- Image — centered, fills screen -->
+  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+              overflow:hidden;" onclick="closeDiaryImg()">
+    <img id="diary-img-src" src="" alt="" draggable="false"
+      style="max-width:88vw;max-height:88vh;border-radius:8px;object-fit:contain;
+             transition:transform 0.1s;transform-origin:center center;
+             user-select:none;touch-action:none;"
+      onclick="event.stopPropagation()">
   </div>
 </div>
 
@@ -567,7 +625,7 @@ setInterval(() => {
     dz=1;dpx=0;dpy=0;
     document.getElementById("diary-img-src").src = src;
     document.getElementById("diary-img-label").textContent = "Order #"+code;
-    document.getElementById("diary-img-modal").style.display = "flex";
+    document.getElementById("diary-img-modal").style.display = "block";
     document.body.style.overflow = "hidden";
     dApplyT();
   };
@@ -589,20 +647,14 @@ setInterval(() => {
       setTimeout(function(){
         var card = document.querySelector(".mb-card");
         var img  = card && card.querySelector("img");
-        if(img && img.src){
+        if(img && img.src && !img.src.endsWith("/")){
           openDiaryImg(next, img.src);
         } else {
-          closeDiaryImg();
-          showToast && showToast("Order #"+next+" ka image nahi mila","error");
+          document.getElementById("diary-img-label").textContent = "Order #"+next+" — image nahi mila";
         }
       }, 700);
     });
   };
-
-  // Click outside to close
-  document.getElementById("diary-img-modal").addEventListener("click", function(e){
-    if(e.target===this) closeDiaryImg();
-  });
 
   var img = document.getElementById("diary-img-src");
 
@@ -634,7 +686,7 @@ setInterval(() => {
   },{passive:false});
   img.addEventListener("touchend",function(){ddr=false;});
 
-  // Pinch to zoom (mobile)
+  // Pinch to zoom
   var pt1=null,pt2=null,pzInit=1;
   img.addEventListener("touchstart",function(e){
     if(e.touches.length===2){pt1=e.touches[0];pt2=e.touches[1];pzInit=dz;}
@@ -643,16 +695,15 @@ setInterval(() => {
     if(e.touches.length===2&&pt1&&pt2){
       var d0=Math.hypot(pt1.clientX-pt2.clientX,pt1.clientY-pt2.clientY);
       var d1=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
-      dz=Math.max(0.25,Math.min(6,pzInit*(d1/d0)));
-      dApplyT();
+      dz=Math.max(0.25,Math.min(6,pzInit*(d1/d0))); dApplyT();
     }
   },{passive:true});
 
   // Keyboard
   document.addEventListener("keydown",function(e){
-    if(document.getElementById("diary-img-modal").style.display!=="flex") return;
-    if(e.key==="ArrowRight"||e.key==="ArrowDown") diaryNavStep(1);
-    if(e.key==="ArrowLeft" ||e.key==="ArrowUp")   diaryNavStep(-1);
+    if(document.getElementById("diary-img-modal").style.display!=="block") return;
+    if(e.key==="ArrowRight") diaryNavStep(1);
+    if(e.key==="ArrowLeft")  diaryNavStep(-1);
     if(e.key==="Escape") closeDiaryImg();
     if(e.key==="+"||e.key==="=") dZoom(0.25);
     if(e.key==="-") dZoom(-0.25);
