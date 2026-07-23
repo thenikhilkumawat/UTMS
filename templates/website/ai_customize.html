@@ -570,7 +570,7 @@ function asGoStep(n){
   }
   asCurStep = n;
   if(n===2||n===3) asFilterFabrics();
-  if(n===3){ asLoadStyleOptions(); setTimeout(asActivateStep3Layout, 80); } else { asDeactivateStep3Layout(); }
+  if(n===3){ asLoadStyleOptions(); asActivateStep3Layout(); } else { asDeactivateStep3Layout(); }
   if(n===4){ asRenderSummary(); }
   // No scroll — user stays at their current position
 }
@@ -1032,60 +1032,39 @@ document.getElementById('asFabSkip').classList.add('sel');
   asUpdateCreditsBar(initPreviews, initTokens);
 })();
 
-// ── Step 3 internal-scroll layout ──────────────────────────────────────────
+// ── Step 3 tile-scroll layout (NO page lock) ─────────────────────────────
 function asActivateStep3Layout(){
-  var prog   = document.getElementById('asProgress');
   var panel  = document.getElementById('asStep3');
-  var layout = panel ? panel.querySelector('.as-style-layout') : null;
+  var prog   = document.getElementById('asProgress');
   var wrap   = document.getElementById('asStyleWrap');
   var pane   = panel ? panel.querySelector('.as-preview-pane') : null;
-  var navBtn = panel ? panel.querySelector('.as-nav') : null;
-  if(!layout || !wrap || !prog) return;
+  if(!wrap) return;
 
-  /* Step 1: detect fixed site nav height */
-  var siteNavH = 0;
-  document.querySelectorAll('header,nav,.site-header,.navbar,.main-nav,.top-bar').forEach(function(el){
-    if(getComputedStyle(el).position === 'fixed' && el.offsetHeight > siteNavH)
-      siteNavH = el.offsetHeight;
-  });
-
-  /* Step 2: scroll page so progress bar sits just below fixed site nav */
-  var progOffsetTop = prog.getBoundingClientRect().top + window.scrollY - siteNavH - 4;
-  window.scrollTo({top: progOffsetTop, behavior: 'instant'});
-
-  /* Step 3: lock ALL scroll — both html and body */
-  document.documentElement.style.overflow = 'hidden';
-  document.body.style.overflow            = 'hidden';
-
-  /* Step 4: measure available height and set internal scroll */
-  var layoutTop = layout.getBoundingClientRect().top;
-  var navBtnH   = navBtn ? navBtn.offsetHeight + 16 : 64;
-  var avail     = window.innerHeight - layoutTop - navBtnH;
-  avail = Math.max(300, avail);
-
-  layout.style.height     = avail + 'px';
-  layout.style.overflow   = 'hidden';
-  layout.style.alignItems = 'stretch';
-  wrap.style.height       = '100%';
-  wrap.style.overflowY    = 'auto';
-  wrap.style.paddingRight = '4px';
-  if(pane){
-    pane.style.height    = '100%';
-    pane.style.overflowY = 'hidden';
-    pane.style.position  = 'relative';
-    pane.style.top       = '0';
+  /* 1. Scroll step-bar into view just below the fixed site nav */
+  var mainNav   = document.getElementById('mainNav');
+  var navBottom = mainNav ? mainNav.getBoundingClientRect().bottom : 96;
+  if(prog){
+    var progTop = prog.getBoundingClientRect().top + window.scrollY;
+    window.scrollTo({top: Math.max(0, progTop - navBottom - 8), behavior: 'smooth'});
   }
+
+  /* 2. After scroll settles, size wrap for internal scroll — page stays unlocked */
+  setTimeout(function(){
+    var wrapTop = wrap.getBoundingClientRect().top;
+    var navBtn  = panel ? panel.querySelector('.as-nav') : null;
+    var btnH    = navBtn ? navBtn.offsetHeight + 20 : 72;
+    var h       = Math.max(280, window.innerHeight - wrapTop - btnH);
+    wrap.style.height    = h + 'px';
+    wrap.style.overflowY = 'auto';
+    if(pane){ pane.style.height = h + 'px'; pane.style.overflowY = 'hidden'; }
+  }, 480);
 }
 function asDeactivateStep3Layout(){
-  var panel  = document.getElementById('asStep3');
-  var layout = panel ? panel.querySelector('.as-style-layout') : null;
-  var wrap   = document.getElementById('asStyleWrap');
-  var pane   = panel ? panel.querySelector('.as-preview-pane') : null;
-  if(layout){ layout.style.height=''; layout.style.overflow=''; layout.style.alignItems=''; }
-  if(wrap)  { wrap.style.height=''; wrap.style.overflowY=''; wrap.style.paddingRight=''; }
-  if(pane)  { pane.style.height=''; pane.style.overflowY=''; pane.style.position=''; pane.style.top=''; }
-  document.documentElement.style.overflow = '';
-  document.body.style.overflow            = ''; /* restore page scroll */
+  var panel = document.getElementById('asStep3');
+  var wrap  = document.getElementById('asStyleWrap');
+  var pane  = panel ? panel.querySelector('.as-preview-pane') : null;
+  if(wrap){ wrap.style.height=''; wrap.style.overflowY=''; }
+  if(pane){ pane.style.height=''; pane.style.overflowY=''; }
 }
 window.addEventListener('resize', function(){
   if(typeof asCurStep !== 'undefined' && asCurStep === 3) asActivateStep3Layout();
