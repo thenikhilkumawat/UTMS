@@ -36,7 +36,7 @@
 .as-wizard{max-width:960px;margin:0 auto;padding:0 1rem 5rem;}
 
 /* Progress */
-.as-progress{display:flex;align-items:center;margin:0 0 32px;padding-top:32px;}
+.as-progress{display:flex;align-items:center;margin:0 0 0;padding:14px 0;position:sticky;top:0;z-index:100;background:#faf7f2;border-bottom:1px solid #ede4d4;}
 .as-step-item{flex:1;display:flex;flex-direction:column;align-items:center;position:relative;}
 .as-step-item:not(:last-child)::after{content:'';position:absolute;top:17px;left:calc(50% + 18px);right:calc(-50% + 18px);height:2px;background:var(--as-border);z-index:0;}
 .as-step-item.done:not(:last-child)::after{background:var(--as-gold);}
@@ -91,13 +91,13 @@
 .as-fab-skip.sel{background:var(--as-gold-pale);}
 
 /* Step 3 — two-column style picker */
-.as-style-layout{display:grid;grid-template-columns:1fr 280px;gap:20px;align-items:start;}
+.as-style-layout{display:grid;grid-template-columns:1fr 360px;gap:24px;align-items:start;}
 .as-style-options-col{min-width:0;}
 .as-preview-pane{position:sticky;top:90px;background:var(--as-card);border:1.5px solid var(--as-border);border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.07);}
 .as-pv-header{padding:10px 14px;background:var(--as-gold-pale);border-bottom:1px solid var(--as-border);}
 .as-pv-title{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--as-gold);}
-.as-pv-img-wrap{width:100%;height:220px;background:linear-gradient(135deg,#f5f0ea,#ede6dc);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
-.as-pv-img{width:100%;height:100%;object-fit:cover;display:none;position:absolute;inset:0;}
+.as-pv-img-wrap{width:100%;height:380px;background:linear-gradient(135deg,#f5f0ea,#ede6dc);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
+.as-pv-img{width:100%;height:100%;object-fit:contain;background:#fff;display:none;position:absolute;inset:0;}
 .as-pv-img.show{display:block;}
 .as-pv-placeholder{font-size:40px;color:#d4c4a8;transition:opacity .2s;}
 .as-pv-label{padding:10px 14px;font-size:12px;font-weight:700;color:var(--as-text);min-height:38px;border-top:1px solid var(--as-border);}
@@ -118,8 +118,8 @@
 /* Image chip */
 .as-img-chip{min-width:110px;width:110px;border:2px solid var(--as-border);border-radius:8px;overflow:hidden;cursor:pointer;transition:all .18s;background:var(--as-card);width:90px;flex-shrink:0;}
 .as-img-chip:hover{border-color:var(--as-gold-lt);transform:translateY(-1px);}
-.as-img-chip.sel{border-color:var(--as-gold);box-shadow:0 0 0 1.5px var(--as-gold);}
-.as-img-chip-img{width:100%;height:120px;object-fit:cover;display:block;background:#f0ede8;}
+.as-img-chip.sel{border-color:var(--as-gold);box-shadow:0 0 0 2.5px var(--as-gold);background:var(--as-gold-pale);}
+.as-img-chip-img{width:100%;height:120px;object-fit:cover;object-position:top center;display:block;background:#f0ede8;image-rendering:auto;}
 .as-img-chip-emoji{width:100%;height:120px;display:flex;align-items:center;justify-content:center;font-size:30px;background:linear-gradient(135deg,#f5f0ea,#ede6dc);}
 .as-img-chip-lbl{font-size:11px;font-weight:600;color:var(--as-sub);padding:6px 8px;text-align:center;line-height:1.3;}
 .as-img-chip.sel .as-img-chip-lbl{color:var(--as-gold);font-weight:800;}
@@ -187,7 +187,7 @@
 @media(max-width:700px){
   .as-style-layout{grid-template-columns:1fr;}
   .as-style-layout .as-preview-pane{position:relative;top:0;order:-1;margin-bottom:4px;}
-  .as-pv-img-wrap{height:180px;}
+  .as-pv-img-wrap{height:260px;}
   .as-garment-grid{grid-template-columns:repeat(3,1fr);}
   .as-fabric-grid{grid-template-columns:repeat(3,1fr);}
 }
@@ -233,7 +233,7 @@
   </div>
 
   <!-- ── STEP 1: Garment with tabs ── -->
-  <div class="as-panel active" id="asStep1">
+  <div class="as-panel active" id="asStep1" style="margin-top:24px;">
     <div class="as-section-label">Step 1</div>
     <div class="as-section-title">Choose Your Garment</div>
     <div class="as-section-sub">Select the garment you want custom stitched.</div>
@@ -357,7 +357,7 @@
       <!-- Left: option tiles -->
       <div id="asStyleWrap"></div>
       <!-- Right: sticky preview pane -->
-      <div class="as-preview-pane" style="border:1px solid var(--as-border);border-radius:12px;overflow:hidden;position:sticky;top:80px;">
+      <div class="as-preview-pane" style="border:1px solid var(--as-border);border-radius:12px;overflow:hidden;position:sticky;top:94px;">
         <div class="as-pv-header">
           <div class="as-pv-title">Preview</div>
         </div>
@@ -662,7 +662,7 @@ function asRenderStyleOptions(){
         var selCls = (currentSel && currentSel.value === v.value_label) ? ' sel' : '';
         html += '<div class="as-chip'+selCls+'" '
           + 'onclick="asPickStyle(\''+escAtt(grp.option_group)+'\',\''+escAtt(grp.option_label)+'\',\''+escAtt(v.value_label)+'\',\'\',this)" '
-          + 'onmouseenter="asPvShow(\'\',\''+escAtt(v.value_label)+'\',\''+escAtt(grp.option_label)+'\')">'+escH(v.value_label)+'</div>';
+          + 'onmouseleave="asPvReset()" onmouseenter="asPvShow(\'\',\''+escAtt(v.value_label)+'\',\''+escAtt(grp.option_label)+'\')">'+escH(v.value_label)+'</div>';
       });
       html += '</div>';
     }
@@ -711,6 +711,18 @@ function asPvShow(imgUrl, valueName, groupName){
   }
 }
 function asPvReset(){
+  // If something is selected, keep showing its image
+  var selEl = document.querySelector('#asStyleWrap .as-img-chip.sel');
+  if(selEl){
+    var img = selEl.querySelector('.as-img-chip-img');
+    var lbl = selEl.querySelector('.as-img-chip-lbl');
+    var grpEl = selEl.closest('.as-style-group');
+    var grpLbl = grpEl ? grpEl.querySelector('.as-sg-label') : null;
+    asPvShow(img && img.src && !img.src.endsWith(location.href) ? img.src : '',
+             lbl ? lbl.textContent.trim() : '',
+             grpLbl ? grpLbl.textContent.trim() : '');
+    return;
+  }
   document.getElementById('asPvImg').classList.remove('show');
   document.getElementById('asPvPlaceholder').style.display = '';
   document.getElementById('asPvPlaceholder').textContent = '✂️';
