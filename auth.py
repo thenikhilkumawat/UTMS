@@ -3,7 +3,7 @@ from flask import session, redirect, url_for, request
 from datetime import datetime, timedelta
 from database import get_setting
 
-OWNER_TIMEOUT_MINUTES = 5
+OWNER_TIMEOUT_MINUTES = 60  # 60 min — enough for a full work session
 
 
 def owner_login(pin):
