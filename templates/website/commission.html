@@ -1736,6 +1736,7 @@ function openStyleModal(name, itemId, card, inp) {
   var overlay = document.getElementById('styleModalOverlay');
   if(overlay) overlay.classList.add('open');
   document.body.style.overflow = 'hidden';
+  cmShowCreditsBar();
   // Load options
   var container = document.getElementById('smOptionsContainer');
   if(container) container.innerHTML = '<p style="color:#7a6a58;font-size:13px;padding:20px 0;text-align:center;">Loading...</p>';
@@ -2055,11 +2056,19 @@ function generateAIPreview() {
       if(em){em.style.display='block';em.textContent=d.error||'Preview unavailable. Please try again.';}
       if(gb){gb.disabled=false;gb.textContent='\u{1F3A8} Generate AI Preview';}
     }
+    // Update credits bar
+    if(d.token_balance != null){ _cmBal = d.token_balance; _cmPrev = null; }
+    else if(d.previews_remaining != null){ _cmPrev = d.previews_remaining; _cmBal = null; }
+    cmShowCreditsBar();
+    if(d.need_tokens){
+      var bar=document.getElementById('cmCreditsBar');
+      if(bar){ bar.innerHTML='\u26a0\ufe0f Credits used up. <a href="/customize" style="color:#b8892a;font-weight:700;">Buy credits \u2192</a>'; bar.style.color='#c2410c'; bar.style.display=''; }
+    }
   }).catch(function(){
     clearInterval(iv);
     var ld=document.getElementById('aiLoading');
     if(ld)ld.style.display='none';
-    var gb=document.getElementById('genPreviewBtn');  // fixed: was 'aiGenBtn'
+    var gb=document.getElementById('genPreviewBtn');
     if(gb){gb.disabled=false;gb.textContent='\u{1F3A8} Generate AI Preview';}
   });
 }
@@ -2147,42 +2156,33 @@ document.getElementById('commissionForm').addEventListener('submit', function(e)
     document.getElementById('commissionForm').submit();
   });
 });
-// ── Commission modal credits bar ──
-(function(){
-  var _cmBal  = {{ init_tokens | tojson }};
-  var _cmPrev = {{ init_previews | tojson }};
-  function cmUpdateBar(tokens, previews){
-    var bar = document.getElementById('cmCreditsBar');
-    if(!bar) return;
-    var txt = '';
-    if(tokens != null){
-      if(tokens === 0){
-        txt = '\u26a0 No credits left — buy credits to generate AI preview';
-        bar.style.color = '#c2410c';
-      } else {
-        txt = '\ud83e\ude99 ' + tokens + ' credit' + (tokens===1?'':'s') + ' remaining';
-        bar.style.color = '#5a3e1b';
-      }
-    } else if(previews != null){
-      if(previews === 0){
-        txt = '\u26a0 Free previews used — buy credits to generate';
-        bar.style.color = '#c2410c';
-      } else {
-        txt = '\ud83c\udf81 ' + previews + ' free preview' + (previews===1?'':'s') + ' left';
-        bar.style.color = '#5a3e1b';
-      }
+// ── AI Credits bar in style modal ─────────────────────────────────────────
+var _cmBal  = {{ init_tokens | tojson }};   // null = guest
+var _cmPrev = {{ init_previews | tojson }}; // null = logged-in
+
+function cmShowCreditsBar() {
+  var bar = document.getElementById('cmCreditsBar');
+  if (!bar) return;
+  var txt = '', color = '#5a3e1b';
+  if (_cmBal != null) {
+    if (_cmBal === 0) {
+      txt = '\u26a0\ufe0f 0 credits left — tap Generate to purchase';
+      color = '#c2410c';
+    } else {
+      txt = '\ud83e\ude99 ' + _cmBal + ' credit' + (_cmBal === 1 ? '' : 's') + ' remaining';
     }
-    bar.textContent = txt;
-    bar.style.display = txt ? '' : 'none';
+  } else if (_cmPrev != null) {
+    if (_cmPrev <= 0) {
+      txt = '\u26a0\ufe0f Free previews used — tap Generate to purchase';
+      color = '#c2410c';
+    } else {
+      txt = '\ud83c\udf81 ' + _cmPrev + ' free preview' + (_cmPrev === 1 ? '' : 's') + ' left';
+    }
   }
-  window.cmUpdateBar = cmUpdateBar;
-  window._cmTokenBal  = _cmBal;
-  window._cmPrevLeft  = _cmPrev;
-  var _origOpen = window.openStyleModal;
-  window.openStyleModal = function(){
-    if(_origOpen) _origOpen.apply(this, arguments);
-    cmUpdateBar(window._cmTokenBal, window._cmPrevLeft);
-  };
-})();
+  bar.textContent = txt;
+  bar.style.color  = color;
+  bar.style.display = txt ? '' : 'none';
+}
+
 </script>
 {% endblock %}
