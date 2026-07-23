@@ -2721,6 +2721,48 @@ def api_fix_order_mobile():
     conn.close()
     return jsonify({"ok": True, "message": f"✅ Order #{code} → {name} ({mobile})"})
 
+
+@bp.route("/api/diagnose-orders")
+@owner_required
+def api_diagnose_orders():
+    """Check if two orders share same customer_id."""
+    c1 = request.args.get("c1","").strip()
+    c2 = request.args.get("c2","").strip()
+    conn = get_db()
+
+    def get_order_info(code):
+        r = conn.execute("""
+            SELECT o.id, o.order_code, o.customer_id,
+                   c.id as cid, c.name as cname, c.mobile, c.address
+            FROM orders o
+            LEFT JOIN customers c ON c.id=o.customer_id
+            WHERE o.order_code=?
+        """, (code,)).fetchone()
+        if not r: return None
+        # Also get all orders linked to this customer
+        others = conn.execute(
+            "SELECT order_code FROM orders WHERE customer_id=? ORDER BY id",
+            (r["customer_id"],)).fetchall()
+        return {
+            "order_code": r["order_code"],
+            "customer_id": r["customer_id"],
+            "name": r["cname"],
+            "mobile": r["mobile"],
+            "all_orders_of_this_customer": [x["order_code"] for x in others]
+        }
+
+    o1 = get_order_info(c1)
+    o2 = get_order_info(c2)
+    conn.close()
+
+    same_cust = o1 and o2 and o1["customer_id"] == o2["customer_id"]
+    return jsonify({
+        "order_1": o1,
+        "order_2": o2,
+        "PROBLEM": same_cust,
+        "reason": "Dono same customer_id share kar rahe hain!" if same_cust else "Alag customer_id hain"
+    })
+
 @bp.route("/finance")
 @owner_required
 def owner_finance():
