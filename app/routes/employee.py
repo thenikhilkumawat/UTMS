@@ -1017,77 +1017,48 @@ def save_order():
         # Customer
         if existing_id:
             existing_id = int(existing_id)
-            ex_row = conn.execute("SELECT id, name FROM customers WHERE id=?", (existing_id,)).fetchone()
-            if ex_row and ex_row["name"].strip().lower() != customer_name.strip().lower():
-                # Different name → find correct customer ONLY if mobile is provided
-                right = None
-                if mobile:
-                    right = conn.execute(
-                        "SELECT id FROM customers WHERE mobile=? AND LOWER(TRIM(name))=LOWER(TRIM(?))",
-                        (mobile, customer_name)).fetchone()
+            ex_row = conn.execute("SELECT id, mobile FROM customers WHERE id=?", (existing_id,)).fetchone()
+            ex_mobile = ((ex_row["mobile"] if ex_row else "") or "").strip()
+            given_mobile = (mobile or "").strip()
+
+            if given_mobile and given_mobile != ex_mobile:
+                # DIFFERENT mobile → mobile is the key → find/create by new mobile
+                right = conn.execute(
+                    "SELECT id FROM customers WHERE mobile=?", (given_mobile,)).fetchone()
                 if right:
                     customer_id = right["id"]
                 else:
-                    # Always create new customer — never fallback to wrong existing_id
                     new_r = conn.execute(
                         "INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?) RETURNING id",
-                        (customer_name, mobile or None, address, now)).fetchone()
+                        (customer_name, given_mobile, address, now)).fetchone()
                     if not new_r:
                         conn.close()
                         return jsonify({"status":"error","message":"Customer create failed"}), 500
                     customer_id = new_r["id"]
+                # Update name/address for whoever this customer is
+                conn.execute("UPDATE customers SET name=?,address=? WHERE id=?",
+                             (customer_name, address, customer_id))
             else:
-                # Same name selected from dropdown
-                # CRITICAL CHECK: if a DIFFERENT mobile is given → different person!
-                # Never overwrite existing customer's mobile with a new number
-                ex_mobile = (ex_row["mobile"] if ex_row else "") or ""
-                given_mobile = (mobile or "").strip()
-
-                if given_mobile and ex_mobile and given_mobile != ex_mobile:
-                    # Different mobile = DIFFERENT PERSON with same name
-                    # Find or create correct customer
-                    right = conn.execute(
-                        "SELECT id FROM customers WHERE mobile=? AND LOWER(TRIM(name))=LOWER(TRIM(?))",
-                        (given_mobile, customer_name)).fetchone()
-                    if right:
-                        customer_id = right["id"]
-                        conn.execute("UPDATE customers SET address=? WHERE id=?",
-                                     (address, customer_id))
-                    else:
-                        new_r = conn.execute(
-                            "INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?) RETURNING id",
-                            (customer_name, given_mobile, address, now)).fetchone()
-                        if not new_r:
-                            conn.close()
-                            return jsonify({"status":"error","message":"Customer create failed"}), 500
-                        customer_id = new_r["id"]
-                else:
-                    # Same mobile (or no mobile given) → truly same person
-                    customer_id = existing_id
-                    if given_mobile:
-                        # Mobile matches — just update address
-                        conn.execute("UPDATE customers SET address=? WHERE id=?",
-                                     (address, customer_id))
-                    else:
-                        # No mobile given — keep everything as is, only update address
-                        conn.execute("UPDATE customers SET address=? WHERE id=?",
-                                     (address, customer_id))
+                # Same mobile or no mobile → same person, update name/address
+                customer_id = existing_id
+                conn.execute("UPDATE customers SET name=?,address=? WHERE id=?",
+                             (customer_name, address, customer_id))
         else:
-            # Customer lookup — match BOTH mobile AND name together
-            # Never use mobile alone (fetchone picks random if multiple customers share mobile)
+            # SIMPLE RULE: Mobile is the ONLY key
+            # Same mobile → same customer (naam/address update)
+            # New mobile  → new customer
+            # No mobile   → new customer (can't identify)
             if mobile:
-                # CORRECT: find exact match by mobile + name together
                 dup = conn.execute(
-                    "SELECT id FROM customers WHERE mobile=? AND LOWER(TRIM(name))=LOWER(TRIM(?))",
-                    (mobile, customer_name)).fetchone()
+                    "SELECT id FROM customers WHERE mobile=?", (mobile,)).fetchone()
                 if dup:
-                    # Same person (same mobile + same name) — reuse, update address only
+                    # Mobile already exists → same person
                     customer_id = dup["id"]
-                    conn.execute("UPDATE customers SET address=? WHERE id=?",
-                                 (address, customer_id))
+                    # Update name and address (mobile stays same — it's the key)
+                    conn.execute("UPDATE customers SET name=?,address=? WHERE id=?",
+                                 (customer_name, address, customer_id))
                 else:
-                    # Not found by name+mobile — create new customer
-                    # (Either new person, or same name different mobile, or shared phone)
+                    # New mobile → new customer
                     new_row = conn.execute(
                         "INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?) RETURNING id",
                         (customer_name, mobile, address, now)).fetchone()
@@ -1096,7 +1067,7 @@ def save_order():
                         conn.close()
                         return jsonify({"status":"error","message":"Customer create failed"}), 500
             else:
-                # No mobile provided — create new customer with NULL mobile (not empty string)
+                # No mobile → new customer (NULL mobile)
                 row = conn.execute(
                     "INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?) RETURNING id",
                     (customer_name, None, address, now)).fetchone()
