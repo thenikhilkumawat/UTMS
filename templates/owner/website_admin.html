@@ -2672,9 +2672,38 @@ function renderAiStyleRules(filterItemId){
         +'</div>';
       html+='</div></div>';
     });
+    // Add new option GROUP form at the bottom of this garment card
+    html+='<div style="border-top:1px solid #e8d9c5;margin-top:14px;padding-top:14px;">';
+    html+='<div style="font-size:11px;font-weight:800;letter-spacing:.06em;color:#b8892a;text-transform:uppercase;margin-bottom:8px;">+ Add New Option Group</div>';
+    html+='<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:flex-end;">'
+      +'<div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:120px;">'
+      +'<label style="font-size:10px;font-weight:700;color:#7a6a58;text-transform:uppercase;letter-spacing:.05em;">Group Key</label>'
+      +'<input class="wa-in" id="aiGrpKey_'+item.id+'" placeholder="e.g. Sleeves" style="font-size:12px;">'
+      +'</div>'
+      +'<div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:120px;">'
+      +'<label style="font-size:10px;font-weight:700;color:#7a6a58;text-transform:uppercase;letter-spacing:.05em;">Display Label</label>'
+      +'<input class="wa-in" id="aiGrpLbl_'+item.id+'" placeholder="e.g. Sleeve Style" style="font-size:12px;">'
+      +'</div>'
+      +'<button class="wa-btn gold" style="font-size:11px;padding:8px 14px;white-space:nowrap;" onclick="aiAddGroupToItem('+item.id+')">Add Group</button>'
+      +'</div>';
+    html+='</div>';
     html+='</div>';
   });
   wrap.innerHTML=html;
+}
+function aiAddGroupToItem(iid){
+  var keyInp=document.getElementById('aiGrpKey_'+iid);
+  var lblInp=document.getElementById('aiGrpLbl_'+iid);
+  if(!keyInp||!lblInp)return;
+  var grp=keyInp.value.trim(), lbl=lblInp.value.trim();
+  if(!grp||!lbl){toast('Fill in both Group Key and Display Label',true);return;}
+  apiFetch('/owner/website/services/item/style-options/add/'+iid,{method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({option_group:grp,option_label:lbl,is_required:0})})
+    .then(function(r){return r.json();}).then(function(d){
+      if(d.ok){keyInp.value='';lblInp.value='';toast('Group added!');loadAiStyleRules();}
+      else toast(d.error||'Error',true);
+    });
 }
 function aiAddValueToGroup(grpId,iid){
   var inp=document.getElementById('aiNewVal_'+grpId);
