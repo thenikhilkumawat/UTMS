@@ -2665,11 +2665,28 @@ function renderAiStyleRules(filterItemId){
         });
         html+='</div>';
       }
+      // Add-value input row at bottom of each group
+      html+='<div style="display:flex;gap:6px;align-items:center;margin-top:10px;">'
+        +'<input class="wa-in" id="aiNewVal_'+opt.id+'" placeholder="New option label e.g. Mandarin Collar" style="flex:1;font-size:12px;" onkeydown="if(event.key===\'Enter\')aiAddValueToGroup('+opt.id+','+item.id+')">'
+        +'<button class="wa-btn gold" style="font-size:11px;padding:7px 12px;white-space:nowrap;" onclick="aiAddValueToGroup('+opt.id+','+item.id+')">+ Add Option</button>'
+        +'</div>';
       html+='</div></div>';
     });
     html+='</div>';
   });
   wrap.innerHTML=html;
+}
+function aiAddValueToGroup(grpId,iid){
+  var inp=document.getElementById('aiNewVal_'+grpId);
+  if(!inp)return;
+  var label=inp.value.trim();
+  if(!label){toast('Enter an option label',true);return;}
+  apiFetch('/owner/website/services/item/style-value/add',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({option_id:grpId,value_label:label})})
+    .then(function(r){return r.json();}).then(function(d){
+      if(d.ok){inp.value='';toast('Option added!');loadAiStyleRules();}
+      else toast(d.error||'Error',true);
+    });
 }
 function aiUploadStyleValueImg(vid,grpId,iid,inp){
   var file=inp.files[0];if(!file)return;
