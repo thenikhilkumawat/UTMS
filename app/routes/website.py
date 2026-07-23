@@ -2505,8 +2505,9 @@ def api_tokens_create_order():
     try:
         _rz1 = db.execute("SELECT value FROM settings WHERE key='razorpay_key_id'").fetchone()
         _rz2 = db.execute("SELECT value FROM settings WHERE key='razorpay_key_secret'").fetchone()
-        rz_key_id  = (_rz1["value"] if _rz1 else "").strip()
-        rz_key_sec = (_rz2["value"] if _rz2 else "").strip()
+        def _rz_clean(v): return (v.split("=",1)[-1] if v and "=" in v else v or "").strip()
+        rz_key_id  = _rz_clean(_rz1["value"] if _rz1 else "")
+        rz_key_sec = _rz_clean(_rz2["value"] if _rz2 else "")
     except Exception:
         rz_key_id = rz_key_sec = ""
     if not rz_key_id or not rz_key_sec:
