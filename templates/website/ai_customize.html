@@ -36,7 +36,7 @@
 .as-wizard{max-width:960px;margin:0 auto;padding:0 1rem 5rem;}
 
 /* Progress */
-.as-progress{display:flex;align-items:center;margin:0 0 16px;padding:14px 0;position:sticky;top:0;z-index:200;background:#faf7f2;border-bottom:1px solid #ede4d4;}
+.as-progress{display:flex;align-items:center;margin:0 0 16px;padding:14px 0;}
 .as-step-item{flex:1;display:flex;flex-direction:column;align-items:center;position:relative;}
 .as-step-item:not(:last-child)::after{content:'';position:absolute;top:17px;left:calc(50% + 18px);right:calc(-50% + 18px);height:2px;background:var(--as-border);z-index:0;}
 .as-step-item.done:not(:last-child)::after{background:var(--as-gold);}
@@ -195,6 +195,13 @@
   .as-garment-grid{grid-template-columns:repeat(2,1fr);}
   .as-fabric-grid{grid-template-columns:repeat(2,1fr);}
 }
+
+/* Slim black scrollbar for tiles column */
+#asStyleWrap::-webkit-scrollbar{width:4px;}
+#asStyleWrap::-webkit-scrollbar-track{background:transparent;}
+#asStyleWrap::-webkit-scrollbar-thumb{background:#2e1a0e;border-radius:4px;}
+#asStyleWrap::-webkit-scrollbar-thumb:hover{background:#1a0e06;}
+#asStyleWrap{scrollbar-width:thin;scrollbar-color:#2e1a0e transparent;}
 </style>
 {% endblock %}
 
@@ -1033,20 +1040,19 @@ function asActivateStep3Layout(){
   var pane   = panel ? panel.querySelector('.as-preview-pane') : null;
   var navBtn = panel ? panel.querySelector('.as-nav') : null;
   if(!layout || !wrap) return;
-  // Measure from top of layout div to bottom of viewport minus nav-buttons
   var layoutTop = layout.getBoundingClientRect().top;
   var navBtnH   = navBtn ? navBtn.offsetHeight + 20 : 68;
   var avail     = window.innerHeight - layoutTop - navBtnH;
-  avail = Math.max(280, avail);
+  avail = Math.max(300, avail);
   layout.style.height        = avail + 'px';
   layout.style.overflow      = 'hidden';
   layout.style.alignItems    = 'stretch';
   wrap.style.height          = '100%';
   wrap.style.overflowY       = 'auto';
-  wrap.style.paddingRight    = '6px';
+  wrap.style.paddingRight    = '4px';
   if(pane){
     pane.style.height        = '100%';
-    pane.style.overflowY    = 'auto';
+    pane.style.overflowY    = 'hidden';   /* no scrollbar on preview */
     pane.style.position     = 'relative';
     pane.style.top          = '0';
   }
