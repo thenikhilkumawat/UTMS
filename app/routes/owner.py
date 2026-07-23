@@ -2685,6 +2685,42 @@ def api_bulk_split_customers():
         "message": f"✅ {fixed_orders} orders alag ho gaye! {fixed_customers} naye customer records bane."
     })
 
+
+@bp.route("/api/fix-order-mobile", methods=["POST"])
+@owner_required
+def api_fix_order_mobile():
+    """Fix a single order's customer mobile number. POST JSON: {order_code, name, mobile}"""
+    from datetime import datetime as _dt
+    d = request.get_json(silent=True) or {}
+    code   = d.get("order_code","").strip()
+    name   = d.get("name","").strip()
+    mobile = d.get("mobile","").strip()
+    if not code or not mobile or not name:
+        return jsonify({"ok": False, "error": "order_code, name, mobile required"})
+    conn = get_db()
+    order = conn.execute("SELECT id, customer_id FROM orders WHERE order_code=?", (code,)).fetchone()
+    if not order:
+        conn.close()
+        return jsonify({"ok": False, "error": f"Order #{code} not found"})
+    now_str = _dt.now().strftime("%Y-%m-%d %H:%M:%S")
+    existing = conn.execute(
+        "SELECT id FROM customers WHERE mobile=? AND LOWER(TRIM(name))=LOWER(TRIM(?))",
+        (mobile, name)
+    ).fetchone()
+    if existing:
+        cust_id = existing["id"]
+    else:
+        old = conn.execute("SELECT address FROM customers WHERE id=?", (order["customer_id"],)).fetchone()
+        row = conn.execute(
+            "INSERT INTO customers(name, mobile, address, created_at) VALUES(?,?,?,?) RETURNING id",
+            (name, mobile, (old["address"] if old else "") or "", now_str)
+        ).fetchone()
+        cust_id = row["id"]
+    conn.execute("UPDATE orders SET customer_id=? WHERE order_code=?", (cust_id, code))
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True, "message": f"✅ Order #{code} → {name} ({mobile})"})
+
 @bp.route("/finance")
 @owner_required
 def owner_finance():
