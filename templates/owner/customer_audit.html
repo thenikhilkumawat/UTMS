@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="max-width:900px;margin:0 auto;padding:20px;">
+
+  <div style="background:linear-gradient(135deg,#dc2626,#ef4444);border-radius:16px;padding:20px;color:#fff;margin-bottom:20px;">
+    <div style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;opacity:0.8;margin-bottom:4px;">DATA INTEGRITY</div>
+    <h1 style="font-size:22px;font-weight:900;margin-bottom:4px;">🔍 Customer Audit</h1>
+    <div style="font-size:13px;opacity:0.85;">Galat merge hue customers dhundho aur fix karo</div>
+  </div>
+
+  <div id="loading" style="text-align:center;padding:40px;color:#64748b;">⏳ Data load ho raha hai...</div>
+  <div id="content" style="display:none;">
+
+    <!-- Stats -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px;">
+      <div style="background:#fff;border-radius:12px;padding:14px;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,0.05);">
+        <div style="font-size:24px;font-weight:900;color:#1e293b;" id="stat-total">—</div>
+        <div style="font-size:11px;color:#64748b;margin-top:2px;">2+ Orders</div>
+      </div>
+      <div style="background:#fff7ed;border-radius:12px;padding:14px;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,0.05);">
+        <div style="font-size:24px;font-weight:900;color:#c2410c;" id="stat-risk">—</div>
+        <div style="font-size:11px;color:#9a3412;margin-top:2px;">⚠️ High Risk</div>
+      </div>
+      <div style="background:#fff1f2;border-radius:12px;padding:14px;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,0.05);">
+        <div style="font-size:24px;font-weight:900;color:#dc2626;" id="stat-samename">—</div>
+        <div style="font-size:11px;color:#991b1b;margin-top:2px;">Same Name</div>
+      </div>
+    </div>
+
+    <!-- Filter -->
+    <div style="background:#fff;border-radius:12px;padding:12px 16px;margin-bottom:14px;box-shadow:0 2px 6px rgba(0,0,0,0.05);display:flex;gap:8px;align-items:center;">
+      <input type="text" id="search-inp" placeholder="Customer naam ya mobile search karo..."
+        oninput="filterList()" style="flex:1;padding:8px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none;">
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#c2410c;cursor:pointer;">
+        <input type="checkbox" id="only-risk" onchange="filterList()"> ⚠️ Sirf High Risk
+      </label>
+    </div>
+
+    <!-- Same name customers -->
+    <div style="background:#fff;border-radius:12px;padding:16px;margin-bottom:14px;box-shadow:0 2px 6px rgba(0,0,0,0.05);">
+      <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#dc2626;margin-bottom:12px;">⚠️ Same Naam — Alag Mobile (Likely Different People)</div>
+      <div id="same-name-list"></div>
+    </div>
+
+    <!-- Customers list -->
+    <div id="customers-list"></div>
+
+  </div>
+
+  <!-- Split Modal -->
+  <div id="split-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999;padding:20px;overflow-y:auto;">
+    <div style="background:#fff;border-radius:16px;padding:20px;max-width:420px;margin:40px auto;">
+      <h3 style="font-size:16px;font-weight:900;margin-bottom:4px;">✂️ Order Split Karo</h3>
+      <div style="font-size:12px;color:#64748b;margin-bottom:14px;">Order ke liye sahi mobile number daalo</div>
+      <div style="font-size:13px;font-weight:700;color:#4338ca;margin-bottom:10px;">Order #<span id="split-code">—</span></div>
+      <input type="text" id="split-name" placeholder="Customer naam" style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:8px;outline:none;">
+      <input type="tel"  id="split-mobile" placeholder="Sahi mobile number" style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:14px;outline:none;">
+      <div style="display:flex;gap:8px;">
+        <button onclick="doSplit()" style="flex:1;padding:11px;background:#16a34a;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;">✅ Fix Karo</button>
+        <button onclick="document.getElementById('split-modal').style.display='none'" style="padding:11px 16px;background:#f1f5f9;border:none;border-radius:10px;font-size:14px;cursor:pointer;">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var allData = [], allSameName = [];
+
+async function loadData() {
+  var r = await fetch('/owner/api/customer-audit-data');
+  var d = await r.json();
+  allData     = d.suspects || [];
+  allSameName = d.same_name_customers || [];
+  document.getElementById('stat-total').textContent    = d.total_suspects || 0;
+  document.getElementById('stat-risk').textContent     = d.high_risk || 0;
+  document.getElementById('stat-samename').textContent = allSameName.length;
+  renderSameName();
+  renderList(allData);
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('content').style.display = 'block';
+}
+
+function renderSameName() {
+  var el = document.getElementById('same-name-list');
+  if (!allSameName.length) { el.innerHTML = '<div style="color:#94a3b8;font-size:13px;text-align:center;padding:10px;">Koi same naam nahi mila ✅</div>'; return; }
+  el.innerHTML = allSameName.map(function(c) {
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f1f5f9;">'
+      + '<div><b style="font-size:13px;">'+c.name+'</b> <span style="font-size:11px;color:#64748b;">('+c.cust_count+' customers)</span></div>'
+      + '<div style="font-size:11px;color:#dc2626;font-weight:700;">Mobiles: '+c.mobiles+'</div>'
+      + '</div>';
+  }).join('');
+}
+
+function filterList() {
+  var q   = document.getElementById('search-inp').value.toLowerCase();
+  var onlyRisk = document.getElementById('only-risk').checked;
+  var filtered = allData.filter(function(c) {
+    if (onlyRisk && !c.suspicious) return false;
+    if (q && !c.name.toLowerCase().includes(q) && !c.mobile.includes(q)) return false;
+    return true;
+  });
+  renderList(filtered);
+}
+
+function renderList(data) {
+  var el = document.getElementById('customers-list');
+  if (!data.length) { el.innerHTML = '<div style="text-align:center;padding:30px;color:#94a3b8;">Koi result nahi</div>'; return; }
+  el.innerHTML = data.map(function(c) {
+    var riskBg = c.suspicious ? '#fff7ed' : '#fff';
+    var riskBorder = c.suspicious ? '1.5px solid #fed7aa' : '1.5px solid #f1f5f9';
+    var codes = (c.order_codes||[]).map(function(code) {
+      return '<span onclick="openSplit(\''+code+'\',\''+c.name+'\',\''+c.mobile+'\')" '
+        + 'style="background:#eef2ff;border:1.5px solid #c7d2fe;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:800;color:#4338ca;cursor:pointer;display:inline-block;margin:2px;">'
+        + '#'+code+'</span>';
+    }).join('');
+    return '<div style="background:'+riskBg+';border:'+riskBorder+';border-radius:12px;padding:14px;margin-bottom:8px;">'
+      + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">'
+      + '<div>'
+      + (c.suspicious ? '<span style="background:#fef3c7;color:#92400e;font-size:10px;font-weight:800;padding:2px 7px;border-radius:10px;margin-right:6px;">⚠️ HIGH RISK</span>' : '')
+      + '<b style="font-size:15px;color:#1e293b;">'+c.name+'</b>'
+      + '</div>'
+      + '<div style="font-size:11px;color:#64748b;">'+c.order_count+' orders · '+c.gap_days+' days gap</div>'
+      + '</div>'
+      + '<div style="font-size:12px;color:#64748b;margin-bottom:8px;">📱 '+c.mobile+' · '+c.first_order+' → '+c.last_order+'</div>'
+      + '<div>'+codes+'</div>'
+      + '<div style="font-size:10px;color:#94a3b8;margin-top:6px;">Order code pe click karo → alag mobile assign karo</div>'
+      + '</div>';
+  }).join('');
+}
+
+var splitCode = '', splitName = '', splitMobile = '';
+function openSplit(code, name, mobile) {
+  splitCode = code;
+  document.getElementById('split-code').textContent = code;
+  document.getElementById('split-name').value  = name;
+  document.getElementById('split-mobile').value = mobile;
+  document.getElementById('split-modal').style.display = 'block';
+}
+
+async function doSplit() {
+  var name   = document.getElementById('split-name').value.trim();
+  var mobile = document.getElementById('split-mobile').value.trim();
+  if (!name || !mobile) { alert('Naam aur mobile dono daalo'); return; }
+  var r = await fetch('/owner/api/split-customer', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({order_code: splitCode, name: name, mobile: mobile})
+  });
+  var d = await r.json();
+  if (d.ok) {
+    alert('✅ ' + d.message);
+    document.getElementById('split-modal').style.display = 'none';
+    loadData();
+  } else {
+    alert('❌ ' + (d.error||'Error'));
+  }
+}
+
+loadData();
+</script>
+{% endblock %}
