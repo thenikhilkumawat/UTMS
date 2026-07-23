@@ -323,6 +323,7 @@
   </div>
 
   <!-- ── STEP 2: Fabric ── -->
+  <!-- ── STEP 2: Fabric ── -->
   <div class="as-panel" id="asStep2">
     <div class="as-section-label">Step 2</div>
     <div class="as-section-title">Pick Your Fabric</div>
@@ -334,13 +335,36 @@
       </div>
       {% for f in fabrics %}
       <div class="as-fab-card" data-fid="{{ f.id }}" data-fname="{{ f.name }}" data-ftype="{{ f.fabric_type or 'all' }}" data-fprice="{{ f.price_per_metre or 0 }}" onclick="asSelectFabric(this.dataset,this)">
-        {% if f.image_url %}<img class="as-fab-img" src="{{ f.image_url }}" alt="{{ f.name }}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="as-fab-emoji" style="display:none">🧵</div>{% else %}<div class="as-fab-emoji">🧵</div>{% endif %}
+        {% if f.image_url %}<img class="as-fab-img" src="{{ f.image_url }}" alt="{{ f.name }}" loading="lazy" onerror="this.style.display='none'">{% endif %}
         <div class="as-fab-name">{{ f.name }}</div>
         {% if f.price_per_metre %}<div class="as-fab-price">₹{{ f.price_per_metre|int }}/m</div>{% endif %}
       </div>
       {% endfor %}
-      {% if not fabrics %}<div style="grid-column:1/-1;padding:18px;text-align:center;color:var(--as-muted);font-size:13px;background:var(--as-card);border-radius:8px;border:1.5px solid var(--as-border);">No fabrics in catalog yet — classic preview will be used.</div>{% endif %}
+      {% if not fabrics %}<div style="grid-column:1/-1;padding:18px;text-align:center;color:var(--as-muted);font-size:13px;">No fabrics configured yet.</div>{% endif %}
     </div>
+    <div class="as-nav" style="margin-top:18px">
+      <button class="as-btn-back" onclick="asGoStep(1)">← Change Garment</button>
+      <button class="as-btn-next" onclick="asGoStep(3)">Customise Style →</button>
+    </div>
+  </div>
+
+  <!-- ── STEP 3: Style Options ── -->
+  <div class="as-panel" id="asStep3">
+    <div class="as-section-label">Step 3</div>
+    <div class="as-section-title">Customise Your Style</div>
+    <div class="as-section-sub">Pick collar, sleeves, fit and more — the AI will use your selections to generate the preview.</div>
+    <div id="asStyleWrap" style="margin-top:12px"></div>
+    <div class="as-nav" style="margin-top:18px">
+      <button class="as-btn-back" onclick="asGoStep(2)">← Change Fabric</button>
+      <button class="as-btn-next" onclick="asGoStep(4)">Generate Preview →</button>
+    </div>
+  </div>
+
+  <!-- ── STEP 4: Generate ── -->
+  <div class="as-panel" id="asStep4">
+    <div class="as-section-label">Step 4</div>
+    <div class="as-section-title">Ready to Generate</div>
+    <div class="as-section-sub">Your choices are locked in — hit Generate to see your AI preview.</div>
     <div class="as-summary" id="asSummary"></div>
     <div id="asCreditsInfo" style="text-align:center;margin:10px 0 4px;font-size:13px;color:var(--as-muted)"></div>
     <button class="as-gen-btn" id="asGenBtn" onclick="asGenerate()">✦ Generate AI Preview</button>
@@ -512,7 +536,7 @@ function asSelectGarment(el){
 // ── Step navigation ──
 var asCurStep = 1;
 function asGoStep(n){
-  if(n===2 && !AS.garment){ alert('Please select a garment first.'); return; }
+  if((n===2||n===3||n===4) && !AS.garment){ alert('Please select a garment first.'); return; }
   document.getElementById('asStep'+asCurStep).classList.remove('active');
   document.getElementById('asStep'+n).classList.add('active');
   for(var i=1;i<=5;i++){
@@ -523,9 +547,9 @@ function asGoStep(n){
     else if(i===n) sp.classList.add('active');
   }
   asCurStep = n;
-  if(n===2) asFilterFabrics();
+  if(n===2||n===3) asFilterFabrics();
   if(n===3) asLoadStyleOptions();
-  if(n===4) asRenderSummary();
+  if(n===4){ asRenderSummary(); }
   // No scroll — user stays at their current position
 }
 
