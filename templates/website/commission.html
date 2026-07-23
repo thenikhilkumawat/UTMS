@@ -666,6 +666,7 @@ body{overflow-x:clip!important}
         </div>
       </div>
     </div>
+    <div id="cmCreditsBar" style="padding:6px 20px 0;font-size:12px;text-align:center;color:#7a6a58;display:none;"></div>
     <div class="sm-foot">
       <button id="genPreviewBtn" onclick="generateAIPreview()" style="flex:1;padding:12px;background:#f7f0e6;color:#2e1a0e;border:2px dashed #C8903A;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">&#127912; Generate AI Preview</button>
       <button onclick="confirmStyle()" style="flex:1;padding:12px;background:#2e1a0e;color:#f7f0e6;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">&#10003; Add to Order</button>
@@ -2146,5 +2147,42 @@ document.getElementById('commissionForm').addEventListener('submit', function(e)
     document.getElementById('commissionForm').submit();
   });
 });
+// ── Commission modal credits bar ──
+(function(){
+  var _cmBal  = {{ init_tokens | tojson }};
+  var _cmPrev = {{ init_previews | tojson }};
+  function cmUpdateBar(tokens, previews){
+    var bar = document.getElementById('cmCreditsBar');
+    if(!bar) return;
+    var txt = '';
+    if(tokens != null){
+      if(tokens === 0){
+        txt = '\u26a0 No credits left — buy credits to generate AI preview';
+        bar.style.color = '#c2410c';
+      } else {
+        txt = '\ud83e\ude99 ' + tokens + ' credit' + (tokens===1?'':'s') + ' remaining';
+        bar.style.color = '#5a3e1b';
+      }
+    } else if(previews != null){
+      if(previews === 0){
+        txt = '\u26a0 Free previews used — buy credits to generate';
+        bar.style.color = '#c2410c';
+      } else {
+        txt = '\ud83c\udf81 ' + previews + ' free preview' + (previews===1?'':'s') + ' left';
+        bar.style.color = '#5a3e1b';
+      }
+    }
+    bar.textContent = txt;
+    bar.style.display = txt ? '' : 'none';
+  }
+  window.cmUpdateBar = cmUpdateBar;
+  window._cmTokenBal  = _cmBal;
+  window._cmPrevLeft  = _cmPrev;
+  var _origOpen = window.openStyleModal;
+  window.openStyleModal = function(){
+    if(_origOpen) _origOpen.apply(this, arguments);
+    cmUpdateBar(window._cmTokenBal, window._cmPrevLeft);
+  };
+})();
 </script>
 {% endblock %}

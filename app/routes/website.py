@@ -810,6 +810,21 @@ def commission():
         except Exception:
             pass
 
+    # Token balance for AI preview credits display
+    _cm_init_tokens = None
+    _cm_init_previews = None
+    _cm_acc = _current_account()
+    if _cm_acc:
+        try:
+            _cm_tok = get_db().execute("SELECT token_balance FROM web_accounts WHERE id=? LIMIT 1", (_cm_acc["id"],)).fetchone()
+            _cm_init_tokens = (_cm_tok["token_balance"] or 0) if _cm_tok else 0
+        except Exception:
+            _cm_init_tokens = 0
+    else:
+        from flask import session as _sess2
+        _used = _sess2.get("preview_count", 0)
+        _cm_init_previews = max(0, FREE_PREVIEW_LIMIT - _used)
+
     return render_template(
         "website/commission.html",
         cs=cs,
@@ -822,6 +837,8 @@ def commission():
         item_media=item_media,
         page_meta=page_meta,
         current_user=_current_user,
+        init_tokens=_cm_init_tokens,
+        init_previews=_cm_init_previews,
     )
 
 @website_bp.route("/track-order")
