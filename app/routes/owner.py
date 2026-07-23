@@ -1583,6 +1583,57 @@ def api_fix_split_customer():
     return jsonify({"ok": True, "fixed": fixed,
                     "message": "✅ Dono orders ke alag alag customers ban gaye!"})
 
+
+@bp.route("/api/quick-fix-customers")
+@owner_required
+def api_quick_fix_customers():
+    """Quick GET-based customer fix for specific orders."""
+    from datetime import datetime as _dt
+    code1, mob1 = request.args.get("c1",""), request.args.get("m1","")
+    code2, mob2 = request.args.get("c2",""), request.args.get("m2","")
+    if not all([code1, mob1, code2, mob2]):
+        return jsonify({"ok": False, "error": "Need c1,m1,c2,m2 params"})
+
+    conn = get_db()
+    now_str = _dt.now().strftime("%Y-%m-%d %H:%M:%S")
+    results = []
+
+    for code, mob in [(code1, mob1), (code2, mob2)]:
+        o = conn.execute("""
+            SELECT o.id, o.order_code, o.customer_id,
+                   c.name as cname, c.address
+            FROM orders o
+            LEFT JOIN customers c ON c.id=o.customer_id
+            WHERE o.order_code=?
+        """, (code,)).fetchone()
+        if not o:
+            results.append(f"❌ Order #{code} not found")
+            continue
+
+        # Check if customer with correct name+mobile already exists
+        existing = conn.execute(
+            "SELECT id FROM customers WHERE mobile=? AND name=?",
+            (mob, o["cname"])
+        ).fetchone()
+
+        if existing:
+            cust_id = existing["id"]
+            results.append(f"✅ #{code} → existing customer id={cust_id}")
+        else:
+            row = conn.execute(
+                "INSERT INTO customers(name, mobile, address, created_at) VALUES(?,?,?,?) RETURNING id",
+                (o["cname"], mob, o["address"] or "", now_str)
+            ).fetchone()
+            cust_id = row["id"]
+            results.append(f"✅ #{code} → new customer id={cust_id} created (mobile={mob})")
+
+        conn.execute("UPDATE orders SET customer_id=? WHERE order_code=?", (cust_id, code))
+
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True, "results": results,
+                    "message": "Dono orders fix ho gaye! Refresh karo diary page."})
+
 @bp.route("/api/fix-order-code")
 @owner_required
 def fix_order_code():
