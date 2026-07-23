@@ -58,6 +58,16 @@ body{overflow-x:clip!important}
 @keyframes spin { to { transform:rotate(360deg); } }
 @media(max-width:640px){ .sm-body{flex-direction:column;} .sm-left{width:100%;border-right:none;border-bottom:1px solid #e8ddd0;} }
 
+
+/* ── Measurement Locker UI ── */
+.locker-mode-row{display:flex;gap:8px;margin-bottom:.75rem;}
+.locker-mode-btn{padding:6px 14px;border-radius:20px;border:1.5px solid #C8903A;background:#fff;color:#A9763D;font-size:12px;font-weight:700;cursor:pointer;transition:.15s;}
+.locker-mode-btn.active{background:#C8903A;color:#fff;}
+.lkr-ok{font-size:13px;font-weight:700;color:#2d6a3f;margin-bottom:6px;}
+.lkr-chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0;}
+.lkr-chip{font-size:11.5px;background:#f5f0e8;border:1px solid #e0d0b8;border-radius:6px;padding:3px 8px;color:#5a3e1b;}
+.lkr-chip b{color:#9c6f2a;margin-right:3px;}
+.lkr-hint{font-size:11.5px;color:#9a8a78;margin:6px 0 0;}
 </style>
 {% endblock %}
 {% block content %}
@@ -294,18 +304,33 @@ body{overflow-x:clip!important}
           </div>
 
           <div class="meth-panel {% if preselect_method=='locker' %}active{% endif %}" id="mp-locker">
-            <p class="meth-intro">Visited our shop before? Enter your phone and we load your saved measurements.</p>
-            <div class="phone-row">
-              <span class="phone-pre">+91</span>
-              <input type="tel" id="locker_phone" class="field-input" placeholder="10-digit phone" maxlength="10">
-              <button type="button" class="fetch-btn" onclick="fetchLocker()">Fetch</button>
+            <p class="meth-intro">Visited our shop before? Load your saved measurements instantly.</p>
+            <!-- Mode toggle -->
+            <div class="locker-mode-row">
+              <button type="button" class="locker-mode-btn active" onclick="setLockerMode('phone',this)">📱 Mobile</button>
+              <button type="button" class="locker-mode-btn" onclick="setLockerMode('code',this)">📋 Order Code</button>
             </div>
-            <div id="locker-otp" style="display:none;margin-top:1rem;">
+            <!-- Phone row -->
+            <div id="locker-phone-row" class="phone-row">
+              <span class="phone-pre">+91</span>
+              <input type="tel" id="locker_phone" class="field-input" placeholder="10-digit mobile number" maxlength="10">
+              <button type="button" class="fetch-btn" onclick="fetchLocker()">Search</button>
+            </div>
+            <!-- Order-code row (hidden by default) -->
+            <div id="locker-code-row" class="phone-row" style="display:none;">
+              <input type="text" id="locker_code" class="field-input" placeholder="Order code e.g. UT-24-001" style="flex:1;text-transform:uppercase;">
+              <button type="button" class="fetch-btn" onclick="fetchLocker()">Search</button>
+            </div>
+            <!-- OTP step -->
+            <div id="locker-otp" style="display:none;margin-top:.75rem;">
               <div class="phone-row">
-                <input type="text" id="locker_otp" class="field-input" placeholder="6-digit OTP" maxlength="6">
+                <input type="text" id="locker_otp" class="field-input" placeholder="6-digit OTP" maxlength="6" inputmode="numeric">
                 <button type="button" class="fetch-btn" onclick="verifyLocker()">Verify</button>
               </div>
             </div>
+            <!-- Status message -->
+            <div id="locker-msg" style="display:none;"></div>
+            <!-- Found result -->
             <div id="locker-found" style="display:none;" class="locker-found"></div>
             <input type="hidden" name="locker_customer_id" id="locker_cid">
           </div>

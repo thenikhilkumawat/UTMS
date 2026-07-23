@@ -2813,3 +2813,138 @@ def api_verify_otp():
         return jsonify({"success": True, "message": "OTP verified"})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
+
+
+# ── Measurement Locker ────────────────────────────────────────────────────────
+# Lets customers fetch their saved measurements by phone number (OTP-verified)
+# or by order code (used as authentication factor itself).
+
+@website_bp.route("/api/locker/send-otp", methods=["POST"])
+@_rl("5 per minute; 10 per hour")
+def api_locker_send_otp():
+    import logging as _logging
+    data  = request.get_json(silent=True) or {}
+    phone = (data.get("phone") or "").strip().lstrip("+91").strip()
+    if not phone or not phone.isdigit() or len(phone) != 10:
+        return jsonify({"success": False, "message": "Enter a valid 10-digit mobile number."})
+    try:
+        db   = get_db()
+        acc  = db.execute("SELECT id,name FROM web_accounts WHERE mobile=? AND is_active=1 LIMIT 1", (phone,)).fetchone()
+        cust = db.execute("SELECT id,name FROM customers WHERE mobile=? ORDER BY id DESC LIMIT 1", (phone,)).fetchone()
+        if not acc and not cust:
+            return jsonify({"success": False, "message": "No records found for this number. Please enter measurements manually."})
+        recent = db.execute(
+            "SELECT COUNT(*) as cnt FROM otp_log WHERE mobile=? AND purpose='locker' "
+            "AND created_at > datetime('now','localtime','-10 minutes') AND used=0",
+            (phone,)
+        ).fetchone()
+        if recent and recent["cnt"] >= 3:
+            return jsonify({"success": False, "message": "Too many requests. Please wait 10 minutes."})
+        from app.utils.sms import send_otp as _send_otp
+        otp = _send_otp(phone)
+        if not otp:
+            return jsonify({"success": False, "message": "Could not send OTP. Please try again or enter measurements manually."})
+        db.execute("INSERT INTO otp_log(mobile, otp, purpose) VALUES(?, ?, 'locker')", (phone, otp))
+        db.commit()
+        first = (acc or cust)["name"].split()[0]
+        return jsonify({"success": True, "message": "OTP sent",
+                        "hint": "Hi {}! OTP sent to +91 {}xxxxxx".format(first, phone[:4])})
+    except Exception as ex:
+        import logging as _log2
+        _log2.getLogger(__name__).error("locker send-otp: %s", ex, exc_info=True)
+        return jsonify({"success": False, "message": "Error sending OTP. Please try again."})
+
+
+@website_bp.route("/api/locker/verify-otp", methods=["POST"])
+@_rl("10 per minute; 30 per hour")
+def api_locker_verify_otp():
+    import json as _json2, logging as _log3
+    data       = request.get_json(silent=True) or {}
+    phone      = (data.get("phone") or "").strip().lstrip("+91").strip()
+    otp        = (data.get("otp") or "").strip()
+    order_code = (data.get("order_code") or "").strip().upper()
+    skip_otp   = (otp == "skip")   # product-page lightweight check
+    try:
+        db = get_db()
+        # Resolve phone from order code if provided instead of phone
+        if order_code and not phone:
+            ord_row = db.execute(
+                "SELECT c.mobile, c.name FROM orders o "
+                "LEFT JOIN customers c ON c.id=o.customer_id "
+                "WHERE o.order_code=? LIMIT 1", (order_code,)
+            ).fetchone()
+            if not ord_row or not ord_row["mobile"]:
+                return jsonify({"success": False, "message": "Order not found. Please try your mobile number."})
+            phone    = ord_row["mobile"]
+            skip_otp = True   # order code itself is the authentication factor
+        if not phone:
+            return jsonify({"success": False, "message": "Mobile number required."})
+        # OTP verification
+        if not skip_otp:
+            if not otp.isdigit() or len(otp) not in (4, 6):
+                return jsonify({"success": False, "message": "Invalid OTP format."})
+            fails = db.execute(
+                "SELECT COUNT(*) as cnt FROM otp_log WHERE mobile=? AND used=2 "
+                "AND created_at > datetime('now','localtime','-15 minutes')",
+                (phone,)
+            ).fetchone()
+            if fails and fails["cnt"] >= 5:
+                return jsonify({"success": False, "message": "Too many failed attempts. Request a new OTP."})
+            row = db.execute(
+                "SELECT id FROM otp_log WHERE mobile=? AND otp=? AND purpose='locker' "
+                "AND used=0 AND expires_at > datetime('now','localtime') ORDER BY id DESC LIMIT 1",
+                (phone, otp)
+            ).fetchone()
+            if not row:
+                db.execute(
+                    "UPDATE otp_log SET used=2 WHERE mobile=? AND purpose='locker' "
+                    "AND used=0 AND expires_at > datetime('now','localtime')",
+                    (phone,)
+                )
+                db.commit()
+                return jsonify({"success": False, "message": "Wrong or expired OTP."})
+            db.execute("UPDATE otp_log SET used=1 WHERE id=?", (row["id"],))
+            db.commit()
+        # Fetch account + measurements
+        acc  = db.execute("SELECT * FROM web_accounts WHERE mobile=? AND is_active=1 LIMIT 1", (phone,)).fetchone()
+        cust = db.execute("SELECT * FROM customers WHERE mobile=? ORDER BY id DESC LIMIT 1", (phone,)).fetchone()
+        name    = ""
+        cust_id = None
+        meas    = {}
+        if acc:
+            name    = acc["name"]
+            cust_id = acc["id"]
+            sm = db.execute(
+                "SELECT * FROM saved_measurements WHERE account_id=? ORDER BY updated_at DESC LIMIT 1",
+                (acc["id"],)
+            ).fetchone()
+            if sm:
+                meas = {k: sm[k] for k in
+                        ("chest","waist","shoulder","sleeve","neck","hip","inseam","thigh","height","weight")
+                        if sm[k] is not None}
+        if cust:
+            if not name:
+                name    = cust["name"]
+                cust_id = cust["id"]
+            if not meas:
+                latest = db.execute(
+                    "SELECT oi.measurements FROM order_items oi "
+                    "JOIN orders o ON o.id=oi.order_id "
+                    "WHERE o.customer_id=? AND oi.measurements != '{}' "
+                    "ORDER BY o.id DESC LIMIT 1",
+                    (cust["id"],)
+                ).fetchone()
+                if latest and latest["measurements"]:
+                    try:
+                        meas = _json2.loads(latest["measurements"])
+                    except Exception:
+                        pass
+        if not name:
+            return jsonify({"success": False, "message": "No records found for this number."})
+        return jsonify({
+            "success": True,
+            "customer": {"id": cust_id, "name": name, "phone": phone, "measurements": meas}
+        })
+    except Exception as ex:
+        _log3.getLogger(__name__).error("locker verify-otp: %s", ex, exc_info=True)
+        return jsonify({"success": False, "message": "Error loading measurements. Please try again."})

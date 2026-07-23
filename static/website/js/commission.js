@@ -88,19 +88,96 @@ document.querySelectorAll('input[name="ref_dropoff"]').forEach(function(r){r.add
 
 function delChange(v){selDelivery=v;var el=document.getElementById('del-addr');if(el)el.style.display=v==='home'?'block':'none';updatePrice();updateSummary();}
 
+// ── Measurement Locker ───────────────────────────────────────────────────────
+function _lockerMode(){
+  var codeRow=document.getElementById('locker-code-row');
+  return (codeRow && codeRow.style.display!=='none') ? 'code' : 'phone';
+}
+function setLockerMode(mode,btn){
+  document.querySelectorAll('.locker-mode-btn').forEach(function(b){b.classList.remove('active');});
+  if(btn) btn.classList.add('active');
+  var pr=document.getElementById('locker-phone-row'),cr=document.getElementById('locker-code-row');
+  if(pr) pr.style.display = mode==='phone'?'flex':'none';
+  if(cr) cr.style.display = mode==='code' ?'flex':'none';
+  _lockerClearMsg();
+}
+function _lockerMsg(msg,type){
+  var el=document.getElementById('locker-msg');if(!el)return;
+  el.style.display='block';
+  el.style.cssText='margin-top:8px;font-size:12.5px;padding:7px 10px;border-radius:7px;display:block;'+(type==='error'?'color:#8b2222;background:#fff0f0;':'color:#5a3e1b;background:#fff8ee;');
+  el.textContent=msg;
+}
+function _lockerClearMsg(){var el=document.getElementById('locker-msg');if(el)el.style.display='none';}
+
 async function fetchLocker(){
-  var phone=document.getElementById('locker_phone').value.trim();if(phone.length!==10){alert('Please enter a valid 10-digit phone number.');return;}
-  var btn=document.querySelector('#mp-locker .fetch-btn');btn.textContent='Sending...';btn.disabled=true;
-  try{var r=await fetch('/api/locker/send-otp',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':csrf()},body:JSON.stringify({phone:phone})});var d=await r.json();if(d.success){document.getElementById('locker-otp').style.display='block';btn.textContent='OTP sent';}else{btn.textContent=d.message||'Not found';btn.disabled=false;}}
-  catch(e){btn.textContent='Error. Try again.';btn.disabled=false;}
+  _lockerClearMsg();
+  if(_lockerMode()==='code'){
+    // Order-code path — no OTP needed
+    var code=(document.getElementById('locker_code')||{}).value;
+    code=(code||'').trim().toUpperCase();
+    if(!code){_lockerMsg('Enter your order code.','error');return;}
+    var btn=document.querySelector('#locker-code-row .fetch-btn');
+    btn.textContent='Searching…';btn.disabled=true;
+    try{
+      var r=await fetch('/api/locker/verify-otp',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':csrf()},body:JSON.stringify({order_code:code,otp:'skip'})});
+      var d=await r.json();
+      if(d.success){_applyLockerResult(d.customer);}
+      else{_lockerMsg(d.message||'Order not found.','error');}
+    }catch(e){_lockerMsg('Connection error. Try again.','error');}
+    btn.textContent='Search';btn.disabled=false;
+    return;
+  }
+  // Phone path
+  var phone=(document.getElementById('locker_phone')||{value:''}).value.trim().replace(/\D/g,'').replace(/^91/,'');
+  if(phone.length!==10){_lockerMsg('Enter a valid 10-digit mobile number.','error');return;}
+  var btn=document.querySelector('#locker-phone-row .fetch-btn');
+  btn.textContent='Sending…';btn.disabled=true;
+  try{
+    var r=await fetch('/api/locker/send-otp',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':csrf()},body:JSON.stringify({phone:phone})});
+    var d=await r.json();
+    if(d.success){
+      document.getElementById('locker-otp').style.display='block';
+      if(d.hint)_lockerMsg(d.hint,'info');
+      btn.textContent='Resend OTP';btn.disabled=false;
+    }else{
+      _lockerMsg(d.message||'Number not found.','error');
+      btn.textContent='Search';btn.disabled=false;
+    }
+  }catch(e){_lockerMsg('Connection error. Try again.','error');btn.textContent='Search';btn.disabled=false;}
 }
 async function verifyLocker(){
-  var phone=document.getElementById('locker_phone').value.trim();var otp=document.getElementById('locker_otp').value.trim();
-  var btn=document.querySelector('#locker-otp .fetch-btn');btn.textContent='Verifying...';btn.disabled=true;
-  try{var r=await fetch('/api/locker/verify-otp',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':csrf()},body:JSON.stringify({phone:phone,otp:otp})});var d=await r.json();
-  if(d.success){document.getElementById('locker_cid').value=d.customer.id;if(d.customer.name)document.getElementById('cust_name').value=d.customer.name;document.getElementById('locker-found').style.display='block';document.getElementById('locker-found').textContent=d.customer.name+' - measurements loaded.';document.getElementById('locker-otp').style.display='none';updateSummary();updateBtn();}
-  else{btn.textContent=d.message||'Wrong OTP';btn.disabled=false;}}
-  catch(e){btn.textContent='Error';btn.disabled=false;}
+  var phone=(document.getElementById('locker_phone')||{value:''}).value.trim().replace(/\D/g,'').replace(/^91/,'');
+  var otp=(document.getElementById('locker_otp')||{value:''}).value.trim();
+  var btn=document.querySelector('#locker-otp .fetch-btn');btn.textContent='Verifying…';btn.disabled=true;
+  try{
+    var r=await fetch('/api/locker/verify-otp',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':csrf()},body:JSON.stringify({phone:phone,otp:otp})});
+    var d=await r.json();
+    if(d.success){_applyLockerResult(d.customer);}
+    else{_lockerMsg(d.message||'Wrong OTP.','error');btn.textContent='Verify';btn.disabled=false;}
+  }catch(e){_lockerMsg('Connection error.','error');btn.textContent='Verify';btn.disabled=false;}
+}
+function _applyLockerResult(cust){
+  // Store customer id + fill name/phone
+  var cidEl=document.getElementById('locker_cid');if(cidEl)cidEl.value=cust.id||'';
+  if(cust.name){var n=document.getElementById('cust_name');if(n&&!n.value)n.value=cust.name;}
+  if(cust.phone){var p=document.getElementById('cust_phone');if(p&&!p.value)p.value=cust.phone;}
+  // Fill fine-tune measurement fields
+  var m=cust.measurements||{};
+  var fieldMap={adj_chest:m.chest,adj_waist:m.waist,adj_shoulder:m.shoulder,adj_length:m.length||m.shirt_length,adj_trouser:m.trouser||m.pant_length||m.inseam};
+  Object.keys(fieldMap).forEach(function(fname){
+    var val=fieldMap[fname];if(val==null||val==='')return;
+    var inp=document.querySelector('input[name="'+fname+'"]');
+    if(inp&&!inp.dataset.userEdited){inp.value=val;inp.dataset.fromLocker='1';}
+  });
+  // Show summary in locker-found panel
+  var fd=document.getElementById('locker-found');if(!fd)return;
+  var labels={chest:'Chest',waist:'Waist',shoulder:'Shoulder',sleeve:'Sleeve',neck:'Neck',hip:'Hip',inseam:'Inseam',thigh:'Thigh',height:'Height″',weight:'Weight(kg)'};
+  var chips=Object.keys(m).filter(function(k){return m[k]!=null&&labels[k];}).map(function(k){return '<span class="lkr-chip"><b>'+labels[k]+'</b> '+m[k]+'"</span>';}).join('');
+  var note=chips?'<div class="lkr-chips">'+chips+'</div><p class="lkr-hint">Fine-tune section above has been pre-filled — adjust if needed.</p>':'<p class="lkr-hint">No body measurements on file. Please enter manually.</p>';
+  fd.innerHTML='<div class="lkr-ok">✅ '+cust.name+' — measurements loaded</div>'+note;
+  fd.style.display='block';
+  document.getElementById('locker-otp').style.display='none';
+  _lockerClearMsg();updateSummary();updateBtn();
 }
 
 function updateSummary(){
