@@ -108,7 +108,7 @@
 .as-sg-header{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
 .as-sg-label{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--as-sub);}
 .as-sg-req{font-size:9px;color:#ef4444;font-weight:700;background:#fef2f2;padding:2px 6px;border-radius:4px;}
-.as-chips{display:flex;flex-wrap:wrap;gap:8px;}
+.as-chips{display:flex;flex-wrap:wrap;gap:12px;}
 
 /* Text chip (no image) */
 .as-chip{padding:8px 16px;border-radius:var(--as-radius);border:1.5px solid var(--as-border);background:var(--as-card);font-size:12.5px;color:var(--as-sub);cursor:pointer;transition:all .18s;user-select:none;font-weight:500;}
@@ -116,12 +116,12 @@
 .as-chip.sel{background:var(--as-gold-pale);border-color:var(--as-gold);color:var(--as-gold);font-weight:700;}
 
 /* Image chip */
-.as-img-chip{border:2px solid var(--as-border);border-radius:8px;overflow:hidden;cursor:pointer;transition:all .18s;background:var(--as-card);width:90px;flex-shrink:0;}
+.as-img-chip{min-width:110px;width:110px;border:2px solid var(--as-border);border-radius:8px;overflow:hidden;cursor:pointer;transition:all .18s;background:var(--as-card);width:90px;flex-shrink:0;}
 .as-img-chip:hover{border-color:var(--as-gold-lt);transform:translateY(-1px);}
 .as-img-chip.sel{border-color:var(--as-gold);box-shadow:0 0 0 1.5px var(--as-gold);}
-.as-img-chip-img{width:100%;height:65px;object-fit:cover;display:block;background:#f0ede8;}
-.as-img-chip-emoji{width:100%;height:65px;display:flex;align-items:center;justify-content:center;font-size:22px;background:linear-gradient(135deg,#f5f0ea,#ede6dc);}
-.as-img-chip-lbl{font-size:10px;font-weight:600;color:var(--as-sub);padding:5px 6px;text-align:center;line-height:1.3;}
+.as-img-chip-img{width:100%;height:120px;object-fit:cover;display:block;background:#f0ede8;}
+.as-img-chip-emoji{width:100%;height:120px;display:flex;align-items:center;justify-content:center;font-size:30px;background:linear-gradient(135deg,#f5f0ea,#ede6dc);}
+.as-img-chip-lbl{font-size:11px;font-weight:600;color:var(--as-sub);padding:6px 8px;text-align:center;line-height:1.3;}
 .as-img-chip.sel .as-img-chip-lbl{color:var(--as-gold);font-weight:800;}
 
 /* Nav buttons */
