@@ -732,6 +732,42 @@ def custom_page(slug):
 
 # ── Sitemap & Robots ─────────────────────────────────────────────────────────
 
+@website_bp.route("/api/commission/create-advance-order", methods=["POST"])
+def api_commission_create_advance_order():
+    """Create Razorpay order for commission advance payment."""
+    import uuid as _uuid
+    data = request.get_json() or {}
+    amount_paise = int(data.get("amount_paise", 0))
+    if amount_paise < 100:
+        return jsonify({"ok": False, "error": "Advance amount too small"})
+    db = get_db()
+    try:
+        _rz1 = db.execute("SELECT value FROM settings WHERE key='razorpay_key_id'").fetchone()
+        _rz2 = db.execute("SELECT value FROM settings WHERE key='razorpay_key_secret'").fetchone()
+        def _rz_clean(v): return (v.split("=",1)[-1] if v and "=" in v else v or "").strip()
+        rz_key_id  = _rz_clean(_rz1["value"] if _rz1 else "")
+        rz_key_sec = _rz_clean(_rz2["value"] if _rz2 else "")
+    except Exception:
+        rz_key_id = rz_key_sec = ""
+    if not rz_key_id or not rz_key_sec:
+        return jsonify({"ok": False, "no_gateway": True,
+                        "error": "Payment gateway not configured — order will be placed without advance."})
+    try:
+        import requests as _req
+        resp = _req.post(
+            "https://api.razorpay.com/v1/orders",
+            auth=(rz_key_id, rz_key_sec),
+            json={"amount": amount_paise, "currency": "INR",
+                  "receipt": f"adv_{_uuid.uuid4().hex[:10]}"},
+            timeout=10
+        ).json()
+        if "id" not in resp:
+            return jsonify({"ok": False, "error": "Could not create payment order. Try again."})
+        return jsonify({"ok": True, "order_id": resp["id"],
+                        "amount": amount_paise, "razorpay_key": rz_key_id})
+    except Exception as ex:
+        return jsonify({"ok": False, "error": str(ex)})
+
 @website_bp.route("/commission")
 def commission():
     from datetime import datetime, timedelta
@@ -1026,8 +1062,27 @@ def create_order():
                 coupon_discount = 0.0
 
         payable_amount = round(payable_amount - coupon_discount, 2)
-        advance_paid  = 0.0
-        remaining     = payable_amount
+        # ── Razorpay advance payment verification ────────────────────────────
+        rz_pay_id  = (request.form.get("rz_payment_id") or "").strip()
+        rz_order_id = (request.form.get("rz_order_id") or "").strip()
+        rz_sig     = (request.form.get("rz_signature") or "").strip()
+        rz_advance  = float(request.form.get("rz_advance_amount", 0) or 0)
+        if rz_pay_id and rz_order_id and rz_sig:
+            try:
+                import hmac as _hmac, hashlib as _hsh
+                _rz2 = db.execute("SELECT value FROM settings WHERE key='razorpay_key_secret'").fetchone()
+                _rs = (_rz2["value"] if _rz2 else "")
+                _rs = (_rs.split("=",1)[-1] if "=" in _rs else _rs).strip()
+                _exp = _hmac.new(_rs.encode(), f"{rz_order_id}|{rz_pay_id}".encode(), _hsh.sha256).hexdigest()
+                if _hmac.compare_digest(_exp, rz_sig):
+                    advance_paid = rz_advance
+                else:
+                    advance_paid = 0.0
+            except Exception:
+                advance_paid = 0.0
+        else:
+            advance_paid  = 0.0
+        remaining     = max(0, round(payable_amount - advance_paid, 2))
 
         # Gift fields
         is_gift      = 1 if request.form.get("is_gift") else 0
@@ -1057,6 +1112,8 @@ def create_order():
             (order_code, customer_id, today, delivery_date,
              total_amount, extra_charges, payable_amount,
              advance_paid, remaining, is_urgent, note, _web_acc_id_order, now)
+        if rz_pay_id:
+            db.execute("UPDATE orders SET payment_mode='online' WHERE order_code=?", (order_code,))
         )
         order_row = db.execute(
             "SELECT id FROM orders WHERE order_code=?", (order_code,)

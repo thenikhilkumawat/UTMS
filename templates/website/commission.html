@@ -493,6 +493,10 @@ body{overflow-x:clip!important}
     </div>
 
     <input type="hidden" name="style_json" id="styleJsonInput" value="{}">
+    <input type="hidden" name="rz_payment_id" id="rzPaymentId" value="">
+    <input type="hidden" name="rz_order_id" id="rzOrderId" value="">
+    <input type="hidden" name="rz_signature" id="rzSignature" value="">
+    <input type="hidden" name="rz_advance_amount" id="rzAdvanceAmount" value="0">
     <input type="hidden" name="generated_images_json" id="generatedImagesInput" value="{}">
   </form>
 
@@ -2076,5 +2080,71 @@ function confirmStyle(){
   closeStyleModal();
 }
 </script>
-<script src="{{ url_for('static', filename='js/commission.js') }}?v=7"></script>
+<script src="{{ url_for('static', filename='js/commission.js') }}?v=7">
+// ── Advance payment via Razorpay before order submission ─────────────────
+document.getElementById('commissionForm').addEventListener('submit', function(e) {
+  // If already paid (hidden fields filled), allow normal submit
+  if (document.getElementById('rzPaymentId').value) return;
+  e.preventDefault();
+
+  var advEl = document.getElementById('sp-adv');
+  var advText = advEl ? advEl.textContent.replace(/[^0-9]/g,'') : '0';
+  var advanceRs = parseInt(advText) || 0;
+
+  if (advanceRs <= 0) {
+    // No advance configured or total is 0 — submit directly
+    this.submit();
+    return;
+  }
+
+  var btn = document.getElementById('reserveBtn');
+  if (btn) { btn.disabled = true; btn.querySelector('span').textContent = 'Opening payment…'; }
+
+  var amountPaise = advanceRs * 100;
+
+  fetch('/api/commission/create-advance-order', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({amount_paise: amountPaise})
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d) {
+    if (d.no_gateway || !d.ok) {
+      // No payment gateway — submit without payment
+      document.getElementById('commissionForm').submit();
+      return;
+    }
+    var custName  = (document.getElementById('cust_name') || {}).value || '';
+    var custPhone = (document.getElementById('cust_phone') || {}).value || '';
+    var options = {
+      key: d.razorpay_key,
+      amount: d.amount,
+      currency: 'INR',
+      name: 'Uttam Tailors',
+      description: 'Advance Payment (' + ADVANCE_PCT + '% of order)',
+      order_id: d.order_id,
+      prefill: { name: custName, contact: custPhone },
+      theme: { color: '#C8903A' },
+      handler: function(resp) {
+        // Payment done — fill hidden fields and submit form
+        document.getElementById('rzPaymentId').value    = resp.razorpay_payment_id;
+        document.getElementById('rzOrderId').value      = resp.razorpay_order_id;
+        document.getElementById('rzSignature').value    = resp.razorpay_signature;
+        document.getElementById('rzAdvanceAmount').value = advanceRs;
+        document.getElementById('commissionForm').submit();
+      },
+      modal: {
+        ondismiss: function() {
+          if (btn) { btn.disabled = false; btn.querySelector('span').textContent = 'Complete Your Order'; }
+        }
+      }
+    };
+    new Razorpay(options).open();
+  })
+  .catch(function() {
+    // Network error — submit without payment
+    document.getElementById('commissionForm').submit();
+  });
+});
+</script>
 {% endblock %}
