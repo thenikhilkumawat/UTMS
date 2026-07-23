@@ -1453,6 +1453,54 @@ def fix_finance_mode(order_code):
     conn.close()
     return jsonify({"ok": True, "updated": len(rows), "message": f"✅ {len(rows)} finance entries updated to {mode}"})
 
+
+@bp.route("/api/diagnose-order/<code>")
+@owner_required
+def api_diagnose_order(code):
+    """Diagnose order customer linkage — check if wrong customer is linked."""
+    conn = get_db()
+    # Get order + customer details
+    order = conn.execute("""
+        SELECT o.id, o.order_code, o.customer_id,
+               c.id as cid, c.name as cname, c.mobile, c.address,
+               o.advance_paid, o.payable_amount
+        FROM orders o
+        LEFT JOIN customers c ON c.id = o.customer_id
+        WHERE o.order_code = ?
+    """, (code,)).fetchone()
+
+    if not order:
+        conn.close()
+        return jsonify({"ok": False, "error": f"Order #{code} not found"})
+
+    # Find all orders linked to same customer
+    same_cust_orders = conn.execute("""
+        SELECT order_code, order_date, status, payable_amount
+        FROM orders WHERE customer_id = ?
+        ORDER BY id DESC LIMIT 10
+    """, (order["customer_id"],)).fetchall()
+
+    # Find all customers with same mobile
+    same_mobile_custs = []
+    if order["mobile"]:
+        same_mobile_custs = conn.execute("""
+            SELECT id, name, mobile FROM customers WHERE mobile = ?
+        """, (order["mobile"],)).fetchall()
+
+    conn.close()
+    return jsonify({
+        "ok": True,
+        "order": {
+            "code": order["order_code"],
+            "customer_id": order["customer_id"],
+            "customer_name": order["cname"],
+            "customer_mobile": order["mobile"],
+        },
+        "all_orders_of_this_customer": [dict(r) for r in same_cust_orders],
+        "customers_with_same_mobile": [dict(r) for r in same_mobile_custs],
+        "fix_url": f"/owner/api/fix-order-customer?code={code}&name=SAHI_NAAM_YAHAN"
+    })
+
 @bp.route("/api/fix-order-code")
 @owner_required
 def fix_order_code():
