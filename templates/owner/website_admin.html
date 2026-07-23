@@ -393,20 +393,18 @@
       <p style="font-size:11px;color:#7a6a58;margin:-4px 0 12px;">Customers who created an account on the website — name, contact info, saved address, orders placed, AI previews used, and account status.</p>
       <div style="overflow-x:auto;">
         <table class="wa-tbl">
-          <thead><tr><th>Name</th><th>Mobile</th><th>Email</th><th>Address</th><th>Orders</th><th>AI Previews</th><th>Status</th><th>Account Created</th></tr></thead>
+          <thead><tr><th>Name</th><th>Mobile</th><th>Email</th><th>Orders</th><th>AI Previews</th><th>🪙 Credits</th><th>Bought / Used</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead>
           <tbody>
             {% for a in web_accounts %}
             <tr>
               <td style="font-weight:600;">{{ a.name }}</td>
               <td style="color:#7a6a58;">{{ a.mobile }}</td>
               <td style="color:#7a6a58;">{{ a.email or '—' }}</td>
-              <td style="font-size:11px;color:#7a6a58;max-width:220px;">
-                {%- if a.address_line1 -%}
-                  {{ a.address_line1 }}{% if a.address_line2 %}, {{ a.address_line2 }}{% endif %}{% if a.address_city %}, {{ a.address_city }}{% endif %}{% if a.address_state %}, {{ a.address_state }}{% endif %}{% if a.address_pincode %} - {{ a.address_pincode }}{% endif %}
-                {%- else -%}—{%- endif -%}
-              </td>
+
               <td><span style="background:#eef2ff;border:1px solid #c7d2fe;border-radius:12px;padding:3px 10px;font-size:11px;font-weight:700;color:#4338ca;">{{ a.order_count or 0 }}</span></td>
               <td><span style="background:#fdf6ee;border:1px solid #e8d9c5;border-radius:12px;padding:3px 10px;font-size:11px;font-weight:700;color:#C8903A;">{{ a.preview_count or 0 }}</span></td>
+              <td style="text-align:center;"><span id="bal-{{a.id}}" style="font-weight:700;color:#C8903A;">{{ a.token_balance or 0 }}</span></td>
+              <td style="font-size:11px;color:#7a6a58;">+{{ a.total_credits_bought or 0 }} / -{{ a.total_credits_used or 0 }}</td>
               <td>
                 {% if a.deleted_at %}
                   <span style="background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:3px 10px;font-size:11px;font-weight:700;color:#b91c1c;">Deleted</span>
@@ -417,12 +415,23 @@
                 {% endif %}
               </td>
               <td style="font-size:11px;color:#7a6a58;">{{ a.created_at }}</td>
+              <td><button class="wa-btn gold" style="padding:3px 10px;font-size:10px;" onclick="addCreditsPrompt({{a.id}},'{{a.name}}')">+ Credits</button></td>
             </tr>
             {% else %}
             <tr><td colspan="8" style="text-align:center;color:#7a6a58;padding:40px 0;">No accounts created yet.</td></tr>
             {% endfor %}
           </tbody>
         </table>
+      </div>
+
+      <!-- Token Transaction History -->
+      <div class="wa-card" style="margin-top:20px;">
+        <div class="wa-card-title" style="display:flex;justify-content:space-between;align-items:center;">
+          <span>🪙 Credit Transaction History</span>
+          <button class="wa-btn gold" style="font-size:11px;padding:4px 12px;" onclick="loadTokenHistory()">Load / Refresh</button>
+        </div>
+        <p style="font-size:11px;color:#7a6a58;margin:-4px 0 12px;">All credit purchases and deductions. Payments via Razorpay are auto-credited after verification. Use "+ Credits" button above to manually add credits.</p>
+        <div id="tokenHistoryWrap"><p style="font-size:12px;color:#7a6a58;">Click "Load / Refresh" to see transactions.</p></div>
       </div>
     </div>
   </div>
@@ -2867,6 +2876,63 @@ function saveFooterLogoHeight(){
     var ok=rs.every(function(r){return r.ok;});
     st.textContent=ok?'Saved!':'Error'; st.style.color=ok?'#16a34a':'#dc2626';
   }).catch(function(){st.textContent='Error';st.style.color='#dc2626';});
+}
+
+function addCreditsPrompt(accountId, name){
+  var tokens = prompt('Add how many credits to ' + name + '?\n(Use negative number to deduct)', '5');
+  if(tokens === null) return;
+  tokens = parseInt(tokens);
+  if(isNaN(tokens) || tokens === 0){ toast('Invalid number', true); return; }
+  var note = prompt('Note (optional):', tokens > 0 ? 'Manual credit by owner' : 'Manual deduction by owner');
+  if(note === null) return;
+  apiFetch('/owner/website/accounts/add-credits',{method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({account_id: accountId, tokens: tokens, note: note || ''})
+  }).then(function(r){return r.json();}).then(function(d){
+    if(d.ok){
+      toast((tokens>0?'+':'')+tokens+' credits added to '+d.name+'. New balance: '+d.new_balance);
+      var el = document.getElementById('bal-'+accountId);
+      if(el) el.textContent = d.new_balance;
+    } else toast(d.error||'Error',true);
+  }).catch(function(){toast('Error',true);});
+}
+
+function loadTokenHistory(){
+  var wrap = document.getElementById('tokenHistoryWrap');
+  if(wrap) wrap.innerHTML = '<p style="font-size:12px;color:#7a6a58;">Loading...</p>';
+  apiFetch('/owner/website/accounts/token-history').then(function(r){return r.json();}).then(function(d){
+    if(!d.ok){ wrap.innerHTML='<p style="color:#dc2626;font-size:12px;">'+escHtml(d.error||'Error')+'</p>'; return; }
+    var txns = d.transactions || [];
+    if(!txns.length){ wrap.innerHTML='<p style="font-size:12px;color:#7a6a58;">No transactions yet.</p>'; return; }
+    var html = '<div style="overflow-x:auto;"><table class="wa-tbl"><thead><tr>'
+      +'<th>Date/Time</th><th>Customer</th><th>Contact</th>'
+      +'<th>Credits</th><th>Type</th><th>Payment ID</th><th>Current Balance</th>'
+      +'</tr></thead><tbody>';
+    txns.forEach(function(t){
+      var isCredit = t.tokens > 0;
+      var typeLabel = t.type === 'manual_credit' ? '✏️ Manual'
+        : t.type === 'debit' ? '🎨 AI Use'
+        : t.type === 'credit' ? '💳 Purchase'
+        : t.type;
+      var amtStyle = 'font-weight:700;color:'+(isCredit?'#16a34a':'#dc2626');
+      var payId = t.razorpay_payment_id || '—';
+      // Truncate long payment IDs
+      var payDisp = payId.length > 20 ? '<span title="'+escHtml(payId)+'">'+escHtml(payId.substring(0,16))+'…</span>' : escHtml(payId);
+      html += '<tr>'
+        +'<td style="font-size:11px;white-space:nowrap;">'+escHtml(t.created_at||'')+'</td>'
+        +'<td style="font-weight:600;">'+escHtml(t.name||'')+'</td>'
+        +'<td style="font-size:11px;color:#7a6a58;">'+(t.mobile?escHtml(t.mobile):'')+(t.email?'<br><span style="font-size:10px;">'+escHtml(t.email)+'</span>':'')+'</td>'
+        +'<td style="'+amtStyle+'">'+(isCredit?'+':'')+t.tokens+'</td>'
+        +'<td style="font-size:11px;">'+typeLabel+'</td>'
+        +'<td style="font-size:10px;font-family:monospace;">'+payDisp+'</td>'
+        +'<td style="text-align:center;font-weight:700;color:#C8903A;">'+t.current_balance+'</td>'
+        +'</tr>';
+    });
+    html += '</tbody></table></div>';
+    wrap.innerHTML = html;
+  }).catch(function(){
+    if(wrap) wrap.innerHTML='<p style="color:#dc2626;font-size:12px;">Load failed.</p>';
+  });
 }
 </script>
 {% endblock %}

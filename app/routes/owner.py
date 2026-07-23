@@ -2980,7 +2980,10 @@ def website_admin():
         # whether the account had been deleted.
         web_accounts = db.execute("""
             SELECT a.*,
-                   (SELECT COUNT(*) FROM orders o WHERE o.web_account_id = a.id) AS order_count
+                   COALESCE(a.token_balance,0) as token_balance,
+                   (SELECT COUNT(*) FROM orders o WHERE o.web_account_id = a.id) AS order_count,
+                   (SELECT COALESCE(SUM(t.tokens),0) FROM token_transactions t WHERE t.account_id=a.id AND t.tokens>0) AS total_credits_bought,
+                   (SELECT COALESCE(SUM(ABS(t.tokens)),0) FROM token_transactions t WHERE t.account_id=a.id AND t.tokens<0) AS total_credits_used
             FROM web_accounts a
             ORDER BY a.id DESC
         """).fetchall()
@@ -2990,6 +2993,46 @@ def website_admin():
         nav_items=nav_items, footer_make=footer_make, pages=pages,
         total_web=total_web, today_web=today_web, pending_web=pending_web, fabric_count=fabric_count,
         web_accounts=web_accounts, web_items=web_items)
+
+@bp.route("/website/accounts/add-credits", methods=["POST"])
+def website_accounts_add_credits():
+    if not session.get("owner_logged_in"): return jsonify({"ok":False}), 403
+    from database import get_db
+    db = get_db()
+    data = request.get_json() or {}
+    account_id = data.get("account_id")
+    tokens = int(data.get("tokens", 0))
+    note = (data.get("note") or "Manual credit by owner").strip()
+    if not account_id or tokens == 0:
+        return jsonify({"ok": False, "error": "account_id and tokens required"})
+    acc = db.execute("SELECT id, name, token_balance FROM web_accounts WHERE id=?", (account_id,)).fetchone()
+    if not acc:
+        return jsonify({"ok": False, "error": "Account not found"})
+    db.execute("UPDATE web_accounts SET token_balance = COALESCE(token_balance,0)+? WHERE id=?", (tokens, account_id))
+    db.execute("INSERT INTO token_transactions (account_id, tokens, type, razorpay_payment_id) VALUES (?,?,?,?)",
+               (account_id, tokens, "manual_credit", note))
+    db.commit()
+    new_bal = db.execute("SELECT token_balance FROM web_accounts WHERE id=?", (account_id,)).fetchone()["token_balance"]
+    return jsonify({"ok": True, "new_balance": new_bal, "name": acc["name"]})
+
+@bp.route("/website/accounts/token-history")
+def website_accounts_token_history():
+    if not session.get("owner_logged_in"): return jsonify({"ok":False}), 403
+    from database import get_db
+    db = get_db()
+    try:
+        rows = db.execute("""
+            SELECT t.id, t.account_id, t.tokens, t.type,
+                   t.razorpay_payment_id, t.razorpay_order_id, t.created_at,
+                   a.name, a.email, a.mobile,
+                   COALESCE(a.token_balance,0) as current_balance
+            FROM token_transactions t
+            JOIN web_accounts a ON a.id = t.account_id
+            ORDER BY t.id DESC LIMIT 200
+        """).fetchall()
+        return jsonify({"ok": True, "transactions": [dict(r) for r in rows]})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)})
 
 @bp.route("/website/settings/save", methods=["POST"])
 def website_settings_save():
