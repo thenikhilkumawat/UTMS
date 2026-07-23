@@ -352,8 +352,23 @@
   <div class="as-panel" id="asStep3">
     <div class="as-section-label">Step 3</div>
     <div class="as-section-title">Customise Your Style</div>
-    <div class="as-section-sub">Pick collar, sleeves, fit and more — the AI will use your selections to generate the preview.</div>
-    <div id="asStyleWrap" style="margin-top:12px"></div>
+    <div class="as-section-sub">Pick collar, sleeves, fit and more — tap any option to preview it on the right.</div>
+    <div class="as-style-layout" style="margin-top:12px">
+      <!-- Left: option tiles -->
+      <div id="asStyleWrap"></div>
+      <!-- Right: sticky preview pane -->
+      <div class="as-preview-pane" style="border:1px solid var(--as-border);border-radius:12px;overflow:hidden;position:sticky;top:80px;">
+        <div class="as-pv-header">
+          <div class="as-pv-title">Preview</div>
+        </div>
+        <div class="as-pv-img-wrap" style="position:relative;">
+          <img id="asPvImg" class="as-pv-img" src="" alt="Preview">
+          <div id="asPvPlaceholder" class="as-pv-placeholder">✂️</div>
+        </div>
+        <div class="as-pv-label" id="asPvLabel" style="color:var(--as-muted)">Tap a style option to preview</div>
+        <div class="as-pv-sub" id="asPvSub" style="padding:0 14px 10px"></div>
+      </div>
+    </div>
     <div class="as-nav" style="margin-top:18px">
       <button class="as-btn-back" onclick="asGoStep(2)">← Change Fabric</button>
       <button class="as-btn-next" onclick="asGoStep(4)">Generate Preview →</button>

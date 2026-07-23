@@ -2627,28 +2627,70 @@ function aiFilterRules(iid,el){
 function renderAiStyleRules(filterItemId){
   var wrap=document.getElementById('aiStyleRulesWrap');
   var items=filterItemId?_aiAllRules.filter(function(i){return String(i.id)===String(filterItemId);}):_aiAllRules;
-  if(!items.length){wrap.innerHTML='<p style="font-size:12px;color:#7a6a58;">No style options configured yet. Add your first option group below.</p>';return;}
+  if(!items.length){wrap.innerHTML='<p style="font-size:12px;color:#7a6a58;">No style options configured yet. Add an option group below.</p>';return;}
   var html='';
   items.forEach(function(item){
-    html+='<div class="ai-cfg-card" style="margin-bottom:10px;">';
-    html+='<div style="font-size:13px;font-weight:700;color:#1a0e06;margin-bottom:10px;">'+item.name+'</div>';
+    html+='<div class="ai-cfg-card" style="margin-bottom:16px;">';
+    html+='<div style="font-size:13px;font-weight:700;color:#1a0e06;margin-bottom:10px;">'+esc(item.name)+'</div>';
     if(!item.options||!item.options.length){html+='<p style="font-size:12px;color:#7a6a58;">No options yet.</p></div>';return;}
     item.options.forEach(function(opt){
-      html+='<div class="ai-opt-row">';
-      html+='<div class="ai-opt-body">';
-      html+='<div class="ai-opt-label">'+esc(opt.option_label||opt.option_group)+'</div>';
-      html+='<div class="ai-opt-group">'+esc(opt.option_group)+'</div>';
-      html+='<div class="ai-val-tags">';
-      (opt.values||[]).forEach(function(v){
-        html+='<span class="ai-val-tag" title="'+(v.ai_prompt?'AI: '+v.ai_prompt:'No custom AI prompt')+'">'+esc(v.value_label||'')+(v.ai_prompt?' ✦':'')+'</span>';
-      });
+      html+='<div style="background:#fff;border:1px solid #e8d9c5;border-radius:8px;overflow:hidden;margin-bottom:10px;" id="airgrp_'+opt.id+'">';
+      html+='<div style="background:#f5ede0;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">'
+        +'<div><span style="font-weight:700;font-size:13px;color:#2e1a0e;">'+esc(opt.option_group)+'</span>'
+        +(opt.is_required?'<span style="font-size:10px;background:#fee2e2;color:#dc2626;padding:1px 7px;border-radius:10px;margin-left:8px;">Required</span>':'')
+        +'<span style="font-size:11px;color:#7a6a58;margin-left:8px;">'+esc(opt.option_label)+'</span></div>'
+        +'<button onclick="deleteAiOption('+opt.id+')" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:18px;padding:0 4px;" title="Delete group">🗑</button>'
+        +'</div>';
+      html+='<div style="padding:12px;">';
+      var vals=opt.values||[];
+      if(!vals.length){html+='<div style="font-size:12px;color:#7a6a58;padding:4px 0 8px;">No options yet — use the + Add Option button on the Products → Style Options editor to add values.</div>';}
+      else {
+        html+='<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px;">';
+        vals.forEach(function(v){
+          var hasImg=!!(v.image_url&&v.image_url.trim());
+          var hasAi=!!(v.ai_prompt&&v.ai_prompt.trim());
+          var imgHtml=hasImg
+            ?'<img src="'+esc(v.image_url)+'" style="width:100%;height:100%;object-fit:cover;" alt="" onerror="this.style.display=\'none\'">'
+            :'<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:24px;color:#c8a87a;">✂</div>';
+          var aiDot='<span title="'+(hasAi?'AI instruction set':'No AI instruction — set one for accurate generation')+'" style="position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:'+(hasAi?'#16a34a':'#dc2626')+';border:1px solid #fff;"></span>';
+          html+='<div style="width:90px;border:1.5px solid #e8d9c5;border-radius:8px;overflow:hidden;position:relative;" id="airval_'+v.id+'">'
+            +aiDot
+            +'<div style="height:70px;background:#f7f0e6;overflow:hidden;">'+imgHtml+'</div>'
+            +'<div style="padding:4px 6px;font-size:10px;font-weight:600;color:#1a0e06;text-align:center;">'+esc(v.value_label||'')+'</div>'
+            +'<div style="display:flex;gap:3px;padding:4px 6px 6px;flex-wrap:wrap;">'
+            +'<label style="flex:1;cursor:pointer;" title="Upload image"><input type="file" accept="image/*" style="display:none;" onchange="aiUploadStyleValueImg('+v.id+','+opt.id+','+item.id+',this)"><span style="display:block;text-align:center;font-size:9px;font-weight:600;background:#e8d9c5;border-radius:4px;padding:2px 0;color:#2e1a0e;cursor:pointer;">📷</span></label>'
+            +'<button onclick="aiSetStyleValueImgUrl('+v.id+','+opt.id+','+item.id+')" title="Paste image URL" style="flex:1;background:#e8d9c5;border:none;border-radius:4px;font-size:9px;cursor:pointer;color:#2e1a0e;font-weight:600;padding:2px 0;">🔗</button>'
+            +'<button onclick="setStyleValueAiPrompt('+v.id+','+opt.id+','+item.id+','+jsq(v.ai_prompt||'')+')" title="Set AI instruction" style="flex:1;background:'+(hasAi?'#dcfce7':'#fef3c7')+';border:none;border-radius:4px;font-size:9px;cursor:pointer;color:#2e1a0e;font-weight:600;padding:2px 0;">🤖</button>'
+            +'</div></div>';
+        });
+        html+='</div>';
+      }
       html+='</div></div>';
-      html+='<button onclick="deleteAiOption('+opt.id+')" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:16px;padding:4px;" title="Delete">🗑</button>';
-      html+='</div>';
     });
     html+='</div>';
   });
   wrap.innerHTML=html;
+}
+function aiUploadStyleValueImg(vid,grpId,iid,inp){
+  var file=inp.files[0];if(!file)return;
+  var fd=new FormData();fd.append('image',file);
+  apiFetch('/owner/website/services/item/style-value/upload-image/'+vid,{method:'POST',body:fd})
+    .then(function(r){return r.json();}).then(function(d){
+      if(d.ok&&d.url){
+        var el=document.querySelector('#airval_'+vid+' div');
+        if(el)el.innerHTML='<img src="'+d.url+'" style="width:100%;height:100%;object-fit:cover;">';
+        toast('Image uploaded!');loadAiStyleRules();
+      } else toast(d.error||'Upload failed',true);
+    });
+}
+function aiSetStyleValueImgUrl(vid,grpId,iid){
+  var url=prompt('Paste image URL:','');
+  if(url===null)return;
+  apiFetch('/owner/website/services/item/style-value/set-image-url/'+vid,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:url.trim()})})
+    .then(function(r){return r.json();}).then(function(d){
+      if(d.ok){toast('Image URL saved!');loadAiStyleRules();}
+      else toast(d.error||'Error',true);
+    });
 }
 function deleteAiOption(oid){
   if(!confirm('Delete this option group and all its values?'))return;
