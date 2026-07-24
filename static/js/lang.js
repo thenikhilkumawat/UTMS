@@ -115,6 +115,27 @@ const T = {
   already_delivered: {en:"Already Delivered",        hi:"पहले डिलीवर हो चुका",    hl:"Already Delivered"},
   cannot_deliver:    {en:"Cannot Deliver — Still Pending", hi:"डिलीवर नहीं — अभी बाकी है", hl:"Cannot Deliver — Pending hai"},
   search_another:    {en:"← Search Another Order",  hi:"← दूसरा ऑर्डर खोजें",    hl:"← Doosra Order search karo"},
+  no_order_selected: {en:"No order selected",       hi:"कोई ऑर्डर चुना नहीं है", hl:"Koi order select nahi hai"},
+  search_above:      {en:"Search above — name, mobile or order number", hi:"ऊपर सर्च करें — नाम, मोबाइल या ऑर्डर नंबर", hl:"Upar search karo — naam, mobile ya order number"},
+  delivered_on:      {en:"Delivered On",             hi:"डिलीवर हुआ",              hl:"Delivered On"},
+  photos_label:      {en:"Photos",                   hi:"फोटो",                    hl:"Photos"},
+  order_not_ready:   {en:"Order not ready yet",      hi:"ऑर्डर अभी तैयार नहीं है", hl:"Order abhi ready nahi hai"},
+  force_ready:       {en:"Force Mark as Ready",      hi:"जबरन तैयार करें",         hl:"Force Mark as Ready"},
+  payment_hint:      {en:"Choose payment mode to deliver", hi:"पेमेंट का तरीका चुनकर डिलीवर करो", hl:"Payment mode chunke deliver karo"},
+  upi_amount:        {en:"UPI Amount",               hi:"यूपीआई राशि",             hl:"UPI Amount"},
+  receiver_name:     {en:"Receiver Name",            hi:"लेने वाले का नाम",        hl:"Receiver Name"},
+  new_search:        {en:"New Search",               hi:"नई खोज",                  hl:"New Search"},
+  bank:              {en:"Bank",                     hi:"बैंक",                    hl:"Bank"},
+  cancelled:         {en:"Cancelled",                hi:"रद्द",                     hl:"Cancelled"},
+  error_loading:     {en:"Error loading order",      hi:"ऑर्डर लोड करने में गड़बड़ी", hl:"Error loading order"},
+  failed_text:       {en:"Failed",                   hi:"असफल",                     hl:"Failed"},
+  network_error:     {en:"Network error",            hi:"नेटवर्क में गड़बड़ी",       hl:"Network error"},
+  no_orders_found:   {en:"No order found",           hi:"कोई ऑर्डर नहीं मिला",      hl:"Koi order nahi mila"},
+  order_not_found:   {en:"Order not found",          hi:"ऑर्डर नहीं मिला",           hl:"Order not found"},
+  searching_text:    {en:"Searching...",             hi:"ढूंढ रहा है...",           hl:"Dhoondh raha hai..."},
+  timeout_text:      {en:"Timeout",                  hi:"समय समाप्त",               hl:"Timeout"},
+  toast_delivered:   {en:"Delivered!",                hi:"डिलीवर हो गया!",           hl:"Delivered!"},
+  toast_ready:       {en:"Ready!",                   hi:"तैयार!",                    hl:"Ready!"},
 
   // ── Finance
   add_entry:         {en:"Add Entry",                hi:"एंट्री जोड़ें",            hl:"Entry add karo"},
@@ -255,6 +276,7 @@ function setLang(lang) {
   if (typeof renderGarments === "function") renderGarments();
   if (typeof renderExistingGarments === "function") renderExistingGarments();
   if (typeof updateSelectOptions === "function") updateSelectOptions();
+  window.dispatchEvent(new CustomEvent("langchange", {detail:{lang:lang}}));
 }
 
 function applyLang() {
