@@ -1692,7 +1692,7 @@ def order_status():
             """, date_params + (like,)).fetchall()
 
     else:
-        # Default: show all orders (restored pre-noon behaviour, no active/recent restriction)
+        # Default: only active orders (pending/ready) — delivered/past orders excluded, not needed here
         raw = conn.execute(f"""
             SELECT o.id, o.order_code, o.status, o.is_urgent, o.note,
                    o.order_date, o.delivery_date, o.delivered_at, o.repeat_of,
@@ -1702,6 +1702,7 @@ def order_status():
             FROM orders o
             LEFT JOIN customers c ON c.id = o.customer_id
             WHERE 1=1 {date_clause}
+              AND o.status IN ('pending','ready')
             ORDER BY
               o.is_urgent DESC,
               CASE o.status WHEN 'pending' THEN 0 WHEN 'ready' THEN 1 ELSE 2 END,
