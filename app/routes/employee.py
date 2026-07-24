@@ -2686,6 +2686,14 @@ def api_pickup_order():
         "payment_mode":     o["payment_mode"] or "",
         "note":             o["note"] or "",
         "delivered_at_fmt": fmtd(delivered_at_raw[:10]),
+        "work_logs":        [{
+            "employee": w["employee_name"],
+            "garment":  w["garment_type"] or "",
+            "status":   w["status"] or "pending",
+            "note":     w["note"] or ""
+        } for w in conn.execute(
+            "SELECT employee_name, garment_type, status, note FROM work_logs WHERE order_id=? ORDER BY id DESC",
+            (o["id"],)).fetchall()],
         "garments": [{
             "garment_type": it["garment_type"],
             "quantity":     it["quantity"],
