@@ -2975,10 +2975,10 @@ def api_server_stats():
 
     # UTMS app process memory
     try:
-        out = subprocess.check_output(
-            "ps aux | grep gunicorn | grep -v grep | awk '{sum+=$6} END {print sum/1024" MB"}'",
-            shell=True, text=True).strip()
-        result["gunicorn_ram"] = out or "0 MB"
+        cmd = "ps aux | grep gunicorn | grep -v grep | awk '{sum+=$6} END {print sum/1024}'"
+        out = subprocess.check_output(cmd, shell=True, text=True).strip()
+        mb = round(float(out or 0), 1)
+        result["gunicorn_ram"] = f"{mb} MB"
     except Exception as e:
         result["gunicorn_ram"] = str(e)
 
