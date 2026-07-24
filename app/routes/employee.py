@@ -1645,11 +1645,17 @@ def order_status():
     date_clause = "AND o.order_date >= ?" if fresh_start_date else ""
     date_params = (fresh_start_date,) if fresh_start_date else ()
 
-    # search_q: if user typed something → load ALL matching (LIMIT 500)
+    # search_q: if user typed → show all matching (LIMIT 500)
     # no search  → only active + recent 7 days (LIMIT 200, fast)
     search_q     = request.args.get("q", "").strip()
-    search_clause = "1=1" if search_q else "1=0"
-    limit_clause  = "LIMIT 500" if search_q else "LIMIT 200"
+    week_ago     = (date.today() - timedelta(days=7)).isoformat()
+
+    if search_q:
+        limit_clause   = "LIMIT 500"
+        status_clause  = ""          # no status filter when searching
+    else:
+        limit_clause   = "LIMIT 200"
+        status_clause  = f"AND (o.status IN ('pending','ready') OR (o.status='delivered' AND o.delivered_at >= '{week_ago}'))"
 
     # Single fast query - no correlated subqueries
     raw = conn.execute(f"""
@@ -1661,11 +1667,7 @@ def order_status():
         FROM orders o
         LEFT JOIN customers c ON c.id = o.customer_id
         WHERE 1=1 {date_clause}
-          AND (
-            {search_clause}
-            OR o.status IN ('pending','ready')
-            OR (o.status='delivered' AND o.delivered_at >= CURRENT_DATE - INTERVAL '7 days')
-          )
+        {status_clause}
         ORDER BY
           o.is_urgent DESC,
           CASE o.status WHEN 'pending' THEN 0 WHEN 'ready' THEN 1 ELSE 2 END,
