@@ -4,19 +4,13 @@
 *{box-sizing:border-box;}
 body{background:#f0f2f5;}
 
-/* ── PAGE WRAP (keeps everything bounded & centered on wide/desktop screens; no effect on real phone widths) ─ */
-.pu-wrap{max-width:560px;margin:0 auto;position:relative;}
-@media (min-width:601px){
-  body{background:#e3e6ec;}
-  .pu-wrap{background:#f0f2f5;min-height:100vh;box-shadow:0 0 0 1px rgba(15,23,42,.05),0 25px 60px -12px rgba(15,23,42,.18);}
-  .pu-top{border-radius:0 0 22px 22px;}
+/* ── DESKTOP LAYOUT (matches Finance page pattern: fixed search panel + flexible content panel, full width — collapses to normal mobile stack below 769px) ─ */
+@media (min-width:769px){
+  .pu-page{display:grid;grid-template-columns:380px 1fr;min-height:100vh;}
+  .pu-search-col{background:#fff;border-right:1px solid #e5e7eb;min-height:100vh;}
+  .pu-order-col{padding:28px 36px;}
 }
-
-/* ── DESKTOP: actually use the wider space (2-column card) instead of a tiny box floating in empty grey ─ */
-@media (min-width:900px){
-  .pu-wrap{max-width:980px;}
-  .pu-top,#search-results,#empty-state{max-width:640px;margin-left:auto;margin-right:auto;}
-  #delivery-card{padding:24px 28px 32px;}
+@media (min-width:1200px){
   .oc{
     display:grid;
     grid-template-columns:1fr 1fr;
@@ -142,7 +136,8 @@ body{background:#f0f2f5;}
 #img-overlay img{max-width:94vw;max-height:90vh;border-radius:12px;}
 </style>
 
-<div class="pu-wrap">
+<div class="pu-page">
+<div class="pu-search-col">
 <!-- Search Header -->
 <div class="pu-top">
   <div class="pu-title">🚚 Pickup &amp; Delivery</div>
@@ -162,7 +157,9 @@ body{background:#f0f2f5;}
   <div class="pu-empty-title">Koi order select nahi hai</div>
   <div class="pu-empty-sub">Upar search karo — naam, mobile ya order number</div>
 </div>
+</div>
 
+<div class="pu-order-col">
 <!-- Order Card -->
 <div id="delivery-card" style="display:none;">
   <div class="oc">
@@ -253,6 +250,7 @@ body{background:#f0f2f5;}
       <button class="oc-new-btn" onclick="searchAnother()">🔍 New</button>
     </div>
   </div>
+</div>
 </div>
 </div>
 
