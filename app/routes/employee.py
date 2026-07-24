@@ -1645,6 +1645,12 @@ def order_status():
     date_clause = "AND o.order_date >= ?" if fresh_start_date else ""
     date_params = (fresh_start_date,) if fresh_start_date else ()
 
+    # search_q: if user typed something → load ALL matching (LIMIT 500)
+    # no search  → only active + recent 7 days (LIMIT 200, fast)
+    search_q     = request.args.get("q", "").strip()
+    search_clause = "1=1" if search_q else "1=0"
+    limit_clause  = "LIMIT 500" if search_q else "LIMIT 200"
+
     # Single fast query - no correlated subqueries
     raw = conn.execute(f"""
         SELECT o.id, o.order_code, o.status, o.is_urgent, o.note,
