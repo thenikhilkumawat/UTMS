@@ -12,6 +12,32 @@ body{background:#f0f2f5;}
   .pu-top{border-radius:0 0 22px 22px;}
 }
 
+/* ── DESKTOP: actually use the wider space (2-column card) instead of a tiny box floating in empty grey ─ */
+@media (min-width:900px){
+  .pu-wrap{max-width:980px;}
+  .pu-top,#search-results,#empty-state{max-width:640px;margin-left:auto;margin-right:auto;}
+  #delivery-card{padding:24px 28px 32px;}
+  .oc{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    align-items:start;
+    grid-template-areas:
+      "header header"
+      "garments garments"
+      "payment action"
+      "photos photos"
+      "actions actions";
+  }
+  .oc-header{grid-area:header;}
+  .oc-garments{grid-area:garments;}
+  .oc-pay{grid-area:payment;border-right:1px solid #f1f5f9;border-bottom:none;}
+  .oc-photos{grid-area:photos;}
+  .oc-delivered{grid-area:action;align-self:center;}
+  .oc-force{grid-area:action;border-bottom:none;}
+  .oc-pay-sec{grid-area:action;}
+  .oc-actions{grid-area:actions;}
+}
+
 /* ── SEARCH ─────────────────────────────────────── */
 .pu-top{background:linear-gradient(135deg,#1e1b4b,#312e81);padding:18px 16px 20px;}
 .pu-title{color:#a5b4fc;font-size:12px;font-weight:800;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;}
