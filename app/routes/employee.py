@@ -1650,10 +1650,7 @@ def order_status():
     search_q     = request.args.get("q", "").strip()
     week_ago     = (date.today() - timedelta(days=7)).isoformat()
 
-    if search_q and search_q.lstrip("#").isdigit():
-        # Numeric search = order code → direct lookup, no limit
-        code = search_q.lstrip("#")
-        raw = conn.execute(f"""
+    SELECT_COLS = """
             SELECT o.id, o.order_code, o.status, o.is_urgent, o.note,
                    o.order_date, o.delivery_date, o.delivered_at, o.repeat_of,
                    o.payable_amount, o.advance_paid, o.remaining, o.customer_id,
@@ -1661,30 +1658,39 @@ def order_status():
                    c.name as cname, c.mobile, c.address as caddress
             FROM orders o
             LEFT JOIN customers c ON c.id = o.customer_id
-            WHERE 1=1 {date_clause}
-              AND o.order_code = ?
-            ORDER BY o.id DESC
-        """, date_params + (code,)).fetchall()
-    elif search_q:
-        # Name / mobile search — server-side across ALL orders, no limit
-        like = f"%{search_q}%"
-        raw = conn.execute(f"""
-            SELECT o.id, o.order_code, o.status, o.is_urgent, o.note,
-                   o.order_date, o.delivery_date, o.delivered_at, o.repeat_of,
-                   o.payable_amount, o.advance_paid, o.remaining, o.customer_id,
-                   o.created_at,
-                   c.name as cname, c.mobile, c.address as caddress
-            FROM orders o
-            LEFT JOIN customers c ON c.id = o.customer_id
-            WHERE 1=1 {date_clause}
-              AND (
-                LOWER(c.name)   LIKE LOWER(?)
-                OR c.mobile     LIKE ?
-                OR o.note       LIKE ?
-              )
-            ORDER BY o.id DESC
-            LIMIT 100
-        """, date_params + (like, like, like)).fetchall()
+    """
+
+    if search_q:
+        q_clean = search_q.lstrip("#").strip()
+
+        if q_clean.isdigit() and len(q_clean) <= 6:
+            # Short number = ORDER CODE → exact match, show that single order
+            raw = conn.execute(f"""
+                {SELECT_COLS}
+                WHERE 1=1 {date_clause}
+                  AND o.order_code = ?
+                ORDER BY o.id DESC
+            """, date_params + (q_clean,)).fetchall()
+
+        elif q_clean.isdigit() and len(q_clean) >= 7:
+            # Long number = MOBILE NUMBER → show ALL orders for this mobile, no limit
+            raw = conn.execute(f"""
+                {SELECT_COLS}
+                WHERE 1=1 {date_clause}
+                  AND c.mobile LIKE ?
+                ORDER BY o.id DESC
+            """, date_params + (f"%{q_clean}%",)).fetchall()
+
+        else:
+            # Name search → search across ALL orders, no limit
+            like = f"%{q_clean}%"
+            raw = conn.execute(f"""
+                {SELECT_COLS}
+                WHERE 1=1 {date_clause}
+                  AND LOWER(c.name) LIKE LOWER(?)
+                ORDER BY o.id DESC
+            """, date_params + (like,)).fetchall()
+
     else:
         # Default: only active + last 7 days delivered (fast)
         status_clause = f"AND (o.status IN ('pending','ready') OR (o.status='delivered' AND o.delivered_at >= '{week_ago}'))"
