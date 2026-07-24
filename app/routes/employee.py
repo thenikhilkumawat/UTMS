@@ -1655,15 +1655,19 @@ def order_status():
         FROM orders o
         LEFT JOIN customers c ON c.id = o.customer_id
         WHERE 1=1 {date_clause}
+          AND (o.status IN ('pending','ready')
+               OR (o.status='delivered' AND o.delivered_at >= CURRENT_DATE - INTERVAL '7 days'))
         ORDER BY
           o.is_urgent DESC,
           CASE o.status WHEN 'pending' THEN 0 WHEN 'ready' THEN 1 ELSE 2 END,
           o.id DESC
+        LIMIT 200
     """, date_params).fetchall()
 
-    # Customer order counts in one query
+    # Customer order counts - only for visible orders
     cust_counts = {}
-    for row in conn.execute("SELECT customer_id, COUNT(*) as cnt FROM orders GROUP BY customer_id").fetchall():
+    vis_cids = ",".join(str(o["customer_id"]) for o in raw if o["customer_id"]) if raw else "0"
+    for row in conn.execute(f"SELECT customer_id, COUNT(*) as cnt FROM orders WHERE customer_id IN ({vis_cids}) GROUP BY customer_id").fetchall():
         cust_counts[row["customer_id"]] = row["cnt"]
 
     # Bulk load ALL order items at once
