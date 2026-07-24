@@ -1655,13 +1655,16 @@ def order_status():
         FROM orders o
         LEFT JOIN customers c ON c.id = o.customer_id
         WHERE 1=1 {date_clause}
-          AND (o.status IN ('pending','ready')
-               OR (o.status='delivered' AND o.delivered_at >= CURRENT_DATE - INTERVAL '7 days'))
+          AND (
+            {search_clause}
+            OR o.status IN ('pending','ready')
+            OR (o.status='delivered' AND o.delivered_at >= CURRENT_DATE - INTERVAL '7 days')
+          )
         ORDER BY
           o.is_urgent DESC,
           CASE o.status WHEN 'pending' THEN 0 WHEN 'ready' THEN 1 ELSE 2 END,
           o.id DESC
-        LIMIT 200
+        {limit_clause}
     """, date_params).fetchall()
 
     # Customer order counts - only for visible orders
