@@ -301,38 +301,48 @@ function doSearch(){
   fetch("/api/pickup/search?q="+encodeURIComponent(q))
     .then(function(r){return r.json();})
     .then(function(data){
+      res.innerHTML='';
       if(!data.length){
         res.innerHTML='<div style="padding:18px 20px;color:#dc2626;font-size:15px;">❌ Koi order nahi mila</div>';
         return;
       }
-      var groups={},gOrder=[];
+      // Group by customer name
+      var groups={}, gOrder=[];
       data.forEach(function(o){
-        var k=(o.customer_name||'—').trim();
+        var k=(o.customer_name||"—").trim();
         if(!groups[k]){groups[k]=[];gOrder.push(k);}
         groups[k].push(o);
       });
       var multi=gOrder.length>1;
-      var resDiv=document.createElement('div');
-      var html=''; // kept for compat
+      var container=document.createElement("div");
       gOrder.forEach(function(name){
-        if(multi) html+='<div style="padding:8px 18px 4px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:#4338ca;background:#f0f0fe;border-bottom:1px solid #ddd;">👤 '+name+'</div>';
+        if(multi){
+          var hdr=document.createElement("div");
+          hdr.style.cssText="padding:8px 18px 4px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:#4338ca;background:#f0f0fe;border-bottom:1px solid #ddd;";
+          hdr.textContent="👤 "+name;
+          container.appendChild(hdr);
+        }
         groups[name].forEach(function(o){
-          var sc=o.status==='ready'?'#16a34a':o.status==='delivered'?'#6366f1':'#d97706';
-          var sbg=o.status==='ready'?'#dcfce7':o.status==='delivered'?'#ede9fe':'#fef3c7';
-          html+='<div class="pu-result-item" onclick="doPickup(\''+o.order_code+'\')">'
-            +'<div class="pu-result-top">'
-            +'<span class="pu-result-code">#'+o.order_code+'</span>'
-            +'<span class="pu-status-pill" style="background:'+sbg+';color:'+sc+';">'+o.status+'</span>'
-            +'</div>'
-            +'<div class="pu-result-name">'+o.customer_name+'</div>'
-            +'<div class="pu-result-meta">📱 '+(o.mobile||'—')+(o.garments?' &nbsp;·&nbsp; '+o.garments:'')+'</div>'
-            +'</div>';
+          var sc=o.status==="ready"?"#16a34a":o.status==="delivered"?"#6366f1":"#d97706";
+          var sbg=o.status==="ready"?"#dcfce7":o.status==="delivered"?"#ede9fe":"#fef3c7";
+          var item=document.createElement("div");
+          item.className="pu-result-item";
+          item.innerHTML=(
+            "<div class='pu-result-top'>"
+            +"<span class='pu-result-code'>#"+o.order_code+"</span>"
+            +"<span class='pu-status-pill' style='background:"+sbg+";color:"+sc+";'>"+o.status+"</span>"
+            +"</div>"
+            +"<div class='pu-result-name'>"+o.customer_name+"</div>"
+            +"<div class='pu-result-meta'>📱 "+(o.mobile||"—")+(o.garments?" · "+o.garments:"")+"</div>"
+          );
+          (function(code){ item.addEventListener("click",function(){ doPickup(code); }); })(o.order_code);
+          container.appendChild(item);
         });
       });
-      res.innerHTML='';
-      res.appendChild(resDiv);
-    }).catch(function(){res.innerHTML='';});
+      res.appendChild(container);
+    }).catch(function(){ res.innerHTML=""; });
 }
+
 
 function loadOrder(code){
   currentCode=code;
