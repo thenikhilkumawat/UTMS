@@ -487,17 +487,18 @@ function doSearch() {
       var multi=gOrder.length>1;
       var html='<div class="pu-search-results">';
       gOrder.forEach(function(name){
-        if(multi) html+='<div style="padding:5px 14px 3px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:#4338ca;background:#f0f0fe;border-bottom:1px solid #ddd;">👤 '+name+'</div>';
+        if(multi) html += '<div style="padding:5px 14px 3px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:#4338ca;background:#f0f0fe;border-bottom:1px solid #ddd;">👤 ' + name + '</div>';
         groups[name].forEach(function(o){
-          var sc=o.status==='ready'?'#16a34a':o.status==='delivered'?'#6366f1':'#d97706';
-          html+='<div class="pu-result-item" onclick="doPickup(''+o.order_code+'')">'
-            +'<div style="display:flex;justify-content:space-between;">'
-            +'<span class="pu-result-code">#'+o.order_code+'</span>'
-            +'<span style="font-size:10px;font-weight:800;color:'+sc+';text-transform:uppercase;">'+o.status+'</span>'
-            +'</div>'
-            +(multi?'':'<div class="pu-result-name">'+o.customer_name+'</div>')
-            +'<div class="pu-result-meta">📱 '+(o.mobile||'—')+(o.garments?' · '+o.garments:'')+'</div>'
-            +'</div>';
+          var sc = o.status==='ready' ? '#16a34a' : o.status==='delivered' ? '#6366f1' : '#d97706';
+          var row = '<div class="pu-result-item" onclick="doPickup(CODE)">'
+            + '<div style="display:flex;justify-content:space-between;">'
+            + '<span class="pu-result-code">#' + o.order_code + '</span>'
+            + '<span style="font-size:10px;font-weight:800;color:' + sc + ';text-transform:uppercase;">' + o.status + '</span>'
+            + '</div>'
+            + (multi ? '' : '<div class="pu-result-name">' + o.customer_name + '</div>')
+            + '<div class="pu-result-meta">📱 ' + (o.mobile||'—') + (o.garments ? ' · ' + o.garments : '') + '</div>'
+            + '</div>';
+          html += row.replace('CODE', "'" + o.order_code + "'");
         });
       });
       html+='</div>';
