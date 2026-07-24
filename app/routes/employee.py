@@ -1650,30 +1650,54 @@ def order_status():
     search_q     = request.args.get("q", "").strip()
     week_ago     = (date.today() - timedelta(days=7)).isoformat()
 
-    if search_q:
-        limit_clause   = "LIMIT 500"
-        status_clause  = ""          # no status filter when searching
+    if search_q and search_q.lstrip("#").isdigit():
+        # Numeric search = order code → direct lookup, no limit
+        code = search_q.lstrip("#")
+        raw = conn.execute(f"""
+            SELECT o.id, o.order_code, o.status, o.is_urgent, o.note,
+                   o.order_date, o.delivery_date, o.delivered_at, o.repeat_of,
+                   o.payable_amount, o.advance_paid, o.remaining, o.customer_id,
+                   o.created_at,
+                   c.name as cname, c.mobile, c.address as caddress
+            FROM orders o
+            LEFT JOIN customers c ON c.id = o.customer_id
+            WHERE 1=1 {date_clause}
+              AND o.order_code = ?
+            ORDER BY o.id DESC
+        """, date_params + (code,)).fetchall()
+    elif search_q:
+        # Name/mobile search — load 500 recent, client-side filter
+        raw = conn.execute(f"""
+            SELECT o.id, o.order_code, o.status, o.is_urgent, o.note,
+                   o.order_date, o.delivery_date, o.delivered_at, o.repeat_of,
+                   o.payable_amount, o.advance_paid, o.remaining, o.customer_id,
+                   o.created_at,
+                   c.name as cname, c.mobile, c.address as caddress
+            FROM orders o
+            LEFT JOIN customers c ON c.id = o.customer_id
+            WHERE 1=1 {date_clause}
+            ORDER BY o.id DESC
+            LIMIT 500
+        """, date_params).fetchall()
     else:
-        limit_clause   = "LIMIT 200"
-        status_clause  = f"AND (o.status IN ('pending','ready') OR (o.status='delivered' AND o.delivered_at >= '{week_ago}'))"
-
-    # Single fast query - no correlated subqueries
-    raw = conn.execute(f"""
-        SELECT o.id, o.order_code, o.status, o.is_urgent, o.note,
-               o.order_date, o.delivery_date, o.delivered_at, o.repeat_of,
-               o.payable_amount, o.advance_paid, o.remaining, o.customer_id,
-               o.created_at,
-               c.name as cname, c.mobile, c.address as caddress
-        FROM orders o
-        LEFT JOIN customers c ON c.id = o.customer_id
-        WHERE 1=1 {date_clause}
-        {status_clause}
-        ORDER BY
-          o.is_urgent DESC,
-          CASE o.status WHEN 'pending' THEN 0 WHEN 'ready' THEN 1 ELSE 2 END,
-          o.id DESC
-        {limit_clause}
-    """, date_params).fetchall()
+        # Default: only active + last 7 days delivered (fast)
+        status_clause = f"AND (o.status IN ('pending','ready') OR (o.status='delivered' AND o.delivered_at >= '{week_ago}'))"
+        raw = conn.execute(f"""
+            SELECT o.id, o.order_code, o.status, o.is_urgent, o.note,
+                   o.order_date, o.delivery_date, o.delivered_at, o.repeat_of,
+                   o.payable_amount, o.advance_paid, o.remaining, o.customer_id,
+                   o.created_at,
+                   c.name as cname, c.mobile, c.address as caddress
+            FROM orders o
+            LEFT JOIN customers c ON c.id = o.customer_id
+            WHERE 1=1 {date_clause}
+            {status_clause}
+            ORDER BY
+              o.is_urgent DESC,
+              CASE o.status WHEN 'pending' THEN 0 WHEN 'ready' THEN 1 ELSE 2 END,
+              o.id DESC
+            LIMIT 200
+        """, date_params).fetchall()
 
     # Customer order counts - only for visible orders
     cust_counts = {}
