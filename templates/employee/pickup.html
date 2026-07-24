@@ -248,9 +248,11 @@ body{background:#f0f2f5;}
 
     <!-- Action Row -->
     <div class="oc-actions">
-      <button class="oc-wa-btn" onclick="sendDeliveryWA('hi')">🟢 WhatsApp हिंदी</button>
-      <button class="oc-wa-btn" onclick="sendDeliveryWA('en')">🟢 English</button>
-      <button class="oc-new-btn" onclick="searchAnother()">🔍 New</button>
+      <div id="wa-buttons" style="display:none;flex:1;display:flex;gap:8px;">
+        <button class="oc-wa-btn" onclick="sendDeliveryWA('hi')">🟢 WhatsApp हिंदी</button>
+        <button class="oc-wa-btn" onclick="sendDeliveryWA('en')">🟢 EN</button>
+      </div>
+      <button class="oc-new-btn" onclick="searchAnother()">🔍 New Search</button>
     </div>
   </div>
 </div>
@@ -352,13 +354,16 @@ function loadOrder(code){
       document.getElementById("pending-section").style.display=o.status==="pending"?"block":"none";
       document.getElementById("payment-section").style.display=o.status==="ready"?"block":"none";
       document.getElementById("pu-delivered-banner").style.display=o.status==="delivered"?"block":"none";
+      // WhatsApp only after delivery
+      var waDiv=document.getElementById("wa-buttons");
+      if(waDiv) waDiv.style.display=o.status==="delivered"?"flex":"none";
       fetch("/images/"+o.order_code+"?ts="+Date.now()).then(function(r){return r.text();}).then(function(html){
         var imgBox=document.getElementById("dc-images"),strip=document.getElementById("photos-strip");
         if(html&&html.trim()){
           var tmp=document.createElement("div");tmp.innerHTML=html;imgBox.innerHTML="";
           tmp.querySelectorAll("img").forEach(function(img){
             var src=img.getAttribute("src"),el=document.createElement("img");
-            el.src=src;el.style.cssText="width:72px;height:72px;object-fit:cover;border-radius:10px;border:2px solid #fde68a;cursor:zoom-in;";
+            el.src=src;el.style.cssText="width:110px;height:110px;object-fit:cover;border-radius:12px;border:2px solid #fde68a;cursor:zoom-in;box-shadow:0 2px 8px rgba(0,0,0,0.12);";
             el.loading="lazy";el.onerror=function(){this.style.display="none";};
             el.onclick=function(){document.getElementById("overlay-img").src=src;document.getElementById("img-overlay").style.display="flex";};
             imgBox.appendChild(el);
