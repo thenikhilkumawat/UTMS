@@ -4,6 +4,14 @@
 *{box-sizing:border-box;}
 body{background:#f0f2f5;}
 
+/* ── PAGE WRAP (keeps everything bounded & centered on wide/desktop screens; no effect on real phone widths) ─ */
+.pu-wrap{max-width:560px;margin:0 auto;position:relative;}
+@media (min-width:601px){
+  body{background:#e3e6ec;}
+  .pu-wrap{background:#f0f2f5;min-height:100vh;box-shadow:0 0 0 1px rgba(15,23,42,.05),0 25px 60px -12px rgba(15,23,42,.18);}
+  .pu-top{border-radius:0 0 22px 22px;}
+}
+
 /* ── SEARCH ─────────────────────────────────────── */
 .pu-top{background:linear-gradient(135deg,#1e1b4b,#312e81);padding:18px 16px 20px;}
 .pu-title{color:#a5b4fc;font-size:12px;font-weight:800;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;}
@@ -56,12 +64,13 @@ body{background:#f0f2f5;}
 
 /* Payment */
 .oc-pay{padding:16px 20px;border-bottom:1px solid #f1f5f9;}
-.oc-pay-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;}
+.oc-pay-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;}
 .oc-pay-label{font-size:13px;color:#64748b;}
 .oc-pay-val{font-size:14px;font-weight:700;color:#1e293b;}
 .oc-divider{border:none;border-top:1px dashed #e2e8f0;margin:8px 0;}
 .oc-due{font-size:22px;font-weight:900;color:#dc2626;}
 .oc-paid-full{font-size:22px;font-weight:900;color:#16a34a;}
+.oc-due-row{background:#fef2f2;border-radius:10px;padding:10px 14px;margin:2px 0 6px;}
 
 /* Photos */
 .oc-photos{padding:12px 20px;border-bottom:1px solid #f1f5f9;display:none;}
@@ -107,6 +116,7 @@ body{background:#f0f2f5;}
 #img-overlay img{max-width:94vw;max-height:90vh;border-radius:12px;}
 </style>
 
+<div class="pu-wrap">
 <!-- Search Header -->
 <div class="pu-top">
   <div class="pu-title">🚚 Pickup &amp; Delivery</div>
@@ -155,7 +165,7 @@ body{background:#f0f2f5;}
         <span class="oc-pay-val" style="color:#16a34a;" id="dc-advance">—</span>
       </div>
       <hr class="oc-divider">
-      <div class="oc-pay-row">
+      <div class="oc-pay-row oc-due-row">
         <span style="font-size:15px;font-weight:800;color:#1e293b;">Due</span>
         <span class="oc-due" id="dc-remaining">—</span>
       </div>
@@ -217,6 +227,7 @@ body{background:#f0f2f5;}
       <button class="oc-new-btn" onclick="searchAnother()">🔍 New</button>
     </div>
   </div>
+</div>
 </div>
 
 <!-- Image Overlay -->
