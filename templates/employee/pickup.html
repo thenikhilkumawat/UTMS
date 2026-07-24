@@ -13,27 +13,6 @@ body{background:#f0f2f5;}
   body #empty-state{max-width:720px;margin:60px auto 0;}
   body #delivery-card{max-width:1000px;margin:0 auto;padding:28px 0 40px;}
 }
-@media (min-width:1200px){
-  body .oc{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    align-items:start;
-    grid-template-areas:
-      "header header"
-      "garments garments"
-      "payment action"
-      "photos photos"
-      "actions actions";
-  }
-  body .oc-header{grid-area:header;}
-  body .oc-garments{grid-area:garments;}
-  body .oc-pay{grid-area:payment;border-right:1px solid #f1f5f9;border-bottom:none;}
-  body .oc-photos{grid-area:photos;}
-  body .oc-delivered{grid-area:action;align-self:center;}
-  body .oc-force{grid-area:action;border-bottom:none;}
-  body .oc-pay-sec{grid-area:action;}
-  body .oc-actions{grid-area:actions;}
-}
 
 /* ── SEARCH ─────────────────────────────────────── */
 .pu-top{background:linear-gradient(135deg,#1e1b4b,#312e81);padding:18px 16px 20px;}
@@ -351,11 +330,11 @@ function renderOrder(o){
   document.getElementById("dc-advance").textContent="₹"+(o.advance_paid||0);
   document.getElementById("dc-remaining").textContent="₹"+(o.remaining||0);
   var modeEl=document.getElementById("dc-mode"),modeRow=document.getElementById("dc-mode-row");
-  if(o.payment_mode && o.delivered_at_fmt){modeEl.textContent=o.payment_mode==="cash"?("💵 "+t("cash")):o.payment_mode==="upi"?("📱 "+t("upi")):("🏦 "+t("bank"));modeRow.style.display="flex";}
+  if(o.payment_mode && o.status==="delivered"){modeEl.textContent=o.payment_mode==="cash"?("💵 "+t("cash")):o.payment_mode==="upi"?("📱 "+t("upi")):("🏦 "+t("bank"));modeRow.style.display="flex";}
   else modeRow.style.display="none";
   var delEl=document.getElementById("dc-deldate"),delRow=document.getElementById("dc-deldate-row");
   var delBannerSub=document.getElementById("dc-deldate-banner");
-  if(o.delivered_at_fmt){delEl.textContent="✅ "+o.delivered_at_fmt;delRow.style.display="flex";if(delBannerSub)delBannerSub.textContent=currentLang==="hi"?(o.delivered_at_fmt+" को डिलीवर हुआ"):("Delivered on "+o.delivered_at_fmt);}
+  if(o.status==="delivered" && o.delivered_at_fmt){delEl.textContent="✅ "+o.delivered_at_fmt;delRow.style.display="flex";if(delBannerSub)delBannerSub.textContent=currentLang==="hi"?(o.delivered_at_fmt+" को डिलीवर हुआ"):("Delivered on "+o.delivered_at_fmt);}
   else delRow.style.display="none";
   var sb=document.getElementById("dc-status-badge");
   var colors={pending:"background:#fef3c7;color:#92400e;",ready:"background:#dcfce7;color:#166534;",delivered:"background:#ede9fe;color:#5b21b6;",cancelled:"background:#fee2e2;color:#991b1b;"};
