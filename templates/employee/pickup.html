@@ -71,7 +71,7 @@ body{background:#f0f2f5;}
 
 /* ── ORDER CARD ──────────────────────────────────── */
 #delivery-card{padding:14px 16px;}
-.oc{background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 3px 16px rgba(0,0,0,0.08);margin-bottom:12px;}
+.oc{background:#fff;border-radius:18px;box-shadow:0 3px 16px rgba(0,0,0,0.08);margin-bottom:12px;}
 
 /* Header */
 .oc-header{padding:18px 20px 16px;border-bottom:1px solid #f1f5f9;}
@@ -350,7 +350,7 @@ function loadOrder(code){
       document.getElementById("dc-advance").textContent="₹"+(o.advance_paid||0);
       document.getElementById("dc-remaining").textContent="₹"+(o.remaining||0);
       var modeEl=document.getElementById("dc-mode"),modeRow=document.getElementById("dc-mode-row");
-      if(o.payment_mode){modeEl.textContent=o.payment_mode==="cash"?"💵 Cash":o.payment_mode==="upi"?"📱 UPI":"🏦 Bank";modeRow.style.display="flex";}
+      if(o.payment_mode && o.delivered_at_fmt){modeEl.textContent=o.payment_mode==="cash"?"💵 Cash":o.payment_mode==="upi"?"📱 UPI":"🏦 Bank";modeRow.style.display="flex";}
       else modeRow.style.display="none";
       var delEl=document.getElementById("dc-deldate"),delRow=document.getElementById("dc-deldate-row");
       var delBannerSub=document.getElementById("dc-deldate-banner");
