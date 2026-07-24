@@ -6,15 +6,15 @@ body{background:#f0f2f5;}
 
 /* ── DESKTOP LAYOUT: blue bar goes full width; search box + results + order card sit centered in a wide, comfortable column ─ */
 @media (min-width:769px){
-  .pu-top{padding:32px 40px 40px;}
-  .pu-search-wrap{max-width:720px;margin:0 auto;}
-  .pu-search-wrap input{padding:20px 56px 20px 26px;font-size:20px;}
-  #search-results{max-width:720px;margin:0 auto;}
-  #empty-state{max-width:720px;margin:60px auto 0;}
-  #delivery-card{max-width:1000px;margin:0 auto;padding:28px 0 40px;}
+  body .pu-top{padding:32px 40px 40px;}
+  body .pu-search-wrap{max-width:720px;margin:0 auto;}
+  body .pu-search-wrap input{padding:20px 56px 20px 26px;font-size:20px;}
+  body #search-results{max-width:720px;margin:0 auto;}
+  body #empty-state{max-width:720px;margin:60px auto 0;}
+  body #delivery-card{max-width:1000px;margin:0 auto;padding:28px 0 40px;}
 }
 @media (min-width:1200px){
-  .oc{
+  body .oc{
     display:grid;
     grid-template-columns:1fr 1fr;
     align-items:start;
@@ -25,14 +25,14 @@ body{background:#f0f2f5;}
       "photos photos"
       "actions actions";
   }
-  .oc-header{grid-area:header;}
-  .oc-garments{grid-area:garments;}
-  .oc-pay{grid-area:payment;border-right:1px solid #f1f5f9;border-bottom:none;}
-  .oc-photos{grid-area:photos;}
-  .oc-delivered{grid-area:action;align-self:center;}
-  .oc-force{grid-area:action;border-bottom:none;}
-  .oc-pay-sec{grid-area:action;}
-  .oc-actions{grid-area:actions;}
+  body .oc-header{grid-area:header;}
+  body .oc-garments{grid-area:garments;}
+  body .oc-pay{grid-area:payment;border-right:1px solid #f1f5f9;border-bottom:none;}
+  body .oc-photos{grid-area:photos;}
+  body .oc-delivered{grid-area:action;align-self:center;}
+  body .oc-force{grid-area:action;border-bottom:none;}
+  body .oc-pay-sec{grid-area:action;}
+  body .oc-actions{grid-area:actions;}
 }
 
 /* ── SEARCH ─────────────────────────────────────── */
