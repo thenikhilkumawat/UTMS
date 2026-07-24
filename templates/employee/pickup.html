@@ -390,7 +390,7 @@ function loadOrder(code){
       document.getElementById("pu-delivered-banner").style.display=o.status==="delivered"?"block":"none";
       // WhatsApp only after delivery
       var waDiv=document.getElementById("wa-buttons");
-      if(waDiv) waDiv.style.display=o.status==="delivered"?"flex":"none";
+      if(waDiv) waDiv.style.display=(o.status==="delivered"||o.status==="ready")?"flex":"none";
       fetch("/images/"+o.order_code+"?ts="+Date.now()).then(function(r){return r.text();}).then(function(html){
         var imgBox=document.getElementById("dc-images"),strip=document.getElementById("photos-strip");
         if(html&&html.trim()){
@@ -447,9 +447,14 @@ function sendDeliveryWA(lang){
   var items=(o.garments||o.items||[]).map(function(i){return i.garment_type+" ×"+i.quantity;}).join(", ");
   var mode=o.payment_mode==="cash"?(lang==="hi"?"नकद":"Cash"):"UPI";
   var total=Math.round(o.payable_amount||0);
+  var isReady = o.status==="ready";
   var msg=lang==="hi"
-    ?"*उत्तम टेलर्स*\nनमस्ते *"+o.customer_name+"* जी,\nआपके कपड़े डिलीवर हो गए।\n📦 #"+o.order_code+"\n👗 "+items+"\n💰 ₹"+total+" ("+mode+")\nधन्यवाद! 🙏"
-    :"*Uttam Tailors*\nHello *"+o.customer_name+"*,\nYour order is delivered.\n📦 #"+o.order_code+"\n👗 "+items+"\n💰 ₹"+total+" ("+mode+")\nThank you! 🙏";
+    ? (isReady
+        ? "*उत्तम टेलर्स*\nनमस्ते *"+o.customer_name+"* जी 🙏\nआपके कपड़े तैयार हैं, कृपया आकर ले जाएं।\n📦 Order: #"+o.order_code+"\n👗 "+items+"\n💰 Total: ₹"+total+"\nधन्यवाद!"
+        : "*उत्तम टेलर्स*\nनमस्ते *"+o.customer_name+"* जी,\nआपके कपड़े डिलीवर हो गए।\n📦 #"+o.order_code+"\n👗 "+items+"\n💰 ₹"+total+" ("+mode+")\nधन्यवाद! 🙏")
+    : (isReady
+        ? "*Uttam Tailors*\nHello *"+o.customer_name+"*,\nYour order is ready! Please come and collect it.\n📦 Order: #"+o.order_code+"\n👗 "+items+"\n💰 Total: ₹"+total+"\nThank you!"
+        : "*Uttam Tailors*\nHello *"+o.customer_name+"*,\nYour order is delivered.\n📦 #"+o.order_code+"\n👗 "+items+"\n💰 ₹"+total+" ("+mode+")\nThank you! 🙏");
   if(o.mobile){var p=o.mobile.replace(/\D/g,"");if(p.length===10)p="91"+p;window.open("https://wa.me/"+p+"?text="+encodeURIComponent(msg),"_blank");}
 }
 
