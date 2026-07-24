@@ -4,11 +4,14 @@
 *{box-sizing:border-box;}
 body{background:#f0f2f5;}
 
-/* ── DESKTOP LAYOUT (matches Finance page pattern: fixed search panel + flexible content panel, full width — collapses to normal mobile stack below 769px) ─ */
+/* ── DESKTOP LAYOUT: blue bar goes full width; search box + results + order card sit centered in a wide, comfortable column ─ */
 @media (min-width:769px){
-  .pu-page{display:grid;grid-template-columns:380px 1fr;min-height:100vh;}
-  .pu-search-col{background:#fff;border-right:1px solid #e5e7eb;min-height:100vh;}
-  .pu-order-col{padding:28px 36px;}
+  .pu-top{padding:32px 40px 40px;}
+  .pu-search-wrap{max-width:720px;margin:0 auto;}
+  .pu-search-wrap input{padding:20px 56px 20px 26px;font-size:20px;}
+  #search-results{max-width:720px;margin:0 auto;}
+  #empty-state{max-width:720px;margin:60px auto 0;}
+  #delivery-card{max-width:1000px;margin:0 auto;padding:28px 0 40px;}
 }
 @media (min-width:1200px){
   .oc{
