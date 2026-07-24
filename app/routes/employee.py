@@ -1715,14 +1715,24 @@ def order_status():
     for row in conn.execute(f"SELECT customer_id, COUNT(*) as cnt FROM orders WHERE customer_id IN ({vis_cids}) GROUP BY customer_id").fetchall():
         cust_counts[row["customer_id"]] = row["cnt"]
 
-    # Bulk load ALL order items at once
-    all_items = conn.execute("SELECT id, order_id, garment_type, quantity, rate, amount, measurements, notes FROM order_items").fetchall()
+    # Bulk load order items for VISIBLE orders only (was scanning the whole table every load)
+    vis_ids = [o["id"] for o in raw]
+    if vis_ids:
+        ph_ids = ",".join(["?"] * len(vis_ids))
+        all_items = conn.execute(f"SELECT id, order_id, garment_type, quantity, rate, amount, measurements, notes FROM order_items WHERE order_id IN ({ph_ids})", tuple(vis_ids)).fetchall()
+    else:
+        all_items = []
     items_by_order = {}
     for it in all_items:
         items_by_order.setdefault(it["order_id"], []).append(it)
 
-    # Bulk load ALL work logs at once
-    all_wl = conn.execute("SELECT order_code, qty_done, notes FROM work_logs").fetchall()
+    # Bulk load work logs for VISIBLE orders only (was scanning the whole table every load)
+    vis_codes = [o["order_code"] for o in raw]
+    if vis_codes:
+        ph_codes = ",".join(["?"] * len(vis_codes))
+        all_wl = conn.execute(f"SELECT order_code, qty_done, notes FROM work_logs WHERE order_code IN ({ph_codes})", tuple(vis_codes)).fetchall()
+    else:
+        all_wl = []
     wl_by_code = {}
     for wl in all_wl:
         wl_by_code.setdefault(wl["order_code"], []).append(wl)
@@ -1922,11 +1932,15 @@ def order_status():
             })
         o["prev_orders_full"] = prev
 
-    # Load images for all orders (batch query)
-    all_images = conn.execute("""
-        SELECT oi.order_id, oi.file_path FROM order_images oi
-        WHERE oi.file_path NOT LIKE 'temp:%'
-    """).fetchall()
+    # Load images for VISIBLE orders only (was scanning the whole table every load)
+    if vis_ids:
+        ph_img = ",".join(["?"] * len(vis_ids))
+        all_images = conn.execute(f"""
+            SELECT oi.order_id, oi.file_path FROM order_images oi
+            WHERE oi.file_path NOT LIKE 'temp:%' AND oi.order_id IN ({ph_img})
+        """, tuple(vis_ids)).fetchall()
+    else:
+        all_images = []
     images_by_order = {}
     for img in all_images:
         images_by_order.setdefault(img["order_id"], []).append(img["file_path"])
