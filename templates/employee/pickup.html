@@ -38,6 +38,10 @@ body{background:#f0f2f5;}
 /* ── SEARCH ─────────────────────────────────────── */
 .pu-top{background:linear-gradient(135deg,#1e1b4b,#312e81);padding:18px 16px 20px;}
 .pu-title{color:#a5b4fc;font-size:12px;font-weight:800;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;}
+.pu-top-row{display:flex;justify-content:space-between;align-items:center;}
+.lang-toggle{display:flex;background:rgba(255,255,255,0.12);border-radius:20px;padding:3px;gap:2px;flex-shrink:0;}
+.lang-btn{padding:7px 16px;border:none;background:transparent;color:rgba(255,255,255,0.65);font-size:14px;font-weight:800;border-radius:16px;cursor:pointer;transition:all .15s;}
+.lang-btn.active{background:#fff;color:#312e81;}
 .pu-search-wrap{position:relative;}
 .pu-search-wrap input{
   width:100%;padding:16px 50px 16px 20px;
@@ -143,7 +147,13 @@ body{background:#f0f2f5;}
 <div class="pu-search-col">
 <!-- Search Header -->
 <div class="pu-top">
-  <div class="pu-title">🚚 Pickup &amp; Delivery</div>
+  <div class="pu-top-row">
+    <div class="pu-title" id="pu-title-text">🚚 Pickup &amp; Delivery</div>
+    <div class="lang-toggle">
+      <button class="lang-btn" data-lang="hi" onclick="setLang('hi')">हिं</button>
+      <button class="lang-btn" data-lang="en" onclick="setLang('en')">EN</button>
+    </div>
+  </div>
   <div class="pu-search-wrap">
     <input type="text" id="pickup-search" placeholder="Naam, mobile ya order code..."
       oninput="debounceSearch()" onkeydown="if(event.key==='Enter')doSearch();" autocomplete="off">
@@ -157,8 +167,8 @@ body{background:#f0f2f5;}
 <!-- Empty State -->
 <div id="empty-state">
   <div class="pu-empty-icon">🧵</div>
-  <div class="pu-empty-title">Koi order select nahi hai</div>
-  <div class="pu-empty-sub">Upar search karo — naam, mobile ya order number</div>
+  <div class="pu-empty-title" id="empty-title">Koi order select nahi hai</div>
+  <div class="pu-empty-sub" id="empty-sub">Upar search karo — naam, mobile ya order number</div>
 </div>
 </div>
 
@@ -183,57 +193,57 @@ body{background:#f0f2f5;}
     <!-- Payment Summary -->
     <div class="oc-pay">
       <div class="oc-pay-row">
-        <span class="oc-pay-label">Total</span>
+        <span class="oc-pay-label" id="lbl-total">Total</span>
         <span class="oc-pay-val" id="dc-total">—</span>
       </div>
       <div class="oc-pay-row">
-        <span class="oc-pay-label">Advance Paid</span>
+        <span class="oc-pay-label" id="lbl-advance">Advance Paid</span>
         <span class="oc-pay-val" style="color:#16a34a;" id="dc-advance">—</span>
       </div>
       <hr class="oc-divider">
       <div class="oc-pay-row oc-due-row">
-        <span style="font-size:15px;font-weight:800;color:#1e293b;">Due</span>
+        <span style="font-size:15px;font-weight:800;color:#1e293b;" id="lbl-due">Due</span>
         <span class="oc-due" id="dc-remaining">—</span>
       </div>
       <div class="oc-pay-row" id="dc-mode-row" style="display:none;margin-top:6px;">
-        <span class="oc-pay-label">Mode</span>
+        <span class="oc-pay-label" id="lbl-mode">Mode</span>
         <span style="font-size:14px;font-weight:800;color:#4338ca;" id="dc-mode">—</span>
       </div>
       <div class="oc-pay-row" id="dc-deldate-row" style="display:none;margin-top:4px;">
-        <span class="oc-pay-label">Delivered On</span>
+        <span class="oc-pay-label" id="lbl-deldate">Delivered On</span>
         <span style="font-size:14px;font-weight:700;color:#16a34a;" id="dc-deldate">—</span>
       </div>
     </div>
 
     <!-- Photos -->
     <div class="oc-photos" id="photos-strip">
-      <div class="oc-photos-label">📷 Photos</div>
+      <div class="oc-photos-label" id="lbl-photos">📷 Photos</div>
       <div class="oc-photos-row" id="dc-images"></div>
     </div>
 
     <!-- Delivered Banner -->
     <div id="pu-delivered-banner" style="display:none;" class="oc-delivered">
       <div class="oc-delivered-icon">✅</div>
-      <div class="oc-delivered-title">Deliver Ho Gaya!</div>
+      <div class="oc-delivered-title" id="lbl-delivered-title">Deliver Ho Gaya!</div>
       <div class="oc-delivered-sub" id="dc-deldate-banner"></div>
     </div>
 
     <!-- Force Ready -->
     <div class="oc-force" id="pending-section" style="display:none;">
-      <div class="oc-force-label">⚠️ Order abhi ready nahi hai</div>
+      <div class="oc-force-label" id="lbl-force-label">⚠️ Order abhi ready nahi hai</div>
       <button class="oc-force-btn" id="force-ready-btn" onclick="forceMarkReady()">⚡ Force Mark as Ready</button>
     </div>
 
     <!-- Payment Section -->
     <div class="oc-pay-sec" id="payment-section" style="display:none;">
-      <div class="oc-pay-sec-title">💳 Payment Collect Karo</div>
-      <div style="font-size:12px;color:#64748b;margin-bottom:12px;margin-top:-6px;">Payment mode chunke deliver karo 👇</div>
+      <div class="oc-pay-sec-title" id="lbl-pay-sec-title">💳 Payment Collect Karo</div>
+      <div style="font-size:12px;color:#64748b;margin-bottom:12px;margin-top:-6px;" id="lbl-pay-sub">Payment mode chunke deliver karo 👇</div>
       <div class="oc-mode-toggle">
         <button class="oc-mode-btn active" id="mode-cash" onclick="setPayMode('cash')">💵 Cash</button>
         <button class="oc-mode-btn" id="mode-upi" onclick="setPayMode('upi')">📱 UPI</button>
       </div>
       <div class="oc-upi-panel" id="upi-panel">
-        <div class="oc-upi-label">UPI Amount</div>
+        <div class="oc-upi-label" id="lbl-upi-amount">UPI Amount</div>
         <div class="oc-upi-amt">₹<span id="upi-amt">0</span></div>
       </div>
       <div class="oc-amt-wrap">
@@ -253,7 +263,7 @@ body{background:#f0f2f5;}
         <button class="oc-wa-btn" onclick="sendDeliveryWA('hi')">🟢 WhatsApp हिंदी</button>
         <button class="oc-wa-btn" onclick="sendDeliveryWA('en')">🟢 EN</button>
       </div>
-      <button class="oc-new-btn" onclick="searchAnother()">🔍 New Search</button>
+      <button class="oc-new-btn" id="new-search-btn" onclick="searchAnother()">🔍 New Search</button>
     </div>
   </div>
 </div>
@@ -267,6 +277,97 @@ body{background:#f0f2f5;}
 
 <script>
 var currentCode="",currentOrder={},payMode="cash",searchTimer=null;
+var LANG=(function(){try{return localStorage.getItem("pu_lang")||"hi";}catch(e){return "hi";}})();
+
+var I18N={
+  hi:{
+    title:"🚚 पिकअप और डिलीवरी",
+    searchPlaceholder:"नाम, मोबाइल या ऑर्डर कोड...",
+    emptyTitle:"कोई ऑर्डर चुना नहीं है",
+    emptySub:"ऊपर सर्च करें — नाम, मोबाइल या ऑर्डर नंबर",
+    searching:"🔍 ढूंढ रहा है...",
+    notFound:"❌ कोई ऑर्डर नहीं मिला",
+    lblTotal:"कुल",lblAdvance:"एडवांस",lblDue:"बकाया",lblMode:"तरीका",lblDelivered:"डिलीवर हुआ",lblPhotos:"📷 फोटो",
+    deliveredTitle:"डिलीवर हो गया!",
+    forceLabel:"⚠️ ऑर्डर अभी तैयार नहीं है",forceBtn:"⚡ जबरन तैयार करें",forceBtnProcessing:"प्रोसेस हो रहा है...",
+    paySecTitle:"💳 पेमेंट कलेक्ट करो",paySub:"पेमेंट का तरीका चुनकर डिलीवर करो 👇",
+    cashBtn:"💵 नकद",upiBtn:"📱 UPI",upiAmountLabel:"यूपीआई राशि",
+    receiverName:"लेने वाले का नाम",receiverMobile:"मोबाइल नंबर",
+    collectBtn:"✅ पेमेंट लो और डिलीवर करो",collectBtnProcessing:"प्रोसेस हो रहा है...",
+    newSearch:"🔍 नई खोज",
+    statusPending:"पेंडिंग",statusReady:"तैयार",statusDelivered:"डिलीवर हुआ",statusCancelled:"रद्द",
+    modeCash:"💵 नकद",modeUpi:"📱 यूपीआई",modeBank:"🏦 बैंक",
+    deliveredOnText:function(d){return d+" को डिलीवर हुआ";},
+    toastNotFound:"ऑर्डर नहीं मिला",toastLoadError:"ऑर्डर लोड करने में गड़बड़ी",
+    toastReady:"✅ तैयार!",toastDelivered:"✅ डिलीवर हो गया!",toastFailed:"असफल",
+    toastNetworkError:"❌ नेटवर्क में गड़बड़ी",toastTimeout:"समय समाप्त",
+    garments:{Pant:"पैंट",Shirt:"शर्ट",Jeans:"जींस",Kurta:"कुर्ता",Blouse:"ब्लाउज",Suit:"सूट",Saree:"साड़ी",Lehenga:"लहंगा",Salwar:"सलवार",Dress:"ड्रेस",Coat:"कोट",Sherwani:"शेरवानी",Pajama:"पजामा","School Dress":"स्कूल ड्रेस"}
+  },
+  en:{
+    title:"🚚 Pickup & Delivery",
+    searchPlaceholder:"Naam, mobile ya order code...",
+    emptyTitle:"No order selected",
+    emptySub:"Search above — name, mobile or order number",
+    searching:"🔍 Searching...",
+    notFound:"❌ No order found",
+    lblTotal:"Total",lblAdvance:"Advance Paid",lblDue:"Due",lblMode:"Mode",lblDelivered:"Delivered On",lblPhotos:"📷 Photos",
+    deliveredTitle:"Delivered!",
+    forceLabel:"⚠️ Order not ready yet",forceBtn:"⚡ Force Mark as Ready",forceBtnProcessing:"Processing...",
+    paySecTitle:"💳 Collect Payment",paySub:"Choose payment mode to deliver 👇",
+    cashBtn:"💵 Cash",upiBtn:"📱 UPI",upiAmountLabel:"UPI Amount",
+    receiverName:"Receiver Name",receiverMobile:"Mobile",
+    collectBtn:"✅ Collect & Mark Delivered",collectBtnProcessing:"Processing...",
+    newSearch:"🔍 New Search",
+    statusPending:"PENDING",statusReady:"READY",statusDelivered:"DELIVERED",statusCancelled:"CANCELLED",
+    modeCash:"💵 Cash",modeUpi:"📱 UPI",modeBank:"🏦 Bank",
+    deliveredOnText:function(d){return "Delivered on "+d;},
+    toastNotFound:"Order not found",toastLoadError:"Error loading order",
+    toastReady:"✅ Ready!",toastDelivered:"✅ Delivered!",toastFailed:"Failed",
+    toastNetworkError:"❌ Network error",toastTimeout:"Timeout",
+    garments:{}
+  }
+};
+
+function garmentLabel(name){
+  var g=I18N[LANG].garments;
+  return (LANG==="hi" && g[name]) ? g[name] : name;
+}
+
+function setLang(l){
+  LANG=l;
+  try{localStorage.setItem("pu_lang",l);}catch(e){}
+  applyLang();
+}
+
+function applyLang(){
+  var t=I18N[LANG];
+  document.getElementById("pu-title-text").textContent=t.title;
+  document.getElementById("pickup-search").placeholder=t.searchPlaceholder;
+  document.getElementById("empty-title").textContent=t.emptyTitle;
+  document.getElementById("empty-sub").textContent=t.emptySub;
+  document.getElementById("lbl-total").textContent=t.lblTotal;
+  document.getElementById("lbl-advance").textContent=t.lblAdvance;
+  document.getElementById("lbl-due").textContent=t.lblDue;
+  document.getElementById("lbl-mode").textContent=t.lblMode;
+  document.getElementById("lbl-deldate").textContent=t.lblDelivered;
+  document.getElementById("lbl-photos").textContent=t.lblPhotos;
+  document.getElementById("lbl-delivered-title").textContent=t.deliveredTitle;
+  document.getElementById("lbl-force-label").textContent=t.forceLabel;
+  var frBtn=document.getElementById("force-ready-btn");
+  if(!frBtn.disabled) frBtn.textContent=t.forceBtn;
+  document.getElementById("lbl-pay-sec-title").textContent=t.paySecTitle;
+  document.getElementById("lbl-pay-sub").textContent=t.paySub;
+  document.getElementById("mode-cash").textContent=t.cashBtn;
+  document.getElementById("mode-upi").textContent=t.upiBtn;
+  document.getElementById("lbl-upi-amount").textContent=t.upiAmountLabel;
+  document.getElementById("receiver-name").placeholder=t.receiverName;
+  document.getElementById("receiver-mobile").placeholder=t.receiverMobile;
+  var colBtn=document.getElementById("collect-btn");
+  if(!colBtn.disabled) colBtn.textContent=t.collectBtn;
+  document.getElementById("new-search-btn").textContent=t.newSearch;
+  document.querySelectorAll(".lang-btn").forEach(function(b){b.classList.toggle("active",b.getAttribute("data-lang")===LANG);});
+  if(currentOrder && currentOrder.order_code) renderOrder(currentOrder);
+}
 
 function debounceSearch(){
   clearTimeout(searchTimer);
@@ -280,16 +381,17 @@ function doPickup(code){
 }
 
 function doSearch(){
+  var t=I18N[LANG];
   var q=document.getElementById("pickup-search").value.trim();
   if(!q) return;
   var res=document.getElementById("search-results");
-  res.innerHTML='<div style="padding:18px 20px;color:#94a3b8;font-size:15px;">🔍 Dhoondh raha hai...</div>';
+  res.innerHTML='<div style="padding:18px 20px;color:#94a3b8;font-size:15px;">'+t.searching+'</div>';
   fetch("/api/pickup/search?q="+encodeURIComponent(q))
     .then(function(r){return r.json();})
     .then(function(data){
       res.innerHTML='';
       if(!data.length){
-        res.innerHTML='<div style="padding:18px 20px;color:#dc2626;font-size:15px;">❌ Koi order nahi mila</div>';
+        res.innerHTML='<div style="padding:18px 20px;color:#dc2626;font-size:15px;">'+t.notFound+'</div>';
         return;
       }
       // Group by customer name
@@ -311,12 +413,13 @@ function doSearch(){
         groups[name].forEach(function(o){
           var sc=o.status==="ready"?"#16a34a":o.status==="delivered"?"#6366f1":"#d97706";
           var sbg=o.status==="ready"?"#dcfce7":o.status==="delivered"?"#ede9fe":"#fef3c7";
+          var statusMap={pending:t.statusPending,ready:t.statusReady,delivered:t.statusDelivered,cancelled:t.statusCancelled};
           var item=document.createElement("div");
           item.className="pu-result-item";
           item.innerHTML=(
             "<div class='pu-result-top'>"
             +"<span class='pu-result-code'>#"+o.order_code+"</span>"
-            +"<span class='pu-status-pill' style='background:"+sbg+";color:"+sc+";'>"+o.status+"</span>"
+            +"<span class='pu-status-pill' style='background:"+sbg+";color:"+sc+";'>"+(statusMap[o.status]||o.status)+"</span>"
             +"</div>"
             +"<div class='pu-result-name'>"+o.customer_name+"</div>"
             +"<div class='pu-result-meta'>📱 "+(o.mobile||"—")+(o.garments?" · "+o.garments:"")+"</div>"
@@ -330,6 +433,42 @@ function doSearch(){
 }
 
 
+function renderOrder(o){
+  var t=I18N[LANG];
+  document.getElementById("dc-code").textContent="#"+(o.display_code||o.order_code)+(o.entry_code?"  (Entry #"+o.entry_code+")":"");
+  document.getElementById("dc-customer").textContent=o.customer_name;
+  var meta=[];
+  if(o.mobile) meta.push("📱 "+o.mobile);
+  if(o.address) meta.push("📍 "+o.address);
+  if(o.order_date_fmt) meta.push("📅 "+o.order_date_fmt+" → "+(o.delivery_date_fmt||"—"));
+  document.getElementById("dc-meta").innerHTML=meta.join("  ·  ");
+  document.getElementById("dc-total").textContent="₹"+(o.payable_amount||0);
+  document.getElementById("dc-advance").textContent="₹"+(o.advance_paid||0);
+  document.getElementById("dc-remaining").textContent="₹"+(o.remaining||0);
+  var modeEl=document.getElementById("dc-mode"),modeRow=document.getElementById("dc-mode-row");
+  if(o.payment_mode && o.delivered_at_fmt){modeEl.textContent=o.payment_mode==="cash"?t.modeCash:o.payment_mode==="upi"?t.modeUpi:t.modeBank;modeRow.style.display="flex";}
+  else modeRow.style.display="none";
+  var delEl=document.getElementById("dc-deldate"),delRow=document.getElementById("dc-deldate-row");
+  var delBannerSub=document.getElementById("dc-deldate-banner");
+  if(o.delivered_at_fmt){delEl.textContent="✅ "+o.delivered_at_fmt;delRow.style.display="flex";if(delBannerSub)delBannerSub.textContent=t.deliveredOnText(o.delivered_at_fmt);}
+  else delRow.style.display="none";
+  var sb=document.getElementById("dc-status-badge");
+  var colors={pending:"background:#fef3c7;color:#92400e;",ready:"background:#dcfce7;color:#166534;",delivered:"background:#ede9fe;color:#5b21b6;",cancelled:"background:#fee2e2;color:#991b1b;"};
+  sb.style.cssText=(colors[o.status]||colors.pending)+"border-radius:20px;padding:4px 12px;font-size:12px;font-weight:800;";
+  var statusMap={pending:t.statusPending,ready:t.statusReady,delivered:t.statusDelivered,cancelled:t.statusCancelled};
+  sb.textContent=statusMap[o.status]||o.status.toUpperCase();
+  document.getElementById("dc-garments").innerHTML=(o.garments||o.items||[]).map(function(it){return'<span class="oc-chip">'+garmentLabel(it.garment_type)+' ×'+it.quantity+'</span>';}).join("")||'<span style="color:#94a3b8;">—</span>';
+  var rem=parseFloat(o.remaining||0);
+  document.getElementById("dc-amount").value=rem>0?rem:"";
+  document.getElementById("upi-amt").textContent=rem>0?rem:0;
+  document.getElementById("pending-section").style.display=o.status==="pending"?"block":"none";
+  document.getElementById("payment-section").style.display=o.status==="ready"?"block":"none";
+  document.getElementById("pu-delivered-banner").style.display=o.status==="delivered"?"block":"none";
+  // WhatsApp only after delivery
+  var waDiv=document.getElementById("wa-buttons");
+  if(waDiv) waDiv.style.display=(o.status==="delivered"||o.status==="ready")?"flex":"none";
+}
+
 function loadOrder(code){
   currentCode=code;
   document.getElementById("empty-state").style.display="none";
@@ -337,39 +476,9 @@ function loadOrder(code){
   fetch("/api/pickup/order?code="+code)
     .then(function(r){return r.json();})
     .then(function(o){
-      if(o.error){showToast("Order not found","error");return;}
+      if(o.error){showToast(I18N[LANG].toastNotFound,"error");return;}
       currentOrder=o;
-      document.getElementById("dc-code").textContent="#"+(o.display_code||o.order_code)+(o.entry_code?"  (Entry #"+o.entry_code+")":"");
-      document.getElementById("dc-customer").textContent=o.customer_name;
-      var meta=[];
-      if(o.mobile) meta.push("📱 "+o.mobile);
-      if(o.address) meta.push("📍 "+o.address);
-      if(o.order_date_fmt) meta.push("📅 "+o.order_date_fmt+" → "+(o.delivery_date_fmt||"—"));
-      document.getElementById("dc-meta").innerHTML=meta.join("  ·  ");
-      document.getElementById("dc-total").textContent="₹"+(o.payable_amount||0);
-      document.getElementById("dc-advance").textContent="₹"+(o.advance_paid||0);
-      document.getElementById("dc-remaining").textContent="₹"+(o.remaining||0);
-      var modeEl=document.getElementById("dc-mode"),modeRow=document.getElementById("dc-mode-row");
-      if(o.payment_mode && o.delivered_at_fmt){modeEl.textContent=o.payment_mode==="cash"?"💵 Cash":o.payment_mode==="upi"?"📱 UPI":"🏦 Bank";modeRow.style.display="flex";}
-      else modeRow.style.display="none";
-      var delEl=document.getElementById("dc-deldate"),delRow=document.getElementById("dc-deldate-row");
-      var delBannerSub=document.getElementById("dc-deldate-banner");
-      if(o.delivered_at_fmt){delEl.textContent="✅ "+o.delivered_at_fmt;delRow.style.display="flex";if(delBannerSub)delBannerSub.textContent=o.delivered_at_fmt+" ko deliver hua";}
-      else delRow.style.display="none";
-      var sb=document.getElementById("dc-status-badge");
-      var colors={pending:"background:#fef3c7;color:#92400e;",ready:"background:#dcfce7;color:#166534;",delivered:"background:#ede9fe;color:#5b21b6;",cancelled:"background:#fee2e2;color:#991b1b;"};
-      sb.style.cssText=(colors[o.status]||colors.pending)+"border-radius:20px;padding:4px 12px;font-size:12px;font-weight:800;";
-      sb.textContent=o.status.toUpperCase();
-      document.getElementById("dc-garments").innerHTML=(o.garments||o.items||[]).map(function(it){return'<span class="oc-chip">'+it.garment_type+' ×'+it.quantity+'</span>';}).join("")||'<span style="color:#94a3b8;">—</span>';
-      var rem=parseFloat(o.remaining||0);
-      document.getElementById("dc-amount").value=rem>0?rem:"";
-      document.getElementById("upi-amt").textContent=rem>0?rem:0;
-      document.getElementById("pending-section").style.display=o.status==="pending"?"block":"none";
-      document.getElementById("payment-section").style.display=o.status==="ready"?"block":"none";
-      document.getElementById("pu-delivered-banner").style.display=o.status==="delivered"?"block":"none";
-      // WhatsApp only after delivery
-      var waDiv=document.getElementById("wa-buttons");
-      if(waDiv) waDiv.style.display=(o.status==="delivered"||o.status==="ready")?"flex":"none";
+      renderOrder(o);
       fetch("/images/"+o.order_code+"?ts="+Date.now()).then(function(r){return r.text();}).then(function(html){
         var imgBox=document.getElementById("dc-images"),strip=document.getElementById("photos-strip");
         if(html&&html.trim()){
@@ -385,7 +494,7 @@ function loadOrder(code){
         } else strip.style.display="none";
       }).catch(function(){document.getElementById("photos-strip").style.display="none";});
       document.getElementById("delivery-card").style.display="block";
-    }).catch(function(){showToast("Error loading order","error");});
+    }).catch(function(){showToast(I18N[LANG].toastLoadError,"error");});
 }
 
 function setPayMode(mode){
@@ -396,29 +505,31 @@ function setPayMode(mode){
 }
 
 function forceMarkReady(){
+  var t=I18N[LANG];
   var btn=document.getElementById("force-ready-btn");
-  btn.disabled=true;btn.textContent="Processing...";
-  var _t=setTimeout(function(){btn.disabled=false;btn.textContent="⚡ Force Mark as Ready";showToast("Timeout","error");},10000);
+  btn.disabled=true;btn.textContent=t.forceBtnProcessing;
+  var _t=setTimeout(function(){btn.disabled=false;btn.textContent=t.forceBtn;showToast(t.toastTimeout,"error");},10000);
   fetch("/api/pickup/force-complete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({order_code:currentCode})})
     .then(function(r){return r.json();}).then(function(d){
       clearTimeout(_t);
-      if(d.ok){showToast("✅ Ready!","success");setTimeout(function(){loadOrder(currentCode);},400);}
-      else{showToast("❌ "+(d.error||"Failed"),"error");btn.disabled=false;btn.textContent="⚡ Force Mark as Ready";}
-    }).catch(function(){clearTimeout(_t);btn.disabled=false;btn.textContent="⚡ Force Mark as Ready";showToast("❌ Network error","error");});
+      if(d.ok){showToast(t.toastReady,"success");setTimeout(function(){loadOrder(currentCode);},400);}
+      else{showToast("❌ "+(d.error||t.toastFailed),"error");btn.disabled=false;btn.textContent=t.forceBtn;}
+    }).catch(function(){clearTimeout(_t);btn.disabled=false;btn.textContent=t.forceBtn;showToast(t.toastNetworkError,"error");});
 }
 
 function collectAndDeliver(isDiscount){
+  var t=I18N[LANG];
   var amt=parseFloat(document.getElementById("dc-amount").value)||0;
   var rn=(document.getElementById("receiver-name").value||"").trim();
   var rm=(document.getElementById("receiver-mobile").value||"").trim();
   var btn=document.getElementById("collect-btn");
-  btn.disabled=true;btn.textContent="Processing...";
+  btn.disabled=true;btn.textContent=t.collectBtnProcessing;
   fetch("/api/pickup/collect-and-deliver",{method:"POST",headers:{"Content-Type":"application/json"},
     body:JSON.stringify({order_code:currentCode,amount:amt,payment_mode:payMode,receiver_name:rn,receiver_mobile:rm})})
     .then(function(r){return r.json();}).then(function(d){
-      if(d.ok){showToast("✅ Delivered!","success");setTimeout(function(){loadOrder(currentCode);},500);}
-      else{showToast("❌ "+(d.error||"Failed"),"error");btn.disabled=false;btn.textContent="✅ Collect & Mark Delivered";}
-    }).catch(function(){btn.disabled=false;btn.textContent="✅ Collect & Mark Delivered";showToast("❌ Network error","error");});
+      if(d.ok){showToast(t.toastDelivered,"success");setTimeout(function(){loadOrder(currentCode);},500);}
+      else{showToast("❌ "+(d.error||t.toastFailed),"error");btn.disabled=false;btn.textContent=t.collectBtn;}
+    }).catch(function(){btn.disabled=false;btn.textContent=t.collectBtn;showToast(t.toastNetworkError,"error");});
 }
 
 function sendDeliveryWA(lang){
@@ -444,5 +555,7 @@ function searchAnother(){
   document.getElementById("search-results").innerHTML="";
   document.getElementById("pickup-search").focus();
 }
+
+applyLang();
 </script>
 {% endblock %}
