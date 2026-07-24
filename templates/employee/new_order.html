@@ -1242,25 +1242,37 @@ function addGarment() {
 function addExistingGarment() {
   const type=document.getElementById("eg_type").value.trim();
   const qty=parseInt(document.getElementById("eg_qty").value)||1;
-  if(!type){showToast("Select garment type","warning");return;}
-  // Pre-fill measurements if we have them for this garment type
-  let meas={};
-  if(ecCustomerData) {
-    fetch("/api/customers/"+ecCustomerData.id+"/measurements").then(r=>r.json()).then(list=>{
-      const found=list.find(m=>m.garment_type===type);
-      if(found) {
-        meas={...found.measurements};
-        var selTypes = found.selectedTypes || [];
-        var notesVal = found.notes || "";
-        existingGarments.push({id:Date.now(),type,qty,rate:parseFloat(RATE_MAP[type]||0),meas,notes:notesVal,extraFields:[],selectedTypes:selTypes});
-      } else {
-        existingGarments.push({id:Date.now(),type,qty,rate:parseFloat(RATE_MAP[type]||0),meas,notes:"",extraFields:[],selectedTypes:[]});
-      }
-      renderExistingGarments();
+  if(!type){showToast("Garment type chunen","warning");return;}
+
+  function _pushGarment(meas, notes, selTypes) {
+    existingGarments.push({
+      id:Date.now()+Math.random(),
+      type, qty,
+      rate: parseFloat((RATE_MAP && RATE_MAP[type])||0),
+      meas: meas||{}, notes: notes||"",
+      extraFields:[], selectedTypes: selTypes||[]
     });
-  } else {
-    existingGarments.push({id:Date.now(),type,qty,rate:parseFloat(RATE_MAP[type]||0),meas:{},notes:"",extraFields:[],selectedTypes:[]});
     renderExistingGarments();
+    showToast(type + " add ho gaya ✅","success");
+  }
+
+  if(ecCustomerData && ecCustomerData.id) {
+    fetch("/api/customers/"+ecCustomerData.id+"/measurements")
+      .then(function(r){ return r.json(); })
+      .then(function(list){
+        const found = list && list.find(function(m){ return m.garment_type===type; });
+        if(found) {
+          _pushGarment(found.measurements, found.notes, found.selectedTypes);
+        } else {
+          _pushGarment({}, "", []);
+        }
+      })
+      .catch(function(){
+        // Network error — still add garment without old measurements
+        _pushGarment({}, "", []);
+      });
+  } else {
+    _pushGarment({}, "", []);
   }
   document.getElementById("eg_type").value=""; document.getElementById("eg_qty").value="1";
 }
