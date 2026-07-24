@@ -1826,9 +1826,15 @@ def order_status():
     raw_by_code = {r["order_code"]: r for r in raw}
 
     # Load ALL orders for customers in current view (ignoring fresh start filter)
+    # NOTE: this deep per-customer history lookup is the expensive part — only run it
+    # for active/recent orders (same set as the old fast-default). Older delivered/
+    # cancelled orders still show fully in the main list, just without the nested
+    # visit-history panel (visit_number defaults to 1 via the existing fallback below).
     all_cust_orders = {}
     try:
-        customer_ids_in_view = list({r["customer_id"] for r in raw if r["customer_id"]})
+        active_raw = [r for r in raw if r["status"] in ("pending", "ready")
+                      or (r["status"] == "delivered" and (r["delivered_at"] or "") >= week_ago)]
+        customer_ids_in_view = list({r["customer_id"] for r in active_raw if r["customer_id"]})
         if customer_ids_in_view:
             ph = ",".join(["?" ] * len(customer_ids_in_view))
             hist_raw = conn.execute(
