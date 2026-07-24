@@ -2669,12 +2669,12 @@ def api_pickup_order():
 
     # Fetch work_logs BEFORE closing connection
     work_logs = [{
-        "employee": w["employee_name"],
+        "employee": w["employee_name"] or "",
         "garment":  w["garment_type"] or "",
-        "status":   w["status"] or "pending",
-        "note":     w["note"] or ""
+        "qty":      w["qty_done"] or 0,
+        "notes":    w["notes"] or ""
     } for w in conn.execute(
-        "SELECT employee_name, garment_type, status, note FROM work_logs WHERE order_id=? ORDER BY id DESC",
+        "SELECT employee_name, garment_type, qty_done, notes FROM work_logs WHERE order_id=? ORDER BY id DESC LIMIT 10",
         (o["id"],)).fetchall()]
 
     conn.close()
