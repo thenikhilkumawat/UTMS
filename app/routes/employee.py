@@ -1666,7 +1666,8 @@ def order_status():
             ORDER BY o.id DESC
         """, date_params + (code,)).fetchall()
     elif search_q:
-        # Name/mobile search — load 500 recent, client-side filter
+        # Name / mobile search — server-side across ALL orders, no limit
+        like = f"%{search_q}%"
         raw = conn.execute(f"""
             SELECT o.id, o.order_code, o.status, o.is_urgent, o.note,
                    o.order_date, o.delivery_date, o.delivered_at, o.repeat_of,
@@ -1676,9 +1677,14 @@ def order_status():
             FROM orders o
             LEFT JOIN customers c ON c.id = o.customer_id
             WHERE 1=1 {date_clause}
+              AND (
+                LOWER(c.name)   LIKE LOWER(?)
+                OR c.mobile     LIKE ?
+                OR o.note       LIKE ?
+              )
             ORDER BY o.id DESC
-            LIMIT 500
-        """, date_params).fetchall()
+            LIMIT 100
+        """, date_params + (like, like, like)).fetchall()
     else:
         # Default: only active + last 7 days delivered (fast)
         status_clause = f"AND (o.status IN ('pending','ready') OR (o.status='delivered' AND o.delivered_at >= '{week_ago}'))"
