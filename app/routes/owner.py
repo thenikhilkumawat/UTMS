@@ -2963,30 +2963,45 @@ def api_server_stats():
     except Exception as e:
         result["ram"] = {"error": str(e)}
 
-    # CPU usage (1 sec sample)
+    # CPU usage (via /proc/loadavg — no external binary needed, works even without procps installed)
     try:
-        out = subprocess.check_output(["top", "-bn1"], text=True)
-        for line in out.splitlines():
-            if "Cpu(s)" in line or "%Cpu" in line:
-                result["cpu_line"] = line.strip()
-                break
+        with open("/proc/loadavg") as f:
+            load1, load5, load15 = f.read().split()[:3]
+        cores = os.cpu_count() or 1
+        result["cpu_line"] = f"load avg: {load1}, {load5}, {load15} (over {cores} core{'s' if cores != 1 else ''})"
+        result["cpu_load_pct_1min"] = round(float(load1) / cores * 100, 1)
     except Exception as e:
         result["cpu_line"] = str(e)
 
-    # UTMS app process memory
+    # UTMS app process memory (scan /proc/[pid]/ directly — no ps needed)
     try:
-        cmd = "ps aux | grep gunicorn | grep -v grep | awk '{sum+=$6} END {print sum/1024}'"
-        out = subprocess.check_output(cmd, shell=True, text=True).strip()
-        mb = round(float(out or 0), 1)
-        result["gunicorn_ram"] = f"{mb} MB"
+        total_kb = 0
+        for pid in os.listdir("/proc"):
+            if not pid.isdigit():
+                continue
+            try:
+                with open(f"/proc/{pid}/cmdline", "rb") as f:
+                    cmdline = f.read().replace(b"\x00", b" ").decode(errors="ignore")
+                if "gunicorn" in cmdline:
+                    with open(f"/proc/{pid}/status") as f:
+                        for line in f:
+                            if line.startswith("VmRSS:"):
+                                total_kb += int(line.split()[1])
+                                break
+            except Exception:
+                continue
+        result["gunicorn_ram"] = f"{round(total_kb / 1024, 1)} MB"
     except Exception as e:
         result["gunicorn_ram"] = str(e)
 
-    # Uptime
+    # Uptime (via /proc/uptime — no external binary needed)
     try:
-        out = subprocess.check_output(["uptime", "-p"], text=True).strip()
-        result["uptime"] = out
-    except:
+        with open("/proc/uptime") as f:
+            secs = float(f.read().split()[0])
+        d, h, m = int(secs // 86400), int((secs % 86400) // 3600), int((secs % 3600) // 60)
+        parts = ([f"{d}d"] if d else []) + ([f"{h}h"] if h else []) + [f"{m}m"]
+        result["uptime"] = "up " + " ".join(parts)
+    except Exception:
         result["uptime"] = "unknown"
 
     # Image folder size
