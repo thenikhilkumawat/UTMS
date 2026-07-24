@@ -134,14 +134,6 @@ body{background:#f0f2f5;}
 .oc-wa-btn{flex:1;padding:12px;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:12px;font-size:13px;font-weight:700;color:#15803d;cursor:pointer;text-align:center;}
 .oc-new-btn{padding:12px 16px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;font-size:13px;font-weight:700;color:#64748b;cursor:pointer;}
 
-/* Work Log */
-.oc-wl{padding:12px 20px;border-bottom:1px solid #f1f5f9;}
-.oc-wl-title{font-size:10px;font-weight:800;text-transform:uppercase;color:#94a3b8;letter-spacing:1px;margin-bottom:8px;}
-.oc-wl-row{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:13px;}
-.oc-wl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
-.oc-wl-done{background:#16a34a;}
-.oc-wl-pend{background:#f59e0b;}
-
 /* Image overlay */
 #img-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:9999;justify-content:center;align-items:center;}
 #img-overlay img{max-width:94vw;max-height:90vh;border-radius:12px;}
@@ -211,12 +203,6 @@ body{background:#f0f2f5;}
         <span class="oc-pay-label">Delivered On</span>
         <span style="font-size:14px;font-weight:700;color:#16a34a;" id="dc-deldate">—</span>
       </div>
-    </div>
-
-    <!-- Work Log -->
-    <div class="oc-wl" id="wl-section" style="display:none;">
-      <div class="oc-wl-title">🧵 Work Log</div>
-      <div id="wl-list"></div>
     </div>
 
     <!-- Photos -->
@@ -378,25 +364,6 @@ function loadOrder(code){
       var rem=parseFloat(o.remaining||0);
       document.getElementById("dc-amount").value=rem>0?rem:"";
       document.getElementById("upi-amt").textContent=rem>0?rem:0;
-      // Work logs
-      var wlSection=document.getElementById("wl-section");
-      var wlList=document.getElementById("wl-list");
-      if(o.work_logs && o.work_logs.length > 0){
-        wlList.innerHTML = o.work_logs.map(function(w){
-          var done = w.status==="done"||w.status==="complete"||w.status==="completed";
-          return '<div class="oc-wl-row">'
-            +'<div class="oc-wl-dot '+(done?'oc-wl-done':'oc-wl-pend')+'"></div>'
-            +'<span style="font-weight:700;color:#1e293b;">'+(w.garment||'Order')+'</span>'
-            +'<span style="color:#64748b;font-size:12px;">— '+w.employee+'</span>'
-            +(done?'<span style="margin-left:auto;font-size:11px;color:#16a34a;font-weight:700;">✅ Done</span>'
-                  :'<span style="margin-left:auto;font-size:11px;color:#f59e0b;font-weight:700;">⏳ Pending</span>')
-            +'</div>';
-        }).join('');
-        wlSection.style.display='block';
-      } else {
-        wlSection.style.display='none';
-      }
-
       document.getElementById("pending-section").style.display=o.status==="pending"?"block":"none";
       document.getElementById("payment-section").style.display=o.status==="ready"?"block":"none";
       document.getElementById("pu-delivered-banner").style.display=o.status==="delivered"?"block":"none";
