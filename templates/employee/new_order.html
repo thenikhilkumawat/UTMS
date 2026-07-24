@@ -363,7 +363,7 @@
     </div>
     <div style="display:flex;justify-content:space-between;">
       <button class="btn btn-ghost" onclick="goExistingStep(1)">← Back</button>
-      <button class="btn btn-primary" onclick="validateExistingGarments()">Next: Confirm →</button>
+      <button class="btn btn-primary" onclick="validateExistingGarments()" ontouchend="event.preventDefault();validateExistingGarments()" style="touch-action:manipulation;">Next: Confirm →</button>
     </div>
   </div>
 
@@ -845,13 +845,21 @@ function goExistingStep(n) {
 }
 
 function validateExistingGarments() {
-  if (!existingGarments.length) { showToast("Add at least one garment","warning"); return; }
-  if (existingGarmentsPhase === 'select') {
-    switchGarmentPhase('existingGarments','measure');
-    showToast(typeof currentLang!=="undefined"&&currentLang==="hi"?"अब हर कपड़े की माप भरें":"Now fill measurements for each garment","success");
-    return;
+  try {
+    if (!existingGarments || existingGarments.length === 0) {
+      showToast("पहले कपड़ा चुनें — Select a garment first","warning");
+      return;
+    }
+    if (existingGarmentsPhase === 'select') {
+      switchGarmentPhase('existingGarments','measure');
+      showToast("अब माप भरें — फिर Next दबाएं","success");
+      return;
+    }
+    goExistingStep(3);
+  } catch(e) {
+    console.error("validateExistingGarments error:", e);
+    showToast("Error — please retry","error");
   }
-  goExistingStep(3);
 }
 
 function validateExistingCustomer() {
