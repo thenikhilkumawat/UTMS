@@ -2924,6 +2924,82 @@ def api_smart_fix_mobile_conflicts():
         "message": f"✅ {merged} typo duplicates merged. {len(needs_review)} mobiles need manual review (genuinely different people)."
     })
 
+
+@bp.route("/api/server-stats")
+@owner_required
+def api_server_stats():
+    """Return server disk, RAM, CPU usage."""
+    import shutil, subprocess, os
+    result = {}
+
+    # Disk usage
+    try:
+        total, used, free = shutil.disk_usage("/")
+        result["disk"] = {
+            "total_gb": round(total / 1e9, 1),
+            "used_gb":  round(used  / 1e9, 1),
+            "free_gb":  round(free  / 1e9, 1),
+            "used_pct": round(used / total * 100, 1)
+        }
+    except Exception as e:
+        result["disk"] = {"error": str(e)}
+
+    # RAM usage
+    try:
+        with open("/proc/meminfo") as f:
+            mem = {}
+            for line in f:
+                k, v = line.split(":")
+                mem[k.strip()] = int(v.strip().split()[0])
+        total_mb = round(mem["MemTotal"] / 1024, 0)
+        free_mb  = round((mem.get("MemAvailable", mem.get("MemFree", 0))) / 1024, 0)
+        used_mb  = total_mb - free_mb
+        result["ram"] = {
+            "total_mb": total_mb,
+            "used_mb":  used_mb,
+            "free_mb":  free_mb,
+            "used_pct": round(used_mb / total_mb * 100, 1)
+        }
+    except Exception as e:
+        result["ram"] = {"error": str(e)}
+
+    # CPU usage (1 sec sample)
+    try:
+        out = subprocess.check_output(["top", "-bn1"], text=True)
+        for line in out.splitlines():
+            if "Cpu(s)" in line or "%Cpu" in line:
+                result["cpu_line"] = line.strip()
+                break
+    except Exception as e:
+        result["cpu_line"] = str(e)
+
+    # UTMS app process memory
+    try:
+        out = subprocess.check_output(
+            "ps aux | grep gunicorn | grep -v grep | awk '{sum+=$6} END {print sum/1024" MB"}'",
+            shell=True, text=True).strip()
+        result["gunicorn_ram"] = out or "0 MB"
+    except Exception as e:
+        result["gunicorn_ram"] = str(e)
+
+    # Uptime
+    try:
+        out = subprocess.check_output(["uptime", "-p"], text=True).strip()
+        result["uptime"] = out
+    except:
+        result["uptime"] = "unknown"
+
+    # Image folder size
+    try:
+        out = subprocess.check_output(
+            "du -sh /home/ubuntu/UTMS/order_images/ 2>/dev/null || echo '0'",
+            shell=True, text=True).strip()
+        result["images_size"] = out.split()[0] if out else "0"
+    except:
+        result["images_size"] = "unknown"
+
+    return jsonify({"ok": True, "stats": result})
+
 @bp.route("/finance")
 @owner_required
 def owner_finance():
