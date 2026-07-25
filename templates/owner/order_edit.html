@@ -404,13 +404,13 @@ function saveOrder() {
     if (d.ok) {
       showToast("✅ Order #{{ order.order_code }} saved!");
       // Go back to wherever the employee came from (preserves their
-      // search/filter state, e.g. "?q=372") instead of a blank orders
-      // list — so bulk edits (372X series) don't require re-searching
-      // every single time.
+      // search/filter state, e.g. "?q=372", or lands back on the Diary
+      // page) instead of a blank/PIN-gated orders list.
       var backUrl = "/owner/orders";
       try {
         var ref = document.referrer;
-        if (ref && new URL(ref).origin === window.location.origin && ref.indexOf("/owner/orders") !== -1) {
+        if (ref && new URL(ref).origin === window.location.origin &&
+            (ref.indexOf("/owner/orders") !== -1 || ref.indexOf("/owner/measurement-book") !== -1)) {
           backUrl = ref;
         }
       } catch(e) {}
