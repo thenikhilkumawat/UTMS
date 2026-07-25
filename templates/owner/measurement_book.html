@@ -216,10 +216,10 @@
 <!-- Results area -->
 <div style="background:#f1f5f9;min-height:100vh;padding:20px 20px 40px;">
 
-  <div id="mb-count" style="font-size:12px;font-weight:700;color:#6b7280;margin-bottom:16px;"></div>
+  <div id="mb-count" style="font-size:12px;font-weight:700;color:#6b7280;margin-bottom:16px;">{% if orders %}Showing {{ orders|length }} recent — search for more{% endif %}</div>
 
   <!-- Default: Search prompt -->
-  <div id="mb-prompt" style="text-align:center;padding:60px 20px;color:#9ca3af;">
+  <div id="mb-prompt" style="text-align:center;padding:60px 20px;color:#9ca3af;{% if orders %}display:none;{% endif %}">
     <div style="font-size:56px;margin-bottom:16px;">📖</div>
     <div style="font-size:20px;font-weight:800;color:#6366f1;margin-bottom:8px;">Kuch search karo</div>
     <div style="font-size:14px;margin-bottom:20px;">Customer ka naam, code, mobile, ya garment type likho</div>
@@ -452,6 +452,7 @@
 {% block extra_js %}
 <script>
 let searchTimer = null, searchToken = 0, initialGrid = null;
+const initialOrderCount = {{ orders|length }};
 
 function filterOrders() {
   clearTimeout(searchTimer);
@@ -466,9 +467,9 @@ async function doSearch() {
 
   if (!q) {
     grid.innerHTML = initialGrid;
-    document.getElementById("mb-prompt").style.display = "block";
+    document.getElementById("mb-prompt").style.display = initialOrderCount ? "none" : "block";
     document.getElementById("mb-empty").style.display = "none";
-    document.getElementById("mb-count").textContent = "";
+    document.getElementById("mb-count").textContent = initialOrderCount ? ("Showing " + initialOrderCount + " recent — search for more") : "";
     return;
   }
 
