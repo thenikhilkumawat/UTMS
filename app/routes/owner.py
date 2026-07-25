@@ -4990,7 +4990,6 @@ def backup_excel():
 # ══════════════════════════════════════════════
 
 @bp.route("/orders/edit/<order_code>")
-@owner_required
 def order_edit(order_code):
     import json as _json, os as _os
     from config import Config
@@ -5065,7 +5064,6 @@ def order_edit(order_code):
 
 
 @bp.route("/orders/edit/<order_code>/save", methods=["POST"])
-@owner_required
 def order_edit_save(order_code):
     import json as _json
     data = request.get_json(silent=True) or {}
