@@ -1872,7 +1872,8 @@ def measurement_book():
                        o.id, o.order_code, o.order_date, o.delivery_date, o.status,
                        o.payable_amount, o.advance_paid, o.remaining, o.note, o.is_urgent,
                        c.name as cname, c.mobile, c.address
-                FROM orders o JOIN customers c ON c.id=o.customer_id
+                FROM (SELECT * FROM orders ORDER BY id DESC LIMIT 200) o
+                JOIN customers c ON c.id = o.customer_id
                 ORDER BY o.customer_id, o.id DESC
             ) sub
             ORDER BY sub.id DESC LIMIT 40
