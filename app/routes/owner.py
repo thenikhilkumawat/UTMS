@@ -1849,20 +1849,68 @@ def sync_order_images():
 
 @bp.route("/measurement-book")
 def measurement_book():
-    import os as _os
+    import os as _os, json as _json
+
+    def fmtd(d):
+        if not d: return "—"
+        p = str(d).split("-")
+        return f"{p[2]}-{p[1]}-{p[0]}" if len(p)==3 else d
+
     conn = get_db()
     try:
         uc = conn.execute("SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status!='delivered'").fetchone()["c"]
         total_orders = conn.execute("SELECT COUNT(*) as c FROM orders").fetchone()["c"]
         db_codes = set(r["order_code"] for r in conn.execute("SELECT order_code FROM orders").fetchall())
+
+        # Recent already-filled-in orders (one card per customer, their latest
+        # order) so the Diary isn't empty until you search — old/manually
+        # entered orders show here too, not just fresh QR uploads.
+        # Capped at 40 to avoid the old thousands-of-orders perf issue.
+        recent_rows = conn.execute("""
+            SELECT * FROM (
+                SELECT DISTINCT ON (o.customer_id)
+                       o.id, o.order_code, o.order_date, o.delivery_date, o.status,
+                       o.payable_amount, o.advance_paid, o.remaining, o.note, o.is_urgent,
+                       c.name as cname, c.mobile, c.address
+                FROM orders o JOIN customers c ON c.id=o.customer_id
+                ORDER BY o.customer_id, o.id DESC
+            ) sub
+            ORDER BY sub.id DESC LIMIT 40
+        """).fetchall()
+
+        recent_ids = [r["id"] for r in recent_rows]
+        garments_by_order, image_by_order = {}, {}
+        if recent_ids:
+            ph = ",".join("?" * len(recent_ids))
+            for g in conn.execute(
+                f"SELECT order_id, garment_type, quantity, rate, notes, measurements FROM order_items WHERE order_id IN ({ph}) ORDER BY order_id, id",
+                recent_ids
+            ).fetchall():
+                try:
+                    meas = _json.loads(g["measurements"] or "{}")
+                except Exception:
+                    meas = {}
+                garments_by_order.setdefault(g["order_id"], []).append({
+                    "type": g["garment_type"], "qty": g["quantity"],
+                    "rate": int(g["rate"] or 0),
+                    "notes": g["notes"] or "", "meas": meas
+                })
+            for r in conn.execute(
+                f"SELECT order_id, file_path FROM order_images WHERE order_id IN ({ph}) AND file_path NOT LIKE ? ORDER BY order_id, id",
+                recent_ids + ["temp:%"]
+            ).fetchall():
+                if r["order_id"] not in image_by_order and r["file_path"]:
+                    image_by_order[r["order_id"]] = r["file_path"]
     finally:
         conn.close()
 
-    # Initial page: ONLY the pending QR image-only cards (usually a handful).
+    # Initial page: pending QR image-only cards (usually a handful) FIRST —
+    # they need action — followed by recent already-filled-in orders below.
     # Previously this route rendered a full card for EVERY order in the DB
     # (~thousands, hidden with display:none, searched client-side) — a 10-20MB
     # HTML response that effectively never finished loading on mobile.
-    # Search is now server-side via /owner/api/diary-search.
+    # Search is now server-side via /owner/api/diary-search for anything
+    # beyond this recent set.
     orders_data = []
     img_base = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.dirname(__file__))), "static", "order_images")
     if _os.path.isdir(img_base):
@@ -1891,6 +1939,23 @@ def measurement_book():
                 "image": f"/static/order_images/{code}/{imgs[0]}",
                 "image_only": True,
             })
+
+    for o in recent_rows:
+        orders_data.append({
+            "code": o["order_code"], "odate": fmtd(o["order_date"]),
+            "ddate": fmtd(o["delivery_date"]), "status": o["status"],
+            "urgent": bool(o["is_urgent"]),
+            "payable": int(o["payable_amount"] or 0),
+            "paid":    int(o["advance_paid"]  or 0),
+            "due":     int(o["remaining"]     or 0),
+            "note":    o["note"] or "",
+            "cname":   o["cname"]   or "—",
+            "mobile":  o["mobile"]  or "—",
+            "address": o["address"] or "—",
+            "garments": garments_by_order.get(o["id"], []),
+            "image": image_by_order.get(o["id"]),
+            "image_only": False,
+        })
 
     return render_template("owner/measurement_book.html",
         active_page="measurement_book", show_voice=False,
