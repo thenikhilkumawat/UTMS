@@ -2620,6 +2620,51 @@ def owner_customers():
 # ══════════════════════════════════════════════
 
 
+@bp.route("/mixed-customers-3701")
+@owner_required
+def mixed_customers_3701():
+    """Diagnostic (read-only): customers linked to MULTIPLE orders within the
+    order_code >= 3701 range. A customer legitimately having several past
+    orders is normal — but if two DIFFERENT people were entered with the same
+    mobile number (e.g. typo, or family number reused), Past Orders' "same
+    mobile = same person" matching silently overwrote the earlier person's
+    name/address, and every order sharing that customer_id now shows the
+    latest name. This page surfaces those groups so they can be reviewed and
+    split via /owner/api/fix-order-customer where needed. Nothing is changed here."""
+    conn = get_db()
+    rows = conn.execute("""
+        SELECT c.id as customer_id, c.name, c.mobile, c.address,
+               COUNT(*) as order_count,
+               STRING_AGG(
+                   o.order_code || '~~' || COALESCE(o.delivery_date::text,'') || '~~' || COALESCE(o.payable_amount::text,'0') || '~~' || o.status,
+                   '||' ORDER BY o.order_code::integer
+               ) as details
+        FROM orders o
+        JOIN customers c ON c.id = o.customer_id
+        WHERE o.order_code ~ '^[0-9]+$' AND o.order_code::integer >= 3701
+        GROUP BY c.id, c.name, c.mobile, c.address
+        HAVING COUNT(*) > 1
+        ORDER BY COUNT(*) DESC
+        LIMIT 200
+    """).fetchall()
+    conn.close()
+
+    groups = []
+    for r in rows:
+        orders = []
+        for part in (r["details"] or "").split("||"):
+            bits = part.split("~~")
+            if len(bits) == 4:
+                orders.append({"code": bits[0], "delivery": bits[1] or "—", "amount": bits[2], "status": bits[3]})
+        groups.append({
+            "customer_id": r["customer_id"], "name": r["name"] or "—",
+            "mobile": r["mobile"] or "—", "address": r["address"] or "—",
+            "count": r["order_count"], "orders": orders
+        })
+
+    return render_template("owner/mixed_customers_3701.html",
+        active_page="mixed_customers_3701", groups=groups)
+
 @bp.route("/same-mobile")
 @owner_required
 def same_mobile_page():
