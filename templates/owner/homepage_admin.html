@@ -34,6 +34,7 @@
 .hp-btn-cancel{padding:9px 16px;background:none;color:#7a6a58;border:1px solid #e8d9c5;border-radius:8px;font-size:12px;cursor:pointer;}
 .hp-rev-row{display:flex;gap:8px;align-items:flex-start;background:#fff;padding:10px;border-radius:8px;border:1px solid #e8d9c5;margin-bottom:8px;}
 .hp-rev-row input{flex:1;padding:7px 10px;border:1px solid #e8d9c5;border-radius:6px;font-size:12px;}
+.hp-rev-row select{padding:7px 6px;border:1px solid #e8d9c5;border-radius:6px;font-size:12px;background:#fff;}
 .hp-rev-row textarea{flex:2;padding:7px 10px;border:1px solid #e8d9c5;border-radius:6px;font-size:12px;resize:vertical;min-height:55px;}
 .hp-subsection-title{font-size:11px;font-weight:700;color:#C8903A;text-transform:uppercase;letter-spacing:.1em;margin:14px 0 8px;padding-bottom:6px;border-bottom:1px solid #e8d9c5;}
 .hp-price-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px;}
@@ -420,6 +421,10 @@
             <input placeholder="Initials e.g. RK" value="{{ rev.init }}" style="width:70px;flex:none;">
             <input placeholder="Full name" value="{{ rev.name }}">
             <input placeholder="Location" value="{{ rev.loc }}" style="flex:.7;">
+            <select style="flex:none;width:62px;">
+              {% for n in [5,4,3,2,1] %}<option value="{{ n }}" {% if rev.get('rating',5)==n %}selected{% endif %}>{{ n }} ★</option>{% endfor %}
+            </select>
+            <input placeholder="Date e.g. 2 weeks ago" value="{{ rev.date }}" style="flex:.6;">
             <textarea placeholder="Review text">{{ rev.text }}</textarea>
             <button onclick="this.closest('.hp-rev-row').remove()" style="background:#dc2626;color:#fff;border:none;border-radius:6px;padding:4px 8px;cursor:pointer;align-self:flex-start;flex-shrink:0;">✕</button>
           </div>
@@ -576,6 +581,28 @@ function toggleActive(key,cb){
     });
 }
 
+function addReviewRow(){
+  var wrap=document.getElementById('reviewRows');
+  if(!wrap) return;
+  var div=document.createElement('div');
+  div.className='hp-rev-row';
+  div.innerHTML=
+    '<input placeholder="Initials e.g. RK" style="width:70px;flex:none;">'+
+    '<input placeholder="Full name">'+
+    '<input placeholder="Location" style="flex:.7;">'+
+    '<select style="flex:none;width:62px;">'+
+      '<option value="5" selected>5 \u2605</option>'+
+      '<option value="4">4 \u2605</option>'+
+      '<option value="3">3 \u2605</option>'+
+      '<option value="2">2 \u2605</option>'+
+      '<option value="1">1 \u2605</option>'+
+    '</select>'+
+    '<input placeholder="Date e.g. 2 weeks ago" style="flex:.6;">'+
+    '<textarea placeholder="Review text"></textarea>'+
+    '<button onclick="this.closest(\'.hp-rev-row\').remove()" style="background:#dc2626;color:#fff;border:none;border-radius:6px;padding:4px 8px;cursor:pointer;align-self:flex-start;flex-shrink:0;">\u2715</button>';
+  wrap.appendChild(div);
+}
+
 function collectSection(key){
   var data={};
   var prefix=key+'_';
@@ -588,10 +615,11 @@ function collectSection(key){
   if(key==='reviews'){
     var revs=[];
     document.querySelectorAll('#reviewRows .hp-rev-row').forEach(function(row){
-      var ins=row.querySelectorAll('input');var ta=row.querySelector('textarea');
+      var ins=row.querySelectorAll('input');var sel=row.querySelector('select');var ta=row.querySelector('textarea');
       var init=(ins[0]||{}).value||'';var name=(ins[1]||{}).value||'';
-      var loc=(ins[2]||{}).value||'';var text=(ta||{}).value||'';
-      if(name) revs.push({init:init,name:name,loc:loc,text:text});
+      var loc=(ins[2]||{}).value||'';var date=(ins[3]||{}).value||'';
+      var rating=parseInt((sel||{}).value,10)||5;var text=(ta||{}).value||'';
+      if(name) revs.push({init:init,name:name,loc:loc,rating:rating,date:date,text:text});
     });
     data['reviews']=revs;
   }
