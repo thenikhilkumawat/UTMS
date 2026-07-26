@@ -192,7 +192,7 @@
   .pdp-mobile-slider{display:none;}
 }
 
-/* ── Reviews Slider ── */
+/* ── Reviews Slider — Google style ── */
 .pdp-reviews-section{margin-top:2rem;padding-top:2rem;border-top:1px solid var(--border);}
 .pdp-reviews-hdr{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:1.25rem;}
 .pdp-reviews-title{font-family:var(--fd);font-size:22px;font-weight:400;color:var(--dark);letter-spacing:.01em;}
@@ -200,27 +200,24 @@
 .pdp-rev-slider{position:relative;overflow:hidden;border-radius:14px;}
 .pdp-rev-track{display:flex;transition:transform .4s cubic-bezier(.25,.46,.45,.94);}
 .pdp-rev-card{
-  min-width:100%;width:100%;box-sizing:border-box;padding:24px 28px;flex-shrink:0;
-  background:#fff;border:1px solid var(--border);border-radius:8px;
-  position:relative;
+  min-width:100%;width:100%;box-sizing:border-box;padding:20px 22px;flex-shrink:0;
+  background:#fff;border:1px solid #e8e8e8;border-radius:12px;
+  position:relative;box-shadow:0 1px 4px rgba(0,0,0,.07);
 }
-.pdp-rev-card::before{
-  content:'“';position:absolute;top:12px;right:20px;
-  font-family:Georgia,serif;font-size:72px;color:var(--gold);
-  opacity:.15;line-height:1;pointer-events:none;
-}
-.pdp-rev-top{display:flex;align-items:center;gap:14px;margin-bottom:12px;}
+.pdp-g-logo{position:absolute;top:14px;right:14px;width:18px;height:18px;}
+.pdp-rev-top{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
 .pdp-rev-avatar{
-  width:44px;height:44px;border-radius:50%;
-  background:linear-gradient(135deg,var(--gold),#a06820);
+  width:40px;height:40px;border-radius:50%;
   color:#fff;display:flex;align-items:center;justify-content:center;
-  font-family:var(--fd);font-size:20px;font-weight:600;flex-shrink:0;
-  box-shadow:0 2px 8px rgba(184,120,48,.3);
+  font-size:16px;font-weight:600;flex-shrink:0;font-family:var(--fm);
 }
 .pdp-rev-info{flex:1;}
-.pdp-reviewer{font-size:14px;font-weight:700;color:var(--dark);margin-bottom:2px;}
-.pdp-review-date{font-size:11px;color:var(--muted);}
-.pdp-review-text{font-size:14px;color:#4a3a2a;line-height:1.7;margin:0;}
+.pdp-reviewer{font-size:13px;font-weight:600;color:#202124;margin-bottom:1px;}
+.pdp-reviewer-sub{font-size:11px;color:#70757a;}
+.pdp-rev-stars-row{display:flex;align-items:center;gap:6px;margin-bottom:8px;}
+.pdp-rev-stars{color:#f5a623;font-size:13px;letter-spacing:1px;}
+.pdp-review-date{font-size:11px;color:#70757a;}
+.pdp-review-text{font-size:13.5px;color:#3c4043;line-height:1.65;margin:0;}
 .pdp-rev-controls{display:flex;align-items:center;justify-content:space-between;margin-top:14px;}
 .pdp-rev-btn{
   background:none;border:1.5px solid var(--border);
@@ -228,10 +225,12 @@
   font-size:18px;display:flex;align-items:center;justify-content:center;
   color:var(--dark);transition:all .15s;
 }
-.pdp-rev-btn:hover{border-color:var(--gold);color:var(--gold);background:rgba(184,120,48,.06);}
+.pdp-rev-btn:hover{border-color:#4285F4;color:#4285F4;background:rgba(66,133,244,.06);}
 .pdp-rev-dots{display:flex;gap:6px;align-items:center;}
 .pdp-rev-dot{width:8px;height:8px;border-radius:50%;background:var(--border);cursor:pointer;transition:all .2s;}
-.pdp-rev-dot.active{background:var(--gold);width:20px;border-radius:4px;}
+.pdp-rev-dot.active{background:#4285F4;width:20px;border-radius:4px;}
+/* Google avatar colors */
+.pdp-g-av-0{background:#4285F4;}.pdp-g-av-1{background:#EA4335;}.pdp-g-av-2{background:#34A853;}.pdp-g-av-3{background:#9334E6;}.pdp-g-av-4{background:#00897B;}.pdp-g-av-5{background:#3949AB;}.pdp-g-av-6{background:#D81B60;}.pdp-g-av-7{background:#F9AB00;}
 
 /* ── FAQ ── */
 .pdp-faq-section{margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--border);}
@@ -512,44 +511,14 @@
         {% if style_options %}
         <div class="pdp-panel-section">
           <div class="pdp-section-title">Style &amp; Finishing</div>
-          {# JS var: {group: {value_label: image_url}} — injected once before pills #}
-          <script>var _STYLE_IMGS={{ style_value_images|tojson }};var _pdpStylePreviewEl=null;</script>
           {% for group, opts in style_options.items() %}
           <div class="pdp-field-group">
             <span class="pdp-field-label">{{ opts.label }}</span>
-            {# Show image chips if any value in this group has an image, else text pills #}
-            {% set has_images = style_value_images.get(group) %}
-            {% if has_images %}
-            <div class="pdp-style-chips" data-group="{{ group }}" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">
-              {% for val in opts["values"] %}
-              {% set img = style_value_images.get(group, {}).get(val, '') %}
-              <div class="pdp-style-chip" data-group="{{ group }}" data-val="{{ val|e }}"
-                onclick="selectStyleChip('{{ group }}','{{ val|e }}',this)"
-                title="{{ val|e }}"
-                style="cursor:pointer;border:2px solid var(--border);border-radius:8px;overflow:hidden;width:64px;text-align:center;transition:border-color .15s;background:#fff;">
-                {% if img %}
-                <img src="{{ img }}" alt="{{ val|e }}" loading="lazy"
-                  style="width:64px;height:64px;object-fit:cover;display:block;"
-                  onerror="this.style.display='none'">
-                {% else %}
-                <div style="width:64px;height:64px;display:flex;align-items:center;justify-content:center;font-size:20px;background:var(--bg3);">✂️</div>
-                {% endif %}
-                <div style="font-size:10px;padding:3px 2px;line-height:1.2;color:var(--dark);font-weight:500;">{{ val }}</div>
-              </div>
-              {% endfor %}
-            </div>
-            {# Image preview box — shown below chips on selection #}
-            <div id="stylePreview_{{ group }}" style="display:none;margin-top:10px;border-radius:10px;overflow:hidden;max-width:220px;border:1.5px solid var(--gold);">
-              <img id="stylePreviewImg_{{ group }}" src="" alt="" style="width:100%;display:block;object-fit:cover;max-height:200px;">
-              <div id="stylePreviewLbl_{{ group }}" style="font-size:11px;font-weight:700;text-align:center;padding:5px 8px;background:var(--gold);color:#fff;letter-spacing:.04em;text-transform:uppercase;"></div>
-            </div>
-            {% else %}
             <div class="pdp-style-pills" data-group="{{ group }}">
               {% for val in opts["values"] %}
               <button class="pdp-style-pill" onclick="selectStyle('{{ group }}','{{ val|e }}',this)">{{ val }}</button>
               {% endfor %}
             </div>
-            {% endif %}
           </div>
           {% endfor %}
         </div>
@@ -652,7 +621,7 @@
           <div id="pdpMeasSaved" class="pdp-meas-panel">
             <div style="margin-top:8px;">
               <div style="display:flex;gap:8px;">
-                <input class="pdp-meas-input" type="tel" id="pdpMeasPhone" placeholder="Your mobile number" inputmode="numeric" maxlength="10" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)" style="flex:1;">
+                <input class="pdp-meas-input" type="tel" id="pdpMeasPhone" placeholder="Your mobile number" style="flex:1;">
                 <button class="pdp-btn-sm" onclick="loadSavedMeasurements()">Load</button>
               </div>
               <div id="pdpSavedMeasResult" style="margin-top:8px;font-size:12px;color:var(--muted);"></div>
@@ -770,31 +739,37 @@
     </div>
   </section>
 
-  <!-- Reviews — full width, summary card + slider side by side -->
+  <!-- Reviews — Google style -->
   {% if reviews %}
   <section class="pdp-section">
-    <p class="kicker">Social proof</p>
-    <h2 class="section-title" style="font-size:clamp(24px,3vw,36px);">Customer Reviews</h2>
+    <p class="kicker">Google Reviews</p>
+    <h2 class="section-title" style="font-size:clamp(24px,3vw,36px);">What customers say</h2>
     {% set avg = (reviews | map(attribute='rating') | sum) / reviews|length %}
     <div class="pdp-reviews-layout">
       <div class="pdp-rating-summary vertical">
-        <div class="pdp-rating-big">{{ "%.1f"|format(avg) }}</div>
-        <div class="pdp-stars">{% for i in range(1,6) %}<span class="pdp-star {% if i <= avg|round %}filled{% endif %}">★</span>{% endfor %}</div>
-        <div class="pdp-review-count">{{ reviews|length }} REVIEW{% if reviews|length != 1 %}S{% endif %}</div>
+        {# Google logo #}
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width:48px;height:48px;margin-bottom:4px;"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+        <div class="pdp-rating-big" style="color:#202124;">{{ "%.1f"|format(avg) }}</div>
+        <div class="pdp-stars">{% for i in range(1,6) %}<span class="pdp-star {% if i <= avg|round %}filled{% endif %}" style="color:#f5a623;">★</span>{% endfor %}</div>
+        <div class="pdp-review-count">{{ reviews|length }} GOOGLE REVIEW{% if reviews|length != 1 %}S{% endif %}</div>
       </div>
       <div class="pdp-rev-slider" id="pdpRevSlider">
         <div class="pdp-rev-track" id="pdpRevTrack">
           {% for r in reviews %}
+          {% set ci = loop.index0 % 8 %}
           <div class="pdp-rev-card">
+            {# Google G icon top-right #}
+            <svg class="pdp-g-logo" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
             <div class="pdp-rev-top">
-              <div class="pdp-rev-avatar">{{ r.reviewer_name[0]|upper }}</div>
+              <div class="pdp-rev-avatar pdp-g-av-{{ ci }}">{{ r.reviewer_name[0]|upper }}</div>
               <div class="pdp-rev-info">
                 <div class="pdp-reviewer">{{ r.reviewer_name }}</div>
-                <div class="pdp-stars" style="margin-top:3px;">
-                  {% for i in range(1,6) %}<span class="pdp-star {% if i <= r.rating %}filled{% endif %}" style="font-size:12px;">★</span>{% endfor %}
-                </div>
+                <div class="pdp-reviewer-sub">Local Guide</div>
               </div>
-              <div class="pdp-review-date">{{ r.created_at[:10] if r.created_at else '' }}</div>
+            </div>
+            <div class="pdp-rev-stars-row">
+              <span class="pdp-rev-stars">{% for i in range(r.rating|int) %}★{% endfor %}</span>
+              <span class="pdp-review-date">{{ r.created_at[:10] if r.created_at else '' }}</span>
             </div>
             {% if r.review_text %}<p class="pdp-review-text">{{ r.review_text }}</p>{% endif %}
           </div>
@@ -1063,31 +1038,6 @@ function selectStyle(group, val, btn){
   var container = btn.closest('[data-group="'+group+'"]');
   if(container) container.querySelectorAll('.pdp-style-pill').forEach(function(b){b.classList.remove('active');});
   btn.classList.add('active');
-}
-
-function selectStyleChip(group, val, chip){
-  _pdpSelectedStyles[group] = val;
-  // Highlight selected chip
-  var container = chip.closest('[data-group="'+group+'"]');
-  if(container) container.querySelectorAll('.pdp-style-chip').forEach(function(c){
-    c.style.borderColor='var(--border)';
-    c.style.boxShadow='none';
-  });
-  chip.style.borderColor='var(--gold)';
-  chip.style.boxShadow='0 0 0 2px rgba(200,144,58,.25)';
-  // Show image preview if this value has an image
-  var imgs = (_STYLE_IMGS && _STYLE_IMGS[group]) || {};
-  var imgUrl = imgs[val] || '';
-  var previewEl  = document.getElementById('stylePreview_' + group);
-  var previewImg = document.getElementById('stylePreviewImg_' + group);
-  var previewLbl = document.getElementById('stylePreviewLbl_' + group);
-  if(previewEl && imgUrl){
-    if(previewImg) previewImg.src = imgUrl;
-    if(previewLbl) previewLbl.textContent = val;
-    previewEl.style.display = 'block';
-  } else if(previewEl){
-    previewEl.style.display = 'none';
-  }
 }
 
 function selectFabric(id, card){

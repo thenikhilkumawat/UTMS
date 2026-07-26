@@ -32,9 +32,9 @@
 .hp-btn-save{padding:9px 22px;background:#C8903A;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.04em;}
 .hp-btn-save:hover{background:#a06820;}
 .hp-btn-cancel{padding:9px 16px;background:none;color:#7a6a58;border:1px solid #e8d9c5;border-radius:8px;font-size:12px;cursor:pointer;}
-.hp-rev-row{display:flex;gap:8px;align-items:flex-start;background:#fff;padding:10px;border-radius:8px;border:1px solid #e8d9c5;margin-bottom:8px;}
-.hp-rev-row input{flex:1;padding:7px 10px;border:1px solid #e8d9c5;border-radius:6px;font-size:12px;}
-.hp-rev-row textarea{flex:2;padding:7px 10px;border:1px solid #e8d9c5;border-radius:6px;font-size:12px;resize:vertical;min-height:55px;}
+.hp-rev-row{display:grid;grid-template-columns:60px 1fr 80px 90px 1fr auto;gap:6px;align-items:flex-start;background:#fff;padding:10px;border-radius:8px;border:1px solid #e8d9c5;margin-bottom:8px;}
+.hp-rev-row input,.hp-rev-row select{padding:7px 10px;border:1px solid #e8d9c5;border-radius:6px;font-size:12px;width:100%;box-sizing:border-box;}
+.hp-rev-row textarea{padding:7px 10px;border:1px solid #e8d9c5;border-radius:6px;font-size:12px;resize:vertical;min-height:55px;grid-column:span 1;width:100%;box-sizing:border-box;}
 .hp-subsection-title{font-size:11px;font-weight:700;color:#C8903A;text-transform:uppercase;letter-spacing:.1em;margin:14px 0 8px;padding-bottom:6px;border-bottom:1px solid #e8d9c5;}
 .hp-price-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px;}
 .hp-price-table th{background:#f5ede0;padding:8px 10px;text-align:left;font-weight:700;color:#1a0e06;border:1px solid #e8d9c5;}
@@ -413,14 +413,22 @@
           <div class="hp-field"><label class="hp-lbl">Kicker</label><input class="hp-in" id="reviews_kicker" value="{{ c.get('kicker','What Sikar says') }}"></div>
           <div class="hp-field"><label class="hp-lbl">Title</label><input class="hp-in" id="reviews_title" value="{{ c.get('title','Words from our customers.') }}"></div>
         </div>
-        <div class="hp-subsection-title">Customer Reviews <button onclick="addReviewRow()" style="background:#1a0e06;color:#fff;border:none;border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer;margin-left:8px;">+ Add Review</button></div>
+        <div class="hp-subsection-title">Google Reviews (copy from your Google Business page) <button onclick="addReviewRow()" style="background:#4285F4;color:#fff;border:none;border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer;margin-left:8px;">+ Add Review</button></div>
+        <div style="font-size:11px;color:#7a6a58;margin-bottom:8px;">Fields: Initials · Full Name · Rating · Date (e.g. "2 months ago") · Review text</div>
         <div id="reviewRows">
           {% for rev in c.get('reviews',[]) %}
           <div class="hp-rev-row">
-            <input placeholder="Initials e.g. RK" value="{{ rev.init }}" style="width:70px;flex:none;">
+            <input placeholder="Initials" value="{{ rev.init }}">
             <input placeholder="Full name" value="{{ rev.name }}">
-            <input placeholder="Location" value="{{ rev.loc }}" style="flex:.7;">
-            <textarea placeholder="Review text">{{ rev.text }}</textarea>
+            <select>
+              <option value="5" {% if rev.get('rating',5)|int == 5 %}selected{% endif %}>★★★★★</option>
+              <option value="4" {% if rev.get('rating',5)|int == 4 %}selected{% endif %}>★★★★☆</option>
+              <option value="3" {% if rev.get('rating',5)|int == 3 %}selected{% endif %}>★★★☆☆</option>
+              <option value="2" {% if rev.get('rating',5)|int == 2 %}selected{% endif %}>★★☆☆☆</option>
+              <option value="1" {% if rev.get('rating',5)|int == 1 %}selected{% endif %}>★☆☆☆☆</option>
+            </select>
+            <input placeholder="Date e.g. 2 months ago" value="{{ rev.get('date','') }}">
+            <textarea placeholder="Review text (copy from Google)">{{ rev.text }}</textarea>
             <button onclick="this.closest('.hp-rev-row').remove()" style="background:#dc2626;color:#fff;border:none;border-radius:6px;padding:4px 8px;cursor:pointer;align-self:flex-start;flex-shrink:0;">✕</button>
           </div>
           {% endfor %}
@@ -448,78 +456,6 @@
         <div class="hp-field"><label class="hp-lbl">Subtitle</label><textarea class="hp-ta" id="ai_preview_subtitle">{{ c.get('subtitle','Pick a garment below — our AI instantly renders a real preview of your style choice.') }}</textarea></div>
         <div class="hp-field"><label class="hp-lbl">Note text (below Generate button)</label><input class="hp-in" id="ai_preview_note" value="{{ c.get('note','3 free AI previews — then a quick sign-in to keep generating.') }}"></div>
         <div class="hp-field"><label class="hp-lbl">Slider hint text (below garment carousel)</label><input class="hp-in" id="ai_preview_hint" value="{{ c.get('hint','Click any garment to customise it & generate your AI preview') }}"></div>
-
-        <!-- ── AI Preview Section: Image/Video Upload ── -->
-        <div style="margin-top:18px;padding:16px;background:#faf7f2;border-radius:8px;border:1px solid #e8ddd0;">
-          <div style="font-size:12px;font-weight:700;color:#5C3420;letter-spacing:.05em;text-transform:uppercase;margin-bottom:14px;">📸 Section Images / Videos</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-
-            <!-- Left card (Fabric) -->
-            <div>
-              <div style="font-size:12px;font-weight:600;color:#5C3420;margin-bottom:8px;">Left Card — Fabric Swatch</div>
-              {% if c.get('left_media') %}
-              <div style="position:relative;margin-bottom:8px;">
-                {% if c.get('left_media_type') == 'video' %}
-                <video src="{{ c['left_media'] }}" style="width:100%;height:120px;object-fit:cover;border-radius:6px;" muted playsinline></video>
-                {% else %}
-                <img src="{{ c['left_media'] }}" style="width:100%;height:120px;object-fit:cover;border-radius:6px;border:1px solid #e8ddd0;" loading="lazy">
-                {% endif %}
-                <button type="button" onclick="aipRemoveMedia('left')" style="position:absolute;top:4px;right:4px;background:#dc2626;color:#fff;border:none;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">✕ Remove</button>
-              </div>
-              {% else %}
-              <div style="height:80px;border:2px dashed #d4c5b0;border-radius:6px;display:flex;align-items:center;justify-content:center;margin-bottom:8px;color:#9a8472;font-size:12px;">CSS texture (default)</div>
-              {% endif %}
-              <input type="file" id="aipLeftFile" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm" style="display:none;" onchange="aipUpload(this,'left')">
-              <button type="button" class="hp-edit-btn" onclick="document.getElementById('aipLeftFile').click()" style="width:100%;">Upload Image / Video</button>
-              <div id="aipLeftStatus" style="font-size:11px;margin-top:4px;color:#5C3420;"></div>
-            </div>
-
-            <!-- Right card (AI Preview / Mannequin) -->
-            <div>
-              <div style="font-size:12px;font-weight:600;color:#5C3420;margin-bottom:8px;">Right Card — AI Preview / Mannequin</div>
-              {% if c.get('right_media') %}
-              <div style="position:relative;margin-bottom:8px;">
-                {% if c.get('right_media_type') == 'video' %}
-                <video src="{{ c['right_media'] }}" style="width:100%;height:120px;object-fit:cover;border-radius:6px;" muted playsinline></video>
-                {% else %}
-                <img src="{{ c['right_media'] }}" style="width:100%;height:120px;object-fit:cover;border-radius:6px;border:1px solid #e8ddd0;" loading="lazy">
-                {% endif %}
-                <button type="button" onclick="aipRemoveMedia('right')" style="position:absolute;top:4px;right:4px;background:#dc2626;color:#fff;border:none;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">✕ Remove</button>
-              </div>
-              {% else %}
-              <div style="height:80px;border:2px dashed #d4c5b0;border-radius:6px;display:flex;align-items:center;justify-content:center;margin-bottom:8px;color:#9a8472;font-size:12px;">SVG mannequin (default)</div>
-              {% endif %}
-              <input type="file" id="aipRightFile" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm" style="display:none;" onchange="aipUpload(this,'right')">
-              <button type="button" class="hp-edit-btn" onclick="document.getElementById('aipRightFile').click()" style="width:100%;">Upload Image / Video</button>
-              <div id="aipRightStatus" style="font-size:11px;margin-top:4px;color:#5C3420;"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ── Inspo Polaroid Images ── -->
-        <div style="margin-top:14px;padding:16px;background:#faf7f2;border-radius:8px;border:1px solid #e8ddd0;">
-          <div style="font-size:12px;font-weight:700;color:#5C3420;letter-spacing:.05em;text-transform:uppercase;margin-bottom:14px;">🖼️ "Bring Your Inspo" Polaroid Images</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
-            {% for slot, label in [('front','Front / Main'), ('bl','Back Left'), ('br','Back Right')] %}
-            {% set inspo_sec = hs.get('bring_inspo', {}) %}
-            {% set inspo_img = inspo_sec.get('img_' + slot, '') %}
-            <div>
-              <div style="font-size:11px;font-weight:600;color:#5C3420;margin-bottom:6px;">{{ label }}</div>
-              {% if inspo_img %}
-              <div style="position:relative;margin-bottom:6px;">
-                <img src="{{ inspo_img }}" style="width:100%;height:90px;object-fit:cover;border-radius:6px;border:1px solid #e8ddd0;" loading="lazy">
-                <button type="button" onclick="inspoRemove('{{ slot }}')" style="position:absolute;top:3px;right:3px;background:#dc2626;color:#fff;border:none;border-radius:3px;padding:1px 7px;font-size:10px;cursor:pointer;">✕</button>
-              </div>
-              {% else %}
-              <div style="height:60px;border:2px dashed #d4c5b0;border-radius:6px;display:flex;align-items:center;justify-content:center;margin-bottom:6px;color:#9a8472;font-size:11px;">Unsplash (default)</div>
-              {% endif %}
-              <input type="file" id="inspoFile_{{ slot }}" accept="image/jpeg,image/png,image/webp" style="display:none;" onchange="inspoUpload(this,'{{ slot }}')">
-              <button type="button" class="hp-edit-btn" onclick="document.getElementById('inspoFile_{{ slot }}').click()" style="width:100%;font-size:10px;">Upload</button>
-              <div id="inspoStatus_{{ slot }}" style="font-size:10px;margin-top:3px;color:#5C3420;"></div>
-            </div>
-            {% endfor %}
-          </div>
-        </div>
 
         {% else %}
         <div style="font-size:13px;color:#7a6a58;padding:8px 0;">No editable fields for this section yet.</div>
@@ -584,14 +520,15 @@ function collectSection(key){
     var field=el.id.slice(prefix.length);
     data[field]=el.value;
   });
-  // Special: reviews list
+  // Special: reviews list (Google style — initials, name, rating, date, text)
   if(key==='reviews'){
     var revs=[];
     document.querySelectorAll('#reviewRows .hp-rev-row').forEach(function(row){
-      var ins=row.querySelectorAll('input');var ta=row.querySelector('textarea');
+      var ins=row.querySelectorAll('input');var sel=row.querySelector('select');var ta=row.querySelector('textarea');
       var init=(ins[0]||{}).value||'';var name=(ins[1]||{}).value||'';
-      var loc=(ins[2]||{}).value||'';var text=(ta||{}).value||'';
-      if(name) revs.push({init:init,name:name,loc:loc,text:text});
+      var rating=parseInt((sel||{}).value||'5')||5;
+      var date=(ins[2]||{}).value||'';var text=(ta||{}).value||'';
+      if(name) revs.push({init:init,name:name,rating:rating,date:date,text:text});
     });
     data['reviews']=revs;
   }
@@ -633,56 +570,27 @@ function collectSection(key){
   return data;
 }
 
-function _compressImage(file, maxPx, qualityJpeg, cb){
-  var reader = new FileReader();
-  reader.onload = function(e){
-    var img = new Image();
-    img.onload = function(){
-      var w = img.width, h = img.height;
-      if(w > maxPx || h > maxPx){ var s=Math.min(maxPx/w,maxPx/h); w=Math.round(w*s); h=Math.round(h*s); }
-      var canvas = document.createElement('canvas');
-      canvas.width=w; canvas.height=h;
-      canvas.getContext('2d').drawImage(img,0,0,w,h);
-      canvas.toBlob(function(blob){ cb(blob||file); },'image/jpeg', qualityJpeg);
-    };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
-}
 function heroUploadImage(fileInput, targetFieldId){
   var f = fileInput.files && fileInput.files[0];
   if (!f) return;
   var statusEl = document.getElementById(fileInput.id+'Status');
-  if (statusEl){ statusEl.style.color='#7a6a58'; statusEl.textContent='Compressing image…'; }
-  _compressImage(f, 1920, 0.82, function(blob){
-    if (statusEl){ statusEl.style.color='#7a6a58'; statusEl.textContent='Uploading… ('+Math.round(blob.size/1024)+'KB)'; }
+  if (statusEl){ statusEl.style.color='#7a6a58'; statusEl.textContent='Uploading…'; }
   var fd = new FormData();
-  fd.append('image', blob, 'hero.jpg');
-  fd.append('field', targetFieldId.replace('hero_', ''));
-  var httpStatus = 0;
-  fetch('/owner/website/homepage/hero/upload-image', { method:'POST', body: fd, credentials:'same-origin' })
-    .then(function(r){
-      httpStatus = r.status;
-      return r.text();
-    })
-    .then(function(txt){
-      try {
-        var d = JSON.parse(txt);
-        if (d.ok){
-          document.getElementById(targetFieldId).value = d.url;
-          if (statusEl){ statusEl.style.color='#1f7a3a'; statusEl.textContent='✓ Uploaded — click Save below to publish it.'; }
-        } else {
-          if (statusEl){ statusEl.style.color='#b3261e'; statusEl.textContent='Server error '+httpStatus+': '+(d.error||'upload failed'); }
-        }
-      } catch(e){
-        if (statusEl){ statusEl.style.color='#b3261e'; statusEl.textContent='HTTP '+httpStatus+' — '+(txt.slice(0,120)||'unexpected response'); }
+  fd.append('image', f);
+  fetch('/owner/website/homepage/hero/upload-image', { method:'POST', body: fd })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (d.ok){
+        document.getElementById(targetFieldId).value = d.url;
+        if (statusEl){ statusEl.style.color='#1f7a3a'; statusEl.textContent='✓ Uploaded — click Save below to publish it.'; }
+      } else {
+        if (statusEl){ statusEl.style.color='#b3261e'; statusEl.textContent='Error: '+(d.error||'upload failed'); }
       }
     })
-    .catch(function(err){
-      if (statusEl){ statusEl.style.color='#b3261e'; statusEl.textContent='Network error: '+err.message; }
+    .catch(function(){
+      if (statusEl){ statusEl.style.color='#b3261e'; statusEl.textContent='Upload failed — check your connection and try again.'; }
     });
   fileInput.value = '';
-  }); // end _compressImage
 }
 function saveSection(key){
   var content=collectSection(key);
@@ -718,72 +626,19 @@ function toggleCatProd(el){
   catUpdateHidden();
 }
 
-// ── AI Preview media upload ──────────────────────────────────────
-function aipUpload(input, slot){
-  var file = input.files[0]; if(!file) return;
-  var statusEl = document.getElementById('aip'+(slot==='left'?'Left':'Right')+'Status');
-  statusEl.style.color='#7a6a58'; statusEl.textContent='Uploading…';
-  var fd=new FormData(); fd.append('file',file); fd.append('slot',slot);
-  var httpStatus=0;
-  fetch('/owner/website/homepage/ai-preview/upload',{method:'POST',body:fd,credentials:'same-origin'})
-    .then(function(r){ httpStatus=r.status; return r.text(); })
-    .then(function(txt){
-      try{
-        var d=JSON.parse(txt);
-        if(d.ok){
-          statusEl.style.color='#1f7a3a';
-          statusEl.textContent='✓ Uploaded! Reloading…';
-          setTimeout(function(){location.reload();},1200);
-        } else {
-          statusEl.style.color='#b3261e';
-          statusEl.textContent='Error '+httpStatus+': '+(d.error||'upload failed');
-        }
-      } catch(e){
-        statusEl.style.color='#b3261e';
-        statusEl.textContent='HTTP '+httpStatus+' — '+(txt.slice(0,120)||'unexpected response');
-      }
-    })
-    .catch(function(err){
-      statusEl.style.color='#b3261e';
-      statusEl.textContent='Network error: '+(err.message||'check console');
-    });
-  input.value='';
-}
-function aipRemoveMedia(slot){
-  if(!confirm('Remove this media?')) return;
-  fetch('/owner/website/homepage/ai-preview/remove',{method:'POST',credentials:'same-origin',
-    headers:{'Content-Type':'application/json'},body:JSON.stringify({slot:slot})})
-    .then(function(r){return r.text();})
-    .then(function(txt){try{var d=JSON.parse(txt);if(d.ok)location.reload();}catch(e){location.reload();}})
-    .catch(function(){location.reload();});
-}
-// ── Inspo polaroid upload ─────────────────────────────────────────
-function inspoUpload(input, slot){
-  var file=input.files[0]; if(!file) return;
-  var statusEl=document.getElementById('inspoStatus_'+slot);
-  statusEl.style.color='#7a6a58'; statusEl.textContent='Uploading…';
-  var fd=new FormData(); fd.append('file',file); fd.append('slot',slot);
-  var httpStatus=0;
-  fetch('/owner/website/homepage/inspo/upload',{method:'POST',body:fd,credentials:'same-origin'})
-    .then(function(r){ httpStatus=r.status; return r.text(); })
-    .then(function(txt){
-      try{
-        var d=JSON.parse(txt);
-        if(d.ok){ statusEl.style.color='#1f7a3a'; statusEl.textContent='✓ Saved!'; setTimeout(function(){location.reload();},1200); }
-        else{ statusEl.style.color='#b3261e'; statusEl.textContent='Error '+httpStatus+': '+(d.error||'upload failed'); }
-      } catch(e){
-        statusEl.style.color='#b3261e';
-        statusEl.textContent='HTTP '+httpStatus+' — '+(txt.slice(0,120)||'unexpected response');
-      }
-    })
-    .catch(function(err){ statusEl.style.color='#b3261e'; statusEl.textContent='Network error: '+(err.message||''); });
-  input.value='';
-}
-function inspoRemove(slot){
-  if(!confirm('Remove this image?')) return;
-  fetch('/owner/website/homepage/inspo/upload',{method:'POST',credentials:'same-origin',
-    headers:{'Content-Type':'application/json'},body:JSON.stringify({remove:slot})})
-    .then(function(){location.reload();}).catch(function(){location.reload();});
+/* ── Add Google Review Row ── */
+function addReviewRow(){
+  var wrap=document.getElementById('reviewRows');
+  if(!wrap)return;
+  var div=document.createElement('div');
+  div.className='hp-rev-row';
+  div.innerHTML='<input placeholder="Initials e.g. RK">'
+    +'<input placeholder="Full name">'
+    +'<select><option value="5">★★★★★</option><option value="4">★★★★☆</option><option value="3">★★★☆☆</option><option value="2">★★☆☆☆</option><option value="1">★☆☆☆☆</option></select>'
+    +'<input placeholder="e.g. 2 months ago">'
+    +'<textarea placeholder="Paste review text from Google..." style="min-height:55px;"></textarea>'
+    +'<button onclick="this.closest(\'.hp-rev-row\').remove()" style="background:#dc2626;color:#fff;border:none;border-radius:6px;padding:4px 8px;cursor:pointer;align-self:flex-start;flex-shrink:0;">✕</button>';
+  wrap.appendChild(div);
 }
 </script>
 {% endblock %}
