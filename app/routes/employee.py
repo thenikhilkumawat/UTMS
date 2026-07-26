@@ -1022,11 +1022,18 @@ def save_order():
             given_mobile = (mobile or "").strip()
 
             if given_mobile and given_mobile != ex_mobile:
-                # DIFFERENT mobile → mobile is the key → find/create by new mobile
+                # DIFFERENT mobile → look for a customer with this exact mobile
+                # AND a matching name. A mobile number can legitimately be
+                # shared by different people (family members etc.) — never
+                # silently overwrite a different person's name/address just
+                # because the mobile happens to match.
                 right = conn.execute(
-                    "SELECT id FROM customers WHERE mobile=?", (given_mobile,)).fetchone()
+                    "SELECT id FROM customers WHERE mobile=? AND LOWER(TRIM(name))=LOWER(TRIM(?))",
+                    (given_mobile, customer_name)).fetchone()
                 if right:
                     customer_id = right["id"]
+                    conn.execute("UPDATE customers SET address=? WHERE id=?",
+                                 (address, customer_id))
                 else:
                     new_r = conn.execute(
                         "INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?) RETURNING id",
@@ -1035,30 +1042,28 @@ def save_order():
                         conn.close()
                         return jsonify({"status":"error","message":"Customer create failed"}), 500
                     customer_id = new_r["id"]
-                # Update name/address for whoever this customer is
-                conn.execute("UPDATE customers SET name=?,address=? WHERE id=?",
-                             (customer_name, address, customer_id))
             else:
-                # Same mobile or no mobile → same person, update name/address
+                # Same mobile as the explicitly-selected customer → confirmed
+                # same person (user picked this exact record), safe to update
                 customer_id = existing_id
                 conn.execute("UPDATE customers SET name=?,address=? WHERE id=?",
                              (customer_name, address, customer_id))
         else:
-            # SIMPLE RULE: Mobile is the ONLY key
-            # Same mobile → same customer (naam/address update)
-            # New mobile  → new customer
-            # No mobile   → new customer (can't identify)
+            # Mobile is the primary key, but never silently merge two DIFFERENT
+            # people just because they share a mobile number (e.g. family
+            # members) — only treat as the same customer if mobile AND name
+            # both match; otherwise create a distinct customer record.
             if mobile:
                 dup = conn.execute(
-                    "SELECT id FROM customers WHERE mobile=?", (mobile,)).fetchone()
+                    "SELECT id FROM customers WHERE mobile=? AND LOWER(TRIM(name))=LOWER(TRIM(?))",
+                    (mobile, customer_name)).fetchone()
                 if dup:
-                    # Mobile already exists → same person
+                    # Same mobile AND same name → genuinely the same person
                     customer_id = dup["id"]
-                    # Update name and address (mobile stays same — it's the key)
-                    conn.execute("UPDATE customers SET name=?,address=? WHERE id=?",
-                                 (customer_name, address, customer_id))
+                    conn.execute("UPDATE customers SET address=? WHERE id=?",
+                                 (address, customer_id))
                 else:
-                    # New mobile → new customer
+                    # New mobile, or mobile shared by a different-named person → new customer
                     new_row = conn.execute(
                         "INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?) RETURNING id",
                         (customer_name, mobile, address, now)).fetchone()
