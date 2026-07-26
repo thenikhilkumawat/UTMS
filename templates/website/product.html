@@ -200,37 +200,30 @@
 .pdp-rev-slider{position:relative;overflow:hidden;border-radius:14px;}
 .pdp-rev-track{display:flex;transition:transform .4s cubic-bezier(.25,.46,.45,.94);}
 .pdp-rev-card{
-  min-width:100%;width:100%;box-sizing:border-box;padding:24px 28px;flex-shrink:0;
-  background:#fff;border:1px solid var(--border);border-radius:8px;
-  position:relative;
+  min-width:100%;width:100%;box-sizing:border-box;padding:20px 22px;flex-shrink:0;
+  background:#fff;border:1px solid #e8e8e8;border-radius:12px;
+  position:relative;box-shadow:0 1px 4px rgba(0,0,0,.07);
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 }
-.pdp-rev-card::before{
-  content:'“';position:absolute;top:12px;right:20px;
-  font-family:Georgia,serif;font-size:72px;color:var(--gold);
-  opacity:.15;line-height:1;pointer-events:none;
-}
-.pdp-rev-top{display:flex;align-items:flex-start;gap:14px;margin-bottom:12px;}
+.pdp-rev-gicon-link{position:absolute;top:16px;right:18px;line-height:0;}
+.pdp-rev-gicon-link svg{width:18px;height:18px;display:block;}
+.pdp-rev-top{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
 .pdp-rev-avatar{
-  width:42px;height:42px;border-radius:50%;
-  background:var(--dark);
+  width:40px;height:40px;border-radius:50%;
   color:#fff;display:flex;align-items:center;justify-content:center;
-  font-family:var(--fb);font-size:16px;font-weight:700;flex-shrink:0;
+  font-size:15px;font-weight:600;flex-shrink:0;
 }
-.pdp-rev-card:nth-child(8n+1) .pdp-rev-avatar{background:#1a73e8;}
-.pdp-rev-card:nth-child(8n+2) .pdp-rev-avatar{background:#d93025;}
-.pdp-rev-card:nth-child(8n+3) .pdp-rev-avatar{background:#188038;}
-.pdp-rev-card:nth-child(8n+4) .pdp-rev-avatar{background:#9334e6;}
-.pdp-rev-card:nth-child(8n+5) .pdp-rev-avatar{background:#e8710a;}
-.pdp-rev-card:nth-child(8n+6) .pdp-rev-avatar{background:#12b5cb;}
-.pdp-rev-card:nth-child(8n+7) .pdp-rev-avatar{background:#d01884;}
-.pdp-rev-card:nth-child(8n) .pdp-rev-avatar{background:#3949ab;}
+.pdp-rev-card:nth-child(4n+1) .pdp-rev-avatar{background:#4285F4;}
+.pdp-rev-card:nth-child(4n+2) .pdp-rev-avatar{background:#EA4335;}
+.pdp-rev-card:nth-child(4n+3) .pdp-rev-avatar{background:#FBBC05;}
+.pdp-rev-card:nth-child(4n) .pdp-rev-avatar{background:#34A853;}
 .pdp-rev-info{flex:1;min-width:0;}
-.pdp-reviewer{font-size:14px;font-weight:700;color:var(--dark);margin-bottom:3px;}
-.pdp-rev-meta{display:flex;align-items:center;gap:7px;}
+.pdp-reviewer{font-size:13px;font-weight:600;color:#202124;margin-bottom:1px;}
+.pdp-rev-sub{font-size:11px;color:#70757a;}
+.pdp-rev-meta{display:flex;align-items:center;gap:6px;margin-top:8px;}
 .pdp-rev-meta .pdp-star{font-size:12px;}
-.pdp-rev-gicon{flex-shrink:0;margin-top:1px;}
-.pdp-review-date{font-size:11px;color:var(--muted);}
-.pdp-review-text{font-size:14px;color:#4a3a2a;line-height:1.7;margin:0;}
+.pdp-review-date{font-size:11px;color:#70757a;}
+.pdp-review-text{font-size:13px;color:#3c4043;line-height:1.65;margin:8px 0 0;}
 .pdp-rev-controls{display:flex;align-items:center;justify-content:space-between;margin-top:14px;}
 .pdp-rev-btn{
   background:none;border:1.5px solid var(--border);
@@ -272,19 +265,14 @@
 .pdp-features li::before{content:'✓';color:var(--gold);font-weight:700;flex-shrink:0;}
 
 /* ── Reviews ── */
-.pdp-rating-summary{display:flex;align-items:center;gap:20px;padding:16px;background:var(--bg2);border-radius:var(--rLg);margin-bottom:1.5rem;}
-.pdp-rating-big{font-family:var(--fd);font-size:52px;font-weight:400;color:var(--dark);line-height:1;}
+.pdp-rating-summary{display:flex;align-items:center;gap:20px;padding:16px;background:#fff;border:1px solid #e8e8e8;border-radius:var(--rLg);margin-bottom:1.5rem;box-shadow:0 1px 4px rgba(0,0,0,.07);text-decoration:none;color:inherit;}
+.pdp-rating-glogo{width:58px;height:auto;margin-bottom:2px;}
+.pdp-rating-big{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:44px;font-weight:500;color:var(--dark);line-height:1;}
 .pdp-stars{display:flex;gap:3px;}
-.pdp-star{font-size:16px;color:#ddd;}
-.pdp-star.filled{color:#f59e0b;}
-.pdp-star.half{color:#f59e0b;opacity:.5;}
+.pdp-star{font-size:16px;color:#dadce0;}
+.pdp-star.filled{color:#f5a623;}
+.pdp-star.half{color:#f5a623;opacity:.5;}
 .pdp-review-count{font-family:var(--fm);font-size:10px;color:var(--muted);letter-spacing:.05em;}
-.pdp-review-card{padding:16px 0;border-bottom:1px solid var(--border);}
-.pdp-review-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
-.pdp-reviewer{font-size:14px;font-weight:600;color:var(--dark);}
-.pdp-review-date{font-family:var(--fm);font-size:10px;color:var(--muted);}
-.pdp-review-text{font-size:13px;color:var(--muted);line-height:1.6;}
-.pdp-no-reviews{text-align:center;padding:30px 0;font-size:13px;color:var(--muted);}
 
 /* ── Related ── */
 .pdp-related-section{margin-top:5rem;padding-top:3rem;border-top:1px solid var(--border);}
@@ -786,31 +774,31 @@
     <p class="kicker">Social proof</p>
     <h2 class="section-title" style="font-size:clamp(24px,3vw,36px);">Customer Reviews</h2>
     {% set avg = (reviews | map(attribute='rating') | sum) / reviews|length %}
+    {% set g_maps_url = 'https://www.google.com/maps/search/?api=1&query=Uttam+Tailors+Sikar+Rajasthan' %}
     <div class="pdp-reviews-layout">
-      <div class="pdp-rating-summary vertical">
+      <a class="pdp-rating-summary vertical" href="{{ g_maps_url }}" target="_blank" rel="noopener noreferrer" aria-label="See reviews on Google">
+        <svg class="pdp-rating-glogo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 272 92" aria-hidden="true"><path fill="#EA4335" d="M115.75 47.18c0 12.77-9.99 22.18-22.25 22.18s-22.25-9.41-22.25-22.18C71.25 34.32 81.24 25 93.5 25s22.25 9.32 22.25 22.18zm-9.74 0c0-7.98-5.79-13.44-12.51-13.44S80.99 39.2 80.99 47.18c0 7.9 5.79 13.44 12.51 13.44s12.51-5.55 12.51-13.44z"/><path fill="#FBBC05" d="M163.75 47.18c0 12.77-9.99 22.18-22.25 22.18s-22.25-9.41-22.25-22.18c0-12.85 9.99-22.18 22.25-22.18s22.25 9.32 22.25 22.18zm-9.74 0c0-7.98-5.79-13.44-12.51-13.44s-12.51 5.46-12.51 13.44c0 7.9 5.79 13.44 12.51 13.44s12.51-5.55 12.51-13.44z"/><path fill="#4285F4" d="M209.75 26.34v39.82c0 16.38-9.66 23.07-21.08 23.07-10.75 0-17.22-7.19-19.66-13.07l8.48-3.53c1.51 3.61 5.21 7.87 11.17 7.87 7.31 0 11.84-4.51 11.84-13v-3.19h-.34c-2.18 2.69-6.38 5.04-11.68 5.04-11.09 0-21.25-9.66-21.25-22.09 0-12.52 10.16-22.26 21.25-22.26 5.29 0 9.49 2.35 11.68 4.96h.34v-3.61h9.25zm-8.56 20.92c0-7.81-5.21-13.52-11.84-13.52-6.72 0-12.35 5.71-12.35 13.52 0 7.73 5.63 13.36 12.35 13.36 6.63 0 11.84-5.63 11.84-13.36z"/><path fill="#34A853" d="M225 3v65h-9.5V3h9.5z"/><path fill="#EA4335" d="M262.02 54.48l7.56 5.04c-2.44 3.61-8.32 9.83-18.48 9.83-12.6 0-22.01-9.74-22.01-22.18 0-13.19 9.49-22.18 20.92-22.18 11.51 0 17.14 9.16 18.98 14.11l1.01 2.52-29.65 12.28c2.27 4.45 5.8 6.72 10.75 6.72 4.96 0 8.4-2.44 10.92-6.14zm-23.27-7.98l19.82-8.23c-1.09-2.77-4.37-4.7-8.23-4.7-4.95 0-11.84 4.37-11.59 12.93z"/><path fill="#4285F4" d="M35.29 41.41V32h31.91c.31 1.64.47 3.58.47 5.68 0 7.06-1.93 15.79-8.15 22.01-6.05 6.3-13.78 9.66-24.02 9.66C16.32 69.35.36 53.89.36 34.91.36 15.93 16.32.47 35.3.47c10.5 0 17.98 4.12 23.6 9.49l-6.64 6.64c-4.03-3.78-9.49-6.72-16.97-6.72-13.86 0-24.7 11.17-24.7 25.03 0 13.86 10.84 25.03 24.7 25.03 8.99 0 14.11-3.61 17.39-6.89 2.66-2.66 4.41-6.46 5.1-11.65l-22.49.01z"/></svg>
         <div class="pdp-rating-big">{{ "%.1f"|format(avg) }}</div>
         <div class="pdp-stars">{% for i in range(1,6) %}<span class="pdp-star {% if i <= avg|round %}filled{% endif %}">★</span>{% endfor %}</div>
         <div class="pdp-review-count">{{ reviews|length }} REVIEW{% if reviews|length != 1 %}S{% endif %}</div>
-      </div>
+      </a>
       <div class="pdp-rev-slider" id="pdpRevSlider">
         <div class="pdp-rev-track" id="pdpRevTrack">
           {% for r in reviews %}
           <div class="pdp-rev-card">
+            <a class="pdp-rev-gicon-link" href="{{ g_maps_url }}" target="_blank" rel="noopener noreferrer" aria-label="View on Google">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+            </a>
             <div class="pdp-rev-top">
               <div class="pdp-rev-avatar">{{ r.reviewer_name[0]|upper }}</div>
               <div class="pdp-rev-info">
                 <div class="pdp-reviewer">{{ r.reviewer_name }}</div>
-                <div class="pdp-rev-meta">
-                  <span class="pdp-stars">{% for i in range(1,6) %}<span class="pdp-star {% if i <= r.rating %}filled{% endif %}">★</span>{% endfor %}</span>
-                  <span class="pdp-review-date">{{ r.created_at[:10] if r.created_at else '' }}</span>
-                </div>
+                <div class="pdp-rev-sub">Local Guide</div>
               </div>
-              <svg class="pdp-rev-gicon" width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
-                <path fill="#4285F4" d="M45.12 24.5c0-1.56-.14-3.06-.4-4.5H24v8.51h11.84c-.51 2.75-2.06 5.08-4.39 6.64v5.52h7.11c4.16-3.83 6.56-9.47 6.56-16.17z"/>
-                <path fill="#34A853" d="M24 46c5.94 0 10.92-1.97 14.56-5.33l-7.11-5.52c-1.97 1.32-4.49 2.1-7.45 2.1-5.73 0-10.58-3.87-12.31-9.07H4.34v5.7C7.96 41.07 15.4 46 24 46z"/>
-                <path fill="#FBBC05" d="M11.69 28.18C11.25 26.86 11 25.45 11 24s.25-2.86.69-4.18v-5.7H4.34C2.85 17.09 2 20.45 2 24s.85 6.91 2.34 9.88l7.35-5.7z"/>
-                <path fill="#EA4335" d="M24 10.75c3.23 0 6.13 1.11 8.41 3.29l6.31-6.31C34.91 4.18 29.93 2 24 2 15.4 2 7.96 6.93 4.34 14.12l7.35 5.7c1.73-5.2 6.58-9.07 12.31-9.07z"/>
-              </svg>
+            </div>
+            <div class="pdp-rev-meta">
+              <span class="pdp-stars">{% for i in range(1,6) %}<span class="pdp-star {% if i <= r.rating %}filled{% endif %}">★</span>{% endfor %}</span>
+              <span class="pdp-review-date">{{ r.created_at[:10] if r.created_at else '' }}</span>
             </div>
             {% if r.review_text %}<p class="pdp-review-text">{{ r.review_text }}</p>{% endif %}
           </div>

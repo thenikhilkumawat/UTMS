@@ -286,27 +286,31 @@ button{cursor:pointer;font-family:var(--fb);border:none;background:none;}
 .reviews-track{display:flex;gap:1.5rem;width:max-content;padding:0 .75rem 1rem;animation:reviewsScroll 60s linear infinite;will-change:transform;}
 .reviews-track:hover{animation-play-state:paused;}
 @keyframes reviewsScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
-.review-card{flex:0 0 340px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--rLg);padding:1.75rem 2rem;}
-.review-top{display:flex;align-items:flex-start;gap:12px;margin-bottom:.9rem;}
-.review-av{width:42px;height:42px;border-radius:50%;background:var(--dark);display:flex;align-items:center;justify-content:center;font-family:var(--fb);font-weight:700;font-size:15px;color:#fff;flex-shrink:0;}
-.review-card:nth-child(8n+1) .review-av{background:#1a73e8;}
-.review-card:nth-child(8n+2) .review-av{background:#d93025;}
-.review-card:nth-child(8n+3) .review-av{background:#188038;}
-.review-card:nth-child(8n+4) .review-av{background:#9334e6;}
-.review-card:nth-child(8n+5) .review-av{background:#e8710a;}
-.review-card:nth-child(8n+6) .review-av{background:#12b5cb;}
-.review-card:nth-child(8n+7) .review-av{background:#d01884;}
-.review-card:nth-child(8n) .review-av{background:#3949ab;}
+.review-card{flex:0 0 300px;background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:18px 20px;box-shadow:0 1px 4px rgba(0,0,0,.07);position:relative;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
+.review-gicon-link{position:absolute;top:14px;right:14px;line-height:0;}
+.review-gicon-link svg{width:18px;height:18px;display:block;}
+.review-top{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.review-av{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:#fff;flex-shrink:0;}
+.review-card:nth-child(4n+1) .review-av{background:#4285F4;}
+.review-card:nth-child(4n+2) .review-av{background:#EA4335;}
+.review-card:nth-child(4n+3) .review-av{background:#FBBC05;}
+.review-card:nth-child(4n) .review-av{background:#34A853;}
 .review-who{flex:1;min-width:0;}
-.review-name{font-size:14px;font-weight:500;color:var(--dark);}
-.review-loc{font-family:var(--fm);font-size:10px;color:var(--muted);margin-top:2px;letter-spacing:.05em;}
-.review-gicon{flex-shrink:0;margin-top:1px;}
-.review-meta{display:flex;align-items:center;gap:7px;margin-bottom:.85rem;}
+.review-name{font-size:13px;font-weight:600;color:#202124;}
+.review-loc{font-size:11px;color:#70757a;margin-top:1px;}
+.review-meta{display:flex;align-items:center;gap:6px;margin-bottom:8px;}
 .review-stars{display:flex;gap:1px;}
-.review-star{font-size:14px;color:#ddd;line-height:1;}
-.review-star.filled{color:#fbbc04;}
-.review-date{font-family:var(--fm);font-size:10.5px;color:var(--muted);}
-.review-text{font-family:var(--fb);font-size:14px;font-style:normal;color:var(--brown);line-height:1.65;}
+.review-star{font-size:13px;color:#dadce0;}
+.review-star.filled{color:#f5a623;}
+.review-date{font-size:11px;color:#70757a;}
+.review-text{font-size:13px;color:#3c4043;line-height:1.65;font-style:normal;font-weight:400;}
+.reviews-gbadge{display:flex;align-items:center;justify-content:center;gap:14px;margin:-.5rem 0 2.5rem;text-decoration:none;}
+.reviews-gbadge:hover{opacity:.82;}
+.reviews-gbadge svg{width:76px;height:auto;flex-shrink:0;}
+.reviews-gscore-row{display:flex;align-items:center;gap:8px;}
+.reviews-gscore{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:2rem;font-weight:500;color:var(--dark);}
+.reviews-gstars{color:#f5a623;font-size:20px;letter-spacing:1px;}
+.reviews-glabel{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:11px;color:#70757a;letter-spacing:.06em;margin-top:2px;}
 .reviews-nav{display:flex;gap:10px;justify-content:center;margin-top:2rem;}
 .rev-btn{width:48px;height:48px;border-radius:50%;background:none;border:1.5px solid var(--border);color:var(--muted);font-size:17px;transition:var(--t);}
 .rev-btn:hover{border-color:var(--dark);color:var(--dark);}
