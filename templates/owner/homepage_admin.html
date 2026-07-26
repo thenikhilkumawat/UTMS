@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Homepage Admin — Uttam Tailors{% endblock %}
+{% block title %}Homepage Admin - Uttam Tailors{% endblock %}
 {% block extra_css %}
 <style>
 .hp-wrap{padding:24px;}
@@ -104,7 +104,7 @@
           <div class="hp-field"><label class="hp-lbl">Title line 2</label><input class="hp-in" id="hero_title_line2" value="{{ c.get('title_line2','made for you.') }}"></div>
         </div>
         <div class="hp-field"><label class="hp-lbl">Subtext paragraph</label><textarea class="hp-ta" id="hero_subtext">{{ c.get('subtext','Tell us what you need — we stitch it perfectly. WhatsApp updates at every step.') }}</textarea></div>
-        <div class="hp-subsection-title">Card 1 — Browse Designs (ghost card)</div>
+        <div class="hp-subsection-title">Card 1 - Browse Designs (ghost card)</div>
         <div class="hp-grid-2">
           <div class="hp-field"><label class="hp-lbl">Title</label><input class="hp-in" id="hero_card1_title" value="{{ c.get('card1_title','Browse designs') }}"></div>
           <div class="hp-field"><label class="hp-lbl">Description</label><input class="hp-in" id="hero_card1_desc" value="{{ c.get('card1_desc','Pick from our catalog. We stitch it in your measurements.') }}"></div>
@@ -114,7 +114,7 @@
           <div class="hp-field"><label class="hp-lbl">Button text</label><input class="hp-in" id="hero_card1_btn" value="{{ c.get('card1_btn','See designs') }}"></div>
         </div>
         <div class="hp-field"><label class="hp-lbl">Card 1 URL</label><input class="hp-in" id="hero_card1_url" value="{{ c.get('card1_url','/our-craft') }}"></div>
-        <div class="hp-subsection-title">Card 2 — Custom Stitching (gold card)</div>
+        <div class="hp-subsection-title">Card 2 - Custom Stitching (gold card)</div>
         <div class="hp-grid-2">
           <div class="hp-field"><label class="hp-lbl">Title</label><input class="hp-in" id="hero_card2_title" value="{{ c.get('card2_title','Custom stitching') }}"></div>
           <div class="hp-field"><label class="hp-lbl">Description</label><input class="hp-in" id="hero_card2_desc" value="{{ c.get('card2_desc','Bring your fabric or choose ours. You decide everything.') }}"></div>
@@ -131,7 +131,7 @@
           <div class="hp-field"><label class="hp-lbl">Kicker (small text above title)</label><input class="hp-in" id="action_cards_kicker" value="{{ c.get('kicker','How can we help you?') }}"></div>
           <div class="hp-field"><label class="hp-lbl">Section title</label><input class="hp-in" id="action_cards_title" value="{{ c.get('title','Two ways to get perfectly fitted clothes') }}"></div>
         </div>
-        <div class="hp-subsection-title">Card 1 — Browse Designs (light card)</div>
+        <div class="hp-subsection-title">Card 1 - Browse Designs (light card)</div>
         <div class="hp-grid-2">
           <div class="hp-field"><label class="hp-lbl">Eyebrow (top small text)</label><input class="hp-in" id="action_cards_card1_eyebrow" value="{{ c.get('card1_eyebrow',"Don't know where to start?") }}"></div>
           <div class="hp-field"><label class="hp-lbl">Title</label><input class="hp-in" id="action_cards_card1_title" value="{{ c.get('card1_title','Browse our designs') }}"></div>
@@ -147,7 +147,7 @@
           <div class="hp-field"><label class="hp-lbl">Button text</label><input class="hp-in" id="action_cards_card1_btn" value="{{ c.get('card1_btn','See all designs') }}"></div>
           <div class="hp-field"><label class="hp-lbl">Button URL</label><input class="hp-in" id="action_cards_card1_url" value="{{ c.get('card1_url','/our-craft') }}"></div>
         </div>
-        <div class="hp-subsection-title">Card 2 — Custom Stitching (dark card)</div>
+        <div class="hp-subsection-title">Card 2 - Custom Stitching (dark card)</div>
         <div class="hp-grid-2">
           <div class="hp-field"><label class="hp-lbl">Eyebrow (top small text)</label><input class="hp-in" id="action_cards_card2_eyebrow" value="{{ c.get('card2_eyebrow','Already know what you want?') }}"></div>
           <div class="hp-field"><label class="hp-lbl">Title</label><input class="hp-in" id="action_cards_card2_title" value="{{ c.get('card2_title','Custom stitching') }}"></div>
@@ -298,7 +298,7 @@
         ] %}
         {% for i in range(1,7) %}
         {% set od = occ_defaults[i-1] %}
-        <div class="hp-subsection-title">Occasion {{ i }} — {{ od[2] }}</div>
+        <div class="hp-subsection-title">Occasion {{ i }} - {{ od[2] }}</div>
         <div class="hp-grid-3">
           <div class="hp-field"><label class="hp-lbl">Title</label><input class="hp-in" id="occasion_finder_occ{{ i }}_title" value="{{ c.get('occ'+i|string+'_title', od[2]) }}"></div>
           <div class="hp-field"><label class="hp-lbl">Subtitle (garments shown)</label><input class="hp-in" id="occasion_finder_occ{{ i }}_sub" value="{{ c.get('occ'+i|string+'_sub', od[3]) }}"></div>

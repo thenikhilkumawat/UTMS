@@ -1,6 +1,6 @@
 {% extends "website/base.html" %}
 {% set active = "home" %}
-{% block title %}Uttam Tailors — Custom Tailoring in Sikar since 1987{% endblock %}
+{% block title %}Uttam Tailors - Custom Tailoring in Sikar since 1987{% endblock %}
 
 {% block head %}
 {# ── LCP optimisation: preload hero image ── #}
@@ -897,7 +897,7 @@ fetch('/api/occasions/upcoming').then(function(r){return r.json();}).then(functi
       <span class="hero-t1">{{ h.get('title_line1','Master tailoring,') }}</span>
       <em>{{ h.get('title_line2','made for you.') }}</em>
     </h1>
-    <p class="hero-sub">{{ h.get('subtext','Tell us what you need — we stitch it perfectly. WhatsApp updates at every step.') }}</p>
+    <p class="hero-sub">{{ h.get('subtext','Tell us what you need - we stitch it perfectly. WhatsApp updates at every step.') }}</p>
     <div class="hero-actions">
       <a href="{{ h.get('card1_url','/our-craft') }}" class="hero-btn-ghost">{{ h.get('card1_btn','Browse designs') }}</a>
       <a href="/commission" class="hero-btn-ghost" style="display:inline-flex;align-items:center;gap:6px;">
@@ -1340,7 +1340,7 @@ fetch('/api/occasions/upcoming').then(function(r){return r.json();}).then(functi
     <div class="section-header" style="max-width:100%;padding-left:0;padding-right:0;">
       <p class="kicker">Our Pricing</p>
       <h2 class="section-title">Every garment. Every price.</h2>
-      <p class="section-sub">Browse all our services — starting prices shown. Final price confirmed before we begin.</p>
+      <p class="section-sub">Browse all our services - starting prices shown. Final price confirmed before we begin.</p>
     </div>
 
     {% if pricing_cats %}
@@ -1389,7 +1389,7 @@ fetch('/api/occasions/upcoming').then(function(r){return r.json();}).then(functi
     {% set of = hs.get('occasion_finder',{}) %}
     <p class="kicker">{{ of.get('kicker','Occasion finder') }} <span class="ai-tag">AI-assisted</span></p>
     <h2 class="section-title">{{ of.get('title','What are you dressing for?') }}</h2>
-    <p class="section-sub">{{ of.get('subtitle','Tell us the occasion — we\'ll suggest the perfect garment.') }}</p>
+    <p class="section-sub">{{ of.get('subtitle','Tell us the occasion - we\'ll suggest the perfect garment.') }}</p>
   </div>
   <div class="occ-inner">
     <div class="occ-grid">
@@ -1458,7 +1458,7 @@ fetch('/api/occasions/upcoming').then(function(r){return r.json();}).then(functi
       {% set hp = hs.get('papa_story',{}) %}
       <p class="kicker" style="color:var(--gold-l);">{{ hp.get('kicker','The master') }}</p>
       <blockquote class="papa-quote">&ldquo;{{ hp.get('quote','My father spent 33 years building this craft. In 2025, I am taking it to every corner of India.') }}&rdquo;</blockquote>
-      <p class="papa-attr">{{ hp.get('attribution','— Nikhil Kumawat, continuing the legacy of Late Mr. Narendra Kumawat') }}</p>
+      <p class="papa-attr">{{ hp.get('attribution','- Nikhil Kumawat, continuing the legacy of Late Mr. Narendra Kumawat') }}</p>
       <a href="{{ hp.get('link_url','/our-story') }}" class="papa-link">{{ hp.get('link_text','Read our full story →') }}</a>
     </div>
     <div>
@@ -1467,7 +1467,7 @@ fetch('/api/occasions/upcoming').then(function(r){return r.json();}).then(functi
         <p>{{ hp.get('body2','He spent over three decades building what Sikar knows today. Lakhs of garments. Thousands of families served. Not one shortcut taken. In 2020, he left us — but not the craft.') }}</p>
         <p>{{ hp.get('body3','His son Nikhil carries that standard forward today — bringing the same quality online so it reaches not just Sikar, but all of India.') }}</p>
       </div>
-      <div class="papa-year">{{ hp.get('year_text','Est. 1987 — forever in every stitch') }}</div>
+      <div class="papa-year">{{ hp.get('year_text','Est. 1987 - forever in every stitch') }}</div>
     </div>
   </div>
 </section>
@@ -1512,7 +1512,7 @@ fetch('/api/occasions/upcoming').then(function(r){return r.json();}).then(functi
     {% set fg = hs.get('fabric_guide',{}) %}
     <p class="kicker">{{ fg.get('kicker','Fabric guide') }} <span class="ai-tag">AI-assisted</span></p>
     <h2 class="section-title">{{ fg.get('title','Which fabric should you choose?') }}</h2>
-    <p class="section-sub">{{ fg.get('subtitle','Season, occasion, price — everything you need to decide.') }}</p>
+    <p class="section-sub">{{ fg.get('subtitle','Season, occasion, price - everything you need to decide.') }}</p>
   </div>
   {% set swatch_map = {
     'Cotton':     'linear-gradient(135deg,#d9c4a0,#b89060)',
@@ -1681,7 +1681,7 @@ fetch('/api/occasions/upcoming').then(function(r){return r.json();}).then(functi
         <p class="kicker">Your Style, Your Rules</p>
         <h2 class="inspo-title">Bring Your <em>Inspo</em></h2>
       </div>
-      <p class="inspo-sub">Found a look you love? Share a photo, screenshot, or magazine cut — and we'll recreate it in your exact measurements, fabric and fit.</p>
+      <p class="inspo-sub">Found a look you love? Share a photo, screenshot, or magazine cut - and we'll recreate it in your exact measurements, fabric and fit.</p>
       <div class="inspo-steps">
         <div class="inspo-step">
           <span class="inspo-step-num">01</span>
@@ -1765,7 +1765,7 @@ fetch('/api/occasions/upcoming').then(function(r){return r.json();}).then(functi
         Updated Daily
       </div>
       <h2 class="craft-head-title">Fresh From<br><em>The Workshop</em></h2>
-      <p class="craft-head-sub">Real work, no stock photos — every piece hand-stitched in Sikar</p>
+      <p class="craft-head-sub">Real work, no stock photos - every piece hand-stitched in Sikar</p>
     </div>
 
     <!-- Photo grid -->
