@@ -1016,32 +1016,25 @@ def save_order():
 
         # Customer
         if existing_id:
+            # Employee explicitly selected this exact customer (e.g. from a
+            # search/autocomplete pick) — a deliberate human decision, not
+            # automatic guessing, so this reuse is safe and intentional.
             existing_id = int(existing_id)
             ex_row = conn.execute("SELECT id, mobile FROM customers WHERE id=?", (existing_id,)).fetchone()
             ex_mobile = ((ex_row["mobile"] if ex_row else "") or "").strip()
             given_mobile = (mobile or "").strip()
 
             if given_mobile and given_mobile != ex_mobile:
-                # DIFFERENT mobile → look for a customer with this exact mobile
-                # AND a matching name. A mobile number can legitimately be
-                # shared by different people (family members etc.) — never
-                # silently overwrite a different person's name/address just
-                # because the mobile happens to match.
-                right = conn.execute(
-                    "SELECT id FROM customers WHERE mobile=? AND LOWER(TRIM(name))=LOWER(TRIM(?))",
-                    (given_mobile, customer_name)).fetchone()
-                if right:
-                    customer_id = right["id"]
-                    conn.execute("UPDATE customers SET address=? WHERE id=?",
-                                 (address, customer_id))
-                else:
-                    new_r = conn.execute(
-                        "INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?) RETURNING id",
-                        (customer_name, given_mobile, address, now)).fetchone()
-                    if not new_r:
-                        conn.close()
-                        return jsonify({"status":"error","message":"Customer create failed"}), 500
-                    customer_id = new_r["id"]
+                # Mobile was changed away from the selected customer's mobile —
+                # no automatic matching against other customers; always create
+                # a fresh, separate customer record for this new mobile/name.
+                new_r = conn.execute(
+                    "INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?) RETURNING id",
+                    (customer_name, given_mobile, address, now)).fetchone()
+                if not new_r:
+                    conn.close()
+                    return jsonify({"status":"error","message":"Customer create failed"}), 500
+                customer_id = new_r["id"]
             else:
                 # Same mobile as the explicitly-selected customer → confirmed
                 # same person (user picked this exact record), safe to update
@@ -1049,37 +1042,16 @@ def save_order():
                 conn.execute("UPDATE customers SET name=?,address=? WHERE id=?",
                              (customer_name, address, customer_id))
         else:
-            # Mobile is the primary key, but never silently merge two DIFFERENT
-            # people just because they share a mobile number (e.g. family
-            # members) — only treat as the same customer if mobile AND name
-            # both match; otherwise create a distinct customer record.
-            if mobile:
-                dup = conn.execute(
-                    "SELECT id FROM customers WHERE mobile=? AND LOWER(TRIM(name))=LOWER(TRIM(?))",
-                    (mobile, customer_name)).fetchone()
-                if dup:
-                    # Same mobile AND same name → genuinely the same person
-                    customer_id = dup["id"]
-                    conn.execute("UPDATE customers SET address=? WHERE id=?",
-                                 (address, customer_id))
-                else:
-                    # New mobile, or mobile shared by a different-named person → new customer
-                    new_row = conn.execute(
-                        "INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?) RETURNING id",
-                        (customer_name, mobile, address, now)).fetchone()
-                    customer_id = new_row["id"] if new_row else None
-                    if not customer_id:
-                        conn.close()
-                        return jsonify({"status":"error","message":"Customer create failed"}), 500
-            else:
-                # No mobile → new customer (NULL mobile)
-                row = conn.execute(
-                    "INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?) RETURNING id",
-                    (customer_name, None, address, now)).fetchone()
-                customer_id = row["id"] if row else None
-                if not customer_id:
-                    conn.close()
-                    return jsonify({"status":"error","message":"Customer create failed"}), 500
+            # No automatic matching by mobile or name — every order without
+            # an explicitly-selected existing customer gets its own separate,
+            # brand-new customer record. Nothing is ever silently merged.
+            row = conn.execute(
+                "INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?) RETURNING id",
+                (customer_name, mobile or None, address, now)).fetchone()
+            customer_id = row["id"] if row else None
+            if not customer_id:
+                conn.close()
+                return jsonify({"status":"error","message":"Customer create failed"}), 500
 
         repeat_of = (data.get("repeat_of") or "").strip() or None
 

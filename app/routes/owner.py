@@ -1088,30 +1088,13 @@ def bulk_import_upload():
                     skipped += 1
                     continue
 
-            # Find or create customer — mobile can legitimately be shared by
-            # different people (family members etc.), so only treat as the
-            # same customer when mobile AND name both match; never silently
-            # overwrite a different person's name/address.
-            cust_id = None
-            if od["mobile"]:
-                r = conn.execute(
-                    "SELECT id FROM customers WHERE mobile=? AND LOWER(TRIM(name))=LOWER(TRIM(?))",
-                    (od["mobile"], od["customer_name"])).fetchone()
-                if r:
-                    cust_id = r["id"]
-                    conn.execute("UPDATE customers SET address=? WHERE id=?",
-                                 (od["address"], cust_id))
-            if not cust_id:
-                r = conn.execute("SELECT id FROM customers WHERE name=? LIMIT 1",
-                                 (od["customer_name"],)).fetchone()
-                if r:
-                    cust_id = r["id"]
-            if not cust_id:
-                now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                conn.execute("INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?)",
-                             (od["customer_name"], od["mobile"], od["address"], now_str))
-                conn.commit()
-                cust_id = conn.execute("SELECT id FROM customers ORDER BY id DESC LIMIT 1").fetchone()["id"]
+            # No automatic matching by mobile or name — every imported row
+            # gets its own separate, brand-new customer record.
+            now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            new_cust = conn.execute(
+                "INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?) RETURNING id",
+                (od["customer_name"], od["mobile"] or None, od["address"], now_str)).fetchone()
+            cust_id = new_cust["id"] if new_cust else None
 
             # Get order code — bulk import must have explicit code, never auto-generate
             order_code = od.get("order_code", "").strip()
@@ -4899,32 +4882,13 @@ def past_orders_save():
     try:
         conn = get_db()
 
-        # 1. Customer — mobile can legitimately be shared by different people
-        # (family members etc.), so only treat as the same customer when
-        # mobile AND name both match; never silently overwrite a different
-        # person's name/address just because the mobile happens to match.
-        customer_id = None
-        if customer_mobile:
-            r = conn.execute(
-                "SELECT id FROM customers WHERE mobile=? AND LOWER(TRIM(name))=LOWER(TRIM(?))",
-                (customer_mobile, customer_name)).fetchone()
-            if r:
-                # Same mobile AND same name → genuinely the same person
-                customer_id = r["id"]
-                conn.execute("UPDATE customers SET address=? WHERE id=?",
-                             (customer_address, customer_id))
-            else:
-                # New mobile, or mobile shared by a different-named person → new customer
-                row = conn.execute(
-                    "INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?) RETURNING id",
-                    (customer_name, customer_mobile, customer_address, now_str)).fetchone()
-                customer_id = row["id"] if row else None
-        else:
-            # No mobile → always new customer with NULL mobile
-            row = conn.execute(
-                "INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?) RETURNING id",
-                (customer_name, None, customer_address, now_str)).fetchone()
-            customer_id = row["id"] if row else None
+        # 1. Customer — no automatic matching by mobile or name. Every past
+        # order gets its own separate, brand-new customer record; nothing is
+        # ever silently merged or reused based on a guess.
+        row = conn.execute(
+            "INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?) RETURNING id",
+            (customer_name, customer_mobile or None, customer_address, now_str)).fetchone()
+        customer_id = row["id"] if row else None
 
         if not customer_id:
             conn.close()
@@ -5205,25 +5169,15 @@ def order_edit_save(order_code):
             ex_mobile = ((ex_cust["mobile"] if ex_cust else "") or "").strip()
 
             if mobile and ex_mobile and mobile != ex_mobile:
-                # Mobile changed → look for a customer with this exact mobile
-                # AND a matching name. A mobile number can legitimately be
-                # shared by different people (family members etc.) — never
-                # silently overwrite a different person's name/address just
-                # because the mobile happens to match.
+                # Mobile changed on this order — no automatic matching against
+                # other customers; always create a fresh, separate customer
+                # record rather than guessing this is someone else's existing entry.
                 from datetime import datetime as _dt
                 now_str = _dt.now().strftime("%Y-%m-%d %H:%M:%S")
-                right = conn.execute(
-                    "SELECT id FROM customers WHERE mobile=? AND LOWER(TRIM(name))=LOWER(TRIM(?))",
-                    (mobile, name)).fetchone()
-                if right:
-                    new_cust_id = right["id"]
-                    conn.execute("UPDATE customers SET address=? WHERE id=?",
-                                 (address, new_cust_id))
-                else:
-                    row = conn.execute(
-                        "INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?) RETURNING id",
-                        (name, mobile, address, now_str)).fetchone()
-                    new_cust_id = row["id"]
+                row = conn.execute(
+                    "INSERT INTO customers(name,mobile,address,created_at) VALUES(?,?,?,?) RETURNING id",
+                    (name, mobile, address, now_str)).fetchone()
+                new_cust_id = row["id"]
                 conn.execute("UPDATE orders SET customer_id=? WHERE id=?",
                              (new_cust_id, order_id))
                 customer_id = new_cust_id
