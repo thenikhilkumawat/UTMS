@@ -3313,8 +3313,11 @@ def measurements_page():
     orders = conn.execute("""
         SELECT o.*, COALESCE(c.name,'') as customer_name, COALESCE(c.mobile,'') as cust_mobile
         FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
-        WHERE o.status != 'delivered' AND o.status != 'cancelled'
-        ORDER BY o.is_urgent DESC, o.id DESC
+        WHERE o.status != 'cancelled'
+          AND o.order_code ~ '^[0-9]+$'
+          AND o.order_code::integer >= 3701
+        ORDER BY o.is_urgent DESC, o.order_code::integer DESC
+        LIMIT 600
     """).fetchall()
 
     urgent_count = conn.execute(
