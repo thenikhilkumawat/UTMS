@@ -373,7 +373,7 @@ def home():
     except:
         pricing_cats = []
     page_meta = get_page_seo("home",
-        "Uttam Tailors — Custom Tailoring in Sikar since 1987",
+        "Uttam Tailors - Custom Tailoring in Sikar since 1987",
         "Custom shirts, suits, kurtas & more stitched in Sikar. Order online. Free delivery.")
     return render_template("website/home.html", active="home",
         home_items=cat_items, item_media=item_media_home, prices=prices, img_map=img_map, hs=hs,
@@ -408,7 +408,7 @@ def about():
 
     from builtins import enumerate as _enum
     page_meta = get_page_seo("about",
-        "Our Story — Uttam Tailors, Sikar since 1987",
+        "Our Story - Uttam Tailors, Sikar since 1987",
         "37 years of master tailoring in Sikar. Learn about the craft and legacy of Uttam Tailors.")
     return render_template("website/about.html", active="about", s=s, timeline=timeline, enumerate=_enum,
         page_meta=page_meta)
@@ -438,7 +438,7 @@ def services():
     except Exception:
         fabric_imgs = {}
     page_meta = get_page_seo("our_craft",
-        "Custom Tailoring — Our Craft | Uttam Tailors Sikar",
+        "Custom Tailoring - Our Craft | Uttam Tailors Sikar",
         "Browse our full range of custom tailoring services in Sikar. Suits, shirts, kurtas, pathani & more.")
     breadcrumbs = [("Our Craft", "/our-craft")]
     return render_template("website/services.html", active="services", services=services_data, prices=prices, item_media=item_media,
@@ -570,7 +570,7 @@ def _render_product(item_id):
         fabrics = [f for f in all_fabrics if not cat_key or not f["fabric_type"] or f["fabric_type"]==cat_key or f["fabric_type"]=="all"]
         if not fabrics: fabrics = all_fabrics  # fallback: show all
         # Build product SEO from item data + DB override
-        _prod_title = _row_get(item, "meta_title") or f"{item['name']} — Custom Stitching in Sikar | Uttam Tailors"
+        _prod_title = _row_get(item, "meta_title") or f"{item['name']} - Custom Stitching in Sikar | Uttam Tailors"
         _prod_desc = _row_get(item, "meta_desc") or f"Get {item['name']} custom stitched in Sikar. {_row_get(item, 'subtitle') or 'Premium quality, perfect fit.'} Book online at Uttam Tailors."
         page_meta = {"title": _prod_title, "desc": _prod_desc, "robots": "index,follow",
                      "og_image": images[0] if images else "", "canonical": ""}
@@ -684,7 +684,7 @@ def ai_customize():
         init_previews=init_previews,
         logged_in_name=(acc["name"] if acc else ""),
         logged_in_mobile=(acc["mobile"] if acc else ""),
-        page_meta={"title":"AI Style Studio — Uttam Tailors",
+        page_meta={"title":"AI Style Studio - Uttam Tailors",
                    "desc":"Design your perfect custom garment with AI. See a photorealistic preview before ordering.",
                    "robots":"index,follow","og_image":"","canonical":""})
 
@@ -722,7 +722,7 @@ def custom_page(slug):
     if not page:
         abort(404)
     page_meta = {
-        "title": (_row_get(page, "meta_title") or page["title"] + " — Uttam Tailors"),
+        "title": (_row_get(page, "meta_title") or page["title"] + " - Uttam Tailors"),
         "desc": _row_get(page, "meta_desc"),
         "robots": "index,follow", "og_image": "", "canonical": ""
     }
@@ -792,7 +792,7 @@ def commission():
     item_media = get_item_media()
 
     page_meta = {
-        "title": "Custom Stitching — Place Your Order | Uttam Tailors",
+        "title": "Custom Stitching - Place Your Order | Uttam Tailors",
         "desc": "Custom tailoring in Sikar. Choose your garment, share your measurements and we stitch it perfectly. WhatsApp updates at every step.",
         "robots": "index,follow",
         "og_image": cs.get("header_image", ""),
@@ -846,7 +846,7 @@ def track_order():
     code  = request.args.get("code", "").strip()
     phone = request.args.get("phone", "").strip()
     page_meta = {
-        "title": "Track Your Order — Uttam Tailors",
+        "title": "Track Your Order - Uttam Tailors",
         "desc": "Enter your order code or mobile number to see the live status of your garment at every stitch.",
         "robots": "noindex,nofollow",
         "og_image": "",
@@ -948,7 +948,7 @@ def contact():
     except Exception:
         s = {}
     page_meta = {
-        "title": "Contact Us — Uttam Tailors, Sikar",
+        "title": "Contact Us - Uttam Tailors, Sikar",
         "desc": "Find us at Subhash Chowk, Sikar. Call, WhatsApp or book a home visit. Monday to Saturday, 9am–7pm.",
         "robots": "index,follow",
         "og_image": "",
@@ -2187,7 +2187,7 @@ def generate_style_preview():
 @website_bp.route("/cart")
 def cart():
     return render_template("website/cart.html", active="cart", page_meta={
-        "title": "Your Cart — Uttam Tailors",
+        "title": "Your Cart - Uttam Tailors",
         "desc": "Review your cart and proceed to checkout.",
         "robots": "noindex,nofollow", "og_image": "", "canonical": ""
     })
@@ -2196,7 +2196,7 @@ def cart():
 @website_bp.route("/order-review")
 def order_review():
     return render_template("website/order_review.html", active="order_review", page_meta={
-        "title": "Order Review — Uttam Tailors",
+        "title": "Order Review - Uttam Tailors",
         "desc": "Review your order before confirming.",
         "robots": "noindex,nofollow", "og_image": "", "canonical": ""
     })
@@ -2208,7 +2208,7 @@ def account_page():
     return render_template("website/account.html",
         google_error=google_error,
         page_meta={
-            "title": "My Account — Uttam Tailors",
+            "title": "My Account - Uttam Tailors",
             "desc": "Manage your account, orders, wishlist and measurements.",
             "robots": "noindex,nofollow", "og_image": "", "canonical": ""
         }
