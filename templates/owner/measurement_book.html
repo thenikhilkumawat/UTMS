@@ -528,7 +528,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("mb-search").focus();
 });
 
-const SECS=5*60; let last=Date.now();
+const SECS=60*60; let last=Date.now();
 ["click","keydown","mousemove","touchstart"].forEach(ev =>
   document.addEventListener(ev, () => { last = Date.now(); }, {passive:true}));
 setInterval(() => {

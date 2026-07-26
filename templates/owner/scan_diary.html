@@ -354,7 +354,7 @@ async function saveScannedOrder() {
   }
 }
 
-const SECS=5*60; let last=Date.now();
+const SECS=60*60; let last=Date.now();
 ["click","keydown","mousemove","touchstart"].forEach(function(ev){document.addEventListener(ev,function(){last=Date.now();},{passive:true});});
 setInterval(function(){if(Math.floor((Date.now()-last)/1000)>=SECS)window.location.href="/owner/login?expired=1";},5000);
 </script>

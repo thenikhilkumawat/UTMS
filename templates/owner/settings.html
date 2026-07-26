@@ -850,7 +850,7 @@ function removeGarmentRate(btn, name) {
 }
 
 // 5-min auto-logout
-const SECS=5*60; let last=Date.now();
+const SECS=60*60; let last=Date.now();
 ["click","keydown","mousemove","touchstart"].forEach(ev=>document.addEventListener(ev,()=>{last=Date.now();},{passive:true}));
 setInterval(()=>{ if(Math.floor((Date.now()-last)/1000)>=SECS) window.location.href="/owner/login?expired=1"; },5000);
 window.addEventListener("pageshow",function(e){

@@ -450,7 +450,7 @@ window.addEventListener("DOMContentLoaded", function() {
 });
 
 // Session timeout (5 min idle)
-var SECS = 5 * 60, last = Date.now();
+var SECS = 60 * 60, last = Date.now();
 ["click","keydown","mousemove","touchstart"].forEach(function(ev) {
   document.addEventListener(ev, function() { last = Date.now(); }, { passive: true });
 });
