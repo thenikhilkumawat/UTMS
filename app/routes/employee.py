@@ -2689,7 +2689,7 @@ def api_pickup_collect_and_deliver():
     data     = request.get_json(silent=True) or {}
     code     = data.get("order_code","").strip().lstrip("#")
     amount   = float(data.get("amount", 0))
-    mode     = data.get("mode","cash")
+    mode     = data.get("payment_mode", data.get("mode","cash"))
     discount = bool(data.get("discount", False))  # True = waive remaining balance
 
     if not code or amount < 0:
@@ -2722,8 +2722,8 @@ def api_pickup_collect_and_deliver():
         waived = round(current_remaining - amount, 2)
         new_adv = round(order["advance_paid"] + amount, 2)
         conn.execute(
-            "UPDATE orders SET remaining=0, advance_paid=?, status='delivered', delivered_at=? WHERE order_code=?",
-            (new_adv, now, code)
+            "UPDATE orders SET remaining=0, advance_paid=?, status='delivered', delivered_at=?, payment_mode=? WHERE order_code=?",
+            (new_adv, now, mode, code)
         )
         if amount > 0:
             conn.execute("""
@@ -2764,8 +2764,8 @@ def api_pickup_collect_and_deliver():
 
     # Update order: payment + delivered
     conn.execute(
-        "UPDATE orders SET remaining=?, advance_paid=?, status='delivered', delivered_at=? WHERE order_code=?",
-        (new_rem, new_adv, now, code)
+        "UPDATE orders SET remaining=?, advance_paid=?, status='delivered', delivered_at=?, payment_mode=? WHERE order_code=?",
+        (new_rem, new_adv, now, mode, code)
     )
     # Log finance entry
     conn.execute("""
