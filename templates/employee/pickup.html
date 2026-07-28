@@ -420,6 +420,13 @@ function forceMarkReady(){
 
 function collectAndDeliver(isDiscount){
   var amt=parseFloat(document.getElementById("dc-amount").value)||0;
+  var due=parseFloat((currentOrder&&currentOrder.remaining)||0);
+  if(!isDiscount && amt<=0 && due>0){
+    var msg=currentLang==="hi"
+      ? ("⚠️ Amount khaali hai! ₹"+due+" abhi bhi due hai.\n\nKya sach mein BINA payment collect kiye deliver karna hai?")
+      : ("⚠️ Amount is empty! ₹"+due+" is still due.\n\nDeliver WITHOUT collecting payment?");
+    if(!confirm(msg)) return;
+  }
   var rn=(document.getElementById("receiver-name").value||"").trim();
   var rm=(document.getElementById("receiver-mobile").value||"").trim();
   var btn=document.getElementById("collect-btn");
