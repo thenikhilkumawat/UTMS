@@ -1441,6 +1441,35 @@ def fix_finance_mode(order_code):
     return jsonify({"ok": True, "updated": len(rows), "message": f"✅ {len(rows)} finance entries updated to {mode}"})
 
 
+@bp.route("/api/diagnose-finance/<code>")
+@owner_required
+def api_diagnose_finance(code):
+    """Read-only: show the order's current stored fields + every finance
+    entry linked to it, exactly as stored in the DB. Used to check why an
+    amount isn't showing on the Finance page (wrong date? wrong mode? entry
+    missing entirely?) without guessing."""
+    conn = get_db()
+    order = conn.execute("""
+        SELECT id, order_code, status, payable_amount, advance_paid, remaining,
+               payment_mode, delivered_at
+        FROM orders WHERE order_code=?
+    """, (code,)).fetchone()
+    if not order:
+        conn.close()
+        return jsonify({"ok": False, "error": f"Order #{code} not found"})
+    finance_rows = conn.execute(
+        "SELECT id, tx_date, tx_type, category, amount, mode, note, created_at FROM finance WHERE order_id=? ORDER BY id DESC",
+        (order["id"],)
+    ).fetchall()
+    conn.close()
+    return jsonify({
+        "ok": True,
+        "order": dict(order),
+        "finance_entry_count": len(finance_rows),
+        "finance_entries": [dict(r) for r in finance_rows],
+    })
+
+
 @bp.route("/api/diagnose-order/<code>")
 @owner_required
 def api_diagnose_order(code):
