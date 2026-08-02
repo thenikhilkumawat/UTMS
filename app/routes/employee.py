@@ -1609,6 +1609,85 @@ def api_shop_name():
 #  ORDER STATUS MODULE
 # ══════════════════════════════════════════════
 
+
+@bp.route("/api/order-status-search")
+def api_order_status_search():
+    """AJAX search for order status — returns JSON, no page reload."""
+    from datetime import date as _date, timedelta as _td
+    q = request.args.get("q", "").strip()
+    conn = get_db()
+
+    fresh_start_enabled = get_setting("utms_fresh_start", "0") == "1"
+    fresh_start_date    = get_setting("utms_fresh_start_date", "2026-06-01") if fresh_start_enabled else None
+    date_clause  = "AND o.order_date >= ?" if fresh_start_date else ""
+    date_params  = (fresh_start_date,) if fresh_start_date else ()
+
+    COLS = """SELECT o.id, o.order_code, o.status, o.is_urgent, o.note,
+                   o.order_date, o.delivery_date, o.delivered_at, o.repeat_of,
+                   o.payable_amount, o.advance_paid, o.remaining, o.customer_id,
+                   c.name as cname, c.mobile
+            FROM orders o LEFT JOIN customers c ON c.id=o.customer_id"""
+
+    if not q:
+        week_ago = (_date.today() - _td(days=7)).isoformat()
+        rows = conn.execute(f"""{COLS}
+            WHERE 1=1 {date_clause}
+            AND (o.status IN ('pending','ready')
+                 OR (o.status='delivered' AND o.delivered_at >= '{week_ago}'))
+            ORDER BY o.is_urgent DESC,
+              CASE o.status WHEN 'pending' THEN 0 WHEN 'ready' THEN 1 ELSE 2 END,
+              o.id DESC LIMIT 200
+        """, date_params).fetchall()
+        latest_codes = set()
+    else:
+        q_clean = q.lstrip("#").strip()
+        if q_clean.isdigit() and len(q_clean) <= 6:
+            rows = conn.execute(f"""{COLS}
+                WHERE 1=1 {date_clause}
+                  AND (o.order_code=? OR o.repeat_of=?)
+                ORDER BY o.id DESC
+            """, date_params + (q_clean, q_clean)).fetchall()
+        elif q_clean.isdigit():
+            rows = conn.execute(f"""{COLS}
+                WHERE 1=1 {date_clause} AND c.mobile LIKE ?
+                ORDER BY o.id DESC
+            """, date_params + (f"%{q_clean}%",)).fetchall()
+        else:
+            rows = conn.execute(f"""{COLS}
+                WHERE 1=1 {date_clause} AND LOWER(c.name) LIKE LOWER(?)
+                ORDER BY o.id DESC
+            """, date_params + (f"%{q_clean}%",)).fetchall()
+        # Mark latest order per repeat_of group
+        latest_codes = set()
+        seen_parents = set()
+        for r in rows:
+            parent = r["repeat_of"] or r["order_code"]
+            if parent not in seen_parents:
+                seen_parents.add(parent)
+                latest_codes.add(r["order_code"])
+
+    def fmtd(d):
+        if not d: return ""
+        p = str(d).split("-")
+        return f"{p[2]}-{p[1]}-{p[0]}" if len(p)==3 else d
+
+    result = []
+    for o in rows:
+        result.append({
+            "order_code":   o["order_code"],
+            "repeat_of":    o["repeat_of"] or "",
+            "status":       o["status"],
+            "is_urgent":    bool(o["is_urgent"]),
+            "cname":        o["cname"] or "—",
+            "mobile":       o["mobile"] or "",
+            "delivery_date":fmtd(o["delivery_date"]),
+            "remaining":    o["remaining"] or 0,
+            "is_latest":    o["order_code"] in latest_codes if latest_codes else False,
+        })
+
+    conn.close()
+    return jsonify({"ok": True, "orders": result, "count": len(result)})
+
 @bp.route("/order-status")
 def order_status():
     conn = get_db()
