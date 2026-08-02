@@ -400,7 +400,7 @@ function changeQty(d) {
 
 function submitLog() {
   if (!SEL_EMP_ID) { showToast("कर्मचारी चुनें","warning"); return; }
-  var code = document.getElementById("wl-code").value.trim().replace("#","");
+  var code = (window._wlEntryCode || document.getElementById("wl-code").value.trim()).replace("#","");
   var qty  = parseInt(document.getElementById("wl-qty").value)||0;
   if (!code||qty<1) { showToast("ऑर्डर कोड और संख्या दर्ज करें","warning"); return; }
   var isStitch = (CURRENT_TAB==="stitch");
