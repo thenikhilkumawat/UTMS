@@ -262,6 +262,15 @@
         <input type="tel" id="fill-mobile" placeholder="9876543210" maxlength="10" style="width:100%;padding:12px;border:2px solid #e5e7eb;border-radius:10px;font-size:16px;box-sizing:border-box;outline:none;" onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#e5e7eb'"></div>
       <div><label style="font-size:11px;font-weight:700;text-transform:uppercase;color:#6b7280;display:block;margin-bottom:5px;">Address / Gaon</label>
         <input type="text" id="fill-address" placeholder="Sikar..." style="width:100%;padding:12px;border:2px solid #e5e7eb;border-radius:10px;font-size:15px;box-sizing:border-box;outline:none;" onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#e5e7eb'"></div>
+      <div>
+        <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:#6b7280;display:block;margin-bottom:5px;">📷 Replace Image (optional)</label>
+        <input type="file" id="fill-image" accept="image/*" capture="environment"
+          style="width:100%;padding:10px;border:2px dashed #c7d2fe;border-radius:10px;font-size:13px;background:#f8f9ff;cursor:pointer;">
+        <div id="fill-img-preview" style="display:none;margin-top:8px;">
+          <img id="fill-img-thumb" style="width:100%;max-height:160px;object-fit:cover;border-radius:8px;border:2px solid #6366f1;">
+          <div style="font-size:11px;color:#16a34a;font-weight:700;margin-top:4px;">✅ Nai image ready hai</div>
+        </div>
+      </div>
     </div>
     <div id="fill-msg" style="font-size:13px;font-weight:700;min-height:20px;margin:12px 0;text-align:center;"></div>
     <div style="display:flex;gap:10px;">
@@ -498,6 +507,17 @@ function openFillModal(code) {
   setTimeout(() => document.getElementById("fill-name").focus(), 100);
 }
 function closeFillModal() { document.getElementById("fill-modal").style.display = "none"; }
+document.getElementById('fill-image').addEventListener('change', function(){
+  var f = this.files[0];
+  if(!f) return;
+  var reader = new FileReader();
+  reader.onload = function(e){
+    document.getElementById('fill-img-thumb').src = e.target.result;
+    document.getElementById('fill-img-preview').style.display = 'block';
+  };
+  reader.readAsDataURL(f);
+});
+
 async function saveFillDetails() {
   const code = document.getElementById("fill-code-label").textContent;
   const name = document.getElementById("fill-name").value.trim();
