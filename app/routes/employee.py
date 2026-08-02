@@ -1641,13 +1641,13 @@ def order_status():
         q_clean = search_q.lstrip("#").strip()
 
         if q_clean.isdigit() and len(q_clean) <= 6:
-            # Short number = ORDER CODE → exact match, show that single order
+            # Short number = ORDER CODE → exact + all repeat entries of this order
             raw = conn.execute(f"""
                 {SELECT_COLS}
                 WHERE 1=1 {date_clause}
-                  AND o.order_code = ?
+                  AND (o.order_code = ? OR o.repeat_of = ?)
                 ORDER BY o.id DESC
-            """, date_params + (q_clean,)).fetchall()
+            """, date_params + (q_clean, q_clean)).fetchall()
 
         elif q_clean.isdigit() and len(q_clean) >= 7:
             # Long number = MOBILE NUMBER → show ALL orders for this mobile, no limit
