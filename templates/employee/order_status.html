@@ -669,6 +669,57 @@ function filterRows() {
     if (expRow) expRow.style.display = "none";
   });
   syncUrlState();
+
+  // If no results visible and query looks like an order code → AJAX search
+  var q2 = document.getElementById("srch").value.trim().replace("#","");
+  if(q2 && q2.match(/^\d+$/)) {
+    var visible = Array.from(document.querySelectorAll(".orow")).filter(function(r){ return r.style.display!=="none"; });
+    if(visible.length === 0) {
+      ajaxSearch(q2);
+    } else {
+      removeDynamicRows();
+    }
+  } else {
+    removeDynamicRows();
+  }
+}
+
+var _ajaxTimer = null;
+function ajaxSearch(q) {
+  clearTimeout(_ajaxTimer);
+  _ajaxTimer = setTimeout(function(){
+    fetch("/api/order-status-search?q=" + encodeURIComponent(q))
+      .then(function(r){ return r.json(); })
+      .then(function(d) {
+        removeDynamicRows();
+        if(!d.ok || !d.orders.length) return;
+        var container = document.querySelector("tbody") || document.getElementById("os-body") || document.querySelector(".os-list");
+        if(!container) return;
+        d.orders.forEach(function(o){
+          var tr = document.createElement("tr");
+          tr.className = "orow dynamic-row";
+          tr.dataset.status = o.status;
+          var statusColor = o.status==="ready"?"#16a34a":o.status==="delivered"?"#6366f1":"#d97706";
+          var statusBg = o.status==="ready"?"#dcfce7":o.status==="delivered"?"#ede9fe":"#fef3c7";
+          tr.innerHTML =
+            "<td style='padding:10px 14px;font-weight:900;color:#4338ca;'>"
+            +"#"+o.order_code
+            +(o.repeat_of?"<br><span style='font-size:10px;color:#94a3b8;'>repeat of #"+o.repeat_of+"</span>":"")
+            +(o.is_latest?"<br><span style='font-size:10px;background:#fef3c7;color:#92400e;padding:1px 5px;border-radius:5px;font-weight:800;'>LATEST</span>":"")
+            +"</td>"
+            +"<td style='padding:10px 14px;font-weight:700;'>"+o.cname+"</td>"
+            +"<td style='padding:10px 14px;font-size:12px;color:#64748b;'>"+o.mobile+"</td>"
+            +"<td style='padding:10px 14px;'><span style='background:"+statusBg+";color:"+statusColor+";font-size:11px;font-weight:800;padding:3px 10px;border-radius:20px;text-transform:uppercase;'>"+o.status+"</span></td>"
+            +"<td style='padding:10px 14px;font-size:12px;color:#64748b;'>"+o.delivery_date+"</td>"
+            +"<td style='padding:10px 14px;font-weight:700;color:"+(o.remaining>0?"#dc2626":"#16a34a")+"'>₹"+o.remaining+"</td>";
+          container.appendChild(tr);
+        });
+      }).catch(function(){});
+  }, 400);
+}
+
+function removeDynamicRows() {
+  document.querySelectorAll(".dynamic-row").forEach(function(r){ r.remove(); });
 }
 
 function toggleExpand(rowEl, expId) {
