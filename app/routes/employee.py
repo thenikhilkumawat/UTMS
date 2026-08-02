@@ -2184,6 +2184,8 @@ def api_worklog_order_info():
         WHERE o.order_code=?
     """, (code,)).fetchone()
 
+    original_code = code
+
     # If found but already delivered, OR if not found, check for newer orders
     # linked via repeat_of (i.e., new orders created under this permanent code)
     if order and order["status"] == "delivered":
@@ -2275,6 +2277,7 @@ def api_worklog_order_info():
     conn.close()
     return jsonify({
         "order_code":       code,
+        "display_code":     original_code,
         "customer_name":    order["cname"] or "—",
         "mobile":           order["mobile"] or "",
         "status":           order["status"],
