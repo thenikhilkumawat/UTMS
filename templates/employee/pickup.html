@@ -363,7 +363,7 @@ function renderOrder(o){
   var rem=parseFloat(o.remaining||0);
   document.getElementById("dc-amount").value=rem>0?rem:"";
   document.getElementById("upi-amt").textContent=rem>0?rem:0;
-  document.getElementById("pending-section").style.display=o.status==="pending"?"block":"none";
+  document.getElementById("pending-section").style.display=(o.status==="pending"||o.status==="entry")?"block":"none";
   document.getElementById("payment-section").style.display=o.status==="ready"?"block":"none";
   document.getElementById("pu-delivered-banner").style.display=o.status==="delivered"?"block":"none";
   // WhatsApp only after delivery
