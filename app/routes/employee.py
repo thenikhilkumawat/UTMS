@@ -2647,6 +2647,16 @@ def api_pickup_order():
     except:
         delivered_at_raw = ""
 
+    # Check for active repeat entry (if this order is delivered)
+    repeat_entry_code = None
+    if o["status"] == "delivered":
+        newer = conn.execute(
+            "SELECT order_code FROM orders WHERE repeat_of=? AND status!='delivered' ORDER BY id DESC LIMIT 1",
+            (o["order_code"],)
+        ).fetchone()
+        if newer:
+            repeat_entry_code = newer["order_code"]
+
     # Fetch work_logs BEFORE closing connection
     work_logs = [{
         "employee": w["employee_name"] or "",
@@ -2677,6 +2687,7 @@ def api_pickup_order():
         "note":             o["note"] or "",
         "delivered_at_fmt": fmtd(delivered_at_raw[:10]),
         "work_logs":        work_logs,
+        "repeat_entry_code": repeat_entry_code,
         "garments": [{
             "garment_type": it["garment_type"],
             "quantity":     it["quantity"],
