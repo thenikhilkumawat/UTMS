@@ -3142,6 +3142,40 @@ def api_server_stats():
 
     return jsonify({"ok": True, "stats": result})
 
+
+@bp.route("/api/upload-order-image", methods=["POST"])
+@owner_required
+def api_upload_order_image():
+    """Replace/add image for an order from diary page."""
+    import os, uuid
+    from datetime import datetime as _dt
+    code  = (request.form.get("order_code") or "").strip().lstrip("#")
+    file  = request.files.get("image")
+    if not code or not file:
+        return jsonify({"ok": False, "error": "code and image required"})
+    conn = get_db()
+    order = conn.execute("SELECT id FROM orders WHERE order_code=?", (code,)).fetchone()
+    if not order:
+        conn.close()
+        return jsonify({"ok": False, "error": f"Order #{code} not found"})
+    # Save image to order_images directory
+    img_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+                           "order_images", code)
+    os.makedirs(img_dir, exist_ok=True)
+    ext     = os.path.splitext(file.filename or "img.jpg")[1] or ".jpg"
+    fname   = f"{uuid.uuid4().hex[:8]}{ext}"
+    fpath   = os.path.join(img_dir, fname)
+    file.save(fpath)
+    # Insert into order_images table
+    now_str = _dt.now().strftime("%Y-%m-%d %H:%M:%S")
+    conn.execute(
+        "INSERT INTO order_images(order_id, filename, uploaded_at) VALUES(?,?,?)",
+        (order["id"], fname, now_str)
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True, "filename": fname, "message": "✅ Image uploaded!"})
+
 @bp.route("/finance")
 @owner_required
 def owner_finance():
