@@ -1671,8 +1671,39 @@ def api_order_status_search():
         p = str(d).split("-")
         return f"{p[2]}-{p[1]}-{p[0]}" if len(p)==3 else d
 
+    # Fetch items + work_logs for progress bars
+    vis_codes = [o["order_code"] for o in rows]
+    items_map = {}
+    wl_map    = {}
+    if vis_codes:
+        ph = ",".join("?" * len(vis_codes))
+        for it in conn.execute(
+            f"SELECT order_id, garment_type, quantity FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE order_code IN ({ph}))",
+            tuple(vis_codes)).fetchall():
+            items_map.setdefault(it["order_id"], []).append({"garment_type":it["garment_type"],"quantity":it["quantity"]})
+        for wl in conn.execute(
+            f"SELECT order_code, garment_type, qty_done, notes FROM work_logs WHERE order_code IN ({ph})",
+            tuple(vis_codes)).fetchall():
+            wl_map.setdefault(wl["order_code"], []).append(wl)
+
     result = []
     for o in rows:
+        wls = wl_map.get(o["order_code"], [])
+        items = items_map.get(o["id"], [])
+        total_qty = sum(it["quantity"] for it in items) or 1
+        naap = kataai = silai = 0
+        for wl in wls:
+            n = (wl["notes"] or "").strip()
+            q = wl["qty_done"] or 0
+            if any(x in n for x in ["Measurement","Naap","नाप","Naap","measure"]):
+                naap += q
+            elif any(x in n for x in ["Kataai","Cutting","कटाई","Cut","cut"]):
+                kataai += q
+            else:
+                silai += q
+        naap_pct   = min(100, int(naap*100/total_qty))
+        kataai_pct = min(100, int(kataai*100/total_qty))
+        silai_pct  = min(100, int(silai*100/total_qty))
         result.append({
             "order_code":   o["order_code"],
             "repeat_of":    o["repeat_of"] or "",
@@ -1683,6 +1714,9 @@ def api_order_status_search():
             "delivery_date":fmtd(o["delivery_date"]),
             "remaining":    o["remaining"] or 0,
             "is_latest":    o["order_code"] in latest_codes if latest_codes else False,
+            "naap_pct":     naap_pct,
+            "kataai_pct":   kataai_pct,
+            "silai_pct":    silai_pct,
         })
 
     conn.close()
