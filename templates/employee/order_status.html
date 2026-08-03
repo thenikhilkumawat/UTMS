@@ -102,6 +102,7 @@
         data-upcoming="{{ 'true' if o.due_soon and not o.overdue else 'false' }}"
         data-pickup-pending="{{ 'true' if o.pickup_pending else 'false' }}"
         data-s="{{ o.order_code }} {{ o.repeat_of or '' }} {{ o.cname|default('')|lower|trim }} {{ o.mobile }} {{ o.garments|map(attribute='garment_type')|join(' ')|lower }}" data-code="{{ o.order_code }}"
+        data-repeat-of="{{ o.repeat_of or '' }}"
         data-date="{{ o.delivery_date or '9999-12-31' }}"
         data-order-date="{{ o.order_date or '' }}"
         data-created-at="{{ (o.created_at or '')[:10] }}"
@@ -651,7 +652,8 @@ function filterRows() {
       matchQ = true;
     } else if (/^\d+$/.test(raw)) {
       const code = (row.dataset.code || "");
-      matchQ = code === raw || code.startsWith(raw);
+      const repeatOf = (row.dataset.repeatOf || "");
+      matchQ = code === raw || code.startsWith(raw) || repeatOf === raw;
     } else {
       matchQ = words.every(w => srch.includes(w));
     }
@@ -774,6 +776,7 @@ function toggleExpand(rowEl, expId) {
   const isOpen = exp.style.display !== "none";
   document.querySelectorAll("[id^='exp-']").forEach(el => el.style.display = "none");
   exp.style.display = isOpen ? "none" : "table-row";
+  if (!isOpen) exp.scrollIntoView({behavior:"smooth", block:"nearest"});
 }
 
 function toggleDynamicExpand(rowEl, code) {
@@ -784,6 +787,7 @@ function toggleDynamicExpand(rowEl, code) {
     var isOpen = existing.style.display !== "none";
     document.querySelectorAll("[id^='exp-']").forEach(function(el){ el.style.display="none"; });
     existing.style.display = isOpen ? "none" : "table-row";
+    if (!isOpen) existing.scrollIntoView({behavior:"smooth", block:"nearest"});
     return;
   }
   // Create expansion row and fetch details
@@ -793,6 +797,7 @@ function toggleDynamicExpand(rowEl, code) {
   expRow.innerHTML = "<td colspan='7' style='padding:12px 24px;background:#f8faff;border-bottom:2px solid #e0e7ff;'>"
     +"<div style='color:#94a3b8;font-size:13px;'>⏳ Loading order details...</div></td>";
   rowEl.parentNode.insertBefore(expRow, rowEl.nextSibling);
+  expRow.scrollIntoView({behavior:"smooth", block:"nearest"});
   // Close other open expansions
   document.querySelectorAll("[id^='exp-']").forEach(function(el){
     if(el.id !== expId) el.style.display = "none";
@@ -815,7 +820,14 @@ function toggleDynamicExpand(rowEl, code) {
               }).join("")
             + "</div>";
         }
-        return "<div>"+chip+measChips+"</div>";
+        var noteHtml = "";
+        if (g.notes) {
+          var plainNote = g.notes.indexOf("[") !== -1 ? g.notes.split("[")[0].trim() : g.notes;
+          if (plainNote) {
+            noteHtml = "<div style='font-size:11px;color:#92400e;background:#fef3c7;border-radius:6px;padding:3px 8px;margin:2px 0 8px;font-weight:600;display:inline-block;'>"+plainNote+"</div>";
+          }
+        }
+        return "<div>"+chip+measChips+noteHtml+"</div>";
       }).join("");
       var due = parseFloat(o.remaining||0);
       expRow.querySelector("td").innerHTML =
