@@ -1634,39 +1634,46 @@ def api_order_status_progress():
     order_ids = list(id_to_code.keys())
     ph2 = ",".join("?" * len(order_ids))
 
-    qty_by_order = {}
+    qty_by_order_gt = {}   # (order_id, garment_type) -> quantity
     for it in conn.execute(
-        f"SELECT order_id, SUM(quantity) as total FROM order_items WHERE order_id IN ({ph2}) GROUP BY order_id",
+        f"SELECT order_id, garment_type, SUM(quantity) as total FROM order_items WHERE order_id IN ({ph2}) GROUP BY order_id, garment_type",
         tuple(order_ids)
     ).fetchall():
-        qty_by_order[it["order_id"]] = it["total"] or 1
+        qty_by_order_gt[(it["order_id"], it["garment_type"])] = it["total"] or 1
 
     wl_rows = conn.execute(
-        f"SELECT order_code, notes, COALESCE(SUM(qty_done),0) as total FROM work_logs WHERE order_code IN ({ph}) GROUP BY order_code, notes",
+        f"SELECT order_code, garment_type, notes, COALESCE(SUM(qty_done),0) as total FROM work_logs WHERE order_code IN ({ph}) GROUP BY order_code, garment_type, notes",
         tuple(codes)
     ).fetchall()
     conn.close()
 
+    # Per (code, garment_type) done-counts, so one garment's stitching can
+    # never inflate another garment's progress in the same order.
     naap, kataai, silai = {}, {}, {}
     for wl in wl_rows:
-        code, n, q = wl["order_code"], (wl["notes"] or "").strip(), wl["total"] or 0
+        code, gt, n, q = wl["order_code"], (wl["garment_type"] or ""), (wl["notes"] or "").strip(), wl["total"] or 0
+        key = (code, gt)
         if any(x in n for x in ["Measurement","Naap","नाप"]):
-            naap[code] = naap.get(code,0) + q
+            naap[key] = naap.get(key,0) + q
         elif any(x in n for x in ["Kataai","Cutting","कटाई"]):
-            kataai[code] = kataai.get(code,0) + q
+            kataai[key] = kataai.get(key,0) + q
         else:
-            silai[code] = silai.get(code,0) + q
+            silai[key] = silai.get(key,0) + q
 
     progress = {}
     for oid, code in id_to_code.items():
         if status_by_code[code] == "delivered":
             progress[code] = {"naap_pct":100,"kataai_pct":100,"silai_pct":100,"status":status_by_code[code]}
             continue
-        total = qty_by_order.get(oid, 1) or 1
+        gts = [gt for (o_id, gt) in qty_by_order_gt if o_id == oid]
+        total = sum(qty_by_order_gt[(oid, gt)] for gt in gts) or 1
+        naap_done   = sum(min(qty_by_order_gt[(oid, gt)], naap.get((code, gt), 0))   for gt in gts)
+        kataai_done = sum(min(qty_by_order_gt[(oid, gt)], kataai.get((code, gt), 0)) for gt in gts)
+        silai_done  = sum(min(qty_by_order_gt[(oid, gt)], silai.get((code, gt), 0))  for gt in gts)
         progress[code] = {
-            "naap_pct":   min(100, int((naap.get(code,0)   * 100) / total)),
-            "kataai_pct": min(100, int((kataai.get(code,0) * 100) / total)),
-            "silai_pct":  min(100, int((silai.get(code,0)  * 100) / total)),
+            "naap_pct":   min(100, int((naap_done   * 100) / total)),
+            "kataai_pct": min(100, int((kataai_done * 100) / total)),
+            "silai_pct":  min(100, int((silai_done  * 100) / total)),
             "status":     status_by_code[code],
         }
     return jsonify({"ok": True, "progress": progress})
@@ -1773,16 +1780,20 @@ def api_order_status_search():
         wls = wl_map.get(o["order_code"], [])
         items = items_map.get(o["id"], [])
         total_qty = sum(it["quantity"] for it in items) or 1
-        naap = kataai = silai = 0
+        naap_by_gt, kataai_by_gt, silai_by_gt = {}, {}, {}
         for wl in wls:
-            n = (wl["notes"] or "").strip()
-            q = wl["qty_done"] or 0
+            n  = (wl["notes"] or "").strip()
+            q  = wl["qty_done"] or 0
+            gt = wl["garment_type"] or ""
             if any(x in n for x in ["Measurement","Naap","नाप","Naap","measure"]):
-                naap += q
+                naap_by_gt[gt] = naap_by_gt.get(gt,0) + q
             elif any(x in n for x in ["Kataai","Cutting","कटाई","Cut","cut"]):
-                kataai += q
+                kataai_by_gt[gt] = kataai_by_gt.get(gt,0) + q
             else:
-                silai += q
+                silai_by_gt[gt] = silai_by_gt.get(gt,0) + q
+        naap   = sum(min(it["quantity"], naap_by_gt.get(it["garment_type"],0))   for it in items)
+        kataai = sum(min(it["quantity"], kataai_by_gt.get(it["garment_type"],0)) for it in items)
+        silai  = sum(min(it["quantity"], silai_by_gt.get(it["garment_type"],0))  for it in items)
         naap_pct   = min(100, int(naap*100/total_qty))
         kataai_pct = min(100, int(kataai*100/total_qty))
         silai_pct  = min(100, int(silai*100/total_qty))
@@ -1903,7 +1914,7 @@ def order_status():
     vis_codes = [o["order_code"] for o in raw]
     if vis_codes:
         ph_codes = ",".join(["?"] * len(vis_codes))
-        all_wl = conn.execute(f"SELECT order_code, qty_done, notes FROM work_logs WHERE order_code IN ({ph_codes})", tuple(vis_codes)).fetchall()
+        all_wl = conn.execute(f"SELECT order_code, garment_type, qty_done, notes FROM work_logs WHERE order_code IN ({ph_codes})", tuple(vis_codes)).fetchall()
     else:
         all_wl = []
     wl_by_code = {}
@@ -1914,19 +1925,20 @@ def order_status():
     for o in raw:
         items_raw = items_by_order.get(o["id"], [])
         wl_rows = wl_by_code.get(o["order_code"], [])
-        naap_total = kataai_total = silai_total = 0
+        # Track completion PER GARMENT TYPE (not an order-wide total shared
+        # proportionally) — logging stitching for Shirt must never show up
+        # as progress on Pant just because they're in the same order.
+        naap_by_gt, kataai_by_gt, silai_by_gt = {}, {}, {}
         for wl in wl_rows:
-            n = (wl["notes"] or "").strip()
-            q = wl["qty_done"] or 0
+            n  = (wl["notes"] or "").strip()
+            q  = wl["qty_done"] or 0
+            gt = wl["garment_type"] or ""
             if any(x in n for x in ["Measurement","Naap","नाप"]):
-                naap_total += q
+                naap_by_gt[gt] = naap_by_gt.get(gt, 0) + q
             elif any(x in n for x in ["Kataai","Cutting","कटाई"]):
-                kataai_total += q
+                kataai_by_gt[gt] = kataai_by_gt.get(gt, 0) + q
             else:
-                silai_total += q
-
-        # Total garment quantity for this order
-        total_order_qty = sum(it["quantity"] for it in items_raw) or 1
+                silai_by_gt[gt] = silai_by_gt.get(gt, 0) + q
 
         is_delivered = o["status"] == "delivered"
         items = []
@@ -1940,10 +1952,9 @@ def order_status():
                 naap_done = cut_done = stitch_done = qty
                 pct = 100
             else:
-                share = qty / total_order_qty
-                naap_done   = min(qty, int(naap_total   * share + 0.999))
-                cut_done    = min(qty, int(kataai_total  * share + 0.999))
-                stitch_done = min(qty, int(silai_total   * share + 0.999))
+                naap_done   = min(qty, naap_by_gt.get(gt, 0))
+                cut_done    = min(qty, kataai_by_gt.get(gt, 0))
+                stitch_done = min(qty, silai_by_gt.get(gt, 0))
                 pct = min(100, int((stitch_done / qty) * 100)) if qty else 0
             items.append({
                 "garment_type":  gt,
