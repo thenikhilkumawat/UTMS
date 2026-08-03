@@ -2778,7 +2778,7 @@ def api_pickup_order():
         return jsonify({"error":"not found"})
 
     items = conn.execute(
-        "SELECT garment_type, quantity, rate, amount FROM order_items WHERE order_id=?",
+        "SELECT garment_type, quantity, rate, amount, notes, measurements FROM order_items WHERE order_id=?",
         (o["id"],)
     ).fetchall()
 
@@ -2812,6 +2812,12 @@ def api_pickup_order():
         "SELECT employee_name, garment_type, qty_done, notes FROM work_logs WHERE order_id=? ORDER BY id DESC LIMIT 10",
         (o["id"],)).fetchall()]
 
+    def _parse_meas(m):
+        try:
+            return json.loads(m) if m else {}
+        except Exception:
+            return {}
+
     conn.close()
     return jsonify({
         "order_code":       o["order_code"],
@@ -2837,7 +2843,9 @@ def api_pickup_order():
             "garment_type": it["garment_type"],
             "quantity":     it["quantity"],
             "rate":         it["rate"],
-            "amount":       it["amount"]
+            "amount":       it["amount"],
+            "notes":        it["notes"] or "",
+            "measurements": _parse_meas(it["measurements"]) if "measurements" in it.keys() else {}
         } for it in items]
     })
 
