@@ -803,8 +803,19 @@ function toggleDynamicExpand(rowEl, code) {
     .then(function(o){
       if(o.error){ expRow.querySelector("td").innerHTML="<div style='color:#dc2626;'>❌ "+o.error+"</div>"; return; }
       var garments = (o.garments||o.items||[]).map(function(g){
-        return "<span style='display:inline-block;background:#eef2ff;border:1.5px solid #c7d2fe;border-radius:8px;padding:4px 10px;font-size:12px;font-weight:700;color:#4338ca;margin:2px;'>"
+        var chip = "<span style='display:inline-block;background:#eef2ff;border:1.5px solid #c7d2fe;border-radius:8px;padding:4px 10px;font-size:12px;font-weight:700;color:#4338ca;margin:2px;'>"
           +g.garment_type+" ×"+g.quantity+"</span>";
+        var measChips = "";
+        if (g.measurements && Object.keys(g.measurements).length) {
+          measChips = "<div style='display:flex;flex-wrap:wrap;gap:4px;margin:4px 0 8px 2px;'>"
+            + Object.keys(g.measurements).map(function(k){
+                var v = g.measurements[k];
+                if (v === "" || v === null || v === undefined) return "";
+                return "<span style='background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:3px 8px;font-size:11px;color:#475569;'><b style='color:#1e293b;'>"+k+"</b> "+v+"</span>";
+              }).join("")
+            + "</div>";
+        }
+        return "<div>"+chip+measChips+"</div>";
       }).join("");
       var due = parseFloat(o.remaining||0);
       expRow.querySelector("td").innerHTML =
