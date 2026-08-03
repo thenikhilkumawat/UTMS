@@ -5195,10 +5195,21 @@ def order_edit(order_code):
     urgent_count = conn.execute("SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status!='delivered'").fetchone()["c"]
     conn.close()
 
+    # Existing images for this order
+    import os as _os
+    img_dir = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.dirname(__file__))),
+                            "order_images", order_code)
+    existing_images = []
+    if _os.path.exists(img_dir):
+        for f in sorted(_os.listdir(img_dir)):
+            if f.lower().endswith(('.jpg','.jpeg','.png','.webp','.gif')):
+                existing_images.append(f"/order_images/{order_code}/{f}")
+
     return render_template("owner/order_edit.html",
         active_page="owner_orders", show_voice=False,
         urgent_count=urgent_count,
         order=dict(o),
+        existing_images=existing_images,
         garments_json=_json.dumps(garments),
         images=images,
         garment_rates=garment_rates,
