@@ -1450,7 +1450,7 @@ def api_diagnose_finance(code):
     missing entirely?) without guessing."""
     conn = get_db()
     order = conn.execute("""
-        SELECT id, order_code, status, payable_amount, advance_paid, remaining,
+        SELECT id, order_code, repeat_of, status, payable_amount, advance_paid, remaining,
                payment_mode, delivered_at
         FROM orders WHERE order_code=?
     """, (code,)).fetchone()
@@ -1458,7 +1458,7 @@ def api_diagnose_finance(code):
         conn.close()
         return jsonify({"ok": False, "error": f"Order #{code} not found"})
     finance_rows = conn.execute(
-        "SELECT id, tx_date, tx_type, category, amount, mode, note, created_at FROM finance WHERE order_id=? ORDER BY id DESC",
+        "SELECT id, order_id, tx_date, tx_type, category, amount, mode, note, created_at FROM finance WHERE order_id=? ORDER BY id DESC",
         (order["id"],)
     ).fetchall()
     conn.close()
