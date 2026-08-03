@@ -2636,6 +2636,28 @@ def owner_customers():
 # ══════════════════════════════════════════════
 
 
+@bp.route("/api/recheck-ready-status")
+@owner_required
+def api_recheck_ready_status():
+    """Re-run the (now-fixed) auto-ready check against every currently
+    'pending' order. Needed because the auto-ready check only used to
+    recognise English work-log labels (Naap/Cutting) and missed Hindi ones
+    (नाप/कटाई) — so orders that were actually 100% done stayed stuck as
+    'pending' until something new was logged against them. This catches
+    those already-stuck orders retroactively. Only touches status; nothing
+    else about the order is changed."""
+    from app.routes.employee import check_and_auto_ready
+    conn = get_db()
+    pending = conn.execute("SELECT order_code FROM orders WHERE status='pending'").fetchall()
+    fixed = []
+    for r in pending:
+        if check_and_auto_ready(conn, r["order_code"]):
+            fixed.append(r["order_code"])
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True, "checked": len(pending), "fixed_count": len(fixed), "fixed_orders": fixed})
+
+
 @bp.route("/mixed-customers-3701")
 @owner_required
 def mixed_customers_3701():

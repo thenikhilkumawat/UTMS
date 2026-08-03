@@ -42,9 +42,9 @@ def check_and_auto_ready(conn, order_code):
         gt  = r["garment_type"]
         n   = (r["notes"] or "").strip()
         qty = r["total"] or 0
-        if n.startswith("Naap") or n.startswith("Measure"):
+        if any(x in n for x in ["Measurement","Naap","नाप"]):
             naap[gt]   = naap.get(gt, 0) + qty
-        elif n.startswith("Cut") or n.startswith("Kataai"):
+        elif any(x in n for x in ["Kataai","Cutting","कटाई"]):
             kataai[gt] = kataai.get(gt, 0) + qty
         else:
             silai[gt]  = silai.get(gt, 0) + qty
