@@ -223,14 +223,10 @@
           <span style="background:#d1fae5;color:#059669;border:1.5px solid #a7f3d0;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:800;">✅ READY</span>
           {% elif o.status == 'delivered' %}
           <span style="background:#f3f4f6;color:#6b7280;border:1.5px solid #e5e7eb;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;"><span class="lang-en">DELIVERED</span><span class="lang-hi" style="display:none;">डिलीवर</span></span>
-          {% elif o.overdue %}
-          <span style="background:#fee2e2;color:#dc2626;border:1.5px solid #fca5a5;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:800;">⏰ LATE</span>
-          {% elif o.due_soon %}
-          <span style="background:#fef3c7;color:#d97706;border:1.5px solid #fde68a;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:800;"><span class="lang-en">UPCOMING</span><span class="lang-hi" style="display:none;">जल्द</span></span>
           {% elif o.status == "cancelled" %}
           <span style="background:#fee2e2;color:#dc2626;border:1.5px solid #fca5a5;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;"><span class="lang-en">CANCELLED</span><span class="lang-hi" style="display:none;">रद्द</span></span>
-          {% elif not o.is_urgent %}
-          <span style="background:#eff6ff;color:#3b82f6;border:1.5px solid #bfdbfe;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;"><span class="lang-en">In Progress</span><span class="lang-hi" style="display:none;">काम हो रहा है</span></span>
+          {% else %}
+          <span style="background:#eff6ff;color:#3b82f6;border:1.5px solid #bfdbfe;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;"><span class="lang-en">PENDING</span><span class="lang-hi" style="display:none;">बाकी</span></span>
           {% endif %}
           </div>
         </td>
