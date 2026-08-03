@@ -11,14 +11,6 @@
         <input type="text" name="q" value="{{ q }}" placeholder="Order code, naam ya mobile..." autofocus
           style="width:100%;padding:14px 18px;border-radius:12px;border:none;font-size:16px;font-weight:700;color:#1e293b;outline:none;">
       </div>
-      <div>
-        <input type="date" name="from" value="{{ from_date }}"
-          style="padding:12px 14px;border-radius:10px;border:none;font-size:13px;font-weight:600;color:#1e293b;">
-      </div>
-      <div>
-        <input type="date" name="to" value="{{ to_date }}"
-          style="padding:12px 14px;border-radius:10px;border:none;font-size:13px;font-weight:600;color:#1e293b;">
-      </div>
       <button type="submit" style="padding:13px 24px;background:#fff;color:#312e81;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;">
         🔍 Search
       </button>
@@ -28,7 +20,6 @@
   {% if q %}
     <div style="font-size:13px;color:#64748b;font-weight:700;margin-bottom:14px;">
       {{ orders|length }} order{{ 's' if orders|length != 1 else '' }} mila{{ 'e' if orders|length != 1 else '' }} — "{{ q }}"
-      {% if from_date or to_date %} · date filter: {{ from_date or '…' }} → {{ to_date or '…' }}{% endif %}
     </div>
 
     {% if not orders %}
