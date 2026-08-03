@@ -159,7 +159,7 @@
         <div style="position:relative;">
           <img src="{{ img_url }}" loading="lazy"
             style="width:90px;height:90px;object-fit:cover;border-radius:10px;border:2px solid #e2e8f0;cursor:pointer;"
-            onclick="document.getElementById('img-zoom-src').src=this.src;document.getElementById('img-zoom-modal').style.display='flex'">
+            onclick="openZoomImg(this.src)">
         </div>
         {% endfor %}
       </div>
