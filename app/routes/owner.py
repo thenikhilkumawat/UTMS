@@ -1441,6 +1441,41 @@ def fix_finance_mode(order_code):
     return jsonify({"ok": True, "updated": len(rows), "message": f"✅ {len(rows)} finance entries updated to {mode}"})
 
 
+@bp.route("/api/diagnose-finance-bulk")
+@owner_required
+def api_diagnose_finance_bulk():
+    """Same as diagnose-finance but for many order codes at once —
+    comma-separated in ?codes=3898,3860,2358 — to quickly spot a pattern
+    across several orders instead of checking one at a time."""
+    codes_param = request.args.get("codes", "")
+    codes = [c.strip().lstrip("#") for c in codes_param.split(",") if c.strip()]
+    if not codes:
+        return jsonify({"ok": False, "error": "Pass ?codes=3898,3860,..."})
+    conn = get_db()
+    out = []
+    for code in codes:
+        order = conn.execute("""
+            SELECT id, order_code, repeat_of, status, payable_amount, advance_paid, remaining,
+                   payment_mode, delivered_at
+            FROM orders WHERE order_code=?
+        """, (code,)).fetchone()
+        if not order:
+            out.append({"code": code, "found": False})
+            continue
+        finance_rows = conn.execute(
+            "SELECT id, order_id, tx_date, tx_type, category, amount, mode, note, created_at FROM finance WHERE order_id=? ORDER BY id DESC",
+            (order["id"],)
+        ).fetchall()
+        out.append({
+            "code": code, "found": True,
+            "order": dict(order),
+            "finance_entry_count": len(finance_rows),
+            "finance_entries": [dict(r) for r in finance_rows],
+        })
+    conn.close()
+    return jsonify({"ok": True, "results": out})
+
+
 @bp.route("/api/diagnose-finance/<code>")
 @owner_required
 def api_diagnose_finance(code):
