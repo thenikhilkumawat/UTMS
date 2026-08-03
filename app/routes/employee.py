@@ -3233,7 +3233,7 @@ def finance():
 
     # All transactions with order codes
     rows = conn.execute("""
-        SELECT f.*, o.order_code
+        SELECT f.*, o.order_code, o.repeat_of
         FROM finance f
         LEFT JOIN orders o ON o.id = f.order_id
         ORDER BY f.tx_date DESC, f.id DESC
@@ -3263,7 +3263,8 @@ def finance():
         "mode":        r["mode"] or "",
         "amount":      r["amount"] or 0,
         "order_id":    r["order_id"],
-        "order_code":  r["order_code"] or ""
+        "order_code":  (r["repeat_of"] if r["repeat_of"] else r["order_code"]) or "",
+        "entry_code":  r["order_code"] if r["repeat_of"] else "",
     } for r in rows]
 
     return render_template("employee/finance.html",

@@ -220,7 +220,7 @@
             <div class="tx-info">
               <div class="tx-cat">
                 {{ tx.category }}
-                {% if tx.order_code %}<span class="tx-badge order">#{{ tx.order_code }}</span>{% endif %}
+                {% if tx.order_code %}<span class="tx-badge order">#{{ tx.order_code }}{% if tx.entry_code %} (#{{ tx.entry_code }}){% endif %}</span>{% endif %}
                 {% if tx.mode=='upi' %}
               <span style="background:#eef2ff;color:#4338ca;font-size:10px;font-weight:800;padding:2px 8px;border-radius:20px;border:1px solid #c7d2fe;">📱 UPI</span>
               {% else %}

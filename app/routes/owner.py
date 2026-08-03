@@ -2738,6 +2738,155 @@ def api_recheck_ready_status():
     return jsonify({"ok": True, "checked": len(pending), "fixed_count": len(fixed), "fixed_orders": fixed})
 
 
+@bp.route("/full-search")
+@owner_required
+def full_search_page():
+    """One search box → everything about an order/customer: garments &
+    measurements, who logged नाप/कटाई/सिलाई and when, every payment/advance
+    with mode and date, and every other order (old + new) for that customer."""
+    q         = request.args.get("q", "").strip()
+    from_date = request.args.get("from", "")
+    to_date   = request.args.get("to", "")
+
+    def fmtd(d):
+        if not d: return "—"
+        p = str(d).split("-")
+        return f"{p[2]}-{p[1]}-{p[0]}" if len(p)==3 else d
+
+    def fmt_dt(ts):
+        if not ts or len(ts) < 16: return ts or "—"
+        try:
+            d, t = ts[:10], ts[11:16]
+            h, m = int(t[:2]), t[3:5]
+            ampm = "AM" if h < 12 else "PM"
+            h12 = h % 12 or 12
+            return f"{fmtd(d)} · {h12}:{m} {ampm}"
+        except Exception:
+            return ts
+
+    orders_out = []
+    if q:
+        conn = get_db()
+        qnum = q.lstrip("#").strip()
+        base_orders = []
+        if qnum.isdigit():
+            exact = conn.execute(
+                "SELECT customer_id FROM orders WHERE order_code=?", (qnum,)
+            ).fetchone()
+            if exact:
+                base_orders = conn.execute("""
+                    SELECT o.id, o.order_code, o.repeat_of, o.order_date, o.delivery_date,
+                           o.delivered_at, o.status, o.payable_amount, o.advance_paid,
+                           o.remaining, o.payment_mode, o.is_urgent, o.note, o.customer_id,
+                           c.name as cname, c.mobile, c.address
+                    FROM orders o JOIN customers c ON c.id=o.customer_id
+                    WHERE o.customer_id=?
+                    ORDER BY o.id DESC
+                """, (exact["customer_id"],)).fetchall()
+            else:
+                # Fall back to mobile match
+                base_orders = conn.execute("""
+                    SELECT o.id, o.order_code, o.repeat_of, o.order_date, o.delivery_date,
+                           o.delivered_at, o.status, o.payable_amount, o.advance_paid,
+                           o.remaining, o.payment_mode, o.is_urgent, o.note, o.customer_id,
+                           c.name as cname, c.mobile, c.address
+                    FROM orders o JOIN customers c ON c.id=o.customer_id
+                    WHERE c.mobile LIKE ?
+                    ORDER BY o.id DESC LIMIT 100
+                """, (f"%{qnum}%",)).fetchall()
+        else:
+            base_orders = conn.execute("""
+                SELECT o.id, o.order_code, o.repeat_of, o.order_date, o.delivery_date,
+                       o.delivered_at, o.status, o.payable_amount, o.advance_paid,
+                       o.remaining, o.payment_mode, o.is_urgent, o.note, o.customer_id,
+                       c.name as cname, c.mobile, c.address
+                FROM orders o JOIN customers c ON c.id=o.customer_id
+                WHERE LOWER(c.name) LIKE LOWER(?)
+                ORDER BY o.id DESC LIMIT 100
+            """, (f"%{q}%",)).fetchall()
+
+        if from_date:
+            base_orders = [o for o in base_orders if o["order_date"] and str(o["order_date"]) >= from_date]
+        if to_date:
+            base_orders = [o for o in base_orders if o["order_date"] and str(o["order_date"]) <= to_date]
+
+        latest_id_per_cust = {}
+        for o in base_orders:
+            cid = o["customer_id"]
+            if cid not in latest_id_per_cust or o["id"] > latest_id_per_cust[cid]:
+                latest_id_per_cust[cid] = o["id"]
+
+        order_ids = [o["id"] for o in base_orders]
+        garments_by_order, wl_by_order, fin_by_order = {}, {}, {}
+        if order_ids:
+            ph = ",".join("?" * len(order_ids))
+            for g in conn.execute(
+                f"SELECT order_id, garment_type, quantity, rate, amount, notes, measurements FROM order_items WHERE order_id IN ({ph}) ORDER BY order_id, id",
+                order_ids
+            ).fetchall():
+                try: meas = json.loads(g["measurements"] or "{}")
+                except Exception: meas = {}
+                garments_by_order.setdefault(g["order_id"], []).append({
+                    "garment_type": g["garment_type"], "quantity": g["quantity"],
+                    "rate": g["rate"], "amount": g["amount"],
+                    "notes": (g["notes"] or "").split("[")[0].strip(),
+                    "measurements": meas,
+                })
+            for w in conn.execute(
+                f"SELECT order_id, employee_name, garment_type, qty_done, notes, log_date, created_at FROM work_logs WHERE order_id IN ({ph}) ORDER BY created_at DESC",
+                order_ids
+            ).fetchall():
+                n = (w["notes"] or "")
+                stage = "नाप" if any(x in n for x in ["Measurement","Naap","नाप"]) else \
+                        "कटाई" if any(x in n for x in ["Kataai","Cutting","कटाई"]) else "सिलाई"
+                wl_by_order.setdefault(w["order_id"], []).append({
+                    "employee": w["employee_name"] or "—", "garment_type": w["garment_type"],
+                    "stage": stage, "qty": w["qty_done"], "when": fmt_dt(w["created_at"] or w["log_date"]),
+                })
+            for f in conn.execute(
+                f"SELECT order_id, tx_date, tx_type, category, amount, mode, note, created_by, created_at FROM finance WHERE order_id IN ({ph}) ORDER BY created_at DESC",
+                order_ids
+            ).fetchall():
+                fin_by_order.setdefault(f["order_id"], []).append({
+                    "type": f["tx_type"], "category": f["category"], "amount": f["amount"],
+                    "mode": f["mode"], "note": f["note"] or "", "by": f["created_by"] or "—",
+                    "when": fmt_dt(f["created_at"]),
+                })
+
+        conn.close()
+
+        for o in base_orders:
+            orders_out.append({
+                "id": o["id"],
+                "code": o["order_code"],
+                "display_code": o["repeat_of"] if o["repeat_of"] else o["order_code"],
+                "entry_code": o["order_code"] if o["repeat_of"] else "",
+                "is_latest": latest_id_per_cust.get(o["customer_id"]) == o["id"],
+                "status": o["status"],
+                "urgent": bool(o["is_urgent"]),
+                "order_date": fmtd(o["order_date"]),
+                "delivery_date": fmtd(o["delivery_date"]),
+                "delivered_at": fmt_dt(o["delivered_at"]) if o["delivered_at"] else "—",
+                "payable": int(o["payable_amount"] or 0),
+                "advance": int(o["advance_paid"] or 0),
+                "due": int(o["remaining"] or 0),
+                "mode": o["payment_mode"] or "—",
+                "note": o["note"] or "",
+                "cname": o["cname"] or "—",
+                "mobile": o["mobile"] or "—",
+                "address": o["address"] or "—",
+                "garments": garments_by_order.get(o["id"], []),
+                "work_logs": wl_by_order.get(o["id"], []),
+                "finance": fin_by_order.get(o["id"], []),
+            })
+        # Newest first
+        orders_out.sort(key=lambda x: -x["id"])
+
+    return render_template("owner/full_search.html",
+        active_page="full_search", q=q, from_date=from_date, to_date=to_date,
+        orders=orders_out)
+
+
 @bp.route("/mixed-customers-3701")
 @owner_required
 def mixed_customers_3701():
