@@ -3158,9 +3158,9 @@ def api_upload_order_image():
     if not order:
         conn.close()
         return jsonify({"ok": False, "error": f"Order #{code} not found"})
-    # Save image to order_images directory
+    # Save image to static/order_images directory (Flask static folder)
     img_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-                           "order_images", code)
+                           "static", "order_images", code)
     os.makedirs(img_dir, exist_ok=True)
     ext     = os.path.splitext(file.filename or "img.jpg")[1] or ".jpg"
     fname   = f"{uuid.uuid4().hex[:8]}{ext}"
@@ -3168,9 +3168,10 @@ def api_upload_order_image():
     file.save(fpath)
     # Insert into order_images table
     now_str = _dt.now().strftime("%Y-%m-%d %H:%M:%S")
+    file_path = f"/static/order_images/{code}/{fname}"
     conn.execute(
-        "INSERT INTO order_images(order_id, filename, uploaded_at) VALUES(?,?,?)",
-        (order["id"], fname, now_str)
+        "INSERT INTO order_images(order_id, file_path) VALUES(?,?)",
+        (order["id"], file_path)
     )
     conn.commit()
     conn.close()
