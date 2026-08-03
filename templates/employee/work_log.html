@@ -441,7 +441,7 @@ function submitLog() {
 
 function logAllRemaining() {
   if (!SEL_EMP_ID || !orderData) { showToast("कर्मचारी और ऑर्डर चुनें","warning"); return; }
-  var code = document.getElementById("wl-code").value.trim().replace("#","");
+  var code = (window._wlEntryCode || document.getElementById("wl-code").value.trim()).replace("#","");
   var items = orderData.items || [];
   var cfg = TAB_CONFIG[CURRENT_TAB];
   var pending = [];
@@ -527,7 +527,7 @@ function renderMCTable(items) {
 
 function logAllMeasureCut() {
   if (!SEL_EMP_ID || !orderData) { showToast("कर्मचारी और ऑर्डर चुनें","warning"); return; }
-  var code = document.getElementById("wl-code").value.trim().replace("#","");
+  var code = (window._wlEntryCode || document.getElementById("wl-code").value.trim()).replace("#","");
   var items = orderData.items || [];
   var rateM = TAB_CONFIG["mc"].rate_measure;
   var rateC = TAB_CONFIG["mc"].rate_cut;
