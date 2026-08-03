@@ -145,15 +145,19 @@
 
         <!-- Col 2: Order Info -->
         <td style="padding:14px 16px;vertical-align:top;">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <span style="font-size:15px;font-weight:900;color:var(--accent);">#{{ o.order_code }}</span>
+            {% if o.is_latest %}
+            <span style="background:#dcfce7;color:#166534;font-size:9px;font-weight:800;padding:1px 7px;border-radius:20px;border:1px solid #86efac;white-space:nowrap;">🆕 Latest</span>
+            {% endif %}
+          </div>
           {% if o.repeat_of %}
-          <div style="font-size:15px;font-weight:900;color:var(--accent);">#{{ o.repeat_of }}</div>
-          <div style="margin-top:3px;">
+          <div style="margin-top:3px;display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
+            <span style="font-size:10px;color:#94a3b8;">(of #{{ o.repeat_of }})</span>
             <span style="background:#ede9fe;color:#6d28d9;font-size:10px;font-weight:800;padding:2px 8px;border-radius:6px;">
               🔁 Visit {{ o.visit_number }}
             </span>
           </div>
-          {% else %}
-          <div style="font-size:15px;font-weight:900;color:var(--accent);">#{{ o.order_code }}</div>
           {% endif %}
           <div style="font-size:11px;color:var(--text-muted);margin-top:2px;"><span class="lang-en">Ord:</span><span class="lang-hi" style="display:none;">दिनांक:</span> {{ o.order_date_fmt }}</div>
         </td>
@@ -162,9 +166,6 @@
         <td style="padding:14px 16px;vertical-align:top;">
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
             <span style="font-size:13px;font-weight:700;color:var(--text-primary);">{{ o.cname }}</span>
-            {% if o.is_latest and o.customer_order_count > 1 %}
-            <span style="background:#dcfce7;color:#166534;font-size:9px;font-weight:800;padding:1px 7px;border-radius:20px;border:1px solid #86efac;white-space:nowrap;">🆕 Latest</span>
-            {% endif %}
             {% if o.customer_order_count > 1 %}
             <span style="background:#fef3c7;color:#b45309;font-size:9px;font-weight:800;padding:1px 7px;border-radius:20px;border:1px solid #fde68a;white-space:nowrap;">⭐ {{ o.customer_order_count }} visits</span>
             {% endif %}
@@ -675,13 +676,10 @@ function filterRows() {
   // If query is numeric → always AJAX (to find old orders not in default 200)
   var q2 = document.getElementById("srch").value.trim().replace("#","");
   if(q2 && /^\d+$/.test(q2)) {
-    var visible = Array.from(document.querySelectorAll(".orow")).filter(function(r){ return r.style.display!=="none"; });
-    if(visible.length === 0) {
-      // No local results — go to AJAX immediately
-      ajaxSearch(q2);
-    } else {
-      removeDynamicRows();
-    }
+    // Always check AJAX too — delivered/old orders aren't in the local
+    // listing at all, so a local match (e.g. a repeat order) must not
+    // block finding the original order via search.
+    ajaxSearch(q2);
   } else {
     removeDynamicRows();
   }
@@ -697,6 +695,12 @@ function ajaxSearch(q) {
       .then(function(d) {
         removeDynamicRows();
         if(!d.ok || !d.orders.length) return;
+        // Skip any order already shown as a visible local row — avoids duplicates
+        var localCodes = Array.from(document.querySelectorAll(".orow:not(.dynamic-row)"))
+          .filter(function(r){ return r.style.display!=="none"; })
+          .map(function(r){ return r.dataset.code; });
+        d.orders = d.orders.filter(function(o){ return localCodes.indexOf(String(o.order_code)) === -1; });
+        if(!d.orders.length) return;
         var container = document.querySelector("tbody") || document.getElementById("os-body") || document.querySelector(".os-list");
         if(!container) return;
         d.orders.forEach(function(o){
