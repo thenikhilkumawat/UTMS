@@ -195,20 +195,20 @@
         <td style="padding:10px 16px;vertical-align:top;min-width:130px;">
           <!-- Step labels -->
           <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
-            <span style="font-size:8px;font-weight:800;color:{% if naap_pct>=100 %}#4f46e5{% else %}#9ca3af{% endif %};">नाप{% if naap_pct>=100 %} ✓{% endif %}</span>
-            <span style="font-size:8px;font-weight:800;color:{% if cut_pct>=100 %}#ea580c{% else %}#9ca3af{% endif %};">कटाई{% if cut_pct>=100 %} ✓{% endif %}</span>
-            <span style="font-size:8px;font-weight:800;color:{% if stitch_pct>=100 %}#16a34a{% else %}#9ca3af{% endif %};">सिलाई{% if stitch_pct>=100 %} ✓{% endif %}</span>
+            <span id="lbl-naap-{{ o.order_code }}" style="font-size:8px;font-weight:800;color:{% if naap_pct>=100 %}#4f46e5{% else %}#9ca3af{% endif %};">नाप{% if naap_pct>=100 %} ✓{% endif %}</span>
+            <span id="lbl-kataai-{{ o.order_code }}" style="font-size:8px;font-weight:800;color:{% if cut_pct>=100 %}#ea580c{% else %}#9ca3af{% endif %};">कटाई{% if cut_pct>=100 %} ✓{% endif %}</span>
+            <span id="lbl-silai-{{ o.order_code }}" style="font-size:8px;font-weight:800;color:{% if stitch_pct>=100 %}#16a34a{% else %}#9ca3af{% endif %};">सिलाई{% if stitch_pct>=100 %} ✓{% endif %}</span>
           </div>
           <!-- Single bar with 3 coloured segments separated by gap -->
           <div style="display:flex;gap:2px;height:8px;border-radius:6px;overflow:hidden;">
             <div style="flex:1;background:#e5e7eb;border-radius:4px;overflow:hidden;">
-              <div style="height:100%;background:#4f46e5;width:{{ naap_pct }}%;transition:width 0.4s;border-radius:4px;"></div>
+              <div id="bar-naap-{{ o.order_code }}" style="height:100%;background:#4f46e5;width:{{ naap_pct }}%;transition:width 0.4s;border-radius:4px;"></div>
             </div>
             <div style="flex:1;background:#e5e7eb;border-radius:4px;overflow:hidden;">
-              <div style="height:100%;background:#ea580c;width:{{ cut_pct }}%;transition:width 0.4s;border-radius:4px;"></div>
+              <div id="bar-kataai-{{ o.order_code }}" style="height:100%;background:#ea580c;width:{{ cut_pct }}%;transition:width 0.4s;border-radius:4px;"></div>
             </div>
             <div style="flex:1;background:#e5e7eb;border-radius:4px;overflow:hidden;">
-              <div style="height:100%;background:#16a34a;width:{{ stitch_pct }}%;transition:width 0.4s;border-radius:4px;"></div>
+              <div id="bar-silai-{{ o.order_code }}" style="height:100%;background:#16a34a;width:{{ stitch_pct }}%;transition:width 0.4s;border-radius:4px;"></div>
             </div>
           </div>
         </td>
@@ -707,6 +707,7 @@ function ajaxSearch(q) {
           var tr = document.createElement("tr");
           tr.className = "orow dynamic-row";
           tr.dataset.status = o.status;
+          tr.dataset.code = o.order_code;
           tr.style.cursor = "pointer";
           tr.onclick = function(){ toggleExpand(this, "exp-"+o.order_code); };
           var statusColor = o.status==="ready"?"#16a34a":o.status==="delivered"?"#6366f1":"#d97706";
@@ -715,14 +716,14 @@ function ajaxSearch(q) {
           var np=o.naap_pct||0, cp=o.kataai_pct||0, sp=o.silai_pct||0;
           var progBar =
             "<div style='display:flex;justify-content:space-between;margin-bottom:3px;'>"
-            +"<span style='font-size:8px;font-weight:800;color:"+(np>=100?"#4f46e5":"#9ca3af")+";'>नाप"+(np>=100?" ✓":"")+"</span>"
-            +"<span style='font-size:8px;font-weight:800;color:"+(cp>=100?"#ea580c":"#9ca3af")+";'>कटाई"+(cp>=100?" ✓":"")+"</span>"
-            +"<span style='font-size:8px;font-weight:800;color:"+(sp>=100?"#16a34a":"#9ca3af")+";'>सिलाई"+(sp>=100?" ✓":"")+"</span>"
+            +"<span id='lbl-naap-"+o.order_code+"' style='font-size:8px;font-weight:800;color:"+(np>=100?"#4f46e5":"#9ca3af")+";'>नाप"+(np>=100?" ✓":"")+"</span>"
+            +"<span id='lbl-kataai-"+o.order_code+"' style='font-size:8px;font-weight:800;color:"+(cp>=100?"#ea580c":"#9ca3af")+";'>कटाई"+(cp>=100?" ✓":"")+"</span>"
+            +"<span id='lbl-silai-"+o.order_code+"' style='font-size:8px;font-weight:800;color:"+(sp>=100?"#16a34a":"#9ca3af")+";'>सिलाई"+(sp>=100?" ✓":"")+"</span>"
             +"</div>"
             +"<div style='display:flex;gap:3px;height:8px;'>"
-            +"<div style='flex:1;background:#e5e7eb;border-radius:4px;overflow:hidden;'><div style='height:100%;background:#4f46e5;width:"+np+"%;'></div></div>"
-            +"<div style='flex:1;background:#e5e7eb;border-radius:4px;overflow:hidden;'><div style='height:100%;background:#ea580c;width:"+cp+"%;'></div></div>"
-            +"<div style='flex:1;background:#e5e7eb;border-radius:4px;overflow:hidden;'><div style='height:100%;background:#16a34a;width:"+sp+"%;'></div></div>"
+            +"<div style='flex:1;background:#e5e7eb;border-radius:4px;overflow:hidden;'><div id='bar-naap-"+o.order_code+"' style='height:100%;background:#4f46e5;width:"+np+"%;'></div></div>"
+            +"<div style='flex:1;background:#e5e7eb;border-radius:4px;overflow:hidden;'><div id='bar-kataai-"+o.order_code+"' style='height:100%;background:#ea580c;width:"+cp+"%;'></div></div>"
+            +"<div style='flex:1;background:#e5e7eb;border-radius:4px;overflow:hidden;'><div id='bar-silai-"+o.order_code+"' style='height:100%;background:#16a34a;width:"+sp+"%;'></div></div>"
             +"</div>"
             +"<div style='display:flex;justify-content:space-between;margin-top:2px;'>"
             +"<span style='font-size:9px;color:#6b7280;'>"+np+"%</span>"
@@ -905,5 +906,38 @@ async function sendWA(lang) {
   fetch("/api/log-notify",{method:"POST",headers:{"Content-Type":"application/json"},
     body:JSON.stringify({order_code:notifyCode,customer:d.customer_name,mobile:d.mobile,lang:lang})}).catch(()=>{});
 }
+
+// ── Live progress-bar refresh — every 5s, updates only the bars/labels
+// (no full page reload, doesn't disturb search/filter/scroll state).
+// Pauses while the tab is in the background to avoid wasting server load.
+function refreshProgressBars() {
+  if (document.visibilityState !== "visible") return;
+  var codes = Array.from(document.querySelectorAll(".orow"))
+    .map(function(r){ return r.dataset.code; })
+    .filter(Boolean);
+  if (!codes.length) return;
+  fetch("/api/order-status-progress", {
+    method: "POST", headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({codes: codes})
+  }).then(function(r){ return r.json(); }).then(function(d){
+    if (!d.ok) return;
+    Object.keys(d.progress).forEach(function(code){
+      var p = d.progress[code];
+      var barN = document.getElementById("bar-naap-"+code);
+      var barK = document.getElementById("bar-kataai-"+code);
+      var barS = document.getElementById("bar-silai-"+code);
+      var lblN = document.getElementById("lbl-naap-"+code);
+      var lblK = document.getElementById("lbl-kataai-"+code);
+      var lblS = document.getElementById("lbl-silai-"+code);
+      if (barN) barN.style.width = p.naap_pct + "%";
+      if (barK) barK.style.width = p.kataai_pct + "%";
+      if (barS) barS.style.width = p.silai_pct + "%";
+      if (lblN) { lblN.style.color = p.naap_pct>=100 ? "#4f46e5" : "#9ca3af"; lblN.textContent = "नाप" + (p.naap_pct>=100?" ✓":""); }
+      if (lblK) { lblK.style.color = p.kataai_pct>=100 ? "#ea580c" : "#9ca3af"; lblK.textContent = "कटाई" + (p.kataai_pct>=100?" ✓":""); }
+      if (lblS) { lblS.style.color = p.silai_pct>=100 ? "#16a34a" : "#9ca3af"; lblS.textContent = "सिलाई" + (p.silai_pct>=100?" ✓":""); }
+    });
+  }).catch(function(){});
+}
+setInterval(refreshProgressBars, 5000);
 </script>
 {% endblock %}

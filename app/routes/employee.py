@@ -1610,6 +1610,68 @@ def api_shop_name():
 # ══════════════════════════════════════════════
 
 
+@bp.route("/api/order-status-progress", methods=["POST"])
+def api_order_status_progress():
+    """Lightweight: given a list of order codes, return just their current
+    naap/kataai/silai % and status. Used to auto-refresh progress bars on
+    the Order Status page every few seconds without reloading the page."""
+    data  = request.get_json(silent=True) or {}
+    codes = [str(c).strip().lstrip("#") for c in data.get("codes", []) if c]
+    if not codes:
+        return jsonify({"ok": True, "progress": {}})
+    codes = codes[:200]  # sane cap
+    conn = get_db()
+    ph = ",".join("?" * len(codes))
+    orders = conn.execute(
+        f"SELECT id, order_code, status FROM orders WHERE order_code IN ({ph})", tuple(codes)
+    ).fetchall()
+    if not orders:
+        conn.close()
+        return jsonify({"ok": True, "progress": {}})
+
+    id_to_code = {o["id"]: o["order_code"] for o in orders}
+    status_by_code = {o["order_code"]: o["status"] for o in orders}
+    order_ids = list(id_to_code.keys())
+    ph2 = ",".join("?" * len(order_ids))
+
+    qty_by_order = {}
+    for it in conn.execute(
+        f"SELECT order_id, SUM(quantity) as total FROM order_items WHERE order_id IN ({ph2}) GROUP BY order_id",
+        tuple(order_ids)
+    ).fetchall():
+        qty_by_order[it["order_id"]] = it["total"] or 1
+
+    wl_rows = conn.execute(
+        f"SELECT order_code, notes, COALESCE(SUM(qty_done),0) as total FROM work_logs WHERE order_code IN ({ph}) GROUP BY order_code, notes",
+        tuple(codes)
+    ).fetchall()
+    conn.close()
+
+    naap, kataai, silai = {}, {}, {}
+    for wl in wl_rows:
+        code, n, q = wl["order_code"], (wl["notes"] or "").strip(), wl["total"] or 0
+        if any(x in n for x in ["Measurement","Naap","नाप"]):
+            naap[code] = naap.get(code,0) + q
+        elif any(x in n for x in ["Kataai","Cutting","कटाई"]):
+            kataai[code] = kataai.get(code,0) + q
+        else:
+            silai[code] = silai.get(code,0) + q
+
+    progress = {}
+    for oid, code in id_to_code.items():
+        if status_by_code[code] == "delivered":
+            progress[code] = {"naap_pct":100,"kataai_pct":100,"silai_pct":100,"status":status_by_code[code]}
+            continue
+        total = qty_by_order.get(oid, 1) or 1
+        progress[code] = {
+            "naap_pct":   min(100, int((naap.get(code,0)   * 100) / total)),
+            "kataai_pct": min(100, int((kataai.get(code,0) * 100) / total)),
+            "silai_pct":  min(100, int((silai.get(code,0)  * 100) / total)),
+            "status":     status_by_code[code],
+        }
+    return jsonify({"ok": True, "progress": progress})
+
+
 @bp.route("/api/order-status-search")
 def api_order_status_search():
     """AJAX search for order status — returns JSON, no page reload."""
