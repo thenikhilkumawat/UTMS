@@ -701,6 +701,8 @@ function ajaxSearch(q) {
           var tr = document.createElement("tr");
           tr.className = "orow dynamic-row";
           tr.dataset.status = o.status;
+          tr.style.cursor = "pointer";
+          tr.onclick = function(){ toggleExpand(this, "exp-"+o.order_code); };
           var statusColor = o.status==="ready"?"#16a34a":o.status==="delivered"?"#6366f1":"#d97706";
           var statusBg = o.status==="ready"?"#dcfce7":o.status==="delivered"?"#ede9fe":"#fef3c7";
           // Progress bar — exactly like server-rendered version
@@ -748,10 +750,73 @@ function removeDynamicRows() {
 
 function toggleExpand(rowEl, expId) {
   const exp = document.getElementById(expId);
+  // For AJAX rows, exp may not exist — load dynamically
+  if (!exp) {
+    const code = expId.replace("exp-", "");
+    toggleDynamicExpand(rowEl, code);
+    return;
+  }
   if (!exp) return;
   const isOpen = exp.style.display !== "none";
   document.querySelectorAll("[id^='exp-']").forEach(el => el.style.display = "none");
   exp.style.display = isOpen ? "none" : "table-row";
+}
+
+function toggleDynamicExpand(rowEl, code) {
+  // Check if expansion row already exists
+  var expId = "exp-"+code;
+  var existing = document.getElementById(expId);
+  if (existing) {
+    var isOpen = existing.style.display !== "none";
+    document.querySelectorAll("[id^='exp-']").forEach(function(el){ el.style.display="none"; });
+    existing.style.display = isOpen ? "none" : "table-row";
+    return;
+  }
+  // Create expansion row and fetch details
+  var expRow = document.createElement("tr");
+  expRow.id = expId;
+  expRow.style.display = "table-row";
+  expRow.innerHTML = "<td colspan='7' style='padding:12px 24px;background:#f8faff;border-bottom:2px solid #e0e7ff;'>"
+    +"<div style='color:#94a3b8;font-size:13px;'>⏳ Loading order details...</div></td>";
+  rowEl.parentNode.insertBefore(expRow, rowEl.nextSibling);
+  // Close other open expansions
+  document.querySelectorAll("[id^='exp-']").forEach(function(el){
+    if(el.id !== expId) el.style.display = "none";
+  });
+  // Fetch order details from pickup API (returns full data)
+  fetch("/api/pickup/order?code="+code)
+    .then(function(r){ return r.json(); })
+    .then(function(o){
+      if(o.error){ expRow.querySelector("td").innerHTML="<div style='color:#dc2626;'>❌ "+o.error+"</div>"; return; }
+      var garments = (o.garments||o.items||[]).map(function(g){
+        return "<span style='display:inline-block;background:#eef2ff;border:1.5px solid #c7d2fe;border-radius:8px;padding:4px 10px;font-size:12px;font-weight:700;color:#4338ca;margin:2px;'>"
+          +g.garment_type+" ×"+g.quantity+"</span>";
+      }).join("");
+      var wlHtml = o.work_logs && o.work_logs.length
+        ? o.work_logs.map(function(w){ return "<div style='font-size:12px;padding:2px 0;'>👤 "+w.employee+" — "+w.garment+" (×"+w.qty+")</div>"; }).join("")
+        : "<div style='font-size:12px;color:#94a3b8;'>Koi work log nahi</div>";
+      var due = parseFloat(o.remaining||0);
+      expRow.querySelector("td").innerHTML =
+        "<div style='display:grid;grid-template-columns:1fr 1fr auto;gap:16px;padding:4px 0;'>"
+        +"<div>"
+        +"<div style='font-size:11px;font-weight:800;text-transform:uppercase;color:#6366f1;letter-spacing:1px;margin-bottom:6px;'>📦 Garments</div>"
+        +garments
+        +"</div>"
+        +"<div>"
+        +"<div style='font-size:11px;font-weight:800;text-transform:uppercase;color:#6366f1;letter-spacing:1px;margin-bottom:6px;'>🧵 Work Log</div>"
+        +wlHtml
+        +"</div>"
+        +"<div style='text-align:right;'>"
+        +"<div style='font-size:11px;font-weight:800;text-transform:uppercase;color:#6366f1;letter-spacing:1px;margin-bottom:6px;'>💰 Payment</div>"
+        +"<div style='font-size:13px;'>Total: <b>₹"+o.payable_amount+"</b></div>"
+        +"<div style='font-size:13px;'>Advance: <b style='color:#16a34a;'>₹"+o.advance_paid+"</b></div>"
+        +"<div style='font-size:14px;font-weight:900;color:"+(due>0?"#dc2626":"#16a34a")+"'>Due: ₹"+due+"</div>"
+        +"<div style='margin-top:10px;display:flex;flex-direction:column;gap:6px;'>"
+        +"<a href='/owner/orders/edit/"+code+"' style='display:block;padding:7px 14px;background:#6366f1;color:#fff;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;text-align:center;'>✏️ Edit Order</a>"
+        +"</div>"
+        +"</div>"
+        +"</div>";
+    }).catch(function(){ expRow.querySelector("td").innerHTML="<div style='color:#dc2626;'>❌ Error loading</div>"; });
 }
 
 function markReady(code) {
