@@ -110,7 +110,7 @@
             {% for o in pending_orders %}
             <tr style="border-bottom:1px solid #fde68a;"
               onmouseover="this.style.background='#fffbeb'" onmouseout="this.style.background=''">
-              <td style="padding:11px 16px;font-weight:800;color:#d97706;">#{{ o.order_code }}</td>
+              <td style="padding:11px 16px;font-weight:800;color:#d97706;">#{{ o.order_code }}{% if o.entry_code %} <span style="font-size:10px;opacity:0.7;">(#{{ o.entry_code }})</span>{% endif %}</td>
               <td style="padding:11px 16px;font-weight:600;">{{ o.cname }}</td>
               <td style="padding:11px 16px;text-align:center;">
                 <span style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:8px;
@@ -123,7 +123,7 @@
               <td style="padding:11px 16px;text-align:right;color:#dc2626;font-weight:900;font-size:15px;">₹{{ o.remaining }}</td>
               <td style="padding:11px 16px;text-align:center;font-size:12px;color:#6b7280;">{{ o.delivery_date }}</td>
               <td style="padding:11px 16px;text-align:center;">
-                <a href="/owner/orders/edit/{{ o.order_code }}"
+                <a href="/owner/orders/edit/{{ o.entry_code if o.entry_code else o.order_code }}"
                   style="background:#fef3c7;color:#d97706;padding:5px 12px;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;">Edit ↗</a>
               </td>
             </tr>
@@ -193,8 +193,8 @@
             <td style="padding:11px 16px;color:var(--text-muted);max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
               {{ tx.note or '—' }}
               {% if tx.order_code %}
-              <a href="/owner/orders/edit/{{ tx.order_code }}" onclick="event.stopPropagation();"
-                style="color:var(--accent);font-size:10px;font-weight:800;background:var(--accent-light);padding:2px 8px;border-radius:7px;text-decoration:none;margin-left:4px;white-space:nowrap;">#{{ tx.order_code }} ↗</a>
+              <a href="/owner/orders/edit/{{ tx.entry_code if tx.entry_code else tx.order_code }}" onclick="event.stopPropagation();"
+                style="color:var(--accent);font-size:10px;font-weight:800;background:var(--accent-light);padding:2px 8px;border-radius:7px;text-decoration:none;margin-left:4px;white-space:nowrap;">#{{ tx.order_code }}{% if tx.entry_code %} (#{{ tx.entry_code }}){% endif %} ↗</a>
               {% endif %}
             </td>
             <td style="padding:11px 16px;text-align:center;"><span style="font-size:11px;font-weight:700;background:#f1f5f9;padding:2px 8px;border-radius:7px;">{{ tx.mode|upper if tx.mode else '—' }}</span></td>
@@ -228,8 +228,8 @@
                 {% if tx.order_code %}
                 <div>
                   <div style="color:var(--text-muted);font-weight:700;text-transform:uppercase;font-size:10px;margin-bottom:3px;">Linked Order</div>
-                  <a href="/owner/orders/edit/{{ tx.order_code }}" onclick="event.stopPropagation();"
-                    style="color:var(--accent);font-weight:800;text-decoration:none;">#{{ tx.order_code }} — View Full Order ↗</a>
+                  <a href="/owner/orders/edit/{{ tx.entry_code if tx.entry_code else tx.order_code }}" onclick="event.stopPropagation();"
+                    style="color:var(--accent);font-weight:800;text-decoration:none;">#{{ tx.order_code }}{% if tx.entry_code %} (#{{ tx.entry_code }}){% endif %} — View Full Order ↗</a>
                 </div>
                 {% endif %}
               </div>

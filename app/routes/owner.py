@@ -3297,7 +3297,7 @@ def owner_finance():
 
     conn = get_db()
     rows = conn.execute("""
-        SELECT f.*, o.order_code
+        SELECT f.*, o.order_code, o.repeat_of
         FROM finance f LEFT JOIN orders o ON o.id=f.order_id
         WHERE f.tx_date >= ? AND f.tx_date <= ?
         ORDER BY f.tx_date DESC, f.id DESC
@@ -3320,7 +3320,7 @@ def owner_finance():
         "SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status!='delivered'"
     ).fetchone()["c"]
     pending_orders_rows = conn.execute("""
-        SELECT o.order_code, c.name as cname, o.remaining, o.payable_amount,
+        SELECT o.order_code, o.repeat_of, c.name as cname, o.remaining, o.payable_amount,
                o.advance_paid, o.delivery_date, o.status
         FROM orders o JOIN customers c ON c.id=o.customer_id
         WHERE o.status!='delivered' AND o.remaining>0
@@ -3349,7 +3349,8 @@ def owner_finance():
             return ts[11:16]
 
     pending_orders = [{
-        "order_code":   r["order_code"],
+        "order_code":   (r["repeat_of"] if r["repeat_of"] else r["order_code"]),
+        "entry_code":   r["order_code"] if r["repeat_of"] else "",
         "cname":        r["cname"],
         "remaining":    int(r["remaining"] or 0),
         "payable":      int(r["payable_amount"] or 0),
@@ -3368,7 +3369,8 @@ def owner_finance():
         "note":        r["note"] or "",
         "mode":        r["mode"] or "",
         "amount":      r["amount"] or 0,
-        "order_code":  r["order_code"] or "",
+        "order_code":  (r["repeat_of"] if r["repeat_of"] else r["order_code"]) or "",
+        "entry_code":  r["order_code"] if r["repeat_of"] else "",
         "created_by":  r["created_by"] or ""
     } for r in rows]
 
