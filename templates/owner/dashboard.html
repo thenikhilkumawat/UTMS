@@ -314,7 +314,7 @@
 
     <!-- Quick actions compact -->
     <div style="background:#fff;border-radius:12px;border:1.5px solid var(--border);padding:10px;display:grid;grid-template-columns:1fr 1fr;gap:6px;min-width:160px;">
-      {% for href, icon, label in [('/owner/finance','📊','Finance'),('/owner/inventory','📦','Inventory'),('/owner/customers','👥','Customers'),('/owner/settings','⚙️','Settings'),('/owner/measurement-fields','📐','Measure'),('/owner/whatsapp','💬','WhatsApp')] %}
+      {% for href, icon, label in [('/owner/finance','📊','Finance'),('/owner/full-search','🔎','Full Search'),('/owner/inventory','📦','Inventory'),('/owner/customers','👥','Customers'),('/owner/settings','⚙️','Settings'),('/owner/measurement-fields','📐','Measure'),('/owner/whatsapp','💬','WhatsApp')] %}
       <a href="{{ href }}" style="display:flex;flex-direction:column;align-items:center;padding:9px 5px;border-radius:10px;background:#f9fafb;text-decoration:none;font-size:10px;font-weight:700;color:var(--text-primary);gap:4px;transition:background 0.15s;"
         onmouseover="this.style.background='var(--accent-light)'" onmouseout="this.style.background='#f9fafb'">
         <span style="font-size:16px;">{{ icon }}</span>{{ label }}
