@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="max-width:900px;margin:0 auto;padding:20px;">
+
+  <div style="background:linear-gradient(135deg,#7c3aed,#a855f7);border-radius:16px;padding:20px;color:#fff;margin-bottom:20px;">
+    <div style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;opacity:0.8;margin-bottom:4px;">FORCE-READY ENTRIES</div>
+    <h1 style="font-size:20px;font-weight:900;margin-bottom:4px;">⚡ Auto-Bypass Fix Karo</h1>
+    <div style="font-size:13px;opacity:0.9;">
+      Ye wo kaam hai jo "Force Mark as Ready" se complete hua tha — kisi employee ke naam se attach nahi hai.
+      Har entry ke liye sahi employee choose karo, taaki uski pieces/earning count ho.
+    </div>
+  </div>
+
+  <div style="background:#fff;border-radius:12px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:10px;border:1.5px solid #e9d5ff;">
+    <span style="font-size:24px;">📋</span>
+    <div style="font-size:15px;font-weight:800;color:#581c87;" id="remaining-count">{{ entries|length }} entries bache hain</div>
+  </div>
+
+  {% if entries %}
+  <div id="entries-list">
+    {% for e in entries %}
+    <div class="bypass-row" id="row-{{ e.id }}" style="background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:200px;">
+        <div style="font-size:14px;font-weight:800;color:#4338ca;">#{{ e.order_code }} <span style="color:#1e293b;">— {{ e.cname }}</span></div>
+        <div style="font-size:12px;color:#64748b;margin-top:2px;">{{ e.garment_type }} ×{{ e.qty }} · {{ e.notes }} · {{ e.date }}</div>
+      </div>
+      <select id="emp-select-{{ e.id }}" style="padding:9px 12px;border:1.5px solid #c7d2fe;border-radius:8px;font-size:13px;font-weight:700;color:#1e293b;min-width:160px;">
+        <option value="">-- Employee चुनें --</option>
+        {% for emp in employees %}
+        <option value="{{ emp.name }}">{{ emp.hindi_name or emp.name }}</option>
+        {% endfor %}
+      </select>
+      <button onclick="reassign({{ e.id }})" id="btn-{{ e.id }}"
+        style="padding:9px 18px;background:#7c3aed;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap;">
+        ✅ Assign Karo
+      </button>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div style="background:#f0fdf4;border:2px solid #86efac;border-radius:12px;padding:30px;text-align:center;">
+    <div style="font-size:32px;margin-bottom:8px;">✅</div>
+    <div style="font-size:16px;font-weight:800;color:#166534;">Koi bhi Auto-Bypass entry bachi nahi hai</div>
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+function reassign(id) {
+  var sel = document.getElementById("emp-select-"+id);
+  var empName = sel.value;
+  if (!empName) { alert("Pehle employee chuno"); return; }
+  var btn = document.getElementById("btn-"+id);
+  btn.disabled = true;
+  btn.textContent = "...";
+  fetch("/owner/api/reassign-worklog", {
+    method: "POST", headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({id: id, employee_name: empName})
+  }).then(function(r){ return r.json(); }).then(function(d){
+    if (d.ok) {
+      var row = document.getElementById("row-"+id);
+      row.style.opacity = "0.4";
+      row.style.pointerEvents = "none";
+      btn.textContent = "✅ Done";
+      var counter = document.getElementById("remaining-count");
+      var n = document.querySelectorAll(".bypass-row:not([style*='opacity: 0.4'])").length;
+      counter.textContent = n + " entries bache hain";
+    } else {
+      alert("❌ " + (d.error || "Kuch galat hua"));
+      btn.disabled = false;
+      btn.textContent = "✅ Assign Karo";
+    }
+  }).catch(function(){
+    alert("❌ Network error");
+    btn.disabled = false;
+    btn.textContent = "✅ Assign Karo";
+  });
+}
+</script>
+{% endblock %}

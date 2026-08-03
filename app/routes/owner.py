@@ -2738,6 +2738,63 @@ def api_recheck_ready_status():
     return jsonify({"ok": True, "checked": len(pending), "fixed_count": len(fixed), "fixed_orders": fixed})
 
 
+@bp.route("/auto-bypass-fix")
+@owner_required
+def auto_bypass_fix_page():
+    """List every work-log entry currently credited to 'AUTO-BYPASS' (from
+    Force Mark as Ready) so the owner can reassign each one to the real
+    employee who actually did the work — for correct pay/stats tracking."""
+    conn = get_db()
+    rows = conn.execute("""
+        SELECT wl.id, wl.order_code, wl.garment_type, wl.qty_done, wl.notes,
+               wl.log_date, wl.created_at, c.name as cname
+        FROM work_logs wl
+        LEFT JOIN orders o ON o.id = wl.order_id
+        LEFT JOIN customers c ON c.id = o.customer_id
+        WHERE wl.employee_name = 'AUTO-BYPASS'
+        ORDER BY wl.id DESC
+    """).fetchall()
+    employees = conn.execute(
+        "SELECT id, name, COALESCE(hindi_name,'') as hindi_name FROM employees WHERE active=1 ORDER BY name"
+    ).fetchall()
+    conn.close()
+
+    def fmtd(d):
+        if not d: return "—"
+        p = str(d).split("-")
+        return f"{p[2]}-{p[1]}-{p[0]}" if len(p)==3 else d
+
+    entries = [{
+        "id": r["id"], "order_code": r["order_code"], "cname": r["cname"] or "—",
+        "garment_type": r["garment_type"], "qty": r["qty_done"],
+        "notes": r["notes"] or "", "date": fmtd(r["log_date"]),
+    } for r in rows]
+
+    return render_template("owner/auto_bypass_fix.html",
+        active_page="auto_bypass_fix", entries=entries,
+        employees=[dict(e) for e in employees])
+
+
+@bp.route("/api/reassign-worklog", methods=["POST"])
+@owner_required
+def api_reassign_worklog():
+    """Change a work_log entry's employee_name from AUTO-BYPASS to a real employee."""
+    data = request.get_json(silent=True) or {}
+    wl_id = data.get("id")
+    emp_name = (data.get("employee_name") or "").strip()
+    if not wl_id or not emp_name:
+        return jsonify({"ok": False, "error": "Missing id or employee_name"})
+    conn = get_db()
+    row = conn.execute("SELECT id FROM work_logs WHERE id=? AND employee_name='AUTO-BYPASS'", (wl_id,)).fetchone()
+    if not row:
+        conn.close()
+        return jsonify({"ok": False, "error": "Entry not found or already reassigned"})
+    conn.execute("UPDATE work_logs SET employee_name=? WHERE id=?", (emp_name, wl_id))
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True})
+
+
 @bp.route("/full-search")
 @owner_required
 def full_search_page():
