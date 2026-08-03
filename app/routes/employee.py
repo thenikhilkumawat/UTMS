@@ -2587,6 +2587,37 @@ def api_worklog_cleanup_past():
 #  PICKUP & DELIVERY MODULE
 # ══════════════════════════════════════════════
 
+
+@bp.route("/api/upload-order-image", methods=["POST"])
+def api_emp_upload_order_image():
+    """Employee can replace/add image for any order."""
+    import os, uuid
+    from datetime import datetime as _dt
+    code  = (request.form.get("order_code") or "").strip().lstrip("#")
+    file  = request.files.get("image")
+    if not code or not file:
+        return jsonify({"ok": False, "error": "code and image required"})
+    conn = get_db()
+    order = conn.execute("SELECT id FROM orders WHERE order_code=?", (code,)).fetchone()
+    if not order:
+        conn.close()
+        return jsonify({"ok": False, "error": f"Order #{code} not found"})
+    img_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+                           "order_images", code)
+    os.makedirs(img_dir, exist_ok=True)
+    ext   = os.path.splitext(file.filename or "img.jpg")[1] or ".jpg"
+    fname = f"{uuid.uuid4().hex[:8]}{ext}"
+    fpath = os.path.join(img_dir, fname)
+    file.save(fpath)
+    now_str = _dt.now().strftime("%Y-%m-%d %H:%M:%S")
+    conn.execute(
+        "INSERT INTO order_images(order_id, filename, uploaded_at) VALUES(?,?,?)",
+        (order["id"], fname, now_str)
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True, "message": "✅ Image upload ho gaya!"})
+
 @bp.route("/pickup")
 def pickup():
     conn = get_db()
