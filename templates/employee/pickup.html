@@ -422,9 +422,14 @@ function loadOrder(code){
             // Also show in image section
             if(empBox){
               var el2=document.createElement("img");
-              el2.src=src;el2.style.cssText="width:80px;height:80px;object-fit:cover;border-radius:10px;border:2px solid #e2e8f0;cursor:zoom-in;";
-              el2.loading="lazy";el2.onerror=function(){this.style.display="none";};
-              el2.onclick=function(){document.getElementById("overlay-img").src=src;document.getElementById("img-overlay").style.display="flex";};
+              el2.src=src;
+              el2.style.cssText="width:90px;height:90px;object-fit:cover;border-radius:10px;border:2px solid #e2e8f0;cursor:zoom-in;box-shadow:0 2px 8px rgba(0,0,0,0.1);";
+              el2.loading="lazy";
+              el2.onerror=function(){this.style.display="none";};
+              (function(s){el2.addEventListener("click",function(){
+                document.getElementById("overlay-img").src=s;
+                document.getElementById("img-overlay").style.display="flex";
+              });})(src);
               empBox.appendChild(el2);
             }
           });
