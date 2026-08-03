@@ -1639,6 +1639,7 @@ def api_order_status_search():
               o.id DESC LIMIT 200
         """, date_params).fetchall()
         latest_codes = set()
+        family_size = {}
     else:
         q_clean = q.lstrip("#").strip()
         if q_clean.isdigit() and len(q_clean) <= 6:
@@ -1657,11 +1658,15 @@ def api_order_status_search():
                 WHERE 1=1 {date_clause} AND LOWER(c.name) LIKE LOWER(?)
                 ORDER BY o.id DESC
             """, date_params + (f"%{q_clean}%",)).fetchall()
-        # Mark latest order per repeat_of group
+        # Mark latest order per repeat_of group, and count family size
+        # (how many visits this repeat-chain has) so "Latest" only shows
+        # when there's actually more than one order in the chain.
         latest_codes = set()
         seen_parents = set()
+        family_size = {}
         for r in rows:
             parent = r["repeat_of"] or r["order_code"]
+            family_size[parent] = family_size.get(parent, 0) + 1
             if parent not in seen_parents:
                 seen_parents.add(parent)
                 latest_codes.add(r["order_code"])
@@ -1714,6 +1719,7 @@ def api_order_status_search():
             "delivery_date":fmtd(o["delivery_date"]),
             "remaining":    o["remaining"] or 0,
             "is_latest":    o["order_code"] in latest_codes if latest_codes else False,
+            "customer_order_count": family_size.get(o["repeat_of"] or o["order_code"], 1),
             "naap_pct":     naap_pct,
             "kataai_pct":   kataai_pct,
             "silai_pct":    silai_pct,
