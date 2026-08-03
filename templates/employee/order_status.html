@@ -146,14 +146,14 @@
         <!-- Col 2: Order Info -->
         <td style="padding:14px 16px;vertical-align:top;">
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-            <span style="font-size:15px;font-weight:900;color:var(--accent);">#{{ o.order_code }}</span>
+            <span style="font-size:15px;font-weight:900;color:var(--accent);">#{{ o.repeat_of if o.repeat_of else o.order_code }}</span>
             {% if o.is_latest %}
             <span style="background:#dcfce7;color:#166534;font-size:9px;font-weight:800;padding:1px 7px;border-radius:20px;border:1px solid #86efac;white-space:nowrap;">🆕 Latest</span>
             {% endif %}
           </div>
           {% if o.repeat_of %}
           <div style="margin-top:3px;display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
-            <span style="font-size:10px;color:#94a3b8;">(of #{{ o.repeat_of }})</span>
+            <span style="font-size:10px;color:#94a3b8;">(#{{ o.order_code }})</span>
             <span style="background:#ede9fe;color:#6d28d9;font-size:10px;font-weight:800;padding:2px 8px;border-radius:6px;">
               🔁 Visit {{ o.visit_number }}
             </span>
@@ -748,8 +748,8 @@ function ajaxSearch(q) {
           tr.innerHTML =
             "<td style='padding:10px 16px;font-size:12px;color:#64748b;white-space:nowrap;'>"+o.delivery_date+"</td>"
             +"<td style='padding:10px 16px;'>"
-            +"<span style='font-weight:900;color:#4338ca;font-size:14px;'>#"+o.order_code+"</span>"
-            +(o.repeat_of?"<br><span style='font-size:10px;color:#94a3b8;'>of #"+o.repeat_of+"</span>":"")
+            +"<span style='font-weight:900;color:#4338ca;font-size:14px;'>#"+(o.repeat_of?o.repeat_of:o.order_code)+"</span>"
+            +(o.repeat_of?"<br><span style='font-size:10px;color:#94a3b8;'>(#"+o.order_code+")</span>":"")
             +(o.is_urgent?"<span style='margin-left:4px;font-size:10px;background:#fef2f2;color:#dc2626;padding:1px 5px;border-radius:4px;font-weight:800;'>🔴 URGENT</span>":"")
             +(o.is_latest?"<br><span style='font-size:10px;background:#fef3c7;color:#92400e;padding:1px 5px;border-radius:5px;font-weight:800;'>LATEST</span>":"")
             +"</td>"
