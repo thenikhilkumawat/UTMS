@@ -1643,11 +1643,24 @@ def api_order_status_search():
     else:
         q_clean = q.lstrip("#").strip()
         if q_clean.isdigit() and len(q_clean) <= 6:
-            rows = conn.execute(f"""{COLS}
+            matched = conn.execute(f"""{COLS}
                 WHERE 1=1 {date_clause}
                   AND (o.order_code=? OR o.repeat_of=?)
                 ORDER BY o.id DESC
             """, date_params + (q_clean, q_clean)).fetchall()
+            # Also pull every other order for the SAME customer — two orders
+            # can belong to one customer without being explicitly linked via
+            # repeat_of (e.g. created through different flows), but if they
+            # share a mobile/customer they should still show together.
+            cust_ids = list({r["customer_id"] for r in matched if r["customer_id"]})
+            if cust_ids:
+                ph = ",".join("?" * len(cust_ids))
+                rows = conn.execute(f"""{COLS}
+                    WHERE 1=1 {date_clause} AND o.customer_id IN ({ph})
+                    ORDER BY o.id DESC
+                """, date_params + tuple(cust_ids)).fetchall()
+            else:
+                rows = matched
         elif q_clean.isdigit():
             rows = conn.execute(f"""{COLS}
                 WHERE 1=1 {date_clause} AND c.mobile LIKE ?
@@ -1658,14 +1671,16 @@ def api_order_status_search():
                 WHERE 1=1 {date_clause} AND LOWER(c.name) LIKE LOWER(?)
                 ORDER BY o.id DESC
             """, date_params + (f"%{q_clean}%",)).fetchall()
-        # Mark latest order per repeat_of group, and count family size
-        # (how many visits this repeat-chain has) so "Latest" only shows
-        # when there's actually more than one order in the chain.
+        # Mark latest order per customer, and count family size (how many
+        # visits this customer has) so "Latest" only shows when there's
+        # actually more than one order — grouped by customer_id rather than
+        # repeat_of, since two orders can belong to one customer without an
+        # explicit repeat_of link between them.
         latest_codes = set()
         seen_parents = set()
         family_size = {}
         for r in rows:
-            parent = r["repeat_of"] or r["order_code"]
+            parent = r["customer_id"] or r["order_code"]
             family_size[parent] = family_size.get(parent, 0) + 1
             if parent not in seen_parents:
                 seen_parents.add(parent)
@@ -1719,7 +1734,7 @@ def api_order_status_search():
             "delivery_date":fmtd(o["delivery_date"]),
             "remaining":    o["remaining"] or 0,
             "is_latest":    o["order_code"] in latest_codes if latest_codes else False,
-            "customer_order_count": family_size.get(o["repeat_of"] or o["order_code"], 1),
+            "customer_order_count": family_size.get(o["customer_id"] or o["order_code"], 1),
             "naap_pct":     naap_pct,
             "kataai_pct":   kataai_pct,
             "silai_pct":    silai_pct,
