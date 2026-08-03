@@ -1466,11 +1466,33 @@ def api_diagnose_finance_bulk():
             "SELECT id, order_id, tx_date, tx_type, category, amount, mode, note, created_at FROM finance WHERE order_id=? ORDER BY id DESC",
             (order["id"],)
         ).fetchall()
+        # Also check for repeat entries OF this code — if the user actually
+        # delivered a repeat visit (displayed as "#code (Entry #xxxx)"), the
+        # real data lives under that entry's own order_code, not this one.
+        repeats = conn.execute("""
+            SELECT id, order_code, status, payable_amount, advance_paid, remaining, delivered_at
+            FROM orders WHERE repeat_of=?
+            ORDER BY id DESC
+        """, (code,)).fetchall()
+        repeat_out = []
+        for rep in repeats:
+            rep_fin = conn.execute(
+                "SELECT id, tx_type, category, amount, mode, created_at FROM finance WHERE order_id=? ORDER BY id DESC",
+                (rep["id"],)
+            ).fetchall()
+            repeat_out.append({
+                "entry_code": rep["order_code"], "status": rep["status"],
+                "payable_amount": rep["payable_amount"], "advance_paid": rep["advance_paid"],
+                "remaining": rep["remaining"], "delivered_at": rep["delivered_at"],
+                "finance_entry_count": len(rep_fin),
+                "finance_entries": [dict(r) for r in rep_fin],
+            })
         out.append({
             "code": code, "found": True,
             "order": dict(order),
             "finance_entry_count": len(finance_rows),
             "finance_entries": [dict(r) for r in finance_rows],
+            "repeat_entries": repeat_out,
         })
     conn.close()
     return jsonify({"ok": True, "results": out})
