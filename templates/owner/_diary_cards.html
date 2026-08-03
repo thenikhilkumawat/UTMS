@@ -13,7 +13,11 @@
     {% if o.image_only %}
     <div style="position:absolute;top:10px;left:12px;background:#f59e0b;color:#fff;font-size:11px;font-weight:800;padding:3px 10px;border-radius:10px;">📱 QR Upload</div>
     {% endif %}
-    <div style="position:absolute;bottom:10px;left:14px;color:#fff;font-size:18px;font-weight:900;">#{{ o.code }}</div>
+    <div style="position:absolute;bottom:10px;left:14px;color:#fff;display:flex;align-items:center;gap:6px;">
+      <span style="font-size:18px;font-weight:900;">#{{ o.display_code if o.display_code else o.code }}</span>
+      {% if o.entry_code %}<span style="font-size:10px;opacity:0.75;">(#{{ o.entry_code }})</span>{% endif %}
+      {% if o.is_latest %}<span style="background:#dcfce7;color:#166534;font-size:9px;font-weight:800;padding:1px 7px;border-radius:20px;border:1px solid #86efac;">🆕 Latest</span>{% endif %}
+    </div>
     <div style="position:absolute;bottom:10px;right:10px;background:rgba(0,0,0,0.4);color:#fff;font-size:10px;padding:3px 8px;border-radius:8px;backdrop-filter:blur(4px);">🔍 tap to zoom</div>
   </div>
   {% else %}
@@ -23,7 +27,11 @@
     </div>
     <div>
       <div style="font-size:16px;font-weight:900;color:#1e1b4b;">{{ o.cname }}</div>
-      <div style="font-size:12px;color:#4338ca;font-weight:700;">#{{ o.code }}</div>
+      <div style="display:flex;align-items:center;gap:6px;margin-top:1px;">
+        <span style="font-size:12px;color:#4338ca;font-weight:700;">#{{ o.display_code if o.display_code else o.code }}</span>
+        {% if o.entry_code %}<span style="font-size:10px;color:#94a3b8;">(#{{ o.entry_code }})</span>{% endif %}
+        {% if o.is_latest %}<span style="background:#dcfce7;color:#166534;font-size:9px;font-weight:800;padding:1px 6px;border-radius:20px;border:1px solid #86efac;">🆕 Latest</span>{% endif %}
+      </div>
     </div>
   </div>
   {% endif %}

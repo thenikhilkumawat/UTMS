@@ -2039,7 +2039,7 @@ def api_diary_search():
                 rows = conn.execute("""
                     SELECT o.id, o.order_code, o.order_date, o.delivery_date, o.status,
                            o.payable_amount, o.advance_paid, o.remaining, o.note, o.is_urgent,
-                           c.name as cname, c.mobile, c.address
+                           o.repeat_of, o.customer_id, c.name as cname, c.mobile, c.address
                     FROM orders o JOIN customers c ON c.id=o.customer_id
                     WHERE o.customer_id = ?
                     ORDER BY o.id DESC
@@ -2057,7 +2057,7 @@ def api_diary_search():
                     SELECT DISTINCT ON (o.customer_id)
                            o.id, o.order_code, o.order_date, o.delivery_date, o.status,
                            o.payable_amount, o.advance_paid, o.remaining, o.note, o.is_urgent,
-                           c.name as cname, c.mobile, c.address
+                           o.repeat_of, o.customer_id, c.name as cname, c.mobile, c.address
                     FROM orders o JOIN customers c ON c.id=o.customer_id
                     WHERE {word_clauses}
                     ORDER BY o.customer_id, o.id DESC
@@ -2091,6 +2091,14 @@ def api_diary_search():
     finally:
         conn.close()
 
+    # Mark the newest order per customer so the "Latest" badge and the
+    # original-vs-entry code split work the same way as Order Status/Pickup.
+    latest_id_per_cust = {}
+    for r in rows:
+        cid = r["customer_id"]
+        if cid not in latest_id_per_cust or r["id"] > latest_id_per_cust[cid]:
+            latest_id_per_cust[cid] = r["id"]
+
     orders_data = [{
         "code": o["order_code"], "odate": fmtd(o["order_date"]),
         "ddate": fmtd(o["delivery_date"]), "status": o["status"],
@@ -2105,6 +2113,9 @@ def api_diary_search():
         "garments": garments_by_order.get(o["id"], []),
         "image": image_by_order.get(o["id"]),
         "image_only": False,
+        "display_code": o["repeat_of"] if o["repeat_of"] else o["order_code"],
+        "entry_code":   o["order_code"] if o["repeat_of"] else "",
+        "is_latest":    latest_id_per_cust.get(o["customer_id"]) == o["id"],
     } for o in rows]
 
     return render_template("owner/_diary_cards.html", orders=orders_data)
