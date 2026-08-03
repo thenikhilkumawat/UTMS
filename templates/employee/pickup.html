@@ -456,12 +456,24 @@ function collectAndDeliver(isDiscount){
   var rm=(document.getElementById("receiver-mobile").value||"").trim();
   var btn=document.getElementById("collect-btn");
   btn.disabled=true;btn.textContent=t("loading");
+  var _timedOut=false;
+  var _t=setTimeout(function(){
+    _timedOut=true;
+    btn.disabled=false;btn.textContent="✅ "+t("collect_deliver2");
+    showToast(t("timeout_text"),"error");
+  },15000);
   fetch("/api/pickup/collect-and-deliver",{method:"POST",headers:{"Content-Type":"application/json"},
     body:JSON.stringify({order_code:currentCode,amount:amt,payment_mode:payMode,receiver_name:rn,receiver_mobile:rm})})
     .then(function(r){return r.json();}).then(function(d){
+      clearTimeout(_t);
+      if(_timedOut) return; // button already restored, avoid double-handling a late response
       if(d.ok){showToast("✅ "+t("toast_delivered"),"success");setTimeout(function(){loadOrder(currentCode);},500);}
       else{showToast("❌ "+(d.error||t("failed_text")),"error");btn.disabled=false;btn.textContent="✅ "+t("collect_deliver2");}
-    }).catch(function(){btn.disabled=false;btn.textContent="✅ "+t("collect_deliver2");showToast("❌ "+t("network_error"),"error");});
+    }).catch(function(){
+      clearTimeout(_t);
+      if(_timedOut) return;
+      btn.disabled=false;btn.textContent="✅ "+t("collect_deliver2");showToast("❌ "+t("network_error"),"error");
+    });
 }
 
 function sendDeliveryWA(lang){
