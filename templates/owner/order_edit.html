@@ -197,6 +197,21 @@
 <!-- Toast notification -->
 <div id="toast" style="display:none;position:fixed;bottom:24px;right:24px;background:#065f46;color:#fff;padding:12px 20px;border-radius:12px;font-size:13px;font-weight:700;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.18);">Saved!</div>
 
+<!-- Simple Zoom Modal -->
+<div id="simple-zoom-modal"
+  onclick="closeZoom()"
+  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:99999;
+         justify-content:center;align-items:center;flex-direction:column;gap:12px;">
+  <button onclick="event.stopPropagation();closeZoom()"
+    style="position:absolute;top:14px;right:14px;width:40px;height:40px;
+           background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:20px;
+           border-radius:50%;cursor:pointer;">✕</button>
+  <img id="simple-zoom-img" src="" onclick="event.stopPropagation()"
+    style="max-width:92vw;max-height:88vh;border-radius:10px;object-fit:contain;
+           cursor:default;">
+  <div style="color:rgba(255,255,255,0.6);font-size:12px;">Tap bahar ya ✕ close karne ke liye</div>
+</div>
+
 {% endblock %}
 {% block extra_js %}<script>
 // ─── DATA FROM SERVER ──────────────────────────────────────
@@ -566,4 +581,33 @@ async function submitChangeCode() {
     </div>
   </div>
 </div>
-{% endblock %}
+<!-- Simple Zoom Modal -->
+<div id="simple-zoom-modal"
+  onclick="closeZoom()"
+  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:99999;
+         justify-content:center;align-items:center;flex-direction:column;gap:12px;">
+  <button onclick="event.stopPropagation();closeZoom()"
+    style="position:absolute;top:14px;right:14px;width:40px;height:40px;
+           background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:20px;
+           border-radius:50%;cursor:pointer;">✕</button>
+  <img id="simple-zoom-img" src="" onclick="event.stopPropagation()"
+    style="max-width:92vw;max-height:88vh;border-radius:10px;object-fit:contain;
+           cursor:default;">
+  <div style="color:rgba(255,255,255,0.6);font-size:12px;">Tap bahar ya ✕ close karne ke liye</div>
+</div>
+
+{% endblock %}// Simple global zoom modal
+function openZoomImg(src) {
+  var m = document.getElementById('simple-zoom-modal');
+  var img = document.getElementById('simple-zoom-img');
+  if(!m) return;
+  img.src = src;
+  img.style.transform = 'scale(1)';
+  m.style.display = 'flex';
+}
+function closeZoom() {
+  var m = document.getElementById('simple-zoom-modal');
+  if(m) m.style.display = 'none';
+}
+
+
