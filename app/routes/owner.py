@@ -2636,6 +2636,62 @@ def owner_customers():
 # ══════════════════════════════════════════════
 
 
+@bp.route("/api/diagnose-ready/<code>")
+@owner_required
+def api_diagnose_ready(code):
+    """Read-only: show exactly what check_and_auto_ready sees for this order —
+    required qty per garment, how each work_log note got classified into
+    naap/kataai/silai, and whether all_done evaluates true. Used to see
+    exactly why an order isn't becoming 'ready' automatically."""
+    conn = get_db()
+    order = conn.execute("SELECT id, order_code, status FROM orders WHERE order_code=?", (code,)).fetchone()
+    if not order:
+        conn.close()
+        return jsonify({"ok": False, "error": f"Order #{code} not found"})
+
+    required = {}
+    for r in conn.execute(
+        "SELECT garment_type, SUM(quantity) as total FROM order_items WHERE order_id=? GROUP BY garment_type",
+        (order["id"],)
+    ).fetchall():
+        required[r["garment_type"]] = r["total"]
+
+    all_logs = conn.execute(
+        "SELECT garment_type, notes, COALESCE(SUM(qty_done),0) as total FROM work_logs WHERE order_code=? GROUP BY garment_type, notes",
+        (code,)
+    ).fetchall()
+
+    naap, kataai, silai = {}, {}, {}
+    raw_logs = []
+    for r in all_logs:
+        gt, n, qty = r["garment_type"], (r["notes"] or "").strip(), r["total"] or 0
+        if any(x in n for x in ["Measurement","Naap","नाप"]):
+            bucket = "naap"; naap[gt] = naap.get(gt,0) + qty
+        elif any(x in n for x in ["Kataai","Cutting","कटाई"]):
+            bucket = "kataai"; kataai[gt] = kataai.get(gt,0) + qty
+        else:
+            bucket = "silai"; silai[gt] = silai.get(gt,0) + qty
+        raw_logs.append({"garment_type": gt, "notes": n, "qty": qty, "classified_as": bucket})
+
+    all_done = all(
+        naap.get(gt,0) >= qty and kataai.get(gt,0) >= qty and silai.get(gt,0) >= qty
+        for gt, qty in required.items()
+    ) if required else False
+
+    conn.close()
+    return jsonify({
+        "ok": True,
+        "order_code": order["order_code"],
+        "current_status": order["status"],
+        "required_qty_per_garment": required,
+        "raw_work_logs": raw_logs,
+        "naap_totals": naap,
+        "kataai_totals": kataai,
+        "silai_totals": silai,
+        "all_done": all_done,
+    })
+
+
 @bp.route("/api/recheck-ready-status")
 @owner_required
 def api_recheck_ready_status():
