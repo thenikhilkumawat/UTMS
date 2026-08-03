@@ -2024,14 +2024,27 @@ def api_diary_search():
         # of a mobile number still works.
         qnum = q.lstrip("#")
         if qnum.isdigit():
-            rows = conn.execute("""
+            exact = conn.execute("""
                 SELECT o.id, o.order_code, o.order_date, o.delivery_date, o.status,
                        o.payable_amount, o.advance_paid, o.remaining, o.note, o.is_urgent,
-                       c.name as cname, c.mobile, c.address
+                       o.customer_id, c.name as cname, c.mobile, c.address
                 FROM orders o JOIN customers c ON c.id=o.customer_id
                 WHERE o.order_code = ?
             """, (qnum,)).fetchall()
-            if not rows:
+            if exact:
+                # Also pull this customer's other orders (old + new) so the
+                # whole history shows together, matched by customer/mobile —
+                # not just the one order that was searched for.
+                cust_id = exact[0]["customer_id"]
+                rows = conn.execute("""
+                    SELECT o.id, o.order_code, o.order_date, o.delivery_date, o.status,
+                           o.payable_amount, o.advance_paid, o.remaining, o.note, o.is_urgent,
+                           c.name as cname, c.mobile, c.address
+                    FROM orders o JOIN customers c ON c.id=o.customer_id
+                    WHERE o.customer_id = ?
+                    ORDER BY o.id DESC
+                """, (cust_id,)).fetchall()
+            else:
                 rows = None
 
         if rows is None:
