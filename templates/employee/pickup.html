@@ -6,11 +6,12 @@ body{background:#f0f2f5;}
 
 /* ── DESKTOP LAYOUT: blue bar goes full width; search box + results + order card sit centered in a wide, comfortable column ─ */
 @media (min-width:769px){
-  body .pu-top{padding:32px 40px 40px;}
+  body .pu-top{padding:14px 40px 18px;}
+  body .pu-title{margin-bottom:6px;}
   body .pu-search-wrap{max-width:720px;margin:0 auto;}
-  body .pu-search-wrap input{padding:20px 56px 20px 26px;font-size:20px;}
+  body .pu-search-wrap input{padding:12px 50px 12px 22px;font-size:16px;}
   body #search-results{max-width:720px;margin:0 auto;}
-  body #empty-state{max-width:720px;margin:60px auto 0;}
+  body #empty-state{max-width:720px;margin:40px auto 0;}
   body #delivery-card{max-width:1000px;margin:0 auto;padding:28px 0 40px;}
 }
 @media (min-width:1200px){
@@ -322,6 +323,10 @@ function doSearch(){
         if(!groups[k]){groups[k]=[];gOrder.push(k);}
         groups[k].push(o);
       });
+      // Latest order first within each customer's group
+      gOrder.forEach(function(name){
+        groups[name].sort(function(a,b){ return (b.is_latest?1:0) - (a.is_latest?1:0); });
+      });
       var multi=gOrder.length>1;
       var container=document.createElement("div");
       gOrder.forEach(function(name){
@@ -334,11 +339,14 @@ function doSearch(){
         groups[name].forEach(function(o){
           var sc=o.status==="ready"?"#16a34a":o.status==="delivered"?"#6366f1":"#d97706";
           var sbg=o.status==="ready"?"#dcfce7":o.status==="delivered"?"#ede9fe":"#fef3c7";
+          var codeMain = o.display_code || o.order_code;
+          var entryTag = o.entry_code ? " <span style='font-size:10px;color:#94a3b8;font-weight:700;'>(#"+o.entry_code+")</span>" : "";
+          var latestTag = o.is_latest ? " <span style='background:#dcfce7;color:#166534;font-size:9px;font-weight:800;padding:1px 6px;border-radius:10px;border:1px solid #86efac;'>🆕 Latest</span>" : "";
           var item=document.createElement("div");
           item.className="pu-result-item";
           item.innerHTML=(
             "<div class='pu-result-top'>"
-            +"<span class='pu-result-code'>#"+o.order_code+"</span>"
+            +"<span class='pu-result-code'>#"+codeMain+"</span>"+entryTag+latestTag
             +"<span class='pu-status-pill' style='background:"+sbg+";color:"+sc+";'>"+(t(o.status)||o.status)+"</span>"
             +"</div>"
             +"<div class='pu-result-name'>"+o.customer_name+"</div>"

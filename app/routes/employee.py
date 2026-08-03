@@ -2685,7 +2685,7 @@ def api_pickup_search():
         code = q.lstrip("#")
         # Exact order_code match
         r = conn.execute("""
-            SELECT o.order_code, o.status, o.delivery_date, o.order_date, o.delivered_at, o.remaining, o.is_urgent,
+            SELECT o.id, o.order_code, o.status, o.delivery_date, o.order_date, o.delivered_at, o.remaining, o.is_urgent,
                    o.repeat_of, c.name as customer_name, c.mobile, c.address
             FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
             WHERE o.order_code=?
@@ -2697,7 +2697,7 @@ def api_pickup_search():
 
         # All orders with repeat_of matching this code (repeat customer's entries)
         r2 = conn.execute("""
-            SELECT o.order_code, o.status, o.delivery_date, o.order_date, o.delivered_at, o.remaining, o.is_urgent,
+            SELECT o.id, o.order_code, o.status, o.delivery_date, o.order_date, o.delivered_at, o.remaining, o.is_urgent,
                    o.repeat_of, c.name as customer_name, c.mobile, c.address
             FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
             WHERE o.repeat_of=?
@@ -2730,7 +2730,7 @@ def api_pickup_search():
             word_params.extend([lk, lk, lk, lk])
 
         r3 = conn.execute(f"""
-            SELECT o.order_code, o.status, o.delivery_date, o.order_date, o.delivered_at, o.remaining, o.is_urgent,
+            SELECT o.id, o.order_code, o.status, o.delivery_date, o.order_date, o.delivered_at, o.remaining, o.is_urgent,
                    o.repeat_of, c.name as customer_name, c.mobile, c.address
             FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
             WHERE {word_clauses}
@@ -2742,11 +2742,21 @@ def api_pickup_search():
                 seen_codes.add(row["order_code"])
     conn.close()
 
+    # Mark the newest order per repeat-family (family = parent code, whether
+    # this row IS the parent or a repeat of it) so the frontend can show a
+    # "Latest" tag and sort it first within each customer's group.
+    latest_id_per_family = {}
+    for r in rows:
+        family = r["repeat_of"] or r["order_code"]
+        if family not in latest_id_per_family or r["id"] > latest_id_per_family[family]:
+            latest_id_per_family[family] = r["id"]
+
     return jsonify([{
         "order_code":       r["order_code"],
         "entry_code":       r["order_code"] if r["repeat_of"] else "",
         "display_code":     r["repeat_of"] if r["repeat_of"] else r["order_code"],
         "repeat_of":        r["repeat_of"] or "",
+        "is_latest":        latest_id_per_family.get(r["repeat_of"] or r["order_code"]) == r["id"],
         "status":           r["status"],
         "customer_name":    r["customer_name"] or "—",
         "mobile":           r["mobile"] or "",
