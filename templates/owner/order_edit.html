@@ -147,6 +147,21 @@
     </div>
   </div>
 
+  <!-- ═══ IMAGE UPLOAD / REPLACE ═══ -->
+  <div style="background:#fff;border-radius:14px;padding:20px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+    <div style="font-size:13px;font-weight:800;color:#1e293b;margin-bottom:12px;">📷 Image Replace / Add</div>
+    <div style="font-size:12px;color:#64748b;margin-bottom:10px;">Nai image select karo — purani replace ho jaayegi</div>
+    <input type="file" id="img-replace-input" accept="image/*" capture="environment"
+      style="width:100%;padding:10px;border:2px dashed #c7d2fe;border-radius:10px;font-size:13px;background:#f8f9ff;cursor:pointer;">
+    <div id="img-replace-preview" style="display:none;margin-top:10px;">
+      <img id="img-replace-thumb" style="width:100%;max-height:200px;object-fit:cover;border-radius:10px;border:2px solid #6366f1;">
+    </div>
+    <button id="img-upload-btn" onclick="uploadOrderImage()" style="display:none;margin-top:10px;width:100%;padding:11px;background:#6366f1;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;">
+      📤 Upload Image
+    </button>
+    <div id="img-upload-msg" style="font-size:12px;margin-top:6px;color:#16a34a;font-weight:700;"></div>
+  </div>
+
   <!-- ═══ SAVE / CANCEL BUTTONS ═══ -->
   <div style="display:flex;gap:10px;justify-content:flex-end;margin-bottom:40px;">
     <a href="/owner/orders"
