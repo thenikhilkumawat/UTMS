@@ -393,6 +393,12 @@ function renderOrder(o){
   // WhatsApp only after delivery
   var waDiv=document.getElementById("wa-buttons");
   if(waDiv) waDiv.style.display=(o.status==="delivered"||o.status==="ready")?"flex":"none";
+  // Always reset action buttons to their default state — prevents a stale
+  // "Loading..." from a previous order/request ever carrying over here.
+  var frBtn=document.getElementById("force-ready-btn");
+  if(frBtn){frBtn.disabled=false;try{frBtn.textContent="⚡ "+t("force_ready");}catch(e){frBtn.textContent="⚡ Force Mark as Ready";}}
+  var colBtn=document.getElementById("collect-btn");
+  if(colBtn){colBtn.disabled=false;try{colBtn.textContent="✅ "+t("collect_deliver2");}catch(e){colBtn.textContent="✅ Collect & Mark Delivered";}}
 }
 
 function loadOrder(code){
@@ -434,13 +440,27 @@ function setPayMode(mode){
 function forceMarkReady(){
   var btn=document.getElementById("force-ready-btn");
   btn.disabled=true;btn.textContent=t("loading");
-  var _t=setTimeout(function(){btn.disabled=false;btn.textContent="⚡ "+t("force_ready");showToast(t("timeout_text"),"error");},10000);
+  var _timedOut=false;
+  var _t=setTimeout(function(){
+    _timedOut=true;
+    // Restore button unconditionally first — this line can never throw,
+    // so the button can never stay stuck no matter what goes wrong below.
+    btn.disabled=false;
+    btn.textContent="⚡ Force Mark as Ready";
+    try{ btn.textContent="⚡ "+t("force_ready"); }catch(e){}
+    try{ showToast(t("timeout_text"),"error"); }catch(e){ showToast("Timeout","error"); }
+  },10000);
   fetch("/api/pickup/force-complete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({order_code:currentCode})})
     .then(function(r){return r.json();}).then(function(d){
       clearTimeout(_t);
+      if(_timedOut) return;
       if(d.ok){showToast("✅ "+t("toast_ready"),"success");setTimeout(function(){loadOrder(currentCode);},400);}
       else{showToast("❌ "+(d.error||t("failed_text")),"error");btn.disabled=false;btn.textContent="⚡ "+t("force_ready");}
-    }).catch(function(){clearTimeout(_t);btn.disabled=false;btn.textContent="⚡ "+t("force_ready");showToast("❌ "+t("network_error"),"error");});
+    }).catch(function(){
+      clearTimeout(_t);
+      if(_timedOut) return;
+      btn.disabled=false;btn.textContent="⚡ "+t("force_ready");showToast("❌ "+t("network_error"),"error");
+    });
 }
 
 function collectAndDeliver(isDiscount){
@@ -459,8 +479,12 @@ function collectAndDeliver(isDiscount){
   var _timedOut=false;
   var _t=setTimeout(function(){
     _timedOut=true;
-    btn.disabled=false;btn.textContent="✅ "+t("collect_deliver2");
-    showToast(t("timeout_text"),"error");
+    // Restore button unconditionally first — this line can never throw,
+    // so the button can never stay stuck no matter what goes wrong below.
+    btn.disabled=false;
+    btn.textContent="✅ Collect & Mark Delivered";
+    try{ btn.textContent="✅ "+t("collect_deliver2"); }catch(e){}
+    try{ showToast(t("timeout_text"),"error"); }catch(e){ showToast("Timeout","error"); }
   },15000);
   fetch("/api/pickup/collect-and-deliver",{method:"POST",headers:{"Content-Type":"application/json"},
     body:JSON.stringify({order_code:currentCode,amount:amt,payment_mode:payMode,receiver_name:rn,receiver_mobile:rm})})
@@ -475,6 +499,7 @@ function collectAndDeliver(isDiscount){
       btn.disabled=false;btn.textContent="✅ "+t("collect_deliver2");showToast("❌ "+t("network_error"),"error");
     });
 }
+
 
 function sendDeliveryWA(lang){
   var o=currentOrder;
