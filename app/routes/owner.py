@@ -69,7 +69,8 @@ ORDERS_PAGE = """{% extends 'base.html' %}
             <td style="padding:12px 14px;">
               <div style="display:flex;align-items:center;gap:6px;">
                 <span id="arrow-{{ o.order_code }}" style="font-size:10px;color:var(--text-muted);transition:transform 0.2s;display:inline-block;">▶</span>
-                <div style="font-size:15px;font-weight:900;color:var(--accent);">#{{ o.order_code }}</div>
+                <div style="font-size:15px;font-weight:900;color:var(--accent);">#{{ o.display_code }}</div>
+                {% if o.entry_code %}<span style="background:#f1f5f9;color:#64748b;font-size:10px;font-weight:700;padding:1px 6px;border-radius:6px;">(#{{ o.entry_code }})</span>{% endif %}
                 {% if o.is_urgent %}<span style="background:#fee2e2;color:#dc2626;font-size:9px;font-weight:800;padding:1px 6px;border-radius:4px;">🔥</span>{% endif %}
               </div>
               {% if o.note %}<div style="font-size:11px;color:var(--text-muted);font-style:italic;padding-left:18px;">📝 {{ o.note[:30] }}</div>{% endif %}
@@ -134,7 +135,7 @@ ORDERS_PAGE = """{% extends 'base.html' %}
           data-alldone="{{ 'yes' if all_done else 'no' }}"
           style="border-bottom:1px solid var(--border);"
           onmouseover="this.style.background='#fafbff'" onmouseout="this.style.background=''">
-          <td style="padding:12px 14px;"><div style="font-size:15px;font-weight:900;color:var(--accent);">#{{ o.order_code }}</div>{% if o.is_urgent %}<span style="background:#fee2e2;color:#dc2626;font-size:9px;font-weight:800;padding:1px 6px;border-radius:4px;">🔥</span>{% endif %}</td>
+          <td style="padding:12px 14px;"><div style="font-size:15px;font-weight:900;color:var(--accent);">#{{ o.display_code }}</div>{% if o.entry_code %}<span style="background:#f1f5f9;color:#64748b;font-size:9px;font-weight:700;padding:1px 6px;border-radius:5px;">(#{{ o.entry_code }})</span>{% endif %}{% if o.is_urgent %}<span style="background:#fee2e2;color:#dc2626;font-size:9px;font-weight:800;padding:1px 6px;border-radius:4px;">🔥</span>{% endif %}</td>
           <td style="padding:12px 14px;"><div style="font-weight:700;">{{ o.cname }}</div><div style="font-size:11px;color:var(--text-muted);">{{ o.mobile }}</div></td>
           <td style="padding:12px 14px;color:var(--text-secondary);max-width:130px;font-size:12px;">{{ o.garments }}</td>
           <td style="padding:12px 14px;"><div style="font-size:13px;font-weight:700;">{{ o.delivery_date }}</div><div style="font-size:11px;color:var(--text-muted);">{{ o.status|upper }}</div></td>
@@ -4603,7 +4604,7 @@ def owner_orders():
     # Work progress data for combined page
     try:
         wp_rows = conn.execute("""
-            SELECT o.order_code, o.status, o.delivery_date, o.is_urgent,
+            SELECT o.order_code, o.repeat_of, o.status, o.delivery_date, o.is_urgent,
                    COALESCE(c.name,'—') as cname, COALESCE(c.mobile,'') as mobile,
                    STRING_AGG(CAST(oi.garment_type||' x'||oi.quantity AS TEXT), ', ') as garments_str,
                    SUM(oi.quantity) as total_qty
@@ -4611,7 +4612,7 @@ def owner_orders():
             LEFT JOIN customers c ON c.id=o.customer_id
             LEFT JOIN order_items oi ON oi.order_id=o.id
             WHERE o.status NOT IN ('delivered','cancelled')
-            GROUP BY o.id, o.order_code, o.status, o.delivery_date, o.is_urgent, c.name, c.mobile
+            GROUP BY o.id, o.order_code, o.repeat_of, o.status, o.delivery_date, o.is_urgent, c.name, c.mobile
             ORDER BY o.delivery_date ASC, o.is_urgent DESC
         """).fetchall()
     except:
@@ -4623,12 +4624,15 @@ def owner_orders():
         naap=kataai=silai=0
         for w in wl:
             n=(w["notes"] or "").strip(); q=w["qty_done"] or 0
-            if any(x in n for x in ["Measurement","Naap"]): naap+=q
-            elif any(x in n for x in ["Kataai","Cutting"]): kataai+=q
+            if any(x in n for x in ["Measurement","Naap","नाप"]): naap+=q
+            elif any(x in n for x in ["Kataai","Cutting","कटाई"]): kataai+=q
             else: silai+=q
         tq=o["total_qty"] or 1
         wp_result.append({
-            "order_code": o["order_code"], "status": o["status"],
+            "order_code": o["order_code"],
+            "display_code": o["repeat_of"] if o["repeat_of"] else o["order_code"],
+            "entry_code": o["order_code"] if o["repeat_of"] else "",
+            "status": o["status"],
             "cname": o["cname"], "mobile": o["mobile"],
             "delivery_date": fmtd(o["delivery_date"]),
             "is_urgent": o["is_urgent"], "garments": o["garments_str"] or "—",
