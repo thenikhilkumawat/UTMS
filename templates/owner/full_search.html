@@ -1,8 +1,17 @@
 {% extends "base.html" %}
 {% block content %}
-<div style="max-width:1100px;margin:0 auto;padding:20px;">
+<style>
+  .fs-wrap { max-width:1100px; margin:0 auto; padding:20px; box-sizing:border-box; }
+  .fs-wrap * { box-sizing:border-box; min-width:0; }
+  @media (max-width:640px) {
+    .fs-wrap { padding:12px; }
+    .fs-header { padding:16px !important; }
+    .fs-header input[type="date"] { flex:1; min-width:130px; }
+  }
+</style>
+<div class="fs-wrap">
 
-  <div style="background:linear-gradient(135deg,#1e1b4b,#312e81);border-radius:18px;padding:24px;color:#fff;margin-bottom:20px;">
+  <div class="fs-header" style="background:linear-gradient(135deg,#1e1b4b,#312e81);border-radius:18px;padding:24px;color:#fff;margin-bottom:20px;">
     <div style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;opacity:0.7;margin-bottom:6px;">🔎 FULL SEARCH</div>
     <div style="font-size:13px;opacity:0.85;margin-bottom:16px;">Order code, naam ya mobile daalo — customer, garments, measurements, work log history aur poori payment history ek saath</div>
 
@@ -76,7 +85,7 @@
       </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:20px;">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin-bottom:20px;">
       <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:12px;padding:16px;text-align:center;">
         <div style="font-size:11px;color:#166534;font-weight:700;text-transform:uppercase;">Income</div>
         <div style="font-size:22px;font-weight:900;color:#166534;">+₹{{ overview.income }}</div>
@@ -145,7 +154,7 @@
         <div><div style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;">Due</div><div style="font-size:14px;font-weight:900;color:{% if o.due>0 %}#dc2626{% else %}#16a34a{% endif %};">₹{{ o.due }}</div></div>
       </div>
 
-      <div style="padding:18px 20px;display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+      <div style="padding:18px 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;">
 
         <!-- Garments & Measurements -->
         <div>
