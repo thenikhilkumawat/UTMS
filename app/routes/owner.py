@@ -3902,6 +3902,8 @@ def whatsapp():
     _D_READY_EN   = "*Uttam Tailors*\n\nHello *{name}*,\nYour order is ready. Please collect your clothes at your convenience. Thank you!\n------------------------------------------\n\n- Order No: *#{code}*\n- Garments: {items}\n- Total: *₹{total}*\n- Balance Due: *₹{due}*\n\n-----------------------------------------------\nThank you for your trust. 🙏🏻\nUttam Tailors"
     _D_DELIV_HI   = "*उत्तम टेलर्स*\n\nनमस्ते *{name}*,\nआपके कपड़े सफलतापूर्वक डिलीवर कर दिए गए हैं।\n------------------------------------------\n\n- ऑर्डर नंबर: *#{code}*\n- ऑर्डर तारीख: {odate}\n- डिलीवरी तारीख: {ddate}\n\n- कपड़े: {items}\n\n- कुल भुगतान: *₹{total}*\n- भुगतान माध्यम: {mode}\n\n-----------------------------------------------\nआपके विश्वास के लिए धन्यवाद। 🙏🏻\nआगे भी सेवा का अवसर दें, यही हमारी शुभकामना है।\n\nधन्यवाद!\nउत्तम टेलर्स"
     _D_DELIV_EN   = "*Uttam Tailors*\n\nHello *{name}*,\nYour garments have been delivered successfully.\n------------------------------------------\n\n- Order No: *#{code}*\n- Order Date: {odate}\n- Delivery Date: {ddate}\n\n- Garments: {items}\n\n- Total Paid: *₹{total}*\n- Payment Mode: {mode}\n\n-----------------------------------------------\nThank you for your trust. 🙏🏻\nWe look forward to serving you again.\n\nThank you!\nUttam Tailors"
+    _D_REMIND_HI  = "*उत्तम टेलर्स*\n\nनमस्ते *{name}*,\nआपका ऑर्डर तैयार है और अभी तक pickup नहीं हुआ है। कृपया जल्द आकर अपने कपड़े ले जाएं।\n------------------------------------------\n\n- ऑर्डर नंबर: *#{code}*\n- कपड़े: {items}\n- बकाया राशि: *₹{due}*\n\n-----------------------------------------------\nधन्यवाद। 🙏🏻\nउत्तम टेलर्स"
+    _D_REMIND_EN  = "*Uttam Tailors*\n\nHello *{name}*,\nYour order is ready and still awaiting pickup. Please collect your garments soon.\n------------------------------------------\n\n- Order No: *#{code}*\n- Garments: {items}\n- Balance Due: *₹{due}*\n\n-----------------------------------------------\nThank you. 🙏🏻\nUttam Tailors"
 
     wa_templates = {
         "confirm":   {"hi": get_setting("wa_order_confirm_hi",   _D_CONFIRM_HI),
@@ -3910,6 +3912,8 @@ def whatsapp():
                       "en": get_setting("wa_order_ready_en",     _D_READY_EN)},
         "delivered": {"hi": get_setting("wa_order_delivered_hi", _D_DELIV_HI),
                       "en": get_setting("wa_order_delivered_en", _D_DELIV_EN)},
+        "reminder":  {"hi": get_setting("wa_order_reminder_hi",  _D_REMIND_HI),
+                      "en": get_setting("wa_order_reminder_en",  _D_REMIND_EN)},
     }
 
     conn.close()
@@ -3918,6 +3922,7 @@ def whatsapp():
         {"name":"Order Confirmed", "icon":"✅", "key":"confirm"},
         {"name":"Order Ready",     "icon":"🔔", "key":"ready"},
         {"name":"Delivered",       "icon":"📦", "key":"delivered"},
+        {"name":"Pickup Reminder", "icon":"⏰", "key":"reminder"},
         {"name":"Payment Due",     "icon":"💰", "key":""},
         {"name":"Festival Wishes", "icon":"🎉", "key":""},
         {"name":"Eid Mubarak",     "icon":"🌙", "key":""},
@@ -4540,6 +4545,7 @@ def save_wa_template():
         "confirm":   ("wa_order_confirm_en",   "wa_order_confirm_hi"),
         "ready":     ("wa_order_ready_en",     "wa_order_ready_hi"),
         "delivered": ("wa_order_delivered_en", "wa_order_delivered_hi"),
+        "reminder":  ("wa_order_reminder_en",  "wa_order_reminder_hi"),
     }
     keys = key_map.get(tmpl, key_map["confirm"])
     if "en" in data: set_setting(keys[0], data["en"])

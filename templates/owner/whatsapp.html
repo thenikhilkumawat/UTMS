@@ -16,42 +16,6 @@
 
 <div class="page-body" style="padding:16px 24px;">
 
-  <!-- ── Order Confirmation Message Templates ─────────────────── -->
-  <div class="card" style="margin-bottom:20px;">
-    <div class="card-header" style="cursor:pointer;" onclick="var b=document.getElementById('wa-tpl-body');b.style.display=b.style.display==='none'?'block':'none';">
-      <span class="card-title">📝 Order Confirmation Message Template</span>
-      <span style="font-size:12px;color:var(--text-muted);">Click to edit — used when new order is confirmed</span>
-    </div>
-    <div id="wa-tpl-body" style="display:none;">
-      <div class="card-body">
-        <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">
-          Available variables: <strong>{name}</strong> = customer name, <strong>{shop}</strong> = shop name,
-          <strong>{code}</strong> = order #, <strong>{mobile}</strong> = mobile,
-          <strong>{items}</strong> = garments, <strong>{total}</strong>, <strong>{advance}</strong>,
-          <strong>{remaining}</strong>, <strong>{order_date}</strong>, <strong>{delivery_date}</strong>, <strong>{mode}</strong>
-        </p>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-          <div>
-            <label style="font-weight:700;font-size:13px;margin-bottom:6px;display:block;">🇬🇧 English Message</label>
-            <textarea id="wa-tpl-en" rows="12"
-              style="width:100%;padding:10px;font-size:12px;line-height:1.6;border:2px solid var(--border);border-radius:10px;resize:vertical;font-family:monospace;">{{ order_confirm_tpl_en }}</textarea>
-          </div>
-          <div>
-            <label style="font-weight:700;font-size:13px;margin-bottom:6px;display:block;">🇮🇳 Hindi Message</label>
-            <textarea id="wa-tpl-hi" rows="12"
-              style="width:100%;padding:10px;font-size:12px;line-height:1.6;border:2px solid var(--border);border-radius:10px;resize:vertical;font-family:monospace;">{{ order_confirm_tpl_hi }}</textarea>
-          </div>
-        </div>
-        <div style="margin-top:12px;display:flex;gap:10px;align-items:center;">
-          <button onclick="saveWATemplates()"
-            style="background:#6366f1;color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer;">
-            💾 Save Templates
-          </button>
-          <span id="wa-tpl-saved" style="color:#16a34a;font-weight:700;font-size:13px;display:none;">✅ Saved!</span>
-        </div>
-      </div>
-    </div>
-  </div>
   <div style="display:grid;grid-template-columns:420px 1fr;gap:24px;align-items:start;">
 
     <!-- ── LEFT: Compose ── -->
@@ -231,16 +195,24 @@
     <div style="padding:18px 22px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff;border-radius:20px 20px 0 0;z-index:1;">
       <div>
         <div style="font-size:17px;font-weight:900;color:#1e1b4b;">✏️ Order Message Templates</div>
-        <div style="font-size:12px;color:#6b7280;margin-top:2px;">Edit karo → Save karo — agli baar yahi format use hoga</div>
+        <div style="font-size:12px;color:#6b7280;margin-top:2px;">Edit karo → Save karo. Abhi manual broadcast mein use hote hain — automatic sending (order create/ready/deliver/reminder pe apne aap jaana) abhi setup ho raha hai.</div>
       </div>
       <button onclick="closeTmplEditor()" style="width:34px;height:34px;border-radius:50%;border:none;background:#f1f5f9;cursor:pointer;font-size:16px;">✕</button>
     </div>
     <div style="padding:18px 22px;display:flex;flex-direction:column;gap:16px;">
-      {% for tmpl_key, tmpl_name in [("confirm","✅ Order Confirmed"), ("ready","🔔 Order Ready"), ("delivered","📦 Delivered")] %}
+      {% for tmpl_key, tmpl_name, tmpl_purpose in [
+        ("confirm","✅ Order Confirmed","Order create hote hi turant customer ko jaata hai — naya order ya repeat order dono pe. Past Orders entry pe nahi jaata."),
+        ("ready","🔔 Order Ready","Jab kapde 100% taiyar ho jayein (नाप+कटाई+सिलाई) tab jaata hai — delivery date se 2 din pehle tak hold hota hai, agar utni jaldi taiyar ho gaye ho."),
+        ("delivered","📦 Delivered","Order deliver/pickup hote hi turant jaata hai — dhanyawad message."),
+        ("reminder","⏰ Pickup Reminder","Delivery date nikal jaye aur order abhi bhi pending ho, tab jaata hai — agle din pehla reminder, phir 5 din baad dusra (max 2 baar).")
+      ] %}
       <div style="border:1.5px solid #e5e7eb;border-radius:12px;overflow:hidden;">
-        <div style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;">
-          <span style="font-size:14px;font-weight:900;color:#166534;">{{ tmpl_name }}</span>
-          <button onclick="saveTemplate('{{ tmpl_key }}')" style="padding:5px 14px;background:#16a34a;color:#fff;border:none;border-radius:7px;font-weight:800;font-size:12px;cursor:pointer;">💾 Save</button>
+        <div style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);padding:10px 16px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-size:14px;font-weight:900;color:#166534;">{{ tmpl_name }}</span>
+            <button onclick="saveTemplate('{{ tmpl_key }}')" style="padding:5px 14px;background:#16a34a;color:#fff;border:none;border-radius:7px;font-weight:800;font-size:12px;cursor:pointer;">💾 Save</button>
+          </div>
+          <div style="font-size:11px;color:#166534;opacity:0.85;margin-top:3px;">{{ tmpl_purpose }}</div>
         </div>
         <div style="padding:12px 16px;display:grid;grid-template-columns:1fr 1fr;gap:10px;">
           <div>
@@ -481,20 +453,6 @@ function filterCustomers() {
   });
 }
 
-function saveWATemplates() {
-  var en = document.getElementById("wa-tpl-en").value;
-  var hi = document.getElementById("wa-tpl-hi").value;
-  fetch("/owner/api/save-wa-template", {
-    method:"POST", headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({en:en, hi:hi})
-  }).then(function(r){return r.json();}).then(function(d){
-    if(d.ok){
-      var s = document.getElementById("wa-tpl-saved");
-      s.style.display="inline";
-      setTimeout(function(){ s.style.display="none"; }, 3000);
-    }
-  });
-}
 const SECS=60*60; let last=Date.now();
 ["click","keydown","mousemove","touchstart"].forEach(ev=>document.addEventListener(ev,()=>{last=Date.now();},{passive:true}));
 setInterval(()=>{if(Math.floor((Date.now()-last)/1000)>=SECS)window.location.href="/owner/login?expired=1";},5000);
