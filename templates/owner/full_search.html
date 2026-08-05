@@ -3,37 +3,39 @@
 <style>
   .fs-wrap { width:100%; margin:0; padding:24px 32px; box-sizing:border-box; }
   .fs-wrap * { box-sizing:border-box; min-width:0; }
+  .fs-form { display:flex; gap:8px; align-items:center; flex-wrap:nowrap; }
+  .fs-form input[type="text"] { flex:2 1 260px; min-width:120px; padding:11px 14px; border-radius:10px; border:none; font-size:14px; font-weight:700; color:#1e293b; outline:none; }
+  .fs-form input[type="date"] { flex:1 1 130px; min-width:110px; padding:10px 10px; border-radius:10px; border:none; font-size:12px; font-weight:600; color:#1e293b; }
+  .fs-form button { flex:0 0 auto; padding:11px 18px; background:#fff; color:#312e81; border:none; border-radius:10px; font-size:13px; font-weight:800; cursor:pointer; white-space:nowrap; }
+  .fs-arrow { flex:0 0 auto; color:#c7d2fe; font-weight:700; font-size:12px; }
+  .fs-presets { display:flex; gap:6px; margin-top:10px; flex-wrap:wrap; }
+  .fs-presets button { padding:4px 10px; background:rgba(255,255,255,0.15); color:#fff; border:1px solid rgba(255,255,255,0.3); border-radius:20px; font-size:11px; font-weight:700; cursor:pointer; }
+  @media (max-width:900px) {
+    .fs-form { flex-wrap:wrap; }
+  }
   @media (max-width:640px) {
     .fs-wrap { padding:12px; }
     .fs-header { padding:16px !important; }
-    .fs-header input[type="date"] { flex:1; min-width:130px; }
   }
 </style>
 <div class="fs-wrap">
 
-  <div class="fs-header" style="background:linear-gradient(135deg,#1e1b4b,#312e81);border-radius:18px;padding:24px;color:#fff;margin-bottom:20px;">
-    <div style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;opacity:0.7;margin-bottom:6px;">🔎 FULL SEARCH</div>
-    <div style="font-size:13px;opacity:0.85;margin-bottom:16px;">Order code, naam ya mobile daalo — customer, garments, measurements, work log history aur poori payment history ek saath</div>
+  <div class="fs-header" style="background:linear-gradient(135deg,#1e1b4b,#312e81);border-radius:18px;padding:20px 24px;color:#fff;margin-bottom:20px;">
+    <div style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;opacity:0.7;margin-bottom:4px;">🔎 FULL SEARCH</div>
+    <div style="font-size:12px;opacity:0.8;margin-bottom:12px;">Order code, naam ya mobile daalo — customer, garments, measurements, work log history aur poori payment history ek saath</div>
 
-    <form method="GET" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-      <div style="flex:1;min-width:240px;position:relative;">
-        <input type="text" name="q" value="{{ q }}" placeholder="Order code, naam ya mobile... (ya khaali chhodo, sirf date-range ke liye)"
-          style="width:100%;padding:14px 18px;border-radius:12px;border:none;font-size:16px;font-weight:700;color:#1e293b;outline:none;">
-      </div>
-      <input type="date" name="from" id="from-date" value="{{ from_date }}"
-        style="padding:12px 14px;border-radius:10px;border:none;font-size:13px;font-weight:600;color:#1e293b;">
-      <span style="color:#c7d2fe;font-weight:700;">→</span>
-      <input type="date" name="to" id="to-date" value="{{ to_date }}"
-        style="padding:12px 14px;border-radius:10px;border:none;font-size:13px;font-weight:600;color:#1e293b;">
-      <button type="submit" style="padding:13px 24px;background:#fff;color:#312e81;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;">
-        🔍 Search
-      </button>
+    <form method="GET" class="fs-form">
+      <input type="text" name="q" value="{{ q }}" placeholder="Order code, naam ya mobile...">
+      <input type="date" name="from" id="from-date" value="{{ from_date }}">
+      <span class="fs-arrow">→</span>
+      <input type="date" name="to" id="to-date" value="{{ to_date }}">
+      <button type="submit">🔍 Search</button>
     </form>
 
-    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
-      <button type="button" onclick="setRange('this-month')" style="padding:6px 14px;background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.3);border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;">Is Mahina</button>
-      <button type="button" onclick="setRange('last-month')" style="padding:6px 14px;background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.3);border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;">Pichla Mahina</button>
-      <button type="button" onclick="setRange('5to5')" style="padding:6px 14px;background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.3);border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;">5 se 5 (Salary Cycle)</button>
+    <div class="fs-presets">
+      <button type="button" onclick="setRange('this-month')">Is Mahina</button>
+      <button type="button" onclick="setRange('last-month')">Pichla Mahina</button>
+      <button type="button" onclick="setRange('5to5')">5 se 5</button>
     </div>
   </div>
 
