@@ -33,7 +33,7 @@
           {% for log in logs %}
           <tr style="border-bottom:1px solid var(--border);" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
             <td style="padding:11px 16px;font-size:12px;color:var(--text-muted);">{{ log.sent_at }}</td>
-            <td style="padding:11px 16px;font-size:15px;font-weight:900;color:var(--accent);">#{{ log.order_code }}</td>
+            <td style="padding:11px 16px;font-size:15px;font-weight:900;color:var(--accent);">#{{ log.display_code }}{% if log.entry_code %} <span style="font-size:10px;color:var(--text-muted);font-weight:700;">(#{{ log.entry_code }})</span>{% endif %}</td>
             <td style="padding:11px 16px;font-weight:700;">{{ log.customer }}</td>
             <td style="padding:11px 16px;color:var(--text-muted);">{{ log.mobile }}</td>
             <td style="padding:11px 16px;text-align:center;">

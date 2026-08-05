@@ -466,7 +466,7 @@ WORK_PROGRESS_PAGE = """{% extends 'base.html' %}
   </div>
   <div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 8px rgba(0,0,0,0.07);">
     <thead><tr style="background:#f8fafc;border-bottom:2px solid var(--border);"><th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Order</th><th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Customer</th><th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Garments</th><th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Delivery</th><th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);min-width:180px;">Progress</th><th style="padding:10px 16px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Pending</th></tr></thead>
-    <tbody id="wp-tbody">{% for o in orders %}{% set all_done = o.naap_pct >= 100 and o.cut_pct >= 100 and o.stitch_pct >= 100 %}<tr class="wrow" data-naap="{{ 'pending' if o.naap_pct < 100 else 'done' }}" data-cut="{{ 'pending' if o.cut_pct < 100 else 'done' }}" data-stitch="{{ 'pending' if o.stitch_pct < 100 else 'done' }}" data-alldone="{{ 'yes' if all_done else 'no' }}" style="border-bottom:1px solid var(--border);" onmouseover="this.style.background='#fafbff'" onmouseout="this.style.background=''"><td style="padding:12px 16px;"><div style="font-size:15px;font-weight:900;color:var(--accent);">#{{ o.order_code }}</div>{% if o.is_urgent %}<span style="background:#fee2e2;color:#dc2626;font-size:9px;font-weight:800;padding:1px 6px;border-radius:4px;">🔥 URGENT</span>{% endif %}</td><td style="padding:12px 16px;"><div style="font-weight:700;">{{ o.cname }}</div>{% if o.mobile %}<div style="font-size:11px;color:var(--text-muted);">{{ o.mobile }}</div>{% endif %}</td><td style="padding:12px 16px;color:var(--text-secondary);max-width:130px;font-size:12px;">{{ o.garments }}</td><td style="padding:12px 16px;"><div style="font-size:13px;font-weight:700;">{{ o.delivery_date }}</div><div style="font-size:11px;color:var(--text-muted);">{{ o.status|upper }}</div></td><td style="padding:12px 16px;"><div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font-size:9px;font-weight:800;color:{% if o.naap_pct>=100 %}#4f46e5{% else %}#9ca3af{% endif %};">नाप{% if o.naap_pct>=100 %} ✓{% else %} {{ o.naap_pct }}%{% endif %}</span><span style="font-size:9px;font-weight:800;color:{% if o.cut_pct>=100 %}#ea580c{% else %}#9ca3af{% endif %};">कटाई{% if o.cut_pct>=100 %} ✓{% else %} {{ o.cut_pct }}%{% endif %}</span><span style="font-size:9px;font-weight:800;color:{% if o.stitch_pct>=100 %}#16a34a{% else %}#9ca3af{% endif %};">सिलाई{% if o.stitch_pct>=100 %} ✓{% else %} {{ o.stitch_pct }}%{% endif %}</span></div><div style="display:flex;gap:2px;height:10px;"><div style="flex:1;background:#e5e7eb;border-radius:4px;overflow:hidden;"><div style="height:100%;background:#4f46e5;width:{{ o.naap_pct }}%;"></div></div><div style="flex:1;background:#e5e7eb;border-radius:4px;overflow:hidden;"><div style="height:100%;background:#ea580c;width:{{ o.cut_pct }}%;"></div></div><div style="flex:1;background:#e5e7eb;border-radius:4px;overflow:hidden;"><div style="height:100%;background:#16a34a;width:{{ o.stitch_pct }}%;"></div></div></div></td><td style="padding:12px 16px;text-align:center;">{% if all_done %}<span style="background:#d1fae5;color:#065f46;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:800;">✅ All Done</span>{% else %}<div style="display:flex;flex-direction:column;gap:3px;align-items:center;">{% if o.naap_pct < 100 %}<span style="background:#eef2ff;color:#4f46e5;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:800;">📐 नाप</span>{% endif %}{% if o.cut_pct < 100 %}<span style="background:#fff7ed;color:#ea580c;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:800;">✂️ कटाई</span>{% endif %}{% if o.stitch_pct < 100 %}<span style="background:#f0fdf4;color:#16a34a;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:800;">🪡 सिलाई</span>{% endif %}</div>{% endif %}</td></tr>{% else %}<tr><td colspan="6" style="padding:40px;text-align:center;color:var(--text-muted);">All orders delivered!</td></tr>{% endfor %}</tbody>
+    <tbody id="wp-tbody">{% for o in orders %}{% set all_done = o.naap_pct >= 100 and o.cut_pct >= 100 and o.stitch_pct >= 100 %}<tr class="wrow" data-naap="{{ 'pending' if o.naap_pct < 100 else 'done' }}" data-cut="{{ 'pending' if o.cut_pct < 100 else 'done' }}" data-stitch="{{ 'pending' if o.stitch_pct < 100 else 'done' }}" data-alldone="{{ 'yes' if all_done else 'no' }}" style="border-bottom:1px solid var(--border);" onmouseover="this.style.background='#fafbff'" onmouseout="this.style.background=''"><td style="padding:12px 16px;"><div style="font-size:15px;font-weight:900;color:var(--accent);">#{{ o.display_code }}</div>{% if o.entry_code %}<span style="background:#f1f5f9;color:#64748b;font-size:10px;font-weight:700;padding:1px 6px;border-radius:5px;">(#{{ o.entry_code }})</span>{% endif %}{% if o.is_urgent %}<span style="background:#fee2e2;color:#dc2626;font-size:9px;font-weight:800;padding:1px 6px;border-radius:4px;">🔥 URGENT</span>{% endif %}</td><td style="padding:12px 16px;"><div style="font-weight:700;">{{ o.cname }}</div>{% if o.mobile %}<div style="font-size:11px;color:var(--text-muted);">{{ o.mobile }}</div>{% endif %}</td><td style="padding:12px 16px;color:var(--text-secondary);max-width:130px;font-size:12px;">{{ o.garments }}</td><td style="padding:12px 16px;"><div style="font-size:13px;font-weight:700;">{{ o.delivery_date }}</div><div style="font-size:11px;color:var(--text-muted);">{{ o.status|upper }}</div></td><td style="padding:12px 16px;"><div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font-size:9px;font-weight:800;color:{% if o.naap_pct>=100 %}#4f46e5{% else %}#9ca3af{% endif %};">नाप{% if o.naap_pct>=100 %} ✓{% else %} {{ o.naap_pct }}%{% endif %}</span><span style="font-size:9px;font-weight:800;color:{% if o.cut_pct>=100 %}#ea580c{% else %}#9ca3af{% endif %};">कटाई{% if o.cut_pct>=100 %} ✓{% else %} {{ o.cut_pct }}%{% endif %}</span><span style="font-size:9px;font-weight:800;color:{% if o.stitch_pct>=100 %}#16a34a{% else %}#9ca3af{% endif %};">सिलाई{% if o.stitch_pct>=100 %} ✓{% else %} {{ o.stitch_pct }}%{% endif %}</span></div><div style="display:flex;gap:2px;height:10px;"><div style="flex:1;background:#e5e7eb;border-radius:4px;overflow:hidden;"><div style="height:100%;background:#4f46e5;width:{{ o.naap_pct }}%;"></div></div><div style="flex:1;background:#e5e7eb;border-radius:4px;overflow:hidden;"><div style="height:100%;background:#ea580c;width:{{ o.cut_pct }}%;"></div></div><div style="flex:1;background:#e5e7eb;border-radius:4px;overflow:hidden;"><div style="height:100%;background:#16a34a;width:{{ o.stitch_pct }}%;"></div></div></div></td><td style="padding:12px 16px;text-align:center;">{% if all_done %}<span style="background:#d1fae5;color:#065f46;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:800;">✅ All Done</span>{% else %}<div style="display:flex;flex-direction:column;gap:3px;align-items:center;">{% if o.naap_pct < 100 %}<span style="background:#eef2ff;color:#4f46e5;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:800;">📐 नाप</span>{% endif %}{% if o.cut_pct < 100 %}<span style="background:#fff7ed;color:#ea580c;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:800;">✂️ कटाई</span>{% endif %}{% if o.stitch_pct < 100 %}<span style="background:#f0fdf4;color:#16a34a;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:800;">🪡 सिलाई</span>{% endif %}</div>{% endif %}</td></tr>{% else %}<tr><td colspan="6" style="padding:40px;text-align:center;color:var(--text-muted);">All orders delivered!</td></tr>{% endfor %}</tbody>
   </table></div>
 </div>
 {% endblock %}
@@ -582,7 +582,7 @@ def dashboard():
 
     # Full transaction log for selected date
     today_transactions = conn.execute(
-        "SELECT f.*, o.order_code FROM finance f LEFT JOIN orders o ON o.id=f.order_id WHERE f.tx_date=? ORDER BY f.id DESC",(selected_date,)
+        "SELECT f.*, o.order_code, o.repeat_of FROM finance f LEFT JOIN orders o ON o.id=f.order_id WHERE f.tx_date=? ORDER BY f.id DESC",(selected_date,)
     ).fetchall()
 
     dues = conn.execute("SELECT SUM(remaining) as total, COUNT(*) as cnt FROM orders WHERE status != 'delivered' AND remaining > 0").fetchone()
@@ -614,11 +614,14 @@ def dashboard():
         p = str(d).split("-")
         return f"{p[2]}-{p[1]}-{p[0]}" if len(p)==3 else d
 
-    new_orders_list = [{"code":r["order_code"],"name":r["name"],
+    new_orders_list = [{"code":r["order_code"],
+        "display_code": r["repeat_of"] if r["repeat_of"] else r["order_code"],
+        "entry_code": r["order_code"] if r["repeat_of"] else "",
+        "name":r["name"],
         "date":_fmtd(r["order_date"]),"payable":int(r["payable_amount"] or 0),
         "paid":int(r["advance_paid"] or 0),"due":int(r["remaining"] or 0)}
         for r in conn.execute("""
-            SELECT o.order_code,c.name,o.order_date,o.payable_amount,o.advance_paid,o.remaining
+            SELECT o.order_code,o.repeat_of,c.name,o.order_date,o.payable_amount,o.advance_paid,o.remaining
             FROM orders o JOIN customers c ON c.id=o.customer_id
             WHERE o.order_date=? AND o.status!='delivered' ORDER BY o.id DESC
         """, (today,)).fetchall()]
@@ -626,10 +629,9 @@ def dashboard():
     def fmt_12h(ts):
         if not ts or len(ts) < 16: return "—"
         try:
-            from datetime import datetime as _dt, timedelta as _td
-            utc = _dt.strptime(str(ts)[:16], "%Y-%m-%d %H:%M")
-            ist = utc + _td(hours=5, minutes=30)
-            h, m = ist.hour, ist.strftime("%M")
+            from datetime import datetime as _dt
+            t = _dt.strptime(str(ts)[:16], "%Y-%m-%d %H:%M")
+            h, m = t.hour, t.strftime("%M")
             return f"{h%12 or 12}:{m} {'AM' if h<12 else 'PM'}"
         except: return "—"
 
@@ -1388,7 +1390,7 @@ def api_order_ledger():
 
     # Other orders by same customer
     other_orders = conn.execute("""
-        SELECT order_code, order_date, delivery_date, payable_amount, remaining, status
+        SELECT order_code, repeat_of, order_date, delivery_date, payable_amount, remaining, status
         FROM orders
         WHERE customer_id = ? AND order_code != ?
         ORDER BY id DESC LIMIT 20
@@ -1396,10 +1398,20 @@ def api_order_ledger():
 
     conn.close()
 
+    other_orders_out = [{
+        "order_code": o["order_code"],
+        "display_code": o["repeat_of"] if o["repeat_of"] else o["order_code"],
+        "entry_code": o["order_code"] if o["repeat_of"] else "",
+        "order_date": o["order_date"], "delivery_date": o["delivery_date"],
+        "payable_amount": o["payable_amount"], "remaining": o["remaining"], "status": o["status"],
+    } for o in other_orders]
+
     return jsonify({
         "ok": True,
         "order": {
             "order_code":    order["order_code"],
+            "display_code":  order["repeat_of"] if order["repeat_of"] else order["order_code"],
+            "entry_code":    order["order_code"] if order["repeat_of"] else "",
             "cname":         order["cname"] or "—",
             "mobile":        order["mobile"] or "",
             "order_date":    order["order_date"] or "",
@@ -1415,7 +1427,7 @@ def api_order_ledger():
             "note":          order["note"] or "",
         },
         "payments": payments_list,
-        "other_orders": [dict(o) for o in other_orders],
+        "other_orders": other_orders_out,
     })
 
 
@@ -3729,6 +3741,34 @@ def owner_finance():
 #  FINANCE ENTRY DELETE
 # ══════════════════════════════════════════════
 
+@bp.route("/api/finance/update-mode/<int:tx_id>", methods=["POST"])
+@owner_required
+def api_finance_update_mode(tx_id):
+    """Fix a transaction's payment mode (Cash/UPI) — for when the wrong one
+    was accidentally selected while adding the entry. Also updates the
+    linked order's payment_mode if this entry is tied to one, so both stay
+    consistent."""
+    data = request.get_json(silent=True) or {}
+    new_mode = (data.get("mode") or "").strip().lower()
+    if new_mode not in ("cash", "upi"):
+        return jsonify({"ok": False, "error": "Mode must be cash or upi"})
+
+    conn = get_db()
+    entry = conn.execute("SELECT * FROM finance WHERE id=?", (tx_id,)).fetchone()
+    if not entry:
+        conn.close()
+        return jsonify({"ok": False, "error": "Entry not found"})
+
+    conn.execute("UPDATE finance SET mode=? WHERE id=?", (new_mode, tx_id))
+
+    if entry["order_id"]:
+        conn.execute("UPDATE orders SET payment_mode=? WHERE id=?", (new_mode, entry["order_id"]))
+
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True, "mode": new_mode})
+
+
 @bp.route("/api/finance/delete/<int:tx_id>", methods=["POST"])
 @owner_required
 def delete_finance_entry(tx_id):
@@ -3949,7 +3989,7 @@ def save_finance_categories():
 def work_progress():
     conn = get_db()
     orders = conn.execute("""
-        SELECT o.order_code, o.status, o.delivery_date, o.is_urgent,
+        SELECT o.order_code, o.repeat_of, o.status, o.delivery_date, o.is_urgent,
                COALESCE(c.name,'—') as cname, COALESCE(c.mobile,'') as mobile,
                STRING_AGG(CAST(oi.garment_type||' x'||oi.quantity AS TEXT), ', ') as garments_str,
                SUM(oi.quantity) as total_qty
@@ -3957,7 +3997,7 @@ def work_progress():
         LEFT JOIN customers c ON c.id=o.customer_id
         LEFT JOIN order_items oi ON oi.order_id=o.id
         WHERE o.status NOT IN ('delivered','cancelled')
-        GROUP BY o.id, o.order_code, o.status, o.delivery_date, o.is_urgent, c.name, c.mobile
+        GROUP BY o.id, o.order_code, o.repeat_of, o.status, o.delivery_date, o.is_urgent, c.name, c.mobile
         ORDER BY o.delivery_date ASC, o.is_urgent DESC
     """).fetchall()
 
@@ -3976,15 +4016,17 @@ def work_progress():
         for wl in wl_rows:
             n = (wl["notes"] or "").strip()
             q = wl["qty_done"] or 0
-            if any(x in n for x in ["Measurement","Naap"]):
+            if any(x in n for x in ["Measurement","Naap","नाप"]):
                 naap_done += q
-            elif any(x in n for x in ["Kataai","Cutting"]):
+            elif any(x in n for x in ["Kataai","Cutting","कटाई"]):
                 kataai_done += q
             else:
                 silai_done += q
         tq = o["total_qty"] or 1
         result.append({
             "order_code":    o["order_code"],
+            "display_code":  o["repeat_of"] if o["repeat_of"] else o["order_code"],
+            "entry_code":    o["order_code"] if o["repeat_of"] else "",
             "status":        o["status"],
             "cname":         o["cname"],
             "mobile":        o["mobile"],
@@ -4696,8 +4738,13 @@ def owner_customer_detail(customer_id):
     ).fetchone()["c"]
     conn.close()
 
+    latest_id = max((o["id"] for o in orders), default=None)
+
     orders_list = [{
         "order_code":       o["order_code"],
+        "display_code":     o["repeat_of"] if o["repeat_of"] else o["order_code"],
+        "entry_code":       o["order_code"] if o["repeat_of"] else "",
+        "is_latest":        o["id"] == latest_id,
         "status":           o["status"],
         "order_date_fmt":   fmtd(o["order_date"]),
         "delivery_date_fmt":fmtd(o["delivery_date"]),
@@ -4749,9 +4796,11 @@ def owner_customer_edit(customer_id):
 def notify_log_view():
     """Owner sees all WhatsApp notifies sent."""
     conn = get_db()
-    logs = conn.execute(
-        "SELECT * FROM notify_log ORDER BY sent_at DESC"
-    ).fetchall()
+    logs = conn.execute("""
+        SELECT n.*, o.repeat_of
+        FROM notify_log n LEFT JOIN orders o ON o.order_code = n.order_code
+        ORDER BY n.sent_at DESC
+    """).fetchall()
     urgent_count = conn.execute(
         "SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status!='delivered'"
     ).fetchone()["c"]
@@ -4765,7 +4814,10 @@ def notify_log_view():
         time_fmt = parts[1][:5] if len(parts)>1 else ""
         return f"{date_fmt} {time_fmt}"
 
-    log_list = [{"order_code":r["order_code"],"customer":r["customer"],
+    log_list = [{"order_code":r["order_code"],
+                 "display_code": r["repeat_of"] if r["repeat_of"] else r["order_code"],
+                 "entry_code": r["order_code"] if r["repeat_of"] else "",
+                 "customer":r["customer"],
                  "mobile":r["mobile"],"lang":r["lang"].upper(),"sent_at":fmtdt(r["sent_at"])}
                 for r in logs]
     return render_template("owner/notify_log.html",
@@ -4860,11 +4912,13 @@ def salary():
     for emp in emps:
         name = emp["name"]
         logs = conn.execute("""
-            SELECT order_code, garment_type, qty_done, making_rate, log_date,
-                   CAST(qty_done AS REAL) * CAST(making_rate AS REAL) as earning
-            FROM work_logs
-            WHERE employee_name=? AND log_date >= ?
-            ORDER BY log_date DESC, id DESC
+            SELECT wl.order_code, wl.garment_type, wl.qty_done, wl.making_rate, wl.log_date,
+                   CAST(wl.qty_done AS REAL) * CAST(wl.making_rate AS REAL) as earning,
+                   o.repeat_of
+            FROM work_logs wl
+            LEFT JOIN orders o ON o.order_code = wl.order_code
+            WHERE wl.employee_name=? AND wl.log_date >= ?
+            ORDER BY wl.log_date DESC, wl.id DESC
         """, (name, start)).fetchall()
 
         total_earned  = sum(r["earning"] or 0 for r in logs)
@@ -4886,7 +4940,10 @@ def salary():
             "total_earned": total_earned,
             "total_advance":adv_period,
             "net_payable":  total_earned - adv_period,
-            "logs": [{"order_code":r["order_code"],"garment_type":r["garment_type"],
+            "logs": [{"order_code":r["order_code"],
+                      "display_code": r["repeat_of"] if r["repeat_of"] else r["order_code"],
+                      "entry_code": r["order_code"] if r["repeat_of"] else "",
+                      "garment_type":r["garment_type"],
                       "qty_done":r["qty_done"],"earning":r["earning"] or 0,
                       "log_date":r["log_date"]} for r in logs]
         })

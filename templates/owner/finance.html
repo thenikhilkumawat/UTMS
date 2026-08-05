@@ -197,7 +197,11 @@
                 style="color:var(--accent);font-size:10px;font-weight:800;background:var(--accent-light);padding:2px 8px;border-radius:7px;text-decoration:none;margin-left:4px;white-space:nowrap;">#{{ tx.order_code }}{% if tx.entry_code %} (#{{ tx.entry_code }}){% endif %} ↗</a>
               {% endif %}
             </td>
-            <td style="padding:11px 16px;text-align:center;"><span style="font-size:11px;font-weight:700;background:#f1f5f9;padding:2px 8px;border-radius:7px;">{{ tx.mode|upper if tx.mode else '—' }}</span></td>
+            <td style="padding:11px 16px;text-align:center;">
+              <span id="mode-badge-{{ tx.id }}" style="font-size:11px;font-weight:700;background:#f1f5f9;padding:2px 8px;border-radius:7px;">{{ tx.mode|upper if tx.mode else '—' }}</span>
+              <button onclick="event.stopPropagation();editMode({{ tx.id }}, '{{ tx.mode or 'cash' }}')"
+                style="background:none;border:none;cursor:pointer;font-size:11px;padding:0 2px;vertical-align:middle;" title="Mode fix karo">✏️</button>
+            </td>
             <td style="padding:11px 16px;text-align:center;font-size:11px;color:var(--text-muted);">{{ tx.created_by }}</td>
             <td style="padding:11px 16px;text-align:right;font-size:15px;font-weight:900;color:{% if tx.tx_type=='income' %}var(--success){% else %}var(--danger){% endif %};">{% if tx.tx_type=='income' %}+{% else %}−{% endif %}₹{{ tx.amount | int }}</td>
             <td style="padding:11px 16px;text-align:center;">
@@ -343,6 +347,26 @@ function filterTx() {
 }
 
 /* ── Finance Entry Delete ── */
+function editMode(id, currentMode) {
+  const newMode = currentMode === "cash" ? "upi" : "cash";
+  if (!confirm(`Mode "${currentMode.toUpperCase()}" se "${newMode.toUpperCase()}" karein?`)) return;
+  fetch("/owner/api/finance/update-mode/" + id, {
+    method: "POST", headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({mode: newMode})
+  })
+    .then(r => r.json())
+    .then(d => {
+      if (d.ok) {
+        const badge = document.getElementById("mode-badge-" + id);
+        if (badge) badge.textContent = newMode.toUpperCase();
+        showToast("Mode updated to " + newMode.toUpperCase(), "success");
+      } else {
+        showToast("Error: " + (d.error || "Update failed"), "error");
+      }
+    })
+    .catch(() => showToast("Network error", "error"));
+}
+
 function deleteTx(id, type, amount, category) {
   const msg = `Delete this entry?\n\n${type === 'income' ? '↑' : '↓'} ₹${amount} — ${category}\n\nThis cannot be undone.\n${(type==='income' && ['advance','payment','remaining amount'].indexOf(category.toLowerCase())!==-1) ? '\n⚠️ Order advance/payment balance will also be reversed.' : ''}`;
   if (!confirm(msg)) return;

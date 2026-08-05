@@ -89,7 +89,8 @@ function doFreshStart() {
             {% for log in emp.logs %}
             <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 16px;border-bottom:1px solid #f1f5f9;font-size:12px;">
               <div>
-                <span style="font-weight:800;color:var(--accent);">#{{ log.order_code }}</span>
+                <span style="font-weight:800;color:var(--accent);">#{{ log.display_code }}</span>
+                {% if log.entry_code %}<span style="font-size:10px;color:var(--text-muted);font-weight:700;">(#{{ log.entry_code }})</span>{% endif %}
                 <span style="color:var(--text-muted);margin-left:4px;">{{ log.garment_type }}</span>
                 <div style="font-size:10px;color:var(--text-muted);">{{ log.log_date }}</div>
               </div>
