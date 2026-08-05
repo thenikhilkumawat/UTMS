@@ -288,13 +288,13 @@ async function loadToday(){
     var ordEl=document.getElementById('t-order-list');
     ordEl.innerHTML=d.orders&&d.orders.length?d.orders.map(function(o){
       var b=o.status==='ready'?'<span class="badge badge-ready">तैयार ✓</span>':o.status==='delivered'?'<span class="badge badge-delivered">मिल गया</span>':'<span class="badge badge-pending">बाकी है</span>';
-      return '<div class="order-row"><div class="order-code">#'+o.order_code+'</div><div class="order-info"><div class="order-name">'+o.name+'</div><div class="order-garment">'+(o.garments||'')+'</div></div>'+b+'</div>';
+      return '<div class="order-row"><div class="order-code">#'+(o.display_code||o.order_code)+(o.entry_code?' <span style="font-size:10px;opacity:0.7;">(#'+o.entry_code+')</span>':'')+'</div><div class="order-info"><div class="order-name">'+o.name+'</div><div class="order-garment">'+(o.garments||'')+'</div></div>'+b+'</div>';
     }).join(''):'<div class="empty-msg">आज कोई ऑर्डर नहीं</div>';
 
     document.getElementById('t-del-count').textContent=d.delivered?d.delivered.length:0;
     var delEl=document.getElementById('t-del-list');
     delEl.innerHTML=d.delivered&&d.delivered.length?d.delivered.map(function(o){
-      return '<div class="order-row"><div class="order-code">#'+o.order_code+'</div><div class="order-info"><div class="order-name">'+o.name+'</div><div class="order-garment">'+(o.garments||'')+'</div></div><span class="badge badge-delivered">✅ मिला</span></div>';
+      return '<div class="order-row"><div class="order-code">#'+(o.display_code||o.order_code)+(o.entry_code?' <span style="font-size:10px;opacity:0.7;">(#'+o.entry_code+')</span>':'')+'</div><div class="order-info"><div class="order-name">'+o.name+'</div><div class="order-garment">'+(o.garments||'')+'</div></div><span class="badge badge-delivered">✅ मिला</span></div>';
     }).join(''):'<div class="empty-msg">आज कोई डिलीवरी नहीं</div>';
   }catch(e){console.error(e);}
   updateTime();

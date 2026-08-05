@@ -927,25 +927,25 @@ def mummy_data():
 
     # Orders created today
     orders = conn.execute("""
-        SELECT o.order_code, o.status, c.name,
+        SELECT o.order_code, o.repeat_of, o.status, c.name,
                string_agg(oi.garment_type, ', ') as garments
         FROM orders o
         LEFT JOIN customers c ON c.id=o.customer_id
         LEFT JOIN order_items oi ON oi.order_id=o.id
         WHERE o.order_date=? AND o.status != 'delivered'
-        GROUP BY o.id, o.order_code, o.status, c.name
+        GROUP BY o.id, o.order_code, o.repeat_of, o.status, c.name
         ORDER BY o.id DESC
     """, (today,)).fetchall()
 
     # Delivered today
     delivered = conn.execute("""
-        SELECT o.order_code, c.name,
+        SELECT o.order_code, o.repeat_of, c.name,
                string_agg(oi.garment_type, ', ') as garments
         FROM orders o
         LEFT JOIN customers c ON c.id=o.customer_id
         LEFT JOIN order_items oi ON oi.order_id=o.id
         WHERE o.delivered_at LIKE ? AND o.status='delivered'
-        GROUP BY o.id, o.order_code, c.name
+        GROUP BY o.id, o.order_code, o.repeat_of, c.name
         ORDER BY o.id DESC
     """, (today + "%",)).fetchall()
 
@@ -957,10 +957,15 @@ def mummy_data():
         "total_expense": round(total_expense, 2),
         "expenses":      [{"note": (r["note"] or r["category"] or "खर्चा"),
                            "amount": (r["amount"] or 0)} for r in exp_rows],
-        "orders":        [{"order_code": r["order_code"], "status": r["status"],
+        "orders":        [{"order_code": r["order_code"],
+                           "display_code": r["repeat_of"] if r["repeat_of"] else r["order_code"],
+                           "entry_code": r["order_code"] if r["repeat_of"] else "",
+                           "status": r["status"],
                            "name": r["name"] or "—",
                            "garments": r["garments"] or ""} for r in orders],
         "delivered":     [{"order_code": r["order_code"],
+                           "display_code": r["repeat_of"] if r["repeat_of"] else r["order_code"],
+                           "entry_code": r["order_code"] if r["repeat_of"] else "",
                            "name": r["name"] or "—",
                            "garments": r["garments"] or ""} for r in delivered],
     })

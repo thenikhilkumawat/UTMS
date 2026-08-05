@@ -1954,7 +1954,7 @@ def measurement_book():
         recent_rows = conn.execute("""
             SELECT * FROM (
                 SELECT DISTINCT ON (o.customer_id)
-                       o.id, o.order_code, o.order_date, o.delivery_date, o.status,
+                       o.id, o.order_code, o.repeat_of, o.order_date, o.delivery_date, o.status,
                        o.payable_amount, o.advance_paid, o.remaining, o.note, o.is_urgent,
                        c.name as cname, c.mobile, c.address
                 FROM (SELECT * FROM orders ORDER BY id DESC LIMIT 200) o
@@ -2028,7 +2028,10 @@ def measurement_book():
 
     for o in recent_rows:
         orders_data.append({
-            "code": o["order_code"], "odate": fmtd(o["order_date"]),
+            "code": o["order_code"],
+            "display_code": o["repeat_of"] if o["repeat_of"] else o["order_code"],
+            "entry_code": o["order_code"] if o["repeat_of"] else "",
+            "odate": fmtd(o["order_date"]),
             "ddate": fmtd(o["delivery_date"]), "status": o["status"],
             "urgent": bool(o["is_urgent"]),
             "payable": int(o["payable_amount"] or 0),
@@ -4340,8 +4343,8 @@ def api_order_detail(order_code):
     naap=kataai=silai=0
     for wl in wl_rows:
         n=(wl["notes"] or "").strip(); q=wl["qty_done"] or 0
-        if any(x in n for x in ["Measurement","Naap"]): naap+=q
-        elif any(x in n for x in ["Kataai","Cutting"]): kataai+=q
+        if any(x in n for x in ["Measurement","Naap","नाप"]): naap+=q
+        elif any(x in n for x in ["Kataai","Cutting","कटाई"]): kataai+=q
         else: silai+=q
     tq=sum(it["quantity"] for it in items) or 1
 
@@ -4459,6 +4462,8 @@ def order_detail(order_code):
 
     order_data = {
         "order_code":    o["order_code"],
+        "display_code":  o["repeat_of"] if o["repeat_of"] else o["order_code"],
+        "entry_code":    o["order_code"] if o["repeat_of"] else "",
         "status":        o["status"],
         "is_urgent":     o["is_urgent"],
         "note":          o["note"],

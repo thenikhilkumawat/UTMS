@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% block title %}Order #{{ order.order_code }} — Admin{% endblock %}
+{% block title %}Order #{{ order.display_code }} — Admin{% endblock %}
 {% block content %}
 <div class="page-header">
   <div>
     <h1>
-      📋 Order #{{ order.order_code }}
+      📋 Order #{{ order.display_code }}{% if order.entry_code %} <span style="font-size:14px;color:#94a3b8;font-weight:700;">(#{{ order.entry_code }})</span>{% endif %}
       {% if order.is_urgent %}<span style="background:#fee2e2;color:#dc2626;font-size:12px;font-weight:800;padding:2px 8px;border-radius:6px;margin-left:8px;">🔥 URGENT</span>{% endif %}
       <span style="font-size:13px;padding:4px 12px;border-radius:8px;font-weight:800;margin-left:8px;background:{% if order.status=='delivered' %}#d1fae5;color:#065f46{% elif order.status=='ready' %}#ede9fe;color:#6d28d9{% elif order.status=='cancelled' %}#fee2e2;color:#dc2626{% else %}#dbeafe;color:#1e40af{% endif %};">{{ order.status|upper }}</span>
     </h1>
