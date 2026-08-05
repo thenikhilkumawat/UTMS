@@ -2996,9 +2996,78 @@ def full_search_page():
         # Newest first
         orders_out.sort(key=lambda x: -x["id"])
 
+    # ── Monthly Business Overview — shown when a date range is set,
+    # regardless of whether a specific order/customer was also searched.
+    overview = None
+    if from_date and to_date:
+        conn2 = get_db()
+
+        # Orders created in this period, by status
+        created_rows = conn2.execute("""
+            SELECT status, COUNT(*) as cnt, COALESCE(SUM(payable_amount),0) as total_value,
+                   COALESCE(SUM(remaining),0) as total_due
+            FROM orders
+            WHERE order_date >= ? AND order_date <= ?
+            GROUP BY status
+        """, (from_date, to_date)).fetchall()
+
+        status_map = {r["status"]: r for r in created_rows}
+        created_total = sum(r["cnt"] for r in created_rows)
+
+        # Orders actually delivered in this period (regardless of when created)
+        delivered_row = conn2.execute("""
+            SELECT COUNT(*) as cnt, COALESCE(SUM(payable_amount),0) as total_value
+            FROM orders
+            WHERE status='delivered' AND delivered_at >= ? AND delivered_at <= ?
+        """, (from_date, to_date + " 23:59:59")).fetchone()
+
+        # Finance: income & expense totals in this period
+        fin_rows = conn2.execute("""
+            SELECT tx_type, COALESCE(SUM(amount),0) as total
+            FROM finance
+            WHERE tx_date >= ? AND tx_date <= ?
+            GROUP BY tx_type
+        """, (from_date, to_date)).fetchall()
+        income  = next((r["total"] for r in fin_rows if r["tx_type"]=="income"), 0)
+        expense = next((r["total"] for r in fin_rows if r["tx_type"]=="expense"), 0)
+
+        # Salary paid per employee in this period
+        salary_rows = conn2.execute("""
+            SELECT employee_name, COALESCE(SUM(amount),0) as total
+            FROM salary_advances
+            WHERE advance_date >= ? AND advance_date <= ?
+            GROUP BY employee_name
+            ORDER BY total DESC
+        """, (from_date, to_date)).fetchall()
+        total_salary = sum(r["total"] for r in salary_rows)
+
+        conn2.close()
+
+        def st(name):
+            r = status_map.get(name)
+            return {"count": r["cnt"] if r else 0, "value": int(r["total_value"] or 0) if r else 0,
+                    "due": int(r["total_due"] or 0) if r else 0}
+
+        overview = {
+            "created_total": created_total,
+            "pending": st("pending"),
+            "ready": st("ready"),
+            "delivered_created": st("delivered"),
+            "cancelled": st("cancelled"),
+            "delivered_period": {
+                "count": delivered_row["cnt"] or 0,
+                "value": int(delivered_row["total_value"] or 0),
+            },
+            "income": int(income),
+            "expense": int(expense),
+            "net": int(income) - int(expense),
+            "total_salary": int(total_salary),
+            "by_employee": [{"name": r["employee_name"], "amount": int(r["total"])} for r in salary_rows],
+        }
+
     return render_template("owner/full_search.html",
         active_page="full_search", q=q, from_date=from_date, to_date=to_date,
-        orders=orders_out)
+        orders=orders_out, overview=overview)
 
 
 @bp.route("/mixed-customers-3701")

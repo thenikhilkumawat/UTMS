@@ -8,14 +8,102 @@
 
     <form method="GET" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
       <div style="flex:1;min-width:240px;position:relative;">
-        <input type="text" name="q" value="{{ q }}" placeholder="Order code, naam ya mobile..." autofocus
+        <input type="text" name="q" value="{{ q }}" placeholder="Order code, naam ya mobile... (ya khaali chhodo, sirf date-range ke liye)"
           style="width:100%;padding:14px 18px;border-radius:12px;border:none;font-size:16px;font-weight:700;color:#1e293b;outline:none;">
       </div>
+      <input type="date" name="from" id="from-date" value="{{ from_date }}"
+        style="padding:12px 14px;border-radius:10px;border:none;font-size:13px;font-weight:600;color:#1e293b;">
+      <span style="color:#c7d2fe;font-weight:700;">→</span>
+      <input type="date" name="to" id="to-date" value="{{ to_date }}"
+        style="padding:12px 14px;border-radius:10px;border:none;font-size:13px;font-weight:600;color:#1e293b;">
       <button type="submit" style="padding:13px 24px;background:#fff;color:#312e81;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;">
         🔍 Search
       </button>
     </form>
+
+    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+      <button type="button" onclick="setRange('this-month')" style="padding:6px 14px;background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.3);border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;">Is Mahina</button>
+      <button type="button" onclick="setRange('last-month')" style="padding:6px 14px;background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.3);border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;">Pichla Mahina</button>
+      <button type="button" onclick="setRange('5to5')" style="padding:6px 14px;background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.3);border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;">5 se 5 (Salary Cycle)</button>
+    </div>
   </div>
+
+  <script>
+  function setRange(preset) {
+    var today = new Date();
+    var y = today.getFullYear(), m = today.getMonth();
+    function fmt(d) { return d.toISOString().slice(0,10); }
+    var from, to;
+    if (preset === 'this-month') {
+      from = new Date(y, m, 1);
+      to = today;
+    } else if (preset === 'last-month') {
+      from = new Date(y, m-1, 1);
+      to = new Date(y, m, 0);
+    } else if (preset === '5to5') {
+      if (today.getDate() >= 5) { from = new Date(y, m, 5); to = new Date(y, m+1, 5); }
+      else { from = new Date(y, m-1, 5); to = new Date(y, m, 5); }
+    }
+    document.getElementById('from-date').value = fmt(from);
+    document.getElementById('to-date').value = fmt(to);
+    document.querySelector('form').submit();
+  }
+  </script>
+
+  {% if overview %}
+  <div style="background:#fff;border-radius:16px;padding:22px;margin-bottom:20px;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+    <div style="font-size:13px;font-weight:800;color:#4338ca;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;">
+      📊 Business Overview — {{ from_date }} → {{ to_date }}
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:20px;">
+      <div style="background:#eff6ff;border-radius:12px;padding:14px;">
+        <div style="font-size:11px;color:#3b82f6;font-weight:700;text-transform:uppercase;">Naye Orders</div>
+        <div style="font-size:24px;font-weight:900;color:#1e3a8a;">{{ overview.created_total }}</div>
+      </div>
+      <div style="background:#fef3c7;border-radius:12px;padding:14px;">
+        <div style="font-size:11px;color:#b45309;font-weight:700;text-transform:uppercase;">Pending</div>
+        <div style="font-size:24px;font-weight:900;color:#78350f;">{{ overview.pending.count }}</div>
+      </div>
+      <div style="background:#d1fae5;border-radius:12px;padding:14px;">
+        <div style="font-size:11px;color:#059669;font-weight:700;text-transform:uppercase;">Ready</div>
+        <div style="font-size:24px;font-weight:900;color:#064e3b;">{{ overview.ready.count }}</div>
+      </div>
+      <div style="background:#ede9fe;border-radius:12px;padding:14px;">
+        <div style="font-size:11px;color:#7c3aed;font-weight:700;text-transform:uppercase;">Delivered (is period mein)</div>
+        <div style="font-size:24px;font-weight:900;color:#4c1d95;">{{ overview.delivered_period.count }}</div>
+        <div style="font-size:11px;color:#7c3aed;">₹{{ overview.delivered_period.value }} value</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:20px;">
+      <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:12px;padding:16px;text-align:center;">
+        <div style="font-size:11px;color:#166534;font-weight:700;text-transform:uppercase;">Income</div>
+        <div style="font-size:22px;font-weight:900;color:#166534;">+₹{{ overview.income }}</div>
+      </div>
+      <div style="background:#fef2f2;border:1.5px solid #fca5a5;border-radius:12px;padding:16px;text-align:center;">
+        <div style="font-size:11px;color:#991b1b;font-weight:700;text-transform:uppercase;">Expense</div>
+        <div style="font-size:22px;font-weight:900;color:#991b1b;">-₹{{ overview.expense }}</div>
+      </div>
+      <div style="background:{% if overview.net >= 0 %}#eef2ff{% else %}#fef2f2{% endif %};border:1.5px solid {% if overview.net >= 0 %}#c7d2fe{% else %}#fca5a5{% endif %};border-radius:12px;padding:16px;text-align:center;">
+        <div style="font-size:11px;color:#4338ca;font-weight:700;text-transform:uppercase;">Net</div>
+        <div style="font-size:22px;font-weight:900;color:{% if overview.net >= 0 %}#4338ca{% else %}#991b1b{% endif %};">{% if overview.net >= 0 %}+{% endif %}₹{{ overview.net }}</div>
+      </div>
+    </div>
+
+    {% if overview.by_employee %}
+    <div>
+      <div style="font-size:11px;font-weight:800;text-transform:uppercase;color:#6366f1;letter-spacing:1px;margin-bottom:10px;">👷 Employee-wise Salary (₹{{ overview.total_salary }} total)</div>
+      {% for e in overview.by_employee %}
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:13px;">
+        <span style="font-weight:700;color:#1e293b;">{{ e.name }}</span>
+        <span style="font-weight:800;color:#d97706;">₹{{ e.amount }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
 
   {% if q %}
     <div style="font-size:13px;color:#64748b;font-weight:700;margin-bottom:14px;">
