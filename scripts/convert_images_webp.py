@@ -101,7 +101,12 @@ def main():
                 # Update DB reference (only rows that still point to the old file)
                 old_url = f"/static/order_images/{order_code}/{fname}"
                 new_url = f"/static/order_images/{order_code}/{new_fname}"
+                # Handle BOTH plain paths and QR-upload "temp:CODE:path" rows
                 conn.execute("UPDATE order_images SET file_path=? WHERE file_path=?", (new_url, old_url))
+                conn.execute(
+                    "UPDATE order_images SET file_path=? WHERE file_path=?",
+                    (f"temp:{order_code}:{new_url}", f"temp:{order_code}:{old_url}")
+                )
                 conn.commit()
 
                 total_before += size_before
