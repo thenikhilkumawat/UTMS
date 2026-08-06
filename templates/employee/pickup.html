@@ -344,6 +344,9 @@ function doSearch(){
           var latestTag = o.is_latest ? " <span style='background:#dcfce7;color:#166534;font-size:9px;font-weight:800;padding:1px 6px;border-radius:10px;border:1px solid #86efac;'>🆕 Latest</span>" : "";
           var item=document.createElement("div");
           item.className="pu-result-item";
+          if(o.is_latest){
+            item.style.cssText="padding:20px 22px;border:2px solid #86efac;border-radius:14px;margin:10px 12px;background:#f0fdf4;cursor:pointer;transition:background 0.15s;";
+          }
           var codeStyle = o.is_latest ? " style='font-size:20px;'" : "";
           item.innerHTML=(
             "<div class='pu-result-top'>"
