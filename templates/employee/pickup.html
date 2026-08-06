@@ -344,9 +344,10 @@ function doSearch(){
           var latestTag = o.is_latest ? " <span style='background:#dcfce7;color:#166534;font-size:9px;font-weight:800;padding:1px 6px;border-radius:10px;border:1px solid #86efac;'>🆕 Latest</span>" : "";
           var item=document.createElement("div");
           item.className="pu-result-item";
+          var codeStyle = o.is_latest ? " style='font-size:20px;'" : "";
           item.innerHTML=(
             "<div class='pu-result-top'>"
-            +"<span class='pu-result-code'>#"+codeMain+"</span>"+entryTag+latestTag
+            +"<span class='pu-result-code'"+codeStyle+">#"+codeMain+"</span>"+entryTag+latestTag
             +"<span class='pu-status-pill' style='background:"+sbg+";color:"+sc+";'>"+(t(o.status)||o.status)+"</span>"
             +"</div>"
             +"<div class='pu-result-name'>"+o.customer_name+"</div>"

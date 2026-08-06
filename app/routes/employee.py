@@ -2791,21 +2791,41 @@ def api_pickup_search():
     if q.lstrip("#").isdigit():
         code = q.lstrip("#")
         # Exact order_code match
-        r = conn.execute("""
+        exact = conn.execute("""
             SELECT o.id, o.order_code, o.status, o.delivery_date, o.order_date, o.delivered_at, o.remaining, o.is_urgent,
-                   o.repeat_of, c.name as customer_name, c.mobile, c.address
+                   o.repeat_of, o.customer_id, c.name as customer_name, c.mobile, c.address
             FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
             WHERE o.order_code=?
         """, (code,)).fetchall()
+
+        if exact:
+            # Found the order — pull EVERY other order for the same customer
+            # (matched by customer_id, which covers both explicit repeat_of
+            # links and orders that just happen to share the same customer),
+            # so all of their orders show together, not just repeat_of ones.
+            cust_id = exact[0]["customer_id"]
+            if cust_id:
+                r = conn.execute("""
+                    SELECT o.id, o.order_code, o.status, o.delivery_date, o.order_date, o.delivered_at, o.remaining, o.is_urgent,
+                           o.repeat_of, c.name as customer_name, c.mobile, c.address
+                    FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
+                    WHERE o.customer_id=?
+                    ORDER BY o.id DESC
+                """, (cust_id,)).fetchall()
+            else:
+                r = exact
+        else:
+            r = []
         for row in r:
             if row["order_code"] not in seen_codes:
                 rows.append(row)
                 seen_codes.add(row["order_code"])
 
-        # All orders with repeat_of matching this code (repeat customer's entries)
+        # Also catch repeat_of matches even if the parent's own customer_id
+        # lookup above somehow missed them (defensive, keeps old behaviour)
         r2 = conn.execute("""
             SELECT o.id, o.order_code, o.status, o.delivery_date, o.order_date, o.delivered_at, o.remaining, o.is_urgent,
-                   o.repeat_of, c.name as customer_name, c.mobile, c.address
+                   o.repeat_of, o.customer_id, c.name as customer_name, c.mobile, c.address
             FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
             WHERE o.repeat_of=?
             ORDER BY o.id DESC
@@ -2838,7 +2858,7 @@ def api_pickup_search():
 
         r3 = conn.execute(f"""
             SELECT o.id, o.order_code, o.status, o.delivery_date, o.order_date, o.delivered_at, o.remaining, o.is_urgent,
-                   o.repeat_of, c.name as customer_name, c.mobile, c.address
+                   o.repeat_of, o.customer_id, c.name as customer_name, c.mobile, c.address
             FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
             WHERE {word_clauses}
             ORDER BY o.id DESC LIMIT 40
@@ -2849,21 +2869,21 @@ def api_pickup_search():
                 seen_codes.add(row["order_code"])
     conn.close()
 
-    # Mark the newest order per repeat-family (family = parent code, whether
-    # this row IS the parent or a repeat of it) so the frontend can show a
-    # "Latest" tag and sort it first within each customer's group.
-    latest_id_per_family = {}
+    # Mark the newest order per CUSTOMER (not just per repeat_of chain) so
+    # the frontend can show a "Latest" tag and sort it first — this covers
+    # orders that share a customer without an explicit repeat_of link too.
+    latest_id_per_cust = {}
     for r in rows:
-        family = r["repeat_of"] or r["order_code"]
-        if family not in latest_id_per_family or r["id"] > latest_id_per_family[family]:
-            latest_id_per_family[family] = r["id"]
+        key = r["customer_id"] if "customer_id" in r.keys() and r["customer_id"] else (r["repeat_of"] or r["order_code"])
+        if key not in latest_id_per_cust or r["id"] > latest_id_per_cust[key]:
+            latest_id_per_cust[key] = r["id"]
 
     return jsonify([{
         "order_code":       r["order_code"],
         "entry_code":       r["order_code"] if r["repeat_of"] else "",
         "display_code":     r["repeat_of"] if r["repeat_of"] else r["order_code"],
         "repeat_of":        r["repeat_of"] or "",
-        "is_latest":        latest_id_per_family.get(r["repeat_of"] or r["order_code"]) == r["id"],
+        "is_latest":        latest_id_per_cust.get(r["customer_id"] if "customer_id" in r.keys() and r["customer_id"] else (r["repeat_of"] or r["order_code"])) == r["id"],
         "status":           r["status"],
         "customer_name":    r["customer_name"] or "—",
         "mobile":           r["mobile"] or "",
