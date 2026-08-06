@@ -599,9 +599,10 @@ def dashboard():
     urgent_count = conn.execute("SELECT COUNT(*) as c FROM orders WHERE is_urgent=1 AND status != 'delivered' AND delivery_date >= ?",(today,)).fetchone()["c"]
 
     # Today's order activity
-    # New orders: order_date = today AND not delivered (same logic as employee dashboard)
+    # New orders: order_date = today (regardless of current status — an order
+    # created AND delivered on the same day should still count as "today's order")
     new_orders_today = conn.execute(
-        "SELECT COUNT(*) as c FROM orders WHERE order_date=? AND status != 'delivered'",
+        "SELECT COUNT(*) as c FROM orders WHERE order_date=?",
         (today,)
     ).fetchone()["c"]
     # Past orders: created today (entered today) AND already delivered AND old order_date
@@ -618,13 +619,13 @@ def dashboard():
     new_orders_list = [{"code":r["order_code"],
         "display_code": r["repeat_of"] if r["repeat_of"] else r["order_code"],
         "entry_code": r["order_code"] if r["repeat_of"] else "",
-        "name":r["name"],
+        "name":r["name"], "status":r["status"],
         "date":_fmtd(r["order_date"]),"payable":int(r["payable_amount"] or 0),
         "paid":int(r["advance_paid"] or 0),"due":int(r["remaining"] or 0)}
         for r in conn.execute("""
-            SELECT o.order_code,o.repeat_of,c.name,o.order_date,o.payable_amount,o.advance_paid,o.remaining
+            SELECT o.order_code,o.repeat_of,o.status,c.name,o.order_date,o.payable_amount,o.advance_paid,o.remaining
             FROM orders o JOIN customers c ON c.id=o.customer_id
-            WHERE o.order_date=? AND o.status!='delivered' ORDER BY o.id DESC
+            WHERE o.order_date=? ORDER BY o.id DESC
         """, (today,)).fetchall()]
 
     def fmt_12h(ts):
