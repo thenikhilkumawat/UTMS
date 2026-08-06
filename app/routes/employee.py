@@ -2869,21 +2869,26 @@ def api_pickup_search():
                 seen_codes.add(row["order_code"])
     conn.close()
 
-    # Mark the newest order per CUSTOMER (not just per repeat_of chain) so
-    # the frontend can show a "Latest" tag and sort it first — this covers
-    # orders that share a customer without an explicit repeat_of link too.
-    latest_id_per_cust = {}
+    # Mark the newest order per MOBILE NUMBER (not customer_id, and not just
+    # repeat_of chain) — grouping by customer_id broke when the same real
+    # person had duplicate customer records (same mobile, different id) from
+    # old data-entry history, causing more than one "Latest" tag to show for
+    # what the user sees as a single customer group.
+    def group_key(r):
+        return r["mobile"] or (r["repeat_of"] or r["order_code"])
+
+    latest_id_per_group = {}
     for r in rows:
-        key = r["customer_id"] if "customer_id" in r.keys() and r["customer_id"] else (r["repeat_of"] or r["order_code"])
-        if key not in latest_id_per_cust or r["id"] > latest_id_per_cust[key]:
-            latest_id_per_cust[key] = r["id"]
+        key = group_key(r)
+        if key not in latest_id_per_group or r["id"] > latest_id_per_group[key]:
+            latest_id_per_group[key] = r["id"]
 
     return jsonify([{
         "order_code":       r["order_code"],
         "entry_code":       r["order_code"] if r["repeat_of"] else "",
         "display_code":     r["repeat_of"] if r["repeat_of"] else r["order_code"],
         "repeat_of":        r["repeat_of"] or "",
-        "is_latest":        latest_id_per_cust.get(r["customer_id"] if "customer_id" in r.keys() and r["customer_id"] else (r["repeat_of"] or r["order_code"])) == r["id"],
+        "is_latest":        latest_id_per_group.get(group_key(r)) == r["id"],
         "status":           r["status"],
         "customer_name":    r["customer_name"] or "—",
         "mobile":           r["mobile"] or "",
