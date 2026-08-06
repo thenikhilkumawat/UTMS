@@ -494,7 +494,8 @@ def owner_required(f):
                 request.path.startswith("/owner/api/") or
                 request.headers.get("X-Requested-With") == "XMLHttpRequest"):
                 return jsonify({"ok": False, "error": "Session expired — please refresh and login again"}), 401
-            return redirect(url_for("owner.login"))
+            next_url = request.full_path if request.query_string else request.path
+            return redirect(url_for("owner.login", next=next_url))
         return f(*args, **kwargs)
     return decorated
 
@@ -502,7 +503,11 @@ def owner_required(f):
 def login():
     if request.args.get("expired"):
         flash("Session expired. Please login again.", "warning")
-    return render_template("owner/login.html", active_page=None, show_voice=False, urgent_count=0)
+    next_url = request.args.get("next", "/owner/dashboard")
+    # Safety: only allow redirecting within our own site, never to an external URL
+    if not next_url.startswith("/"):
+        next_url = "/owner/dashboard"
+    return render_template("owner/login.html", active_page=None, show_voice=False, urgent_count=0, next_url=next_url)
 
 @bp.route("/verify-pin", methods=["POST"])
 def verify_pin():

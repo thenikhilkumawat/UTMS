@@ -51,7 +51,8 @@ def owner_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if not is_owner_active():
-            return redirect(url_for("owner.login", next=request.path))
+            next_url = request.full_path if request.query_string else request.path
+            return redirect(url_for("owner.login", next=next_url))
         touch_owner_session()
         return f(*args, **kwargs)
     return decorated

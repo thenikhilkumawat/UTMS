@@ -73,7 +73,7 @@ function submitPin() {
   .then(r => r.json())
   .then(data => {
     if (data.ok) {
-      window.location.href = "/owner/dashboard";
+      window.location.href = "{{ next_url }}";
     } else {
       // Shake and show error
       for (let i = 0; i < 4; i++) document.getElementById("d" + i).classList.add("error");
