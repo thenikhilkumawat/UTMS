@@ -1881,7 +1881,8 @@ def order_status():
             """, date_params + (like,)).fetchall()
 
     else:
-        # Default: only active orders (pending/ready) — delivered/past orders excluded, not needed here
+        # Default: active orders (pending/ready) PLUS anything delivered TODAY
+        # (so an order created and delivered same-day still shows under "Today")
         raw = conn.execute(f"""
             SELECT o.id, o.order_code, o.status, o.is_urgent, o.note,
                    o.order_date, o.delivery_date, o.delivered_at, o.repeat_of,
@@ -1891,12 +1892,12 @@ def order_status():
             FROM orders o
             LEFT JOIN customers c ON c.id = o.customer_id
             WHERE 1=1 {date_clause}
-              AND o.status IN ('pending','ready')
+              AND (o.status IN ('pending','ready') OR (o.status='delivered' AND o.order_date=?))
             ORDER BY
               o.is_urgent DESC,
               CASE o.status WHEN 'pending' THEN 0 WHEN 'ready' THEN 1 ELSE 2 END,
               o.id DESC
-        """, date_params).fetchall()
+        """, date_params + (date.today().isoformat(),)).fetchall()
 
     # Customer order counts - only for visible orders
     cust_counts = {}
@@ -2137,6 +2138,13 @@ def order_status():
         oid = order_id_map.get(o_data["order_code"])
         o_data["images"] = images_by_order.get(oid, []) if oid else []
 
+    # "Today" must count ALL of today's orders regardless of status (an order
+    # created and delivered same-day should still count) — the base list above
+    # is intentionally limited to pending/ready only, so this needs its own query.
+    today_count_all_status = conn.execute(
+        "SELECT COUNT(*) as c FROM orders WHERE order_date=?", (date.today().isoformat(),)
+    ).fetchone()["c"]
+
     counts = {
         "total":     len(orders),
         "late":      sum(1 for o in orders if o["overdue"] and o["status"]!="delivered"),
@@ -2146,7 +2154,7 @@ def order_status():
         "cancelled": sum(1 for o in orders if o["status"]=="cancelled"),
         "urgent":    sum(1 for o in orders if o["is_urgent"] and o["status"]!="delivered"),
         "pickup_pending": sum(1 for o in orders if o.get("pickup_pending")),
-        "today":     sum(1 for o in orders if o.get("order_date") == date.today().isoformat()),
+        "today":     today_count_all_status,
     }
     conn.close()
     HINDI_MAP = {

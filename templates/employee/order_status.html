@@ -655,7 +655,7 @@ function filterRows() {
       matchQ = words.every(w => srch.includes(w));
     }
     let matchF = true;
-    if      (activeTab === "today")          matchF = row.dataset.orderDate === TODAY_DATE && status !== "delivered";
+    if      (activeTab === "today")          matchF = row.dataset.orderDate === TODAY_DATE;
     else if (activeTab === "late")           matchF = overdue && status !== "delivered" && status !== "cancelled";
     else if (activeTab === "upcoming")       matchF = upcoming && status !== "cancelled";
     else if (activeTab === "ready")          matchF = status === "ready";
